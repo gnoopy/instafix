@@ -221,6 +221,100 @@ export function buildStyles(colors: ThemeColors): string {
       fill: none;
     }
 
+    /* ---- Auto-contrast against the host page's background (G8) ----
+       Fab.updateContrast() samples the actual rendered background behind
+       the FAB/toolbar and toggles one of these on the shared root wrapper —
+       a solid, opaque style beats the default translucent glass whenever
+       the glass itself would be hard to tell apart from the page underneath
+       (e.g. the light theme's near-white glass over a white page). */
+
+    .sp-fab-root--on-light .sp-toolbar-item {
+      background: rgba(15, 23, 42, 0.92);
+      border-color: rgba(15, 23, 42, 0.92);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 1px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .sp-fab-root--on-light .sp-toolbar-item:hover,
+    .sp-fab-root--on-light .sp-toolbar-item:focus-visible {
+      background: rgba(30, 41, 59, 0.97);
+      border-color: var(--sp-accent);
+      color: #fff;
+      box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.4),
+        0 0 0 3px var(--sp-accent-light);
+    }
+
+    .sp-fab-root--on-dark .sp-toolbar-item {
+      background: rgba(255, 255, 255, 0.96);
+      border-color: rgba(255, 255, 255, 0.96);
+      color: #0f172a;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 1px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .sp-fab-root--on-dark .sp-toolbar-item:hover,
+    .sp-fab-root--on-dark .sp-toolbar-item:focus-visible {
+      background: #ffffff;
+      border-color: var(--sp-accent);
+      color: var(--sp-accent);
+      box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.4),
+        0 0 0 3px var(--sp-accent-light);
+    }
+
+    /* A thin light ring around the FAB itself separates its (already
+       saturated, generally-visible) accent color from either a very light
+       or very dark page background sitting right up against it. */
+    .sp-fab-root--on-light .sp-fab,
+    .sp-fab-root--on-dark .sp-fab {
+      box-shadow:
+        0 4px 20px var(--sp-accent-glow),
+        0 0 0 3px rgba(255, 255, 255, 0.9),
+        0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    /* ---- Discovery shine — a diagonal light sweep across the FAB + toolbar
+       (G8) ---- a persistent-but-easy-to-miss toolbar needs some way to say
+       "look here" the first time it appears. Plays once, right-to-left
+       (matching the FAB → eye → pencil → list reading order), sized and
+       positioned in JS to exactly span whatever's currently rendered
+       (Fab.playShine()) rather than a fixed guess at the toolbar's width. */
+    .sp-toolbar-shine {
+      position: fixed;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: ${Z_INDEX_MAX};
+      border-radius: 9999px;
+    }
+
+    .sp-toolbar-shine::before {
+      content: "";
+      position: absolute;
+      top: -60%;
+      left: 100%;
+      width: 48px;
+      height: 220%;
+      background: linear-gradient(
+        100deg,
+        transparent,
+        rgba(250, 204, 21, 0.85) 45%,
+        rgba(255, 241, 153, 0.95) 50%,
+        rgba(250, 204, 21, 0.85) 55%,
+        transparent
+      );
+      transform: rotate(18deg);
+      animation: sp-toolbar-shine-sweep 1.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+
+    @keyframes sp-toolbar-shine-sweep {
+      from {
+        left: 100%;
+      }
+      to {
+        left: -80px;
+      }
+    }
+
     /* Hover/focus tooltip — appears above the item, matching a horizontal
        toolbar (the old vertical radial menu showed labels to the side). */
     .sp-toolbar-label {

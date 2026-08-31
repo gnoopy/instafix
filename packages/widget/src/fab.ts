@@ -1,8 +1,15 @@
 import type { InstaFixConfig } from "@instafix/core";
+import { sampleBackgroundIsLight } from "./dom/background-contrast.js";
 import { parseSvg, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
 import { type TFunction, type Translations, tWithParams } from "./i18n/index.js";
 import { ICON_CLOSE, ICON_EDIT, ICON_EYE, ICON_EYE_OFF, ICON_INSTAFIX, ICON_LIST } from "./icons.js";
+
+/** Re-sample the background behind the FAB/toolbar at most this often while scrolling/resizing. */
+const CONTRAST_DEBOUNCE_MS = 200;
+
+/** Pause between discovery-shine sweeps — picked fresh (not a fixed cadence) so it never reads as mechanical. */
+const SHINE_INTERVAL_CHOICES_MS = [3000, 4000, 5000];
 
 /** Closed set of toolbar item ids — keeps the label lookup exhaustive. */
 type ToolbarItemId = "chat" | "annotate" | "toggle-annotations";
@@ -62,6 +69,12 @@ export class Fab {
   private toolbarVisible: boolean;
   private annotationsVisible = true;
   private items: ToolbarItem[];
+  /** The shadow host — hidden momentarily during a contrast sample so `elementFromPoint` sees the real page underneath. */
+  private readonly host: HTMLElement;
+  private contrastDebounce: ReturnType<typeof setTimeout> | null = null;
+  private readonly onWindowChange: () => void;
+  private shineTimer: ReturnType<typeof setTimeout> | null = null;
+  private activeShine: HTMLElement | null = null;
 
   constructor(
     shadowRoot: ShadowRoot,
@@ -70,6 +83,7 @@ export class Fab {
     private readonly t: TFunction,
   ) {
     const position = config.position ?? "bottom-right";
+    this.host = shadowRoot.host as HTMLElement;
 
     // Horizontal toolbar next to the FAB. Icons:
     // - list  → opens the feedback sidebar (panel of feedbacks).
@@ -178,6 +192,110 @@ export class Fab {
         }
       }
     });
+
+    // Auto-contrast against whatever the host page's background actually is
+    // where the FAB/toolbar sit (G8) — a translucent glass toolbar can be
+    // hard to notice against a page whose own background is close to it
+    // (e.g. the default light theme's white-ish glass over a white page).
+    // The first sample waits a frame: the shadow root's stylesheet may not
+    // be attached yet at the exact moment this constructor runs (the FAB
+    // still reports a 0×0 rect until it is), so sampling synchronously here
+    // would silently no-op for most page loads. Re-sampled (debounced) on
+    // scroll/resize after that, since a `position: fixed` widget ends up
+    // over different content as the page scrolls underneath it.
+    requestAnimationFrame(() => this.updateContrast());
+    this.onWindowChange = () => {
+      if (this.contrastDebounce) clearTimeout(this.contrastDebounce);
+      this.contrastDebounce = setTimeout(() => this.updateContrast(), CONTRAST_DEBOUNCE_MS);
+    };
+    window.addEventListener("scroll", this.onWindowChange, { passive: true });
+    window.addEventListener("resize", this.onWindowChange);
+
+    // Discovery shine (G8) — an easy-to-miss persistent toolbar needs some
+    // way to say "look here" every so often, not just on the first load.
+    // Only runs while the toolbar is actually visible — see show()/hide().
+    this.scheduleShine();
+  }
+
+  /**
+   * Sample the page's actual background color behind the FAB and toggle
+   * `sp-fab--on-light` / `sp-fab--on-dark` (cascading to the toolbar items
+   * via `.sp-toolbar--on-light`/`--on-dark`) so their styling always
+   * contrasts with it, rather than assuming the widget's own light/dark
+   * theme matches the host page.
+   */
+  private updateContrast(): void {
+    const rect = this.fab.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) return; // not laid out yet (hidden, or a non-browser test env)
+    const isLight = sampleBackgroundIsLight(rect.left + rect.width / 2, rect.top + rect.height / 2, this.host);
+    if (isLight === null) return; // nothing to sample — leave the theme-based default styling as-is
+
+    this.root.classList.toggle("sp-fab-root--on-light", isLight);
+    this.root.classList.toggle("sp-fab-root--on-dark", !isLight);
+  }
+
+  /**
+   * Schedule the next discovery-shine sweep after a random pause (one of
+   * `SHINE_INTERVAL_CHOICES_MS`, re-picked every cycle) — a no-op while the
+   * toolbar is hidden, since there's nothing to draw attention to then.
+   */
+  private scheduleShine(): void {
+    if (this.shineTimer) clearTimeout(this.shineTimer);
+    if (!this.toolbarVisible) return;
+    const choices = SHINE_INTERVAL_CHOICES_MS;
+    const delay = choices[Math.floor(Math.random() * choices.length)] as number;
+    this.shineTimer = setTimeout(() => {
+      this.playShine();
+      this.scheduleShine();
+    }, delay);
+  }
+
+  /** Cancels any pending shine cycle and removes an in-flight sweep element, if one is currently animating. */
+  private stopShineSchedule(): void {
+    if (this.shineTimer) {
+      clearTimeout(this.shineTimer);
+      this.shineTimer = null;
+    }
+    this.activeShine?.remove();
+    this.activeShine = null;
+  }
+
+  /**
+   * One sweep of the discovery shine — a diagonal light band that passes
+   * right-to-left across the FAB and every toolbar item at once (they're
+   * separately-positioned siblings, so the sweep's own box is computed from
+   * their actual rendered bounds — position config and item count both
+   * change that span). Deferred a frame for the same reason updateContrast()
+   * is: nothing has real layout yet at the exact instant a timer fires.
+   */
+  private playShine(): void {
+    requestAnimationFrame(() => {
+      if (!this.toolbarVisible) return; // hidden again before this frame ran
+      const toolbarRect = this.toolbar.getBoundingClientRect();
+      const fabRect = this.fab.getBoundingClientRect();
+      if (toolbarRect.width === 0 || fabRect.width === 0) return; // not laid out (hidden, or a non-browser test env)
+
+      const left = Math.min(toolbarRect.left, fabRect.left);
+      const right = Math.max(toolbarRect.right, fabRect.right);
+      const top = Math.min(toolbarRect.top, fabRect.top);
+      const bottom = Math.max(toolbarRect.bottom, fabRect.bottom);
+
+      this.activeShine?.remove();
+      const shine = document.createElement("div");
+      shine.className = "sp-toolbar-shine";
+      shine.style.cssText = `left:${left}px; top:${top}px; width:${right - left}px; height:${bottom - top}px;`;
+      shine.setAttribute("aria-hidden", "true");
+      shine.addEventListener(
+        "animationend",
+        () => {
+          shine.remove();
+          if (this.activeShine === shine) this.activeShine = null;
+        },
+        { once: true },
+      );
+      this.root.appendChild(shine);
+      this.activeShine = shine;
+    });
   }
 
   /** The FAB button element — anchor point for the onboarding coachmark (G8). */
@@ -253,6 +371,8 @@ export class Fab {
 
     const items = this.toolbar.querySelectorAll<HTMLButtonElement>(".sp-toolbar-item");
     for (const item of items) item.tabIndex = 0;
+
+    this.scheduleShine();
   }
 
   private hide(): void {
@@ -268,6 +388,8 @@ export class Fab {
 
     // Return focus to the FAB in case a toolbar item had it.
     this.fab.focus();
+
+    this.stopShineSchedule();
   }
 
   private setFabIcon(svgStr: string): void {
@@ -312,6 +434,10 @@ export class Fab {
   }
 
   destroy(): void {
+    window.removeEventListener("scroll", this.onWindowChange);
+    window.removeEventListener("resize", this.onWindowChange);
+    if (this.contrastDebounce) clearTimeout(this.contrastDebounce);
+    this.stopShineSchedule();
     this.root.remove();
   }
 }

@@ -759,4 +759,334 @@ describe("Fab", () => {
       }
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Auto-contrast against the host page's background (G8)
+  // -------------------------------------------------------------------------
+
+  describe("auto-contrast", () => {
+    const originalElementFromPoint = document.elementFromPoint;
+
+    afterEach(() => {
+      vi.useRealTimers();
+      document.elementFromPoint = originalElementFromPoint;
+    });
+
+    function stubFabRect(): void {
+      const fabBtn = shadow.querySelector<HTMLButtonElement>(".sp-fab")!;
+      fabBtn.getBoundingClientRect = () =>
+        ({
+          top: 800,
+          left: 1300,
+          width: 52,
+          height: 52,
+          right: 1352,
+          bottom: 852,
+          x: 1300,
+          y: 800,
+          toJSON: () => {},
+        }) as DOMRect;
+    }
+
+    function stubPageBackground(color: string): void {
+      const bgEl = document.createElement("div");
+      bgEl.style.backgroundColor = color;
+      document.body.appendChild(bgEl);
+      document.elementFromPoint = (() => bgEl) as typeof document.elementFromPoint;
+    }
+
+    it("defers the initial contrast sample to the next animation frame", () => {
+      // Regression: sampling synchronously in the constructor measured the
+      // FAB before the shadow root's stylesheet was necessarily attached —
+      // in a real browser that's still a 0×0 rect, silently skipping the
+      // very first sample on most page loads. jsdom can't reproduce the
+      // layout-timing bug itself (it never lays anything out), but this
+      // pins the fix's mechanism: the initial sample must go through rAF.
+      const rafSpy = vi.spyOn(window, "requestAnimationFrame");
+      fab.destroy();
+      shadow.host.remove();
+      shadow = createShadowRoot();
+      fab = new Fab(shadow, defaultConfig(), bus, createT("fr"));
+
+      expect(rafSpy).toHaveBeenCalled();
+      rafSpy.mockRestore();
+    });
+
+    it("does not sample when the FAB isn't laid out yet (0×0 rect — jsdom's default)", () => {
+      // The shared beforeEach already constructed `fab` — jsdom reports an
+      // all-zero rect, so the initial sample in the constructor is a no-op.
+      const root = shadow.querySelector<HTMLElement>(".sp-fab")!.parentElement!;
+      expect(root.classList.contains("sp-fab-root--on-light")).toBe(false);
+      expect(root.classList.contains("sp-fab-root--on-dark")).toBe(false);
+    });
+
+    it("adds sp-fab-root--on-light when a light background is sampled on scroll", () => {
+      vi.useFakeTimers();
+      stubFabRect();
+      stubPageBackground("rgb(255, 255, 255)");
+
+      window.dispatchEvent(new Event("scroll"));
+      vi.advanceTimersByTime(250);
+
+      const root = shadow.querySelector<HTMLElement>(".sp-fab")!.parentElement!;
+      expect(root.classList.contains("sp-fab-root--on-light")).toBe(true);
+      expect(root.classList.contains("sp-fab-root--on-dark")).toBe(false);
+    });
+
+    it("adds sp-fab-root--on-dark when a dark background is sampled on resize", () => {
+      vi.useFakeTimers();
+      stubFabRect();
+      stubPageBackground("rgb(10, 10, 10)");
+
+      window.dispatchEvent(new Event("resize"));
+      vi.advanceTimersByTime(250);
+
+      const root = shadow.querySelector<HTMLElement>(".sp-fab")!.parentElement!;
+      expect(root.classList.contains("sp-fab-root--on-dark")).toBe(true);
+      expect(root.classList.contains("sp-fab-root--on-light")).toBe(false);
+    });
+
+    it("switches from on-light to on-dark as the sampled background changes across scroll events", () => {
+      vi.useFakeTimers();
+      stubFabRect();
+
+      stubPageBackground("rgb(255, 255, 255)");
+      window.dispatchEvent(new Event("scroll"));
+      vi.advanceTimersByTime(250);
+      const root = shadow.querySelector<HTMLElement>(".sp-fab")!.parentElement!;
+      expect(root.classList.contains("sp-fab-root--on-light")).toBe(true);
+
+      stubPageBackground("rgb(10, 10, 10)");
+      window.dispatchEvent(new Event("scroll"));
+      vi.advanceTimersByTime(250);
+      expect(root.classList.contains("sp-fab-root--on-light")).toBe(false);
+      expect(root.classList.contains("sp-fab-root--on-dark")).toBe(true);
+    });
+
+    it("debounces rapid scroll events into a single re-sample", () => {
+      vi.useFakeTimers();
+      stubFabRect();
+      stubPageBackground("rgb(255, 255, 255)");
+
+      const spy = vi.spyOn(document, "elementFromPoint");
+      window.dispatchEvent(new Event("scroll"));
+      window.dispatchEvent(new Event("scroll"));
+      window.dispatchEvent(new Event("scroll"));
+      vi.advanceTimersByTime(250);
+
+      expect(spy).toHaveBeenCalledTimes(1);
+      spy.mockRestore();
+    });
+
+    it("does not sample after destroy() (scroll/resize listeners removed)", () => {
+      vi.useFakeTimers();
+      stubFabRect();
+      stubPageBackground("rgb(255, 255, 255)");
+
+      fab.destroy();
+      const spy = vi.spyOn(document, "elementFromPoint");
+      window.dispatchEvent(new Event("scroll"));
+      vi.advanceTimersByTime(250);
+
+      expect(spy).not.toHaveBeenCalled();
+      spy.mockRestore();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Discovery shine — periodic right-to-left light sweep (G8)
+  // -------------------------------------------------------------------------
+
+  describe("discovery shine", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    });
+
+    function stubLayout(): void {
+      const fabBtn = shadow.querySelector<HTMLButtonElement>(".sp-fab")!;
+      fabBtn.getBoundingClientRect = () =>
+        ({
+          top: 800,
+          left: 1300,
+          width: 52,
+          height: 52,
+          right: 1352,
+          bottom: 852,
+          x: 1300,
+          y: 800,
+          toJSON: () => {},
+        }) as DOMRect;
+      const toolbarEl = shadow.querySelector<HTMLElement>(".sp-toolbar")!;
+      toolbarEl.getBoundingClientRect = () =>
+        ({
+          top: 804,
+          left: 1050,
+          width: 234,
+          height: 44,
+          right: 1284,
+          bottom: 848,
+          x: 1050,
+          y: 804,
+          toJSON: () => {},
+        }) as DOMRect;
+    }
+
+    function findShine(): HTMLElement | null {
+      return shadow.querySelector<HTMLElement>(".sp-toolbar-shine");
+    }
+
+    /**
+     * The shared `beforeEach` constructs `fab` before this describe block's
+     * mocks (fake timers, `Math.random`) exist — its constructor already
+     * called `scheduleShine()` against a REAL, unmocked-random timer that
+     * `vi.advanceTimersByTime()` can never see. Recreate it once the mocks
+     * are in place so its own `scheduleShine()` call is the one under test.
+     */
+    function recreateFab(): void {
+      fab.destroy();
+      shadow.host.remove();
+      shadow = createShadowRoot();
+      fab = new Fab(shadow, defaultConfig(), bus, createT("fr"));
+    }
+
+    function mockRafSynchronous(): void {
+      vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
+        cb(0);
+        return 0;
+      });
+    }
+
+    it("does not sweep before layout has happened (jsdom's default 0×0 rects)", () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0); // shortest choice: 3000ms
+      mockRafSynchronous();
+      recreateFab();
+
+      // No stubLayout() — the FAB/toolbar keep jsdom's default 0×0 rects, so
+      // playShine()'s "not laid out yet" guard should skip creating anything.
+      vi.advanceTimersByTime(3000);
+      expect(findShine()).toBeNull();
+    });
+
+    it("sweeps once after the shortest random interval (3000ms) when Math.random rolls 0", () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      mockRafSynchronous();
+      recreateFab();
+      stubLayout();
+
+      vi.advanceTimersByTime(3000);
+
+      expect(findShine()).not.toBeNull();
+    });
+
+    it("sizes the sweep to span both the toolbar and the FAB", () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      mockRafSynchronous();
+      recreateFab();
+      stubLayout();
+
+      vi.advanceTimersByTime(3000);
+
+      const shine = findShine()!;
+      // left = min(toolbar.left=1050, fab.left=1300) = 1050
+      // right = max(toolbar.right=1284, fab.right=1352) = 1352 → width 302
+      expect(shine.style.left).toBe("1050px");
+      expect(shine.style.width).toBe("302px");
+    });
+
+    it("removes the sweep element once its animation ends", () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      mockRafSynchronous();
+      recreateFab();
+      stubLayout();
+
+      vi.advanceTimersByTime(3000);
+      const shine = findShine()!;
+      shine.dispatchEvent(new Event("animationend"));
+
+      expect(findShine()).toBeNull();
+    });
+
+    it("schedules the next sweep after the previous one fires (repeats indefinitely)", () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0); // always the shortest (3000ms) choice
+      mockRafSynchronous();
+      recreateFab();
+      stubLayout();
+
+      vi.advanceTimersByTime(3000);
+      const first = findShine();
+      expect(first).not.toBeNull();
+      first?.dispatchEvent(new Event("animationend"));
+
+      vi.advanceTimersByTime(3000);
+      expect(findShine()).not.toBeNull();
+    });
+
+    it("picks the longest interval (5000ms) when Math.random rolls close to 1", () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0.99);
+      mockRafSynchronous();
+      recreateFab();
+      stubLayout();
+
+      vi.advanceTimersByTime(4000);
+      expect(findShine()).toBeNull(); // too early for the 5000ms choice
+
+      vi.advanceTimersByTime(1000);
+      expect(findShine()).not.toBeNull();
+    });
+
+    it("hiding the toolbar cancels the pending cycle and removes an in-flight sweep", () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      mockRafSynchronous();
+      recreateFab();
+      stubLayout();
+
+      vi.advanceTimersByTime(3000);
+      expect(findShine()).not.toBeNull();
+
+      const fabBtn = shadow.querySelector<HTMLButtonElement>(".sp-fab")!;
+      fabBtn.click(); // hide
+
+      expect(findShine()).toBeNull();
+
+      // No further sweep even after waiting well past every possible interval.
+      vi.advanceTimersByTime(5000);
+      expect(findShine()).toBeNull();
+    });
+
+    it("showing the toolbar again restarts the schedule", () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      mockRafSynchronous();
+      recreateFab();
+      stubLayout();
+
+      const fabBtn = shadow.querySelector<HTMLButtonElement>(".sp-fab")!;
+      fabBtn.click(); // hide
+      fabBtn.click(); // show again
+
+      vi.advanceTimersByTime(3000);
+      expect(findShine()).not.toBeNull();
+    });
+
+    it("destroy() cancels the pending cycle", () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      recreateFab();
+      stubLayout();
+      const rafSpy = vi.spyOn(window, "requestAnimationFrame");
+
+      fab.destroy();
+      vi.advanceTimersByTime(5000);
+
+      expect(rafSpy).not.toHaveBeenCalled();
+    });
+  });
 });
