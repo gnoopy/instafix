@@ -30,6 +30,33 @@ Draw rectangles, leave comments, track bugs — directly on the live site.
 
 ---
 
+## Quickstart — install today, straight from GitHub
+
+`@instafix/*` isn't published to the npm registry yet, so `npm install @instafix/widget` won't work. Every package installs straight from this repo's build output instead, via a disposable `<package>-dist` branch — same install experience, just a GitHub URL instead of a package name.
+
+```bash
+# 1. Scaffold the API route + widget component interactively.
+#    No Prisma schema in your project? init offers SQLite (better-sqlite3,
+#    zero external services) as the default instead of assuming Prisma.
+npx github:gnoopy/instafix#cli-dist init
+
+# 2. Install whichever packages init referenced — for the SQLite path:
+npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-sqlite-dist
+# Prisma project instead? swap in: github:gnoopy/instafix#adapter-prisma-dist
+```
+
+**To remove it again**: revert your lockfile and `package.json` (`git checkout -- package.json package-lock.json`, or your lockfile), delete `app/api/instafix/` and `components/instafix-widget.tsx`, then reinstall.
+
+### Wiring it into your app — hand this to your coding agent
+
+`init` generates `components/instafix-widget.tsx` but doesn't touch your layout (editing arbitrary layout files safely needs a human, or an agent, in the loop). Paste this to Claude Code / Cursor / Copilot / etc. once install is done:
+
+> `npx github:gnoopy/instafix#cli-dist init` generated `components/instafix-widget.tsx`, which exports a component named `InstaFixWidget`. Add `<InstaFixWidget />` to my app's root layout — `app/layout.tsx` for Next.js App Router, or the equivalent root layout/root component for whatever framework this project uses. Import it from `@/components/instafix-widget` (adjust the import path if this project doesn't use the `@/` alias). Place the tag once, inside `<body>`, alongside any other global providers — it renders nothing itself (`return null`), so exact position doesn't matter. Don't wrap it in a conditional: it already no-ops outside development unless `forceShow` is set inside the component.
+
+Once `<InstaFixWidget />` is in the layout, every page gets the feedback widget. See the [Quickstart](#quickstart) below for what changes once these packages are published to npm.
+
+---
+
 ## Why InstaFix?
 
 Stop chasing client feedback across Slack threads, email chains, and Notion docs. InstaFix gives your clients a **contextual** way to leave feedback — anchored to the exact element they're looking at.
