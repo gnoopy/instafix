@@ -420,6 +420,22 @@ export const INBOX_CSS = `
 .ifd-row[data-status="resolved"] .ifd-row-status { color: var(--ifd-st-resolved); }
 .ifd-row[data-status="wont_fix"] .ifd-row-status { color: var(--ifd-st-wontfix); }
 
+/* Closed items (resolved / wont_fix) fade the whole row so an open backlog
+   stands out at a glance; hover/focus/selection lift it back to full opacity
+   since the row is still actionable (e.g. reopening it). */
+.ifd-row[data-status="resolved"],
+.ifd-row[data-status="wont_fix"] {
+  opacity: 0.55;
+}
+.ifd-row[data-status="resolved"]:hover,
+.ifd-row[data-status="wont_fix"]:hover,
+.ifd-row[data-status="resolved"].ifd-row-focused,
+.ifd-row[data-status="wont_fix"].ifd-row-focused,
+.ifd-row[data-status="resolved"][aria-selected="true"],
+.ifd-row[data-status="wont_fix"][aria-selected="true"] {
+  opacity: 0.85;
+}
+
 /* status glyph coloring contract: data-status on the glyph's direct parent
    (first svg only — trailing chevrons/checks keep the text color) */
 .ifd-root [data-status="open"] > svg:first-of-type { color: var(--ifd-st-open); }
