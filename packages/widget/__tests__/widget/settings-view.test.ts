@@ -79,7 +79,6 @@ describe("SettingsView", () => {
         accentColor: "#173CFF",
         enableScreenshot: true,
         captureDiagnostics: true,
-        enableRightClickComment: false,
       }),
       onChange,
     );
@@ -90,10 +89,10 @@ describe("SettingsView", () => {
     expect(view.element.querySelector<HTMLInputElement>(".sp-settings-color-input")!.value).toBe("#173cff");
 
     const chips = view.element.querySelectorAll<HTMLButtonElement>(".sp-settings-chip");
-    // Order: screenshots, diagnostics, right-click comments.
+    // Order: screenshots, diagnostics.
     expect(chips[0]?.getAttribute("aria-checked")).toBe("true");
     expect(chips[1]?.getAttribute("aria-checked")).toBe("true");
-    expect(chips[2]?.getAttribute("aria-checked")).toBe("false");
+    expect(chips).toHaveLength(2);
 
     view.destroy();
   });
@@ -162,12 +161,8 @@ describe("SettingsView", () => {
   });
 
   it("each toggle chip flips its aria-checked state and calls onChange with the matching key", () => {
-    const view = new SettingsView(
-      t,
-      baseConfig({ enableScreenshot: false, captureDiagnostics: false, enableRightClickComment: false }),
-      onChange,
-    );
-    const [screenshotChip, diagnosticsChip, rightClickChip] = Array.from(
+    const view = new SettingsView(t, baseConfig({ enableScreenshot: false, captureDiagnostics: false }), onChange);
+    const [screenshotChip, diagnosticsChip] = Array.from(
       view.element.querySelectorAll<HTMLButtonElement>(".sp-settings-chip"),
     );
 
@@ -178,10 +173,6 @@ describe("SettingsView", () => {
     diagnosticsChip!.click();
     expect(diagnosticsChip!.getAttribute("aria-checked")).toBe("true");
     expect(onChange).toHaveBeenLastCalledWith({ captureDiagnostics: true });
-
-    rightClickChip!.click();
-    expect(rightClickChip!.getAttribute("aria-checked")).toBe("true");
-    expect(onChange).toHaveBeenLastCalledWith({ enableRightClickComment: true });
 
     // Clicking again flips it back off.
     screenshotChip!.click();

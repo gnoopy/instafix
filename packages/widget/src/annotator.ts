@@ -2,7 +2,7 @@ import type { AnnotationPayload, FeedbackType, ScreenshotRegion } from "@instafi
 import { CLICK_THRESHOLD_PX, INSTANT_ANNOTATION_SIZE, Z_INDEX_MAX } from "./constants.js";
 import { findAnchorElement, findLargestAncestor, generateAnchor, rectToPercentages } from "./dom/anchor.js";
 import { computeAutoScrollDelta } from "./dom/auto-scroll.js";
-import { collectMarqueeElements } from "./dom/marquee.js";
+import { collectMarqueeElements, collectMarqueeElementsDetailed } from "./dom/marquee.js";
 import { type MotionPauseHandle, pauseMotion } from "./dom/motion-pause.js";
 import { detectTextSelection } from "./dom/text-selection.js";
 import { el, setText } from "./dom-utils.js";
@@ -13,6 +13,18 @@ import { MultiTargetPreview } from "./multi-target-preview.js";
 import { Popup } from "./popup.js";
 import { type AnnotatedScreenshot, captureAnnotatedScreenshot } from "./screenshot.js";
 import type { ThemeColors } from "./styles/theme.js";
+
+/**
+ * A marquee drag's multi-target selection, both resolutions pre-computed:
+ * `elements`/`detailElements` are the live DOM refs the multi-target preview
+ * badges/outlines track; the matching `*Annotations` arrays are pre-built so
+ * switching resolution doesn't need to re-hit-test or re-`generateAnchor`.
+ */
+interface MarqueeSelection {
+  elements: Element[];
+  detailElements: Element[];
+  detailAnnotations: AnnotationPayload[];
+}
 
 export interface AnnotationComplete {
   /** One or more targets (G3 marquee/shift-accumulate multi-select) attached to a single feedback. */
@@ -549,10 +561,11 @@ export class Annotator {
     const rectBounds = new DOMRect(x, y, w, h);
 
     let annotations: AnnotationPayload[];
-    // Live elements behind this drag's multi-target selection — only
-    // populated by the marquee path, and only meaningful for the
-    // multi-target preview (G8) below.
-    let marqueeElements: Element[] = [];
+    // Live elements (+ their pre-built annotations) behind this drag's
+    // multi-target selection — only populated by the marquee path, and only
+    // meaningful for the multi-target preview (G8) / summary-detail toggle
+    // below.
+    let marquee: MarqueeSelection | undefined;
     if (altKey) {
       annotations = [this.buildAreaAnnotation(rectBounds)];
     } else {
@@ -562,11 +575,15 @@ export class Annotator {
       } else {
         const result = this.buildMarqueeAnnotations(rectBounds);
         annotations = result.annotations;
-        marqueeElements = result.elements;
+        marquee = {
+          elements: result.elements,
+          detailElements: result.detailElements,
+          detailAnnotations: result.detailAnnotations,
+        };
       }
     }
 
-    await this.finalizeOrAccumulate(annotations, rectBounds, shiftKey, marqueeElements);
+    await this.finalizeOrAccumulate(annotations, rectBounds, shiftKey, marquee);
   };
 
   /**
@@ -578,7 +595,7 @@ export class Annotator {
     newAnnotations: AnnotationPayload[],
     captureRect: DOMRect,
     shiftKey: boolean,
-    marqueeElements: Element[] = [],
+    marquee?: MarqueeSelection,
   ): Promise<void> {
     if (shiftKey) {
       this.accumulated.push(...newAnnotations);
@@ -588,28 +605,66 @@ export class Annotator {
       return;
     }
 
-    // Only preview when this drag alone produced every target being
-    // submitted — once earlier Shift-drags contributed targets too, numbered
-    // badges covering just the last drag would undercount and mislead rather
-    // than clarify.
-    const showPreview = this.accumulated.length === 0 && marqueeElements.length > 1;
-    const allAnnotations = [...this.accumulated, ...newAnnotations];
+    // Only preview/offer the summary↔detail toggle when this drag alone
+    // produced every target being submitted — once earlier Shift-drags
+    // contributed targets too, numbered badges covering just the last drag
+    // would undercount and mislead rather than clarify.
+    const showPreview = this.accumulated.length === 0 && (marquee?.elements.length ?? 0) > 1;
+    let allAnnotations = [...this.accumulated, ...newAnnotations];
     this.accumulated = [];
 
-    const preview = showPreview ? new MultiTargetPreview(this.colors, marqueeElements, this.t, captureRect) : null;
+    // Reassigns `allAnnotations` via closure when the user switches the
+    // summary/detail resolution — same idiom already used below in
+    // `startInstantAnnotation`'s Element/Container `onChange` for a
+    // later-running submit handler to pick up.
+    const preview =
+      showPreview && marquee
+        ? new MultiTargetPreview(
+            this.colors,
+            {
+              summary: marquee.elements,
+              detail: marquee.detailElements.length > 0 ? marquee.detailElements : marquee.elements,
+            },
+            this.t,
+            captureRect,
+            (resolution) => {
+              allAnnotations =
+                resolution === "detail" && marquee.detailAnnotations.length > 0
+                  ? marquee.detailAnnotations
+                  : newAnnotations;
+              this.popup.setLegend(this.legendEntriesFromAnnotations(allAnnotations));
+            },
+          )
+        : null;
 
     // Keep the drawn rectangle visible while the popup is open so the user
     // can see what they're sending feedback about — including while the
     // submit-spinner is running. We only remove it after the popup closes.
     const screenshotCache: { value?: AnnotatedScreenshot | null } = {};
-    const result = await this.popup.show(captureRect, (formResult) =>
+    const resultPromise = this.popup.show(captureRect, (formResult) =>
       this.runSubmission(allAnnotations, formResult, captureRect, screenshotCache),
     );
+    // show()'s executor runs synchronously (it resets the legend to hidden
+    // before returning the pending promise) — set the real legend on the
+    // next line, after that reset, not before it.
+    if (showPreview) this.popup.setLegend(this.legendEntriesFromAnnotations(allAnnotations));
+    const result = await resultPromise;
 
     preview?.destroy();
     this.drawingRect?.remove();
     this.drawingRect = null;
     if (result) this.deactivate();
+  }
+
+  /** Cheap per-number legend labels for the marquee popup — derived from the anchor data already computed while building each annotation, no re-hit-testing. */
+  private legendEntriesFromAnnotations(
+    annotations: readonly AnnotationPayload[],
+  ): Array<{ number: number; label: string }> {
+    return annotations.map((a, index) => {
+      const raw = a.anchor.textSnippet.trim() || a.anchor.elementTag.toLowerCase();
+      const label = raw.length > 24 ? `${raw.slice(0, 24)}…` : raw;
+      return { number: index + 1, label };
+    });
   }
 
   /** Update the toolbar instruction to show the running Shift-accumulated count. */
@@ -701,16 +756,31 @@ export class Annotator {
    * in a real page (there's always at least a background element) and would
    * make marquee behavior depend on hit-testing quirks instead of intent.
    */
-  private buildMarqueeAnnotations(rectBounds: DOMRect): { annotations: AnnotationPayload[]; elements: Element[] } {
+  private buildMarqueeAnnotations(rectBounds: DOMRect): MarqueeSelection & { annotations: AnnotationPayload[] } {
     if (this.overlay) this.overlay.style.pointerEvents = "none";
     const elements = collectMarqueeElements(rectBounds);
+    // Detail (uncollapsed nested-chain) resolution is only worth computing
+    // when there's a genuine multi-target selection to offer a toggle for.
+    const detailElements = elements.length > 1 ? collectMarqueeElementsDetailed(rectBounds) : [];
     if (this.overlay) this.overlay.style.pointerEvents = "auto";
 
     if (elements.length <= 1) {
       const { annotation } = this.buildAnnotation(rectBounds);
-      return { annotations: [annotation], elements: [] };
+      return { annotations: [annotation], elements: [], detailElements: [], detailAnnotations: [] };
     }
-    const annotations = elements.map(
+    const annotations = this.annotationsForElements(elements);
+    const detailAnnotations = detailElements.length > 0 ? this.annotationsForElements(detailElements) : [];
+    // Elements/detailElements are only surfaced back for the multi-target
+    // preview (G8) — the live refs are the whole point (no re-resolution
+    // needed for a session that was just drawn), so they're only worth
+    // returning when there's more than one target to preview in the first
+    // place.
+    return { annotations, elements, detailElements, detailAnnotations };
+  }
+
+  /** Shared by both marquee resolutions — one full-bounds `AnnotationPayload` per element. */
+  private annotationsForElements(elements: readonly Element[]): AnnotationPayload[] {
+    return elements.map(
       (element): AnnotationPayload => ({
         anchor: generateAnchor(element),
         rect: { xPct: 0, yPct: 0, wPct: 1, hPct: 1 },
@@ -722,11 +792,6 @@ export class Annotator {
         target: { kind: "element" },
       }),
     );
-    // Elements are only surfaced back for the multi-target preview (G8) — the
-    // live refs are the whole point (no re-resolution needed for a session
-    // that was just drawn), so they're only worth returning when there's more
-    // than one target to preview in the first place.
-    return { annotations, elements };
   }
 
   /**

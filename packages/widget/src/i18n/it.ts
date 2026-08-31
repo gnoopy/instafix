@@ -58,6 +58,7 @@ export const it: Translations = {
   "fab.showTools": "Mostra strumenti",
   "fab.messages": "Mostra barra laterale",
   "fab.annotate": "Crea nuova annotazione",
+  "fab.targeting": "Seleziona automaticamente un elemento",
   "fab.annotations": "Mostra o nascondi i marcatori",
 
   // Annotator
@@ -225,10 +226,14 @@ export const it: Translations = {
   "popup.targetLabel": "Commento su",
   "popup.targetElement": "Elemento",
   "popup.targetContainer": "Contenitore",
+  "popup.legendLabel": "Obiettivi numerati",
 
   // Anteprima multi-target
   "annotator.targetBadgeAria": "Target {number}",
   "annotator.targetPreviewAlwaysShow": "Mostra sempre i contorni",
+  "annotator.resolutionLabel": "Visualizzazione",
+  "annotator.resolutionSummary": "Riepilogo",
+  "annotator.resolutionDetail": "Dettaglio",
 
   // Settings panel
   "settings.title": "Impostazioni",
@@ -243,5 +248,4 @@ export const it: Translations = {
   "settings.accentColor": "Colore accento",
   "settings.screenshots": "Screenshot",
   "settings.diagnostics": "Diagnostica",
-  "settings.rightClickComments": "Commenti con clic destro",
 };

@@ -57,6 +57,7 @@ export const de: Translations = {
   "fab.showTools": "Werkzeuge einblenden",
   "fab.messages": "Seitenleiste anzeigen",
   "fab.annotate": "Neue Anmerkung erstellen",
+  "fab.targeting": "Element automatisch anvisieren",
   "fab.annotations": "Markierungen ein- oder ausblenden",
 
   // Annotator
@@ -226,10 +227,14 @@ export const de: Translations = {
   "popup.targetLabel": "Kommentar zu",
   "popup.targetElement": "Element",
   "popup.targetContainer": "Container",
+  "popup.legendLabel": "Nummerierte Ziele",
 
   // Mehrfachziel-Vorschau
   "annotator.targetBadgeAria": "Ziel {number}",
   "annotator.targetPreviewAlwaysShow": "Umrisse immer anzeigen",
+  "annotator.resolutionLabel": "Anzeige",
+  "annotator.resolutionSummary": "Übersicht",
+  "annotator.resolutionDetail": "Detail",
 
   // Settings panel
   "settings.title": "Einstellungen",
@@ -244,5 +249,4 @@ export const de: Translations = {
   "settings.accentColor": "Akzentfarbe",
   "settings.screenshots": "Screenshots",
   "settings.diagnostics": "Diagnosedaten",
-  "settings.rightClickComments": "Rechtsklick-Kommentare",
 };

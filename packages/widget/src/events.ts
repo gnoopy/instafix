@@ -66,6 +66,14 @@ export interface WidgetEvents {
   "annotation:end": [];
   "annotation:complete": [AnnotationComplete];
   /**
+   * Internal-only: the "auto-target" toolbar button's hover-then-click
+   * picker mode (Mode 2) — continuous hover highlight, click locks the
+   * target and hands off to `startInstantAnnotation`. Not part of
+   * `InstaFixPublicEvents`, same category as `submission:cancelled` below.
+   */
+  "targeting:start": [];
+  "targeting:end": [];
+  /**
    * Internal-only: a feedback submission was aborted by a benign user action
    * (e.g. cancelling the identity prompt). Distinct from `feedback:error` so a
    * cancellation does not surface through the host's `onError` callback. Not

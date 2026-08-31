@@ -58,6 +58,7 @@ export interface Translations {
   "fab.showTools": string;
   "fab.messages": string;
   "fab.annotate": string;
+  "fab.targeting": string;
   "fab.annotations": string;
 
   // Annotator
@@ -228,12 +229,16 @@ export interface Translations {
   "popup.targetLabel": string;
   "popup.targetElement": string;
   "popup.targetContainer": string;
+  "popup.legendLabel": string;
 
   // Multi-target preview (G8) — numbered on-page badges shown while composing
   // a multi-select (marquee) annotation, before submission.
   /** aria-label per badge, e.g. "Target 2". */
   "annotator.targetBadgeAria": string;
   "annotator.targetPreviewAlwaysShow": string;
+  "annotator.resolutionLabel": string;
+  "annotator.resolutionSummary": string;
+  "annotator.resolutionDetail": string;
 
   // Settings panel — gear icon in the feedback list header, lets visitors
   // adjust theme/locale/position/accent/feature toggles live via
@@ -251,7 +256,6 @@ export interface Translations {
   "settings.accentColor": string;
   "settings.screenshots": string;
   "settings.diagnostics": string;
-  "settings.rightClickComments": string;
 }
 
 /** Every valid key of `Translations` as a string-literal union. */

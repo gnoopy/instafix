@@ -18,6 +18,10 @@ export interface MarqueeOptions {
 }
 
 const DEFAULT_MAX_ELEMENTS = 20;
+/** Detail mode skips the containment collapse, so a raw candidate set runs
+ * larger on the same drag — capped lower than summary mode so the numbered
+ * badge cloud stays scannable. */
+const DEFAULT_DETAIL_MAX_ELEMENTS = 12;
 const DEFAULT_GRID_SIZE = 6;
 /** An element whose box exceeds this multiple of the marquee's own area, and
  * isn't fully contained by it, is a layout wrapper the grid sampled through
@@ -105,15 +109,25 @@ function resolveContainment(list: Element[], marqueeArea: number): Element[] {
   return sorted.filter((el) => !dropped.has(el));
 }
 
+function documentOrder(list: Element[]): Element[] {
+  return [...list].sort((a, b) => {
+    const position = a.compareDocumentPosition(b);
+    if (position & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+    if (position & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+    return 0;
+  });
+}
+
 /**
- * Collect the meaningful elements a marquee rect intersects, normalized:
- * widget chrome and hidden elements excluded, oversized ancestor wrappers
- * dropped, and ancestor/descendant conflicts resolved by `resolveContainment`
- * (whichever one best matches the size of what was actually dragged). Returned
- * in document order, capped at `maxElements`.
+ * Grid-sample the rect and normalize the raw hits: widget chrome, hidden
+ * elements, and oversized ancestor wrappers the grid sampled through are
+ * excluded. Shared by both `collectMarqueeElements` (which then collapses
+ * containment conflicts) and `collectMarqueeElementsDetailed` (which doesn't)
+ * — both modes start from the exact same filtered candidate set, so "summary
+ * vs. detail" is genuinely two views of the same drag, not two independently
+ * tuned algorithms.
  */
-export function collectMarqueeElements(rect: DOMRect, options: MarqueeOptions = {}): Element[] {
-  const maxElements = options.maxElements ?? DEFAULT_MAX_ELEMENTS;
+function collectFilteredCandidates(rect: DOMRect, options: MarqueeOptions): { list: Element[]; marqueeArea: number } {
   const gridSize = options.gridSize ?? DEFAULT_GRID_SIZE;
   // Some test environments (jsdom) don't implement elementFromPoint at all —
   // degrade to "nothing found" (callers already treat that as an empty
@@ -122,7 +136,7 @@ export function collectMarqueeElements(rect: DOMRect, options: MarqueeOptions = 
     options.elementFromPoint ??
     (typeof document.elementFromPoint === "function" ? document.elementFromPoint.bind(document) : () => null);
 
-  if (rect.width <= 0 || rect.height <= 0) return [];
+  if (rect.width <= 0 || rect.height <= 0) return { list: [], marqueeArea: 0 };
 
   const candidates = new Set<Element>();
   for (const { x, y } of samplePoints(rect, gridSize)) {
@@ -135,7 +149,7 @@ export function collectMarqueeElements(rect: DOMRect, options: MarqueeOptions = 
   }
 
   const marqueeArea = rect.width * rect.height;
-  let list = [...candidates].filter((el) => {
+  const list = [...candidates].filter((el) => {
     if (classifyVisibility(el) === "hidden") return false;
     const box = el.getBoundingClientRect();
     if (box.width <= 0 || box.height <= 0) return false;
@@ -144,14 +158,33 @@ export function collectMarqueeElements(rect: DOMRect, options: MarqueeOptions = 
     return true;
   });
 
-  list = resolveContainment(list, marqueeArea);
+  return { list, marqueeArea };
+}
 
-  list.sort((a, b) => {
-    const position = a.compareDocumentPosition(b);
-    if (position & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
-    if (position & Node.DOCUMENT_POSITION_PRECEDING) return 1;
-    return 0;
-  });
+/**
+ * Collect the meaningful elements a marquee rect intersects, normalized:
+ * widget chrome and hidden elements excluded, oversized ancestor wrappers
+ * dropped, and ancestor/descendant conflicts resolved by `resolveContainment`
+ * (whichever one best matches the size of what was actually dragged). Returned
+ * in document order, capped at `maxElements`.
+ */
+export function collectMarqueeElements(rect: DOMRect, options: MarqueeOptions = {}): Element[] {
+  const { list, marqueeArea } = collectFilteredCandidates(rect, options);
+  const resolved = resolveContainment(list, marqueeArea);
+  return documentOrder(resolved).slice(0, options.maxElements ?? DEFAULT_MAX_ELEMENTS);
+}
 
-  return list.slice(0, maxElements);
+/**
+ * Same candidate set as `collectMarqueeElements`, but WITHOUT collapsing
+ * ancestor/descendant containment conflicts — every element the grid
+ * sampled through survives, preserving the nested container → component
+ * chain instead of picking one best-fit representative per group. Meant for
+ * a "detailed" view of a drag selection (numbered outline per nested
+ * element) alongside the default "summary" view. Independently capped
+ * (`DEFAULT_DETAIL_MAX_ELEMENTS`) — callers must not assume this list is a
+ * superset of `collectMarqueeElements`'s output for the same rect.
+ */
+export function collectMarqueeElementsDetailed(rect: DOMRect, options: MarqueeOptions = {}): Element[] {
+  const { list } = collectFilteredCandidates(rect, options);
+  return documentOrder(list).slice(0, options.maxElements ?? DEFAULT_DETAIL_MAX_ELEMENTS);
 }

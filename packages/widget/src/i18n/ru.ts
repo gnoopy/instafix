@@ -56,6 +56,7 @@ export const ru: Translations = {
   "fab.showTools": "Показать инструменты",
   "fab.messages": "Показать панель",
   "fab.annotate": "Создать аннотацию",
+  "fab.targeting": "Автовыбор элемента",
   "fab.annotations": "Показать или скрыть метки",
 
   // Annotator
@@ -224,10 +225,14 @@ export const ru: Translations = {
   "popup.targetLabel": "Комментарий к",
   "popup.targetElement": "Элемент",
   "popup.targetContainer": "Контейнер",
+  "popup.legendLabel": "Пронумерованные цели",
 
   // Предпросмотр нескольких целей
   "annotator.targetBadgeAria": "Цель {number}",
   "annotator.targetPreviewAlwaysShow": "Всегда показывать контуры",
+  "annotator.resolutionLabel": "Показ",
+  "annotator.resolutionSummary": "Сводка",
+  "annotator.resolutionDetail": "Детали",
 
   // Settings panel
   "settings.title": "Настройки",
@@ -242,5 +247,4 @@ export const ru: Translations = {
   "settings.accentColor": "Акцентный цвет",
   "settings.screenshots": "Скриншоты",
   "settings.diagnostics": "Диагностика",
-  "settings.rightClickComments": "Комментарии по правому клику",
 };

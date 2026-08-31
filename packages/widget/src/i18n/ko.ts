@@ -56,6 +56,7 @@ export const ko: Translations = {
   "fab.showTools": "도구 표시",
   "fab.messages": "사이드바 표시",
   "fab.annotate": "새 주석 만들기",
+  "fab.targeting": "요소 자동 선택",
   "fab.annotations": "마커 표시/숨기기",
 
   // Annotator
@@ -222,10 +223,14 @@ export const ko: Translations = {
   "popup.targetLabel": "의견 대상",
   "popup.targetElement": "요소",
   "popup.targetContainer": "컨테이너",
+  "popup.legendLabel": "번호가 매겨진 대상",
 
   // Multi-target preview
   "annotator.targetBadgeAria": "대상 {number}",
   "annotator.targetPreviewAlwaysShow": "항상 윤곽선 표시",
+  "annotator.resolutionLabel": "표시",
+  "annotator.resolutionSummary": "요약",
+  "annotator.resolutionDetail": "상세",
 
   // Settings panel
   "settings.title": "설정",
@@ -240,5 +245,4 @@ export const ko: Translations = {
   "settings.accentColor": "강조색",
   "settings.screenshots": "스크린샷",
   "settings.diagnostics": "진단정보",
-  "settings.rightClickComments": "우클릭 코멘트",
 };

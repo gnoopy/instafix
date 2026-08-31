@@ -1689,3 +1689,62 @@ describe("Popup target-size picker", () => {
     resolveSubmit();
   });
 });
+
+describe("Popup legend", () => {
+  let localPopup: Popup;
+
+  afterEach(() => {
+    localPopup.destroy();
+  });
+
+  function legendRow(): HTMLElement {
+    // The legend heading text is the sole discriminator — walk up from it to
+    // the row that toggles display:none/flex.
+    const heading = Array.from(document.querySelectorAll<HTMLElement>("span")).find(
+      (s) => s.textContent === t("popup.legendLabel"),
+    )!;
+    return heading.parentElement!;
+  }
+
+  it("is hidden until setLegend() is called with entries", () => {
+    localPopup = new Popup(colors, t);
+    localPopup.show(makeBounds());
+
+    expect(legendRow().style.display).toBe("none");
+  });
+
+  it("shows one entry per number/label pair", () => {
+    localPopup = new Popup(colors, t);
+    localPopup.show(makeBounds());
+
+    localPopup.setLegend([
+      { number: 1, label: "header" },
+      { number: 2, label: "search box" },
+    ]);
+
+    expect(legendRow().style.display).toBe("flex");
+    const text = legendRow().textContent ?? "";
+    expect(text).toContain("1. header");
+    expect(text).toContain("2. search box");
+  });
+
+  it("calling setLegend([]) hides the row again", () => {
+    localPopup = new Popup(colors, t);
+    localPopup.show(makeBounds());
+    localPopup.setLegend([{ number: 1, label: "header" }]);
+    expect(legendRow().style.display).toBe("flex");
+
+    localPopup.setLegend([]);
+    expect(legendRow().style.display).toBe("none");
+  });
+
+  it("resets to hidden on the next show() call", () => {
+    localPopup = new Popup(colors, t);
+    localPopup.show(makeBounds());
+    localPopup.setLegend([{ number: 1, label: "header" }]);
+    expect(legendRow().style.display).toBe("flex");
+
+    localPopup.show(makeBounds());
+    expect(legendRow().style.display).toBe("none");
+  });
+});

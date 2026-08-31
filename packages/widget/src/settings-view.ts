@@ -29,7 +29,6 @@ export interface SettingsPatch {
   accentColor?: string;
   enableScreenshot?: boolean;
   captureDiagnostics?: boolean;
-  enableRightClickComment?: boolean;
 }
 
 /** Native names — a language picker shows each option in its own language, not translated into the current locale. */
@@ -343,11 +342,6 @@ export class SettingsView {
     chips.appendChild(
       this.buildChip(this.t("settings.diagnostics"), !!initialConfig.captureDiagnostics, (checked) =>
         this.onChange({ captureDiagnostics: checked }),
-      ),
-    );
-    chips.appendChild(
-      this.buildChip(this.t("settings.rightClickComments"), initialConfig.enableRightClickComment ?? false, (checked) =>
-        this.onChange({ enableRightClickComment: checked }),
       ),
     );
     grid.appendChild(chips);

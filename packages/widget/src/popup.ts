@@ -123,6 +123,13 @@ export class Popup {
   private targetSizeChoice: TargetSizeChoice = "smallest";
   private targetSizeOnChange: ((choice: TargetSizeChoice) => void) | null = null;
 
+  // --- Marquee multi-target legend — numbered targets set imperatively via
+  // setLegend(), so a developer typing the comment can refer to "2번" etc.
+  // without hunting for the tiny on-page badge.
+  private legendRow: HTMLElement;
+  private legendHeadingEl: HTMLElement;
+  private legendListEl: HTMLElement;
+
   /**
    * True from `show()` until its promise settles — through typing, the
    * in-flight `onSubmit` await, AND the failed-submit retry window. The
@@ -198,6 +205,19 @@ export class Popup {
     targetToggle.appendChild(this.targetLargestBtn);
     this.targetSizeRow.appendChild(this.targetLabelEl);
     this.targetSizeRow.appendChild(targetToggle);
+
+    // Marquee multi-target legend — hidden by default, populated by
+    // setLegend() right after the annotator opens the popup for a
+    // multi-target marquee selection (summary or detail resolution).
+    this.legendRow = el("div", {
+      style: "display:none;flex-direction:column;gap:4px;margin-bottom:10px;",
+    });
+    this.legendHeadingEl = el("span", {
+      style: `font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.02em;color:${this.colors.textTertiary};`,
+    });
+    this.legendListEl = el("div", { style: "display:flex;flex-wrap:wrap;gap:4px 10px;" });
+    this.legendRow.appendChild(this.legendHeadingEl);
+    this.legendRow.appendChild(this.legendListEl);
 
     // Type selector grid (2x2). Labels are bound later by `applyLabels()` —
     // the constructor only builds the structure (icon + empty label span).
@@ -434,6 +454,7 @@ export class Popup {
 
     this.root.appendChild(this.targetSizeRow);
     this.root.appendChild(this.typeRow);
+    this.root.appendChild(this.legendRow);
     if (this.draftBanner) this.root.appendChild(this.draftBanner);
     this.root.appendChild(this.textarea);
     this.root.appendChild(hintRow);
@@ -500,6 +521,32 @@ export class Popup {
       "aria-label",
       `${this.t("popup.targetLabel")}: ${this.t("popup.targetContainer")}`,
     );
+
+    setText(this.legendHeadingEl, this.t("popup.legendLabel"));
+  }
+
+  /**
+   * Set (or clear) the numbered-target legend — called by the annotator
+   * right after `show()` for a multi-target marquee selection, and again
+   * whenever the summary/detail resolution toggle changes. Entries come from
+   * data already computed while building each resolution's annotation
+   * payloads (anchor tag/text snippet), so this is pure DOM writes, no
+   * re-hit-testing.
+   */
+  setLegend(entries: ReadonlyArray<{ number: number; label: string }>): void {
+    this.legendListEl.replaceChildren();
+    if (entries.length === 0) {
+      this.legendRow.style.display = "none";
+      return;
+    }
+    for (const entry of entries) {
+      const item = el("span", {
+        style: `font-size:11px;color:${this.colors.textTertiary};font-family:"Inter",system-ui,-apple-system,sans-serif;white-space:nowrap;`,
+      });
+      setText(item, `${entry.number}. ${entry.label}`);
+      this.legendListEl.appendChild(item);
+    }
+    this.legendRow.style.display = "flex";
   }
 
   /** Switch the active target-size button and notify the annotator. */
@@ -693,6 +740,7 @@ export class Popup {
       this.submittingState = false;
       this.resetTypeButtons();
       this.hideDraftBanner();
+      this.setLegend([]);
 
       this.targetSizeOnChange = targetSizeOptions?.onChange ?? null;
       this.targetSizeChoice = targetSizeOptions?.initial ?? "smallest";

@@ -824,204 +824,6 @@ describe("launch", () => {
   });
 
   // -------------------------------------------------------------------------
-  // Right-click comment (enableRightClickComment)
-  // -------------------------------------------------------------------------
-
-  describe("enableRightClickComment", () => {
-    it("does not register a contextmenu listener when the flag is off", () => {
-      const spy = vi.spyOn(document, "addEventListener");
-      const instance = launch(defaultConfig());
-
-      const contextMenuCalls = spy.mock.calls.filter(([event]) => event === "contextmenu");
-      expect(contextMenuCalls).toHaveLength(0);
-
-      instance.destroy();
-      spy.mockRestore();
-    });
-
-    it("registers a contextmenu listener when the flag is on", () => {
-      const spy = vi.spyOn(document, "addEventListener");
-      const instance = launch(defaultConfig({ enableRightClickComment: true }));
-
-      const contextMenuCalls = spy.mock.calls.filter(([event]) => event === "contextmenu");
-      expect(contextMenuCalls.length).toBeGreaterThanOrEqual(1);
-
-      instance.destroy();
-      spy.mockRestore();
-    });
-
-    it("removes the contextmenu listener on destroy", () => {
-      const spy = vi.spyOn(document, "removeEventListener");
-      const instance = launch(defaultConfig({ enableRightClickComment: true }));
-      instance.destroy();
-
-      const contextMenuCalls = spy.mock.calls.filter(([event]) => event === "contextmenu");
-      expect(contextMenuCalls.length).toBeGreaterThanOrEqual(1);
-
-      spy.mockRestore();
-    });
-
-    it("does not preventDefault when a modifier key is held", () => {
-      const instance = launch(defaultConfig({ enableRightClickComment: true }));
-
-      const event = new MouseEvent("contextmenu", {
-        button: 2,
-        clientX: 100,
-        clientY: 100,
-        shiftKey: true,
-        bubbles: true,
-        cancelable: true,
-      });
-      document.dispatchEvent(event);
-      // Event should not have been prevented
-      expect(event.defaultPrevented).toBe(false);
-
-      instance.destroy();
-    });
-
-    it("does not preventDefault when event is already defaultPrevented", () => {
-      const instance = launch(defaultConfig({ enableRightClickComment: true }));
-
-      const event = new MouseEvent("contextmenu", {
-        button: 2,
-        clientX: 100,
-        clientY: 100,
-        bubbles: true,
-        cancelable: true,
-      });
-      // Simulate a host-page handler that already called preventDefault
-      event.preventDefault();
-      document.dispatchEvent(event);
-      // Our handler should have yielded (event was already prevented by host)
-      expect(annotatorCapture.startInstantAnnotation).not.toHaveBeenCalled();
-
-      instance.destroy();
-    });
-
-    it("plain right-click prevents the native menu and starts the instant flow", () => {
-      const instance = launch(defaultConfig({ enableRightClickComment: true }));
-
-      const event = new MouseEvent("contextmenu", {
-        button: 2,
-        clientX: 100,
-        clientY: 100,
-        bubbles: true,
-        cancelable: true,
-      });
-      document.dispatchEvent(event);
-
-      expect(event.defaultPrevented).toBe(true);
-      expect(annotatorCapture.startInstantAnnotation).toHaveBeenCalledWith(100, 100);
-
-      instance.destroy();
-    });
-
-    it("right-click on InstaFix's own UI is ignored", () => {
-      const instance = launch(defaultConfig({ enableRightClickComment: true }));
-
-      // Simulate a click on the InstaFix widget (or something inside it)
-      const event = new MouseEvent("contextmenu", {
-        button: 2,
-        clientX: 100,
-        clientY: 100,
-        bubbles: true,
-        cancelable: true,
-      });
-
-      const widget = document.querySelector("instafix-widget")!;
-      // Need composedPath() to include the widget, so dispatch from it or a shadow child
-      widget.dispatchEvent(event);
-
-      expect(event.defaultPrevented).toBe(false);
-      expect(annotatorCapture.startInstantAnnotation).not.toHaveBeenCalled();
-
-      instance.destroy();
-    });
-
-    it("does not preventDefault for keyboard-triggered contextmenu (Menu key)", () => {
-      const instance = launch(defaultConfig({ enableRightClickComment: true }));
-
-      // Keyboard contextmenu events (Menu key) are mandated to have pointerType=""
-      const event = new PointerEvent("contextmenu", {
-        pointerType: "",
-        button: 0,
-        clientX: 100,
-        clientY: 100,
-        bubbles: true,
-        cancelable: true,
-      });
-      document.dispatchEvent(event);
-
-      // Should yield to the native menu (not prevented)
-      expect(event.defaultPrevented).toBe(false);
-      expect(annotatorCapture.startInstantAnnotation).not.toHaveBeenCalled();
-
-      instance.destroy();
-    });
-
-    it("does not preventDefault for legacy keyboard-triggered contextmenu (no pointerType, button 0)", () => {
-      const instance = launch(defaultConfig({ enableRightClickComment: true }));
-
-      // Legacy engines dispatch a MouseEvent (no pointerType property)
-      const event = new MouseEvent("contextmenu", {
-        button: 0,
-        clientX: 100,
-        clientY: 100,
-        bubbles: true,
-        cancelable: true,
-      });
-      document.dispatchEvent(event);
-
-      expect(event.defaultPrevented).toBe(false);
-      expect(annotatorCapture.startInstantAnnotation).not.toHaveBeenCalled();
-
-      instance.destroy();
-    });
-
-    it("touch long-press (pointerType 'touch', button 0) still starts the instant flow", () => {
-      const instance = launch(defaultConfig({ enableRightClickComment: true }));
-
-      // Android / Windows-touch long-press: contextmenu arrives as a
-      // PointerEvent with pointerType "touch" and button 0 — the exact
-      // combination the pointerType leg of the gate exists for.
-      const event = new PointerEvent("contextmenu", {
-        pointerType: "touch",
-        button: 0,
-        clientX: 100,
-        clientY: 100,
-        bubbles: true,
-        cancelable: true,
-      });
-      document.dispatchEvent(event);
-
-      expect(event.defaultPrevented).toBe(true);
-      expect(annotatorCapture.startInstantAnnotation).toHaveBeenCalledWith(100, 100);
-
-      instance.destroy();
-    });
-
-    it("pen long-press (pointerType 'pen', button 0) still starts the instant flow", () => {
-      const instance = launch(defaultConfig({ enableRightClickComment: true }));
-
-      // Windows Ink long-press
-      const event = new PointerEvent("contextmenu", {
-        pointerType: "pen",
-        button: 0,
-        clientX: 100,
-        clientY: 100,
-        bubbles: true,
-        cancelable: true,
-      });
-      document.dispatchEvent(event);
-
-      expect(event.defaultPrevented).toBe(true);
-      expect(annotatorCapture.startInstantAnnotation).toHaveBeenCalledWith(100, 100);
-
-      instance.destroy();
-    });
-  });
-
-  // -------------------------------------------------------------------------
   // updateConfig — the facade + listener-replay mechanism behind the
   // widget's in-panel Settings view (and any host calling it directly)
   // -------------------------------------------------------------------------
@@ -1084,18 +886,17 @@ describe("launch", () => {
       instance.destroy();
     });
 
-    it("a merged option takes effect for real — enableRightClickComment wires a live contextmenu listener", () => {
-      const spy = vi.spyOn(document, "addEventListener");
-      const instance = launch(defaultConfig({ enableRightClickComment: false }));
-      spy.mockClear();
+    it("a merged option takes effect for real — showAnnotationsToggle removes the toolbar's eye button live", () => {
+      const instance = launch(defaultConfig({ showAnnotationsToggle: true }));
+      const shadowBefore = document.querySelector("instafix-widget")!.shadowRoot!;
+      expect(shadowBefore.querySelector('[data-item-id="toggle-annotations"]')).not.toBeNull();
 
-      instance.updateConfig({ enableRightClickComment: true });
+      instance.updateConfig({ showAnnotationsToggle: false });
 
-      const contextMenuCalls = spy.mock.calls.filter(([event]) => event === "contextmenu");
-      expect(contextMenuCalls.length).toBeGreaterThanOrEqual(1);
+      const shadowAfter = document.querySelector("instafix-widget")!.shadowRoot!;
+      expect(shadowAfter.querySelector('[data-item-id="toggle-annotations"]')).toBeNull();
 
       instance.destroy();
-      spy.mockRestore();
     });
 
     it("destroy() is idempotent, including after an updateConfig remount", () => {

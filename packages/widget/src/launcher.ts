@@ -545,48 +545,6 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
     focusTracker.getLastPageFocus(),
   );
 
-  let onContextMenu: ((e: MouseEvent) => void) | null = null;
-  if (config.enableRightClickComment) {
-    onContextMenu = (e: MouseEvent) => {
-      // Respect host pages that run their own custom context menus (grids,
-      // editors). Element-level handlers fire before this document-level
-      // listener, so if they called preventDefault() we yield.
-      if (e.defaultPrevented) return;
-      // Keyboard-triggered contextmenu (≣ Menu key, Shift+F10): Pointer
-      // Events L3 mandates pointerType === "" (pointerId -1) for non-pointer
-      // activations — yield to the native menu. contextmenu is a PointerEvent
-      // in Chrome/Edge 92+, Firefox 129+, Safari 18.2+.
-      const pointerType = (e as PointerEvent).pointerType;
-      if (pointerType === "") return;
-      // Legacy MouseEvent engines (no pointerType to consult): fall back to
-      // requiring a genuine right-button click.
-      if (pointerType === undefined && e.button !== 2) return;
-      // Modifier-key escape hatch: Shift/Ctrl/Alt/Meta → native menu.
-      if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
-      // Exclude InstaFix's own UI — right-clicking the FAB, panel, markers,
-      // popup, or overlay must not hijack the event. composedPath() reaches
-      // into the closed shadow root so all retargeted events are caught.
-      const path = e.composedPath();
-      if (
-        path.some(
-          (n) =>
-            n === host ||
-            (n instanceof Element && (n.hasAttribute("data-instafix-ignore") || n.id === "instafix-markers")),
-        )
-      )
-        return;
-      // Don't swallow the event while the annotator is already active (e.g.
-      // the user right-clicks to paste in the popup textarea). Fall through
-      // to the native menu instead of silently consuming the event.
-      if (annotator.isBusy) return;
-      e.preventDefault();
-      void annotator
-        .startInstantAnnotation(e.clientX, e.clientY)
-        .catch((err) => log("right-click annotation failed", err));
-    };
-    document.addEventListener("contextmenu", onContextMenu);
-  }
-
   // Once the locale dictionary lands, swap the FAB + popup labels from the
   // English fallback to the configured language. `t` already resolves to the
   // loaded dictionary at call time, so the markers list rendered below (which
@@ -850,9 +808,6 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
       // may call this more than once on the same raw instance.
       if (destroyed) return;
       log("Destroying widget");
-      if (onContextMenu) {
-        document.removeEventListener("contextmenu", onContextMenu);
-      }
       destroyed = true;
       pendingOpen = false;
       teardownNavigation?.();

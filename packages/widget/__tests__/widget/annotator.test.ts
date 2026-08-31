@@ -56,6 +56,8 @@ const popupMocks = vi.hoisted(() => {
       | undefined,
     /** When set, the mock invokes `targetSizeOptions.onChange(...)` before submitting — simulates the user toggling the picker before sending. */
     toggleTargetSizeBeforeSubmit: null as "smallest" | "largest" | null,
+    /** Entries from the last `setLegend(...)` call — empty array means "hidden". */
+    lastLegend: [] as Array<{ number: number; label: string }>,
   };
 });
 
@@ -105,6 +107,9 @@ vi.mock(new URL("../../src/popup.js", import.meta.url).pathname, () => ({
       destroy: vi.fn().mockImplementation(() => {
         popupMocks.destroyCount += 1;
         popupMocks.isOpenState = false;
+      }),
+      setLegend: vi.fn().mockImplementation((entries: Array<{ number: number; label: string }>) => {
+        popupMocks.lastLegend = entries;
       }),
       get isOpen() {
         return popupMocks.isOpenState;
@@ -194,6 +199,7 @@ describe("Annotator", () => {
     popupMocks.showCount = 0;
     popupMocks.capturedTargetSizeOptions = undefined;
     popupMocks.toggleTargetSizeBeforeSubmit = null;
+    popupMocks.lastLegend = [];
     vi.mocked(findAnchorElement).mockReturnValue(document.body);
     vi.mocked(findLargestAncestor).mockReturnValue(document.body);
     screenshotMocks.captureAnnotatedScreenshot.mockReset();
@@ -1742,6 +1748,65 @@ describe("Annotator", () => {
         overlay.dispatchEvent(new MouseEvent("mouseup", { clientX: 200, clientY: 150, bubbles: true, altKey: true }));
 
         expect(findBadges()).toHaveLength(0);
+      } finally {
+        document.elementFromPoint = originalEFP;
+        elA.remove();
+        elB.remove();
+      }
+    });
+
+    it("calls popup.setLegend with a numbered entry per target while the preview is open", async () => {
+      const elA = document.createElement("div");
+      const elB = document.createElement("div");
+      elA.getBoundingClientRect = () => new DOMRect(50, 50, 70, 100);
+      elB.getBoundingClientRect = () => new DOMRect(130, 50, 70, 100);
+      document.body.appendChild(elA);
+      document.body.appendChild(elB);
+
+      const originalEFP = document.elementFromPoint;
+      (document as any).elementFromPoint = (x: number) => (x < 125 ? elA : elB);
+
+      try {
+        bus.emit("annotation:start");
+        const overlay = findOverlay()!;
+        overlay.dispatchEvent(new MouseEvent("mousedown", { clientX: 50, clientY: 50, bubbles: true }));
+        overlay.dispatchEvent(new MouseEvent("mouseup", { clientX: 200, clientY: 150, bubbles: true }));
+
+        expect(popupMocks.lastLegend).toEqual([
+          { number: 1, label: "div" },
+          { number: 2, label: "div" },
+        ]);
+      } finally {
+        document.elementFromPoint = originalEFP;
+        elA.remove();
+        elB.remove();
+      }
+    });
+
+    it("clicking the detail resolution toggle re-renders badges and re-calls popup.setLegend without throwing", async () => {
+      const elA = document.createElement("div");
+      const elB = document.createElement("div");
+      elA.getBoundingClientRect = () => new DOMRect(50, 50, 70, 100);
+      elB.getBoundingClientRect = () => new DOMRect(130, 50, 70, 100);
+      document.body.appendChild(elA);
+      document.body.appendChild(elB);
+
+      const originalEFP = document.elementFromPoint;
+      (document as any).elementFromPoint = (x: number) => (x < 125 ? elA : elB);
+
+      try {
+        bus.emit("annotation:start");
+        const overlay = findOverlay()!;
+        overlay.dispatchEvent(new MouseEvent("mousedown", { clientX: 50, clientY: 50, bubbles: true }));
+        overlay.dispatchEvent(new MouseEvent("mouseup", { clientX: 200, clientY: 150, bubbles: true }));
+
+        const detailBtn = Array.from(document.querySelectorAll<HTMLButtonElement>("button")).find(
+          (b) => b.textContent === t("annotator.resolutionDetail"),
+        )!;
+        expect(() => detailBtn.click()).not.toThrow();
+
+        expect(findBadges().map((b) => b.textContent)).toEqual(["1", "2"]);
+        expect(popupMocks.lastLegend).toHaveLength(2);
       } finally {
         document.elementFromPoint = originalEFP;
         elA.remove();

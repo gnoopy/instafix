@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { collectMarqueeElements } from "../../src/dom/marquee.js";
+import { collectMarqueeElements, collectMarqueeElementsDetailed } from "../../src/dom/marquee.js";
 import { makeDOMRect } from "../helpers.js";
 
 function stubRect(el: HTMLElement, rect: { x: number; y: number; width: number; height: number }): void {
@@ -219,5 +219,131 @@ describe("collectMarqueeElements", () => {
     });
 
     expect(result.length).toBeLessThanOrEqual(20);
+  });
+});
+
+describe("collectMarqueeElementsDetailed", () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement("div");
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    container.remove();
+  });
+
+  it("keeps the full nested chain instead of collapsing to one best-fit element", () => {
+    // Same wrapper-chain fixture as collectMarqueeElements's "drops a
+    // redundant wrapper chain" case — detail mode must do the opposite.
+    const outer = document.createElement("div");
+    const middle = document.createElement("div");
+    const button = document.createElement("button");
+    middle.appendChild(button);
+    outer.appendChild(middle);
+    container.appendChild(outer);
+    stubRect(outer, { x: 0, y: 0, width: 104, height: 44 });
+    stubRect(middle, { x: 1, y: 1, width: 102, height: 42 });
+    stubRect(button, { x: 2, y: 2, width: 100, height: 40 });
+
+    const cells = new Map<string, Element>([
+      ["2,2", outer],
+      ["50,20", button],
+      ["100,40", middle],
+    ]);
+    const result = collectMarqueeElementsDetailed(makeDOMRect(2, 2, 100, 40), {
+      elementFromPoint: gridStub(cells),
+    });
+
+    expect(result).toContain(outer);
+    expect(result).toContain(middle);
+    expect(result).toContain(button);
+    expect(result).toHaveLength(3);
+  });
+
+  it("still drops an oversized wrapper that isn't fully contained in the marquee", () => {
+    const wrapper = document.createElement("section");
+    container.appendChild(wrapper);
+    stubRect(wrapper, { x: 0, y: 0, width: 2000, height: 2000 });
+
+    const cells = new Map([["25,25", wrapper]]);
+    const result = collectMarqueeElementsDetailed(makeDOMRect(0, 0, 50, 50), {
+      elementFromPoint: gridStub(cells),
+    });
+
+    expect(result).toEqual([]);
+  });
+
+  it("still excludes widget chrome elements", () => {
+    const chrome = document.createElement("div");
+    chrome.setAttribute("data-instafix-ignore", "true");
+    container.appendChild(chrome);
+    stubRect(chrome, { x: 0, y: 0, width: 100, height: 100 });
+
+    const cells = new Map([["50,50", chrome]]);
+    const result = collectMarqueeElementsDetailed(makeDOMRect(0, 0, 100, 100), {
+      elementFromPoint: gridStub(cells),
+    });
+
+    expect(result).toEqual([]);
+  });
+
+  it("caps at a lower default than the summary mode", () => {
+    const cells = new Map<string, Element>();
+    for (let i = 0; i < 30; i++) {
+      const el = document.createElement("div");
+      container.appendChild(el);
+      stubRect(el, { x: i * 10, y: 0, width: 8, height: 8 });
+      cells.set(`${i * 10 + 4},4`, el);
+    }
+
+    const result = collectMarqueeElementsDetailed(makeDOMRect(0, 0, 300, 10), {
+      elementFromPoint: gridStub(cells),
+      gridSize: 20,
+    });
+
+    expect(result.length).toBeLessThanOrEqual(12);
+  });
+
+  it("respects an explicit maxElements override", () => {
+    const cells = new Map<string, Element>();
+    for (let i = 0; i < 30; i++) {
+      const el = document.createElement("div");
+      container.appendChild(el);
+      stubRect(el, { x: i * 10, y: 0, width: 8, height: 8 });
+      cells.set(`${i * 10 + 4},4`, el);
+    }
+
+    const result = collectMarqueeElementsDetailed(makeDOMRect(0, 0, 300, 10), {
+      elementFromPoint: gridStub(cells),
+      gridSize: 20,
+      maxElements: 5,
+    });
+
+    expect(result.length).toBeLessThanOrEqual(5);
+  });
+
+  it("is not assumed to be a superset of collectMarqueeElements for the same rect (independent caps)", () => {
+    // Detail mode's raw (uncollapsed) candidate set can legitimately be
+    // capped down to fewer elements than summary mode's collapsed-then-capped
+    // output for the same drag — callers must treat the two lists as
+    // independent, not "detail ⊇ summary".
+    const cells = new Map<string, Element>();
+    for (let i = 0; i < 20; i++) {
+      const el = document.createElement("div");
+      container.appendChild(el);
+      stubRect(el, { x: i * 10, y: 0, width: 8, height: 8 });
+      cells.set(`${i * 10 + 4},4`, el);
+    }
+    const rect = makeDOMRect(0, 0, 200, 10);
+
+    const summary = collectMarqueeElements(rect, { elementFromPoint: gridStub(cells), gridSize: 20 });
+    const detail = collectMarqueeElementsDetailed(rect, { elementFromPoint: gridStub(cells), gridSize: 20 });
+
+    expect(detail.length).toBeLessThanOrEqual(12);
+    expect(summary.length).toBeLessThanOrEqual(20);
+    // No ordering/superset assumption between the two — just confirm both
+    // independently respect their own caps without throwing.
   });
 });

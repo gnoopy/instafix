@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createT } from "../../src/i18n/index.js";
-import { MultiTargetPreview } from "../../src/multi-target-preview.js";
+import { MultiTargetPreview, type PreviewResolution } from "../../src/multi-target-preview.js";
 import { buildThemeColors } from "../../src/styles/theme.js";
 import { makeDOMRect } from "../helpers.js";
 
@@ -52,11 +52,15 @@ describe("MultiTargetPreview", () => {
   let store: Record<string, string>;
   let elements: HTMLElement[];
   let preview: MultiTargetPreview | null;
+  let onResolutionChange: ReturnType<
+    typeof vi.fn<(resolution: PreviewResolution, elements: readonly Element[]) => void>
+  >;
 
   beforeEach(() => {
     store = stubLocalStorage();
     elements = makeElements(3);
     preview = null;
+    onResolutionChange = vi.fn();
   });
 
   afterEach(() => {
@@ -65,7 +69,13 @@ describe("MultiTargetPreview", () => {
   });
 
   it("renders one numbered badge per element, in order", () => {
-    preview = new MultiTargetPreview(colors, elements, t, ANCHOR_RECT);
+    preview = new MultiTargetPreview(
+      colors,
+      { summary: elements, detail: elements },
+      t,
+      ANCHOR_RECT,
+      onResolutionChange,
+    );
     const badges = Array.from(document.querySelectorAll("button")).filter(
       (b) => b.textContent === "1" || b.textContent === "2" || b.textContent === "3",
     );
@@ -73,14 +83,26 @@ describe("MultiTargetPreview", () => {
   });
 
   it("sets an aria-label on each badge with its number", () => {
-    preview = new MultiTargetPreview(colors, elements, t, ANCHOR_RECT);
+    preview = new MultiTargetPreview(
+      colors,
+      { summary: elements, detail: elements },
+      t,
+      ANCHOR_RECT,
+      onResolutionChange,
+    );
     const badges = document.querySelectorAll("button");
     const second = Array.from(badges).find((b) => b.textContent === "2")!;
     expect(second.getAttribute("aria-label")).toBe(t("annotator.targetBadgeAria").replace("{number}", "2"));
   });
 
   it("does not show an outline until a badge is hovered", () => {
-    preview = new MultiTargetPreview(colors, elements, t, ANCHOR_RECT);
+    preview = new MultiTargetPreview(
+      colors,
+      { summary: elements, detail: elements },
+      t,
+      ANCHOR_RECT,
+      onResolutionChange,
+    );
     // Only badges + the toggle chip should exist; no outline divs yet.
     const outlineCandidates = Array.from(document.body.querySelectorAll("div")).filter((d) =>
       d.style.border?.includes("2px solid"),
@@ -89,7 +111,13 @@ describe("MultiTargetPreview", () => {
   });
 
   it("shows an outline on badge mouseenter and removes it on mouseleave", () => {
-    preview = new MultiTargetPreview(colors, elements, t, ANCHOR_RECT);
+    preview = new MultiTargetPreview(
+      colors,
+      { summary: elements, detail: elements },
+      t,
+      ANCHOR_RECT,
+      onResolutionChange,
+    );
     const badge = Array.from(document.querySelectorAll("button")).find((b) => b.textContent === "1")!;
 
     badge.dispatchEvent(new MouseEvent("mouseenter"));
@@ -104,7 +132,13 @@ describe("MultiTargetPreview", () => {
   });
 
   it("shows an outline on badge focus and removes it on blur", () => {
-    preview = new MultiTargetPreview(colors, elements, t, ANCHOR_RECT);
+    preview = new MultiTargetPreview(
+      colors,
+      { summary: elements, detail: elements },
+      t,
+      ANCHOR_RECT,
+      onResolutionChange,
+    );
     const badge = Array.from(document.querySelectorAll("button")).find((b) => b.textContent === "2")!;
 
     badge.dispatchEvent(new FocusEvent("focus"));
@@ -119,7 +153,13 @@ describe("MultiTargetPreview", () => {
   });
 
   it("clicking the 'always show' toggle shows all outlines at once", () => {
-    preview = new MultiTargetPreview(colors, elements, t, ANCHOR_RECT);
+    preview = new MultiTargetPreview(
+      colors,
+      { summary: elements, detail: elements },
+      t,
+      ANCHOR_RECT,
+      onResolutionChange,
+    );
     const toggle = Array.from(document.querySelectorAll("button")).find(
       (b) => b.textContent === t("annotator.targetPreviewAlwaysShow"),
     )!;
@@ -134,7 +174,13 @@ describe("MultiTargetPreview", () => {
   });
 
   it("outlines stay visible after mouseleave once 'always show' is on", () => {
-    preview = new MultiTargetPreview(colors, elements, t, ANCHOR_RECT);
+    preview = new MultiTargetPreview(
+      colors,
+      { summary: elements, detail: elements },
+      t,
+      ANCHOR_RECT,
+      onResolutionChange,
+    );
     const toggle = Array.from(document.querySelectorAll("button")).find(
       (b) => b.textContent === t("annotator.targetPreviewAlwaysShow"),
     )!;
@@ -151,7 +197,13 @@ describe("MultiTargetPreview", () => {
   });
 
   it("clicking the toggle again turns 'always show' back off and clears outlines", () => {
-    preview = new MultiTargetPreview(colors, elements, t, ANCHOR_RECT);
+    preview = new MultiTargetPreview(
+      colors,
+      { summary: elements, detail: elements },
+      t,
+      ANCHOR_RECT,
+      onResolutionChange,
+    );
     const toggle = Array.from(document.querySelectorAll("button")).find(
       (b) => b.textContent === t("annotator.targetPreviewAlwaysShow"),
     )!;
@@ -167,7 +219,13 @@ describe("MultiTargetPreview", () => {
   });
 
   it("persists the 'always show' preference across instances", () => {
-    preview = new MultiTargetPreview(colors, elements, t, ANCHOR_RECT);
+    preview = new MultiTargetPreview(
+      colors,
+      { summary: elements, detail: elements },
+      t,
+      ANCHOR_RECT,
+      onResolutionChange,
+    );
     const toggle = Array.from(document.querySelectorAll("button")).find(
       (b) => b.textContent === t("annotator.targetPreviewAlwaysShow"),
     )!;
@@ -175,7 +233,13 @@ describe("MultiTargetPreview", () => {
     expect(store.instafix_target_preview_always_show).toBe("1");
 
     preview.destroy();
-    preview = new MultiTargetPreview(colors, elements, t, ANCHOR_RECT);
+    preview = new MultiTargetPreview(
+      colors,
+      { summary: elements, detail: elements },
+      t,
+      ANCHOR_RECT,
+      onResolutionChange,
+    );
 
     const outlines = Array.from(document.body.querySelectorAll("div")).filter((d) =>
       d.style.border?.includes("2px solid"),
@@ -184,7 +248,13 @@ describe("MultiTargetPreview", () => {
   });
 
   it("turning the preference back off clears the stored key", () => {
-    preview = new MultiTargetPreview(colors, elements, t, ANCHOR_RECT);
+    preview = new MultiTargetPreview(
+      colors,
+      { summary: elements, detail: elements },
+      t,
+      ANCHOR_RECT,
+      onResolutionChange,
+    );
     const toggle = Array.from(document.querySelectorAll("button")).find(
       (b) => b.textContent === t("annotator.targetPreviewAlwaysShow"),
     )!;
@@ -205,7 +275,13 @@ describe("MultiTargetPreview", () => {
     });
 
     expect(() => {
-      preview = new MultiTargetPreview(colors, elements, t, ANCHOR_RECT);
+      preview = new MultiTargetPreview(
+        colors,
+        { summary: elements, detail: elements },
+        t,
+        ANCHOR_RECT,
+        onResolutionChange,
+      );
       const toggle = Array.from(document.querySelectorAll("button")).find(
         (b) => b.textContent === t("annotator.targetPreviewAlwaysShow"),
       )!;
@@ -214,7 +290,13 @@ describe("MultiTargetPreview", () => {
   });
 
   it("destroy() removes all badges, outlines, and the toggle from the DOM", () => {
-    preview = new MultiTargetPreview(colors, elements, t, ANCHOR_RECT);
+    preview = new MultiTargetPreview(
+      colors,
+      { summary: elements, detail: elements },
+      t,
+      ANCHOR_RECT,
+      onResolutionChange,
+    );
     const toggle = Array.from(document.querySelectorAll("button")).find(
       (b) => b.textContent === t("annotator.targetPreviewAlwaysShow"),
     )!;
@@ -231,7 +313,13 @@ describe("MultiTargetPreview", () => {
   });
 
   it("hovering the same badge twice does not create duplicate outlines", () => {
-    preview = new MultiTargetPreview(colors, elements, t, ANCHOR_RECT);
+    preview = new MultiTargetPreview(
+      colors,
+      { summary: elements, detail: elements },
+      t,
+      ANCHOR_RECT,
+      onResolutionChange,
+    );
     const badge = Array.from(document.querySelectorAll("button")).find((b) => b.textContent === "1")!;
 
     badge.dispatchEvent(new MouseEvent("mouseenter"));
@@ -241,5 +329,107 @@ describe("MultiTargetPreview", () => {
       d.style.border?.includes("2px solid"),
     );
     expect(outlines.length).toBe(1);
+  });
+
+  // -------------------------------------------------------------------------
+  // Summary/detail resolution toggle
+  // -------------------------------------------------------------------------
+
+  describe("resolution toggle", () => {
+    it("starts in summary resolution, showing the summary set's badges", () => {
+      const summary = elements.slice(0, 2);
+      const detail = elements;
+      preview = new MultiTargetPreview(colors, { summary, detail }, t, ANCHOR_RECT, onResolutionChange);
+
+      const badges = Array.from(document.querySelectorAll("button")).filter((b) =>
+        ["1", "2", "3"].includes(b.textContent ?? ""),
+      );
+      expect(badges.map((b) => b.textContent)).toEqual(["1", "2"]);
+    });
+
+    it("switching to detail rebuilds badges from the detail set and calls onResolutionChange", () => {
+      const summary = elements.slice(0, 2);
+      const detail = elements;
+      preview = new MultiTargetPreview(colors, { summary, detail }, t, ANCHOR_RECT, onResolutionChange);
+
+      const detailBtn = Array.from(document.querySelectorAll("button")).find(
+        (b) => b.textContent === t("annotator.resolutionDetail"),
+      )!;
+      detailBtn.click();
+
+      const badges = Array.from(document.querySelectorAll("button")).filter((b) =>
+        ["1", "2", "3"].includes(b.textContent ?? ""),
+      );
+      expect(badges.map((b) => b.textContent)).toEqual(["1", "2", "3"]);
+      expect(onResolutionChange).toHaveBeenCalledWith("detail", detail);
+      expect(detailBtn.getAttribute("aria-pressed")).toBe("true");
+    });
+
+    it("switching back to summary removes the extra detail badges", () => {
+      const summary = elements.slice(0, 2);
+      const detail = elements;
+      preview = new MultiTargetPreview(colors, { summary, detail }, t, ANCHOR_RECT, onResolutionChange);
+
+      const detailBtn = Array.from(document.querySelectorAll("button")).find(
+        (b) => b.textContent === t("annotator.resolutionDetail"),
+      )!;
+      const summaryBtn = Array.from(document.querySelectorAll("button")).find(
+        (b) => b.textContent === t("annotator.resolutionSummary"),
+      )!;
+      detailBtn.click();
+      summaryBtn.click();
+
+      const badges = Array.from(document.querySelectorAll("button")).filter((b) =>
+        ["1", "2", "3"].includes(b.textContent ?? ""),
+      );
+      expect(badges.map((b) => b.textContent)).toEqual(["1", "2"]);
+      expect(onResolutionChange).toHaveBeenLastCalledWith("summary", summary);
+    });
+
+    it("switching resolution clears any outline left over from the previous resolution's badges", () => {
+      const summary = elements.slice(0, 2);
+      const detail = elements;
+      preview = new MultiTargetPreview(colors, { summary, detail }, t, ANCHOR_RECT, onResolutionChange);
+
+      const badge1 = Array.from(document.querySelectorAll("button")).find((b) => b.textContent === "1")!;
+      badge1.dispatchEvent(new MouseEvent("mouseenter"));
+      expect(
+        Array.from(document.body.querySelectorAll("div")).filter((d) => d.style.border?.includes("2px solid")),
+      ).toHaveLength(1);
+
+      const detailBtn = Array.from(document.querySelectorAll("button")).find(
+        (b) => b.textContent === t("annotator.resolutionDetail"),
+      )!;
+      detailBtn.click();
+
+      expect(
+        Array.from(document.body.querySelectorAll("div")).filter((d) => d.style.border?.includes("2px solid")),
+      ).toHaveLength(0);
+    });
+
+    it("does not render a resolution toggle when both sets have at most one element", () => {
+      const single = elements.slice(0, 1);
+      preview = new MultiTargetPreview(colors, { summary: single, detail: single }, t, ANCHOR_RECT, onResolutionChange);
+
+      expect(
+        Array.from(document.querySelectorAll("button")).some((b) => b.textContent === t("annotator.resolutionDetail")),
+      ).toBe(false);
+    });
+
+    it("destroy() removes the resolution toggle too", () => {
+      preview = new MultiTargetPreview(
+        colors,
+        { summary: elements, detail: elements },
+        t,
+        ANCHOR_RECT,
+        onResolutionChange,
+      );
+      preview.destroy();
+      preview = null;
+
+      expect(
+        Array.from(document.querySelectorAll("button")).some((b) => b.textContent === t("annotator.resolutionDetail")),
+      ).toBe(false);
+    });
   });
 });
