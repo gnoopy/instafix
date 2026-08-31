@@ -227,7 +227,7 @@ model InstaFixFeedback {
 
       expect(p.log.warn).toHaveBeenCalledWith(expect.stringContaining("No schema.prisma file found"));
       expect(p.log.info).toHaveBeenCalledWith(
-        expect.stringContaining("https://github.com/gnoopy/InstaFix#prisma-schema-1"),
+        expect.stringContaining("https://github.com/gnoopy/instafix#prisma-schema-1"),
       );
     });
   });

@@ -50,7 +50,7 @@ export async function initCommand(): Promise<void> {
     }
   } else {
     p.log.warn("No schema.prisma file found. You will need to add the models manually.");
-    p.log.info("See the documentation: https://github.com/gnoopy/InstaFix#prisma-schema-1");
+    p.log.info("See the documentation: https://github.com/gnoopy/instafix#prisma-schema-1");
   }
 
   // Step 2: API route

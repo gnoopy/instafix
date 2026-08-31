@@ -17,7 +17,7 @@ jobs:
   auto-merge:
     if: >
       github.event.pull_request.user.login == 'dependabot[bot]' &&
-      github.repository == 'gnoopy/InstaFix'
+      github.repository == 'gnoopy/instafix'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

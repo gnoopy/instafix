@@ -30,7 +30,7 @@ export default async function Page({ params }: PageProps) {
           backing this locale: the `.fr.mdx` twin when one exists, the English
           source when the page falls back. */}
       <EditOnGitHub
-        href={`https://github.com/gnoopy/InstaFix/blob/main/apps/demo/content/docs/${page.path}`}
+        href={`https://github.com/gnoopy/instafix/blob/main/apps/demo/content/docs/${page.path}`}
         className="mt-8"
       />
     </DocsPage>

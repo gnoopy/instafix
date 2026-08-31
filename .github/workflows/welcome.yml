@@ -37,7 +37,7 @@ jobs:
             - If it's a bug, include a **reproduction** (CodeSandbox, minimal repo, or numbered steps) and the package + version (`@instafix/widget`, `@instafix/adapter-prisma`, …).
             - If it's a feature, describe the **use case** before the implementation — it helps us pick the right shape for the API.
 
-            We try to triage within a few days. In the meantime, browse [`good first issue`](https://github.com/gnoopy/InstaFix/labels/good%20first%20issue) if you'd like to ship a fix yourself. 🚀
+            We try to triage within a few days. In the meantime, browse [`good first issue`](https://github.com/gnoopy/instafix/labels/good%20first%20issue) if you'd like to ship a fix yourself. 🚀
           pr_message: |
             🎉 **Welcome, new contributor!** Thanks for your first pull request to InstaFix — this is genuinely exciting.
 
@@ -45,6 +45,6 @@ jobs:
 
             - We use **Conventional Commits** for PR titles (e.g. `feat(widget): …`, `fix(adapter-prisma): …`). The auto-labeller reads the prefix to categorise your work in the next release.
             - CI runs **typecheck + tests + Playwright E2E** — give it a few minutes to go green.
-            - Once merged, you'll appear in the next [release notes](https://github.com/gnoopy/InstaFix/releases) under **New Contributors**, and a maintainer will add you to our [Contributors](https://github.com/gnoopy/InstaFix#contributors) table.
+            - Once merged, you'll appear in the next [release notes](https://github.com/gnoopy/instafix/releases) under **New Contributors**, and a maintainer will add you to our [Contributors](https://github.com/gnoopy/instafix#contributors) table.
 
             If something feels off in the review, push back — your perspective is welcome. Thanks again for showing up. 💚

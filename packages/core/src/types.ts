@@ -11,7 +11,7 @@ export type InstaFixPosition = "bottom-right" | "bottom-left";
 export type InstaFixTheme = "light" | "dark" | "auto";
 
 /** Built-in UI locales shipped with the widget. */
-export const BUILTIN_LOCALES = ["en", "fr", "de", "es", "it", "pt", "ru"] as const;
+export const BUILTIN_LOCALES = ["en", "ko", "fr", "de", "es", "it", "pt", "ru"] as const;
 export type BuiltinLocale = (typeof BUILTIN_LOCALES)[number];
 
 /**
@@ -251,7 +251,7 @@ export interface InstaFixBaseConfig {
    * read at widget init time, not on every render. Hosts that need live
    * identity updates after sign-in/sign-out should currently remount the
    * widget (e.g. via a React `key` on the wrapping component). See
-   * https://github.com/gnoopy/InstaFix/issues/85 for tracking a
+   * https://github.com/gnoopy/instafix/issues/85 for tracking a
    * future enhancement that propagates identity updates without a remount.
    */
   identity?: InstaFixIdentity | undefined;

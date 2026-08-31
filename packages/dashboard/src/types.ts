@@ -210,7 +210,7 @@ export interface InstaFixInboxPresentationProps {
   theme?: InboxTheme | undefined;
   /** Row density — defaults to `"comfortable"`. */
   density?: "comfortable" | "compact" | undefined;
-  /** UI locale — defaults to `"en"`; non-English built-ins are lazy-loaded. */
+  /** UI locale — defaults to `"ko"`; non-English, non-Korean built-ins are lazy-loaded. */
   locale?: InstaFixLocale | undefined;
   /** Extra class name(s) appended to the root element. */
   className?: string | undefined;

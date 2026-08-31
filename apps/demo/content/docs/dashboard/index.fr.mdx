@@ -35,7 +35,7 @@ Compatible React 18 et 19, livré en ESM et CJS, sans aucune dépendance en deho
 | `theme` | `"light"` \| `"dark"` \| `"auto"` | `"auto"` | `auto` suit la préférence système — en direct, y compris quand elle change en cours de session |
 | `accentColor` | `string` | `"#0066ff"` | Hexadécimal uniquement ; toutes les nuances d'accent dérivent de cette seule valeur. Voir [Personnalisation](/fr/docs/dashboard/theming) |
 | `density` | `"comfortable"` \| `"compact"` | `"comfortable"` | Hauteur de ligne 44 px contre 36 px |
-| `locale` | `string` | `"en"` | N'importe quelle étiquette BCP-47 — voir [Langues](#langues) |
+| `locale` | `string` | `"ko"` | N'importe quelle étiquette BCP-47 — voir [Langues](#langues) |
 | `deepLinkParam` | `string` | `"instafix"` | Paramètre d'URL utilisé par les liens « Ouvrir sur la page » ; doit correspondre au paramètre `deepLink` du widget |
 | `emptyState` | `ReactNode` | — | Nœud personnalisé pour l'état « aucun feedback dans ce projet » uniquement — les états inbox-zéro et aucun-résultat gardent leurs valeurs par défaut |
 | `className` | `string` | — | Ajouté aux classes de l'élément racine |
@@ -64,7 +64,7 @@ Quatre statuts : `open`, `in_progress`, `resolved`, `wont_fix`. Le dashboard peu
 
 ## Langues
 
-Les mêmes sept locales intégrées que le widget (`en`, `fr`, `de`, `es`, `it`, `pt`, `ru`), l'anglais embarqué, le reste chargé à la demande, les étiquettes BCP-47 normalisées (`fr-CA` → `fr`).
+Les mêmes huit locales intégrées que le widget (`en`, `ko`, `fr`, `de`, `es`, `it`, `pt`, `ru`), l'anglais et le coréen (locale par défaut) embarqués, le reste chargé à la demande, les étiquettes BCP-47 normalisées (`fr-CA` → `fr`).
 
 Le dashboard accepte aussi des locales personnalisées à l'exécution :
 

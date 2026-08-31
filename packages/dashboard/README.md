@@ -8,7 +8,7 @@
 
 `<InstaFixInbox />` is a keyboard-first React component that lists every feedback your clients sent through [`@instafix/widget`](https://www.npmjs.com/package/@instafix/widget) — annotated screenshots re-rendered as the client framed them, status triage (open / in progress / resolved / won't fix) with undo, search, and deep links back to the live page.
 
-Part of [InstaFix](https://github.com/gnoopy/InstaFix) — **[documentation](https://instafix.realstory.blog/docs/dashboard)**.
+Part of [InstaFix](https://github.com/gnoopy/instafix) — **[documentation](https://instafix.realstory.blog/docs/dashboard)**.
 
 ## Install
 
@@ -44,7 +44,7 @@ const inbox = useInstaFixInbox({ projects: "my-app", endpoint: "/api/instafix" }
 - **Keyboard-first** — `j`/`k` navigate, `e`/`p`/`x` toggle statuses, `u` undo, `/` search, `?` shows the cheat sheet
 - **Three data modes** — HTTP `endpoint`, in-process `store`, or a fully custom 3-method `source` (tRPC/GraphQL/server actions)
 - **Themeable without Shadow DOM** — scoped `ifd-` classes and `--ifd-*` CSS variables; light/dark/auto with live system-theme tracking
-- **7 built-in locales** plus runtime custom locales via `registerLocale`
+- **8 built-in locales** (Korean is the default) plus runtime custom locales via `registerLocale`
 
 ## Documentation
 
@@ -52,4 +52,4 @@ Props, headless API, theming variables with the correct override selectors, cust
 
 ## License
 
-[MIT](https://github.com/gnoopy/InstaFix/blob/main/LICENSE)
+[MIT](https://github.com/gnoopy/instafix/blob/main/LICENSE)

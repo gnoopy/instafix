@@ -12,3 +12,4 @@ coverage/
 .claude/worktrees/
 coverage-report/
 .source/
+apps/demo/data/

@@ -10,18 +10,29 @@ export { interpolate };
 // locale and only the resolved one ships over the network when
 // `loadLocale()` is called.
 //
+// `ko` is also bundled synchronously: it's the dashboard's default locale
+// (see `components/inbox.tsx`), and hosts that don't configure a locale must
+// render in Korean immediately, with no flash of English while a chunk loads.
+//
 // The loader map is typed against core's BUILTIN_LOCALES: adding a locale
 // code there is a compile error here until the dictionary + loader exist.
 import { en } from "./en.js";
+import { ko } from "./ko.js";
 
 const i18n = createI18n<Translations>(en, {
   de: () => import("./de.js").then((m) => m.de),
   es: () => import("./es.js").then((m) => m.es),
   fr: () => import("./fr.js").then((m) => m.fr),
   it: () => import("./it.js").then((m) => m.it),
+  ko: () => import("./ko.js").then((m) => m.ko),
   pt: () => import("./pt.js").then((m) => m.pt),
   ru: () => import("./ru.js").then((m) => m.ru),
 });
+
+// Pre-register `ko` synchronously (already imported above) so it's available
+// in the registry from the very first `createT()` call — the same guarantee
+// `en` gets from being passed directly into `createI18n`.
+i18n.registerLocale("ko", ko);
 
 /**
  * Register a custom locale at runtime. Partial dictionaries are welcome —
@@ -41,7 +52,8 @@ export const loadLocale: (locale: string) => Promise<Partial<Translations> | nul
  * Create a translation function for the given locale.
  *
  * Locale resolution: exact match > language prefix > English fallback.
- * Non-English built-in locales are lazy-loaded via {@link loadLocale} — call
+ * `en` and `ko` (the default) are both bundled synchronously. Every other
+ * built-in locale is lazy-loaded via {@link loadLocale} — call
  * `await loadLocale(locale)` at init if you want the inbox to render in the
  * target language immediately. Otherwise it renders in English until the
  * dictionary lands, then `createT` returns the resolved dictionary.

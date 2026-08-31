@@ -66,7 +66,7 @@ export function MobileNav() {
 
           <div className="mt-4 flex flex-col items-center gap-4">
             <a
-              href="https://github.com/gnoopy/InstaFix"
+              href="https://github.com/gnoopy/instafix"
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setOpen(false)}

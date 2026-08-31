@@ -10,7 +10,7 @@ export default async function Layout({ params, children }: { params: Promise<{ l
     <DocsLayout
       tree={source.getPageTree(lang)}
       nav={{ title: "InstaFix", mode: "top" }}
-      githubUrl="https://github.com/gnoopy/InstaFix"
+      githubUrl="https://github.com/gnoopy/instafix"
     >
       {children}
       <DocsWidget locale={lang} />

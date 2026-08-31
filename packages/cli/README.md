@@ -4,7 +4,7 @@
 
 # @instafix/cli
 
-Set up and check [InstaFix](https://github.com/gnoopy/InstaFix) from the command line. Single self-contained binary, zero runtime dependencies, Node ≥ 20.
+Set up and check [InstaFix](https://github.com/gnoopy/instafix) from the command line. Single self-contained binary, zero runtime dependencies, Node ≥ 20.
 
 **[Documentation](https://instafix.realstory.blog/docs/cli)**
 
@@ -33,4 +33,4 @@ Flags, exit codes, non-TTY behavior, and what each command writes: **[instafix.r
 
 ## License
 
-[MIT](https://github.com/gnoopy/InstaFix/blob/main/LICENSE)
+[MIT](https://github.com/gnoopy/instafix/blob/main/LICENSE)

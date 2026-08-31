@@ -64,7 +64,10 @@ type InboxOverrides = Partial<
 
 function renderInbox(props: InboxOverrides = {}, records = seed()) {
   const source = makeSource(records);
-  const utils = render(<InstaFixInbox source={source} projects="demo" theme="dark" {...props} />);
+  // Locale defaults to English here: these tests assert specific English UI
+  // copy as part of feature behavior, not the default-locale mechanism
+  // itself (which is exercised separately, e.g. in launcher/i18n tests).
+  const utils = render(<InstaFixInbox source={source} projects="demo" theme="dark" locale="en" {...props} />);
   return { source, ...utils };
 }
 
@@ -400,7 +403,7 @@ describe("InstaFixInbox — empty & error states", () => {
   it("shows the error state with a retry button when the list fails", async () => {
     const source = makeSource(seed());
     source.list.mockRejectedValue(new Error("boom"));
-    render(<InstaFixInbox source={source} projects="demo" theme="dark" />);
+    render(<InstaFixInbox source={source} projects="demo" theme="dark" locale="en" />);
     expect(await screen.findByText("Failed to load feedbacks")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
   });

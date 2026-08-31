@@ -4,7 +4,7 @@
 
 # @instafix/adapter-prisma
 
-The production server adapter for [InstaFix](https://github.com/gnoopy/InstaFix) — one endpoint that validates, authenticates, and persists client feedback in your database.
+The production server adapter for [InstaFix](https://github.com/gnoopy/instafix) — one endpoint that validates, authenticates, and persists client feedback in your database.
 
 **[Documentation](https://instafix.realstory.blog/docs/adapters/prisma)** · **[live demo](https://instafix.realstory.blog/demo)**
 
@@ -45,4 +45,4 @@ All options with their real defaults, the full HTTP reference (bodies, query par
 
 ## License
 
-[MIT](https://github.com/gnoopy/InstaFix/blob/main/LICENSE)
+[MIT](https://github.com/gnoopy/instafix/blob/main/LICENSE)

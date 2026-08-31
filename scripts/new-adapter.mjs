@@ -71,10 +71,10 @@ writeFileSync(
       homepage: "https://instafix.realstory.blog",
       repository: {
         type: "git",
-        url: "git+https://github.com/gnoopy/InstaFix.git",
+        url: "git+https://github.com/gnoopy/instafix.git",
         directory: pkgDir,
       },
-      bugs: { url: "https://github.com/gnoopy/InstaFix/issues" },
+      bugs: { url: "https://github.com/gnoopy/instafix/issues" },
       publishConfig: { access: "public" },
       engines: { node: ">=20" },
       devDependencies: { "@instafix/core": "workspace:*" },

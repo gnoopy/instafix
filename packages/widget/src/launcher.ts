@@ -192,15 +192,16 @@ export function launch(config: InstaFixConfig): InstaFixInstance {
     return skippedInstance();
   }
 
-  const locale = config.locale ?? "en";
-  // Kick off the locale fetch immediately. English is bundled synchronously
-  // and used as the fallback while the chunk is in flight. The launcher
-  // awaits `localeReady` before rendering markers and re-localizes the FAB
-  // and popup once the dictionary lands — both are mounted synchronously so
-  // the widget is interactive immediately, but their labels start in the
-  // English fallback until the chunk arrives.
+  const locale = config.locale ?? "ko";
+  // Kick off the locale fetch immediately. English and Korean (the default)
+  // are both bundled synchronously and used immediately while any other
+  // chunk is in flight. The launcher awaits `localeReady` before rendering
+  // markers and re-localizes the FAB and popup once the dictionary lands —
+  // both are mounted synchronously so the widget is interactive immediately,
+  // but labels for any other locale start in the English fallback until the
+  // chunk arrives.
   const localeReady: Promise<unknown> =
-    locale === "en"
+    locale === "en" || locale === "ko"
       ? Promise.resolve()
       : loadLocale(locale).catch(() => {
           /* fallback to English — already handled by createT */
@@ -464,7 +465,7 @@ export function launch(config: InstaFixConfig): InstaFixInstance {
   // English fallback to the configured language. `t` already resolves to the
   // loaded dictionary at call time, so the markers list rendered below (which
   // calls `t` lazily) only needs to wait on `localeReady` once.
-  if (locale !== "en") {
+  if (locale !== "en" && locale !== "ko") {
     localeReady.then(() => {
       if (destroyed) return;
       fab.refreshLabels();

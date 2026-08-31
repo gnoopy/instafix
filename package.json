@@ -8,7 +8,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gnoopy/InstaFix.git"
+    "url": "git+https://github.com/gnoopy/instafix.git"
   },
   "packageManager": "bun@1.3.11",
   "workspaces": [

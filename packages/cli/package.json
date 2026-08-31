@@ -30,11 +30,11 @@
   "homepage": "https://instafix.realstory.blog",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gnoopy/InstaFix.git",
+    "url": "git+https://github.com/gnoopy/instafix.git",
     "directory": "packages/cli"
   },
   "bugs": {
-    "url": "https://github.com/gnoopy/InstaFix/issues"
+    "url": "https://github.com/gnoopy/instafix/issues"
   },
   "publishConfig": {
     "access": "public"

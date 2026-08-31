@@ -44,7 +44,7 @@ export function Header() {
         {/* Right actions */}
         <div className="hidden items-center gap-2.5 md:flex">
           <a
-            href="https://github.com/gnoopy/InstaFix"
+            href="https://github.com/gnoopy/instafix"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-sm text-gray-300 transition-all hover:border-white/20 hover:bg-white/[0.08] hover:text-white"

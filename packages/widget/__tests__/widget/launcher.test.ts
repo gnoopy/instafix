@@ -465,17 +465,16 @@ describe("launch", () => {
   // -------------------------------------------------------------------------
 
   describe("locale", () => {
-    it("defaults to French locale", () => {
+    it("defaults to Korean locale", () => {
       const instance = launch(defaultConfig());
 
       const widget = document.querySelector("instafix-widget")!;
       const shadow = widget.shadowRoot!;
       const fabBtn = shadow.querySelector<HTMLButtonElement>(".sp-fab")!;
-      // French is loaded async and this test's harness doesn't resolve real
-      // dynamic-import chunks — the sync render may still be showing the
-      // English fallback at this point. Accept either: the toolbar is
-      // visible by default, so this is the "hide" variant in both locales.
-      expect(["Hide tools", "Masquer les outils"]).toContain(fabBtn.getAttribute("aria-label"));
+      // Korean is the default locale and, like English, its dictionary is
+      // bundled synchronously (no dynamic-import chunk to wait on), so the
+      // FAB renders in Korean immediately — no fallback hedge needed.
+      expect(fabBtn.getAttribute("aria-label")).toBe("도구 숨기기");
 
       instance.destroy();
     });

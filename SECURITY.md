@@ -15,7 +15,7 @@ Only the latest published version of each `@instafix/*` package receives securit
 
 Instead, please report vulnerabilities through one of these channels:
 
-1. **GitHub Security Advisories** (preferred) -- [Report a vulnerability](https://github.com/gnoopy/InstaFix/security/advisories/new)
+1. **GitHub Security Advisories** (preferred) -- [Report a vulnerability](https://github.com/gnoopy/instafix/security/advisories/new)
 2. **Email** -- Send details to **security@gnoopy.dev**
 
 ### What to include

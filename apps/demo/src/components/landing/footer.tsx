@@ -1,7 +1,9 @@
+import Link from "next/link";
+
 const links = [
   {
     label: "GitHub",
-    href: "https://github.com/gnoopy/InstaFix",
+    href: "https://github.com/gnoopy/instafix",
   },
   {
     label: "npm",
@@ -37,6 +39,11 @@ export function Footer() {
                   </a>
                 </li>
               ))}
+              <li>
+                <Link href="/contact" className="text-sm text-gray-400 transition-colors hover:text-white">
+                  문의하기
+                </Link>
+              </li>
             </ul>
           </nav>
         </div>

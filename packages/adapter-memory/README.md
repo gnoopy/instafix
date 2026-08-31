@@ -4,7 +4,7 @@
 
 # @instafix/adapter-memory
 
-In-memory store for [InstaFix](https://github.com/gnoopy/InstaFix) — zero dependencies, zero configuration. For tests, previews, and throwaway demos: restart the process and it's gone.
+In-memory store for [InstaFix](https://github.com/gnoopy/instafix) — zero dependencies, zero configuration. For tests, previews, and throwaway demos: restart the process and it's gone.
 
 **[Documentation](https://instafix.realstory.blog/docs/adapters/memory)**
 
@@ -34,4 +34,4 @@ Writing your own adapter? This store passes the shared 40-test conformance suite
 
 ## License
 
-[MIT](https://github.com/gnoopy/InstaFix/blob/main/LICENSE)
+[MIT](https://github.com/gnoopy/instafix/blob/main/LICENSE)

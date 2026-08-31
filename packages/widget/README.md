@@ -9,7 +9,7 @@
 
 A lightweight feedback widget that lets your clients annotate websites during development. Draw rectangles (or right-click), leave comments, track bugs — directly on the live site, anchored to the exact DOM element.
 
-Part of [InstaFix](https://github.com/gnoopy/InstaFix) — **[live demo](https://instafix.realstory.blog/demo)** · **[documentation](https://instafix.realstory.blog/docs/widget)**.
+Part of [InstaFix](https://github.com/gnoopy/instafix) — **[live demo](https://instafix.realstory.blog/demo)** · **[documentation](https://instafix.realstory.blog/docs/widget)**.
 
 ## Install
 
@@ -49,7 +49,7 @@ No server? Pass `store: new LocalStorageStore()` (from `@instafix/adapter-locals
 - **Opt-in extras** — screenshots of the annotated area (with `data-instafix-ignore="true"` privacy masking), console/network diagnostics, instant right-click comments that never hijack keyboard or modifier-key menus
 - **Reliable** — retry with backoff plus a localStorage queue; a flaky network never loses a comment
 - **Isolated & light** — closed Shadow DOM, ~30 KB gzip (ESM); panel, screenshot engine, and non-English locales load on demand
-- **7 built-in locales** — en, fr, de, es, it, pt, ru (BCP-47 tags like `fr-CA` resolve automatically)
+- **8 built-in locales** — en, ko (default), fr, de, es, it, pt, ru (BCP-47 tags like `fr-CA` resolve automatically)
 
 ## Documentation
 
@@ -57,4 +57,4 @@ Every option with its real default and behavior: **[instafix.realstory.blog/docs
 
 ## License
 
-[MIT](https://github.com/gnoopy/InstaFix/blob/main/LICENSE)
+[MIT](https://github.com/gnoopy/instafix/blob/main/LICENSE)

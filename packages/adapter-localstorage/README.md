@@ -4,7 +4,7 @@
 
 # @instafix/adapter-localstorage
 
-Client-side store for [InstaFix](https://github.com/gnoopy/InstaFix) — the whole feedback loop in the browser, no server required. Ideal for demos, prototypes, and docs sites.
+Client-side store for [InstaFix](https://github.com/gnoopy/instafix) — the whole feedback loop in the browser, no server required. Ideal for demos, prototypes, and docs sites.
 
 **[Documentation](https://instafix.realstory.blog/docs/adapters/localstorage)**
 
@@ -30,4 +30,4 @@ Each visitor sees only their own feedback — data never leaves their browser. C
 
 ## License
 
-[MIT](https://github.com/gnoopy/InstaFix/blob/main/LICENSE)
+[MIT](https://github.com/gnoopy/instafix/blob/main/LICENSE)

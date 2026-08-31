@@ -41,17 +41,17 @@ export function InstaFixInbox(props: InstaFixInboxProps): ReactElement {
     accentColor,
     theme: themePref = "auto",
     density = "comfortable",
-    locale = "en",
+    locale = "ko",
     className,
     deepLinkParam = "instafix",
     emptyState,
     onError,
   } = props;
 
-  // ----- i18n: English renders immediately; other locales upgrade when their chunk lands
+  // ----- i18n: English and Korean (the default) render immediately; other locales upgrade when their chunk lands
   const [localeTick, setLocaleTick] = useState(0);
   useEffect(() => {
-    if (locale.toLowerCase().startsWith("en")) return;
+    if (locale.toLowerCase().startsWith("en") || locale.toLowerCase().startsWith("ko")) return;
     let cancelled = false;
     loadLocale(locale)
       .then((dict) => {

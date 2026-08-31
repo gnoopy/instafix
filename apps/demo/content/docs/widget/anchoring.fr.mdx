@@ -17,7 +17,7 @@ Le rectangle lui-même est stocké **en pourcentages de la boîte englobante de 
 
 **Bien encaissé :** les modifications de contenu autour de l'élément, les décalages de mise en page, le réagencement responsive, l'ajout ou la suppression d'autres éléments, et la plupart des refactorisations qui gardent l'élément reconnaissable.
 
-**Se dégrade :** la suppression de l'élément (plus rien à quoi s'ancrer), les réécritures lourdes qui changent d'un coup la balise, le texte et la position, et le contenu à l'intérieur d'un **Shadow DOM**, que le moteur d'ancrage ne traverse pas aujourd'hui (suivi dans [#177](https://github.com/gnoopy/InstaFix/issues/177)).
+**Se dégrade :** la suppression de l'élément (plus rien à quoi s'ancrer), les réécritures lourdes qui changent d'un coup la balise, le texte et la position, et le contenu à l'intérieur d'un **Shadow DOM**, que le moteur d'ancrage ne traverse pas aujourd'hui (suivi dans [#177](https://github.com/gnoopy/instafix/issues/177)).
 
 Quand une ancre ne peut pas être résolue lors d'une visite ultérieure, le marqueur est masqué pour cette page plutôt qu'affiché au mauvais endroit — un marqueur manquant est déroutant, un marqueur qui ment est pire. Le feedback lui-même (message, capture, métadonnées) n'est jamais perdu : il reste visible dans le panneau et dans le dashboard.
 
