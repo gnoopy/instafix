@@ -176,19 +176,20 @@ export const pt: Translations = {
 
   // Export controls
   "export.label": "Exportar",
-  "export.csv": "Exportar CSV",
+  "export.xlsx": "Exportar Excel",
   "export.json": "Exportar JSON",
+  "export.failedHint": "A exportação falhou — tente novamente",
 
-  // Copiar para o Claude Code
-  "agent.copyButton": "Copiar para o Claude Code",
-  "agent.previewTitle": "Copiar {count} item(ns) para o Claude Code",
+  // Copiar prompt
+  "agent.copyButton": "Copiar prompt",
+  "agent.previewTitle": "Copiar {count} item(ns) como prompt",
   "agent.previewEmpty": "Nada para copiar ainda",
   "agent.copyAction": "Copiar",
   "agent.cancel": "Cancelar",
   "agent.copiedToast": "{count} item(ns) copiado(s) para a área de transferência",
   "agent.copyFailedHint": "A cópia automática falhou — selecione o texto abaixo e copie manualmente",
   "agent.previewAria": "Pré-visualização em Markdown para o agente de código",
-  "detail.copyForAgent": "Copiar para o Claude Code",
+  "detail.copyForAgent": "Copiar prompt",
 
   // Entrada de voz
   "voice.micLabel": "Usar entrada de voz",
@@ -213,7 +214,7 @@ export const pt: Translations = {
   "onboarding.step2Body": "Escolha Anotar e depois clique ou arraste na página para marcar o que você quer comentar.",
   "onboarding.step3Title": "Copie para sua IA",
   "onboarding.step3Body":
-    'Escreva ou dite uma nota e use "Copiar para o Claude Code" para colar um contexto pronto no seu assistente de código.',
+    'Escreva ou dite uma nota e use "Copiar prompt" para colar um contexto pronto no seu assistente de código.',
   "onboarding.next": "Próximo",
   "onboarding.done": "Entendi",
   "onboarding.skip": "Pular",
@@ -227,4 +228,19 @@ export const pt: Translations = {
   // Pré-visualização de múltiplos alvos
   "annotator.targetBadgeAria": "Alvo {number}",
   "annotator.targetPreviewAlwaysShow": "Sempre mostrar contornos",
+
+  // Settings panel
+  "settings.title": "Configurações",
+  "settings.theme": "Tema",
+  "settings.themeLight": "Claro",
+  "settings.themeDark": "Escuro",
+  "settings.themeAuto": "Automático",
+  "settings.locale": "Idioma",
+  "settings.position": "Posição",
+  "settings.positionRight": "Direita",
+  "settings.positionLeft": "Esquerda",
+  "settings.accentColor": "Cor de destaque",
+  "settings.screenshots": "Capturas de tela",
+  "settings.diagnostics": "Diagnósticos",
+  "settings.rightClickComments": "Comentários com clique direito",
 };

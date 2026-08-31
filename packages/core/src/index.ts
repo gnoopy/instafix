@@ -1,5 +1,5 @@
 export type { AgentExporter, AgentMarkdownOptions } from "./agent-format.js";
-export { CLAUDE_CODE_EXPORTER, formatFeedbacksForAgent } from "./agent-format.js";
+export { formatFeedbacksForAgent, PROMPT_EXPORTER } from "./agent-format.js";
 export type { InstaFixErrorCode } from "./errors.js";
 export { InstaFixAuthError, InstaFixError, InstaFixNetworkError, InstaFixValidationError } from "./errors.js";
 export type { FilterResult } from "./filters.js";

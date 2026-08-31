@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 /** Storage backend to scaffold the API route against. */
-export type RouteBackend = "prisma" | "sqlite";
+export type RouteBackend = "prisma" | "sqlite" | "fs";
 
 const ROUTE_TEMPLATES: Record<RouteBackend, string> = {
   prisma: `import { createInstaFixHandler } from "@instafix/adapter-prisma";
@@ -28,7 +28,51 @@ export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({
   // allowedOrigins: ["https://your-site.com"],
 });
 `,
+  fs: `import { createInstaFixHandler, FsStore } from "@instafix/adapter-fs";
+
+// No database, no server to run — feedback (and screenshots) are stored as
+// plain files under .instafix/ at your project root, the same idea as
+// .git. Delete the folder any time to reset. Meant for a single developer
+// working locally, not for taking feedback from real site visitors — there's
+// no auth here by design.
+const store = new FsStore();
+
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({ store });
+`,
 };
+
+/**
+ * Serves screenshots FsStore writes to \`.instafix/screenshots/\` back over
+ * HTTP — FsStore's own \`screenshotUrl\` points here
+ * (\`/api/instafix/screenshots/<file>\`), and the widget/dashboard load it as
+ * a plain \`<img src>\`. Only generated for the "fs" backend; the other
+ * backends' adapters serve screenshots from wherever \`screenshotStorage\`
+ * (S3, R2, …) or the database puts them instead.
+ */
+const SCREENSHOT_ROUTE_TEMPLATE = `import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
+// Guards against \`..\`/absolute-path segments — Next's dynamic segment
+// already excludes "/", but a stray \`..\` alone wouldn't be, so this is
+// the one thing this route actually needs to get right.
+const SAFE_FILENAME = /^[A-Za-z0-9_-]+\\.[A-Za-z0-9]+$/;
+
+export async function GET(_request: Request, { params }: { params: Promise<{ file: string }> }) {
+  const { file } = await params;
+  if (!SAFE_FILENAME.test(file)) {
+    return new Response("Not found", { status: 404 });
+  }
+
+  try {
+    const bytes = await readFile(join(process.cwd(), ".instafix", "screenshots", file));
+    const ext = file.split(".").pop();
+    const contentType = ext === "png" ? "image/png" : "image/jpeg";
+    return new Response(new Uint8Array(bytes), { headers: { "Content-Type": contentType } });
+  } catch {
+    return new Response("Not found", { status: 404 });
+  }
+}
+`;
 
 /** Result of a route-generation attempt. */
 export interface RouteGenerationResult {
@@ -65,6 +109,11 @@ export function generateRoute(
   try {
     mkdirSync(dirname(routePath), { recursive: true });
     writeFileSync(routePath, ROUTE_TEMPLATES[backend], "utf-8");
+    if (backend === "fs") {
+      const screenshotRoutePath = join(appDir, "api", "instafix", "screenshots", "[file]", "route.ts");
+      mkdirSync(dirname(screenshotRoutePath), { recursive: true });
+      writeFileSync(screenshotRoutePath, SCREENSHOT_ROUTE_TEMPLATE, "utf-8");
+    }
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
     if (code === "EACCES" || code === "EPERM") {

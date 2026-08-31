@@ -73,6 +73,7 @@
   },
   "dependencies": {
     "@medv/finder": "^4.0.2",
+    "exceljs": "4.4.0",
     "html2canvas": "^1.4.1"
   },
   "devDependencies": {

@@ -176,12 +176,13 @@ export const de: Translations = {
 
   // Export controls
   "export.label": "Exportieren",
-  "export.csv": "CSV exportieren",
+  "export.xlsx": "Excel exportieren",
   "export.json": "JSON exportieren",
+  "export.failedHint": "Export fehlgeschlagen — bitte erneut versuchen",
 
-  // Für Claude Code kopieren
-  "agent.copyButton": "Für Claude Code kopieren",
-  "agent.previewTitle": "{count} Eintrag/Einträge für Claude Code kopieren",
+  // Prompt kopieren
+  "agent.copyButton": "Prompt kopieren",
+  "agent.previewTitle": "{count} Eintrag/Einträge als Prompt kopieren",
   "agent.previewEmpty": "Noch nichts zu kopieren",
   "agent.copyAction": "Kopieren",
   "agent.cancel": "Abbrechen",
@@ -189,7 +190,7 @@ export const de: Translations = {
   "agent.copyFailedHint":
     "Automatisches Kopieren fehlgeschlagen — markieren Sie den Text unten und kopieren Sie ihn manuell",
   "agent.previewAria": "Markdown-Vorschau für den Coding-Agenten",
-  "detail.copyForAgent": "Für Claude Code kopieren",
+  "detail.copyForAgent": "Prompt kopieren",
 
   // Spracheingabe
   "voice.micLabel": "Spracheingabe verwenden",
@@ -215,7 +216,7 @@ export const de: Translations = {
     "Wähle Kommentieren und klicke oder ziehe dann auf der Seite, um zu markieren, worüber du sprechen möchtest.",
   "onboarding.step3Title": "Für deine KI kopieren",
   "onboarding.step3Body":
-    "Schreibe oder diktiere eine Notiz und nutze dann „Für Claude Code kopieren“, um fertigen Kontext in deinen Coding-Assistenten einzufügen.",
+    "Schreibe oder diktiere eine Notiz und nutze dann „Prompt kopieren“, um fertigen Kontext in deinen Coding-Assistenten einzufügen.",
   "onboarding.next": "Weiter",
   "onboarding.done": "Verstanden",
   "onboarding.skip": "Überspringen",
@@ -229,4 +230,19 @@ export const de: Translations = {
   // Mehrfachziel-Vorschau
   "annotator.targetBadgeAria": "Ziel {number}",
   "annotator.targetPreviewAlwaysShow": "Umrisse immer anzeigen",
+
+  // Settings panel
+  "settings.title": "Einstellungen",
+  "settings.theme": "Design",
+  "settings.themeLight": "Hell",
+  "settings.themeDark": "Dunkel",
+  "settings.themeAuto": "Automatisch",
+  "settings.locale": "Sprache",
+  "settings.position": "Position",
+  "settings.positionRight": "Rechts",
+  "settings.positionLeft": "Links",
+  "settings.accentColor": "Akzentfarbe",
+  "settings.screenshots": "Screenshots",
+  "settings.diagnostics": "Diagnosedaten",
+  "settings.rightClickComments": "Rechtsklick-Kommentare",
 };

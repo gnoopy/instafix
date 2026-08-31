@@ -1,4 +1,4 @@
 {
   "title": "어댑터",
-  "pages": ["index", "prisma", "sqlite", "memory", "localstorage", "writing-an-adapter"]
+  "pages": ["index", "prisma", "sqlite", "fs", "memory", "localstorage", "writing-an-adapter"]
 }

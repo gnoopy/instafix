@@ -1,5 +1,5 @@
 /**
- * "Copy for Claude Code" — the widget-side wiring around
+ * "Copy Prompt" — the widget-side wiring around
  * `formatFeedbacksForAgent` (pure, in `@instafix/core`): a button that opens
  * a preview dialog, copies the generated Markdown to the clipboard, and
  * falls back to a selectable textarea when the Clipboard API is unavailable
@@ -244,7 +244,7 @@ export interface AgentCopyButtonOptions {
 }
 
 /**
- * Self-contained "Copy for Claude Code" button: resolves feedbacks, formats
+ * Self-contained "Copy Prompt" button: resolves feedbacks, formats
  * them (pure, testable in `@instafix/core`), shows a preview dialog, and
  * copies to the clipboard on confirm. The preview textarea doubles as the
  * manual-copy fallback when the Clipboard API fails.

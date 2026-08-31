@@ -174,19 +174,20 @@ export const ko: Translations = {
 
   // Export controls
   "export.label": "내보내기",
-  "export.csv": "CSV로 내보내기",
+  "export.xlsx": "Excel로 내보내기",
   "export.json": "JSON으로 내보내기",
+  "export.failedHint": "내보내기에 실패했습니다 — 다시 시도해 주세요",
 
-  // Copy for Claude Code
-  "agent.copyButton": "Claude Code용으로 복사",
-  "agent.previewTitle": "Claude Code용으로 {count}개 항목 복사",
+  // Copy Prompt
+  "agent.copyButton": "프롬프트 복사",
+  "agent.previewTitle": "{count}개 항목을 프롬프트로 복사",
   "agent.previewEmpty": "아직 복사할 내용이 없습니다",
   "agent.copyAction": "복사",
   "agent.cancel": "취소",
   "agent.copiedToast": "{count}개 항목을 클립보드에 복사했습니다",
   "agent.copyFailedHint": "자동 복사에 실패했습니다 — 아래 텍스트를 선택해 직접 복사하세요",
   "agent.previewAria": "코딩 에이전트용 마크다운 미리보기",
-  "detail.copyForAgent": "Claude Code용으로 복사",
+  "detail.copyForAgent": "프롬프트 복사",
 
   // Voice input
   "voice.micLabel": "음성 입력 사용",
@@ -211,7 +212,7 @@ export const ko: Translations = {
   "onboarding.step2Body": "주석 달기를 선택한 다음, 이야기하고 싶은 부분을 클릭하거나 드래그해 표시하세요.",
   "onboarding.step3Title": "AI를 위해 복사하세요",
   "onboarding.step3Body":
-    '메모를 작성하거나 음성으로 입력한 후 "Claude Code용으로 복사"를 눌러 코딩 어시스턴트에 바로 붙여넣을 수 있는 컨텍스트를 준비하세요.',
+    '메모를 작성하거나 음성으로 입력한 후 "프롬프트 복사"를 눌러 코딩 어시스턴트에 바로 붙여넣을 수 있는 컨텍스트를 준비하세요.',
   "onboarding.next": "다음",
   "onboarding.done": "확인",
   "onboarding.skip": "건너뛰기",
@@ -225,4 +226,19 @@ export const ko: Translations = {
   // Multi-target preview
   "annotator.targetBadgeAria": "대상 {number}",
   "annotator.targetPreviewAlwaysShow": "항상 윤곽선 표시",
+
+  // Settings panel
+  "settings.title": "설정",
+  "settings.theme": "테마",
+  "settings.themeLight": "라이트",
+  "settings.themeDark": "다크",
+  "settings.themeAuto": "자동",
+  "settings.locale": "언어",
+  "settings.position": "위치",
+  "settings.positionRight": "오른쪽",
+  "settings.positionLeft": "왼쪽",
+  "settings.accentColor": "강조색",
+  "settings.screenshots": "스크린샷",
+  "settings.diagnostics": "진단정보",
+  "settings.rightClickComments": "우클릭 코멘트",
 };

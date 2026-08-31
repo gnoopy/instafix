@@ -177,19 +177,20 @@ export const it: Translations = {
 
   // Export controls
   "export.label": "Esporta",
-  "export.csv": "Esporta CSV",
+  "export.xlsx": "Esporta Excel",
   "export.json": "Esporta JSON",
+  "export.failedHint": "Esportazione non riuscita — riprova",
 
-  // Copia per Claude Code
-  "agent.copyButton": "Copia per Claude Code",
-  "agent.previewTitle": "Copia {count} elemento/i per Claude Code",
+  // Copia prompt
+  "agent.copyButton": "Copia prompt",
+  "agent.previewTitle": "Copia {count} elemento/i come prompt",
   "agent.previewEmpty": "Niente da copiare per ora",
   "agent.copyAction": "Copia",
   "agent.cancel": "Annulla",
   "agent.copiedToast": "{count} elemento/i copiato/i negli appunti",
   "agent.copyFailedHint": "Copia automatica non riuscita — seleziona il testo qui sotto e copialo manualmente",
   "agent.previewAria": "Anteprima Markdown per l'agente di coding",
-  "detail.copyForAgent": "Copia per Claude Code",
+  "detail.copyForAgent": "Copia prompt",
 
   // Input vocale
   "voice.micLabel": "Usa input vocale",
@@ -214,7 +215,7 @@ export const it: Translations = {
   "onboarding.step2Body": "Scegli Annota, poi clicca o trascina sulla pagina per segnare ciò di cui vuoi parlare.",
   "onboarding.step3Title": "Copia per la tua IA",
   "onboarding.step3Body":
-    'Scrivi o detta una nota, poi usa "Copia per Claude Code" per incollare un contesto pronto nel tuo assistente di coding.',
+    'Scrivi o detta una nota, poi usa "Copia prompt" per incollare un contesto pronto nel tuo assistente di coding.',
   "onboarding.next": "Avanti",
   "onboarding.done": "Capito",
   "onboarding.skip": "Salta",
@@ -228,4 +229,19 @@ export const it: Translations = {
   // Anteprima multi-target
   "annotator.targetBadgeAria": "Target {number}",
   "annotator.targetPreviewAlwaysShow": "Mostra sempre i contorni",
+
+  // Settings panel
+  "settings.title": "Impostazioni",
+  "settings.theme": "Tema",
+  "settings.themeLight": "Chiaro",
+  "settings.themeDark": "Scuro",
+  "settings.themeAuto": "Automatico",
+  "settings.locale": "Lingua",
+  "settings.position": "Posizione",
+  "settings.positionRight": "Destra",
+  "settings.positionLeft": "Sinistra",
+  "settings.accentColor": "Colore accento",
+  "settings.screenshots": "Screenshot",
+  "settings.diagnostics": "Diagnostica",
+  "settings.rightClickComments": "Commenti con clic destro",
 };

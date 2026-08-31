@@ -6,5 +6,6 @@
   "packages/adapter-kit": "0.1.0",
   "packages/dashboard": "0.2.5",
   "packages/cli": "0.5.4",
-  "packages/adapter-sqlite": "0.0.0"
+  "packages/adapter-sqlite": "0.0.0",
+  "packages/adapter-fs": "0.0.0"
 }

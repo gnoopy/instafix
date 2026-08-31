@@ -1,8 +1,9 @@
 /**
- * Deterministic Markdown formatter — turns feedbacks into text a coding
- * agent (Claude Code, etc.) can act on directly. Pure and framework-agnostic:
- * no DOM, no clipboard, no UI. `AgentExporter` is the seam for adding other
- * agent-specific formats later without touching call sites.
+ * Deterministic Markdown formatter — turns feedbacks into text any coding
+ * agent (Claude Code, Cursor, Copilot, ...) can act on directly. Pure and
+ * framework-agnostic: no DOM, no clipboard, no UI. `AgentExporter` is the
+ * seam for adding other agent-specific formats later without touching call
+ * sites.
  */
 
 import type { AnnotationResponse, FeedbackResponse } from "./types.js";
@@ -161,6 +162,52 @@ function pageUrl(fb: FeedbackResponse): string {
   return truncate(fb.url, MAX_FIELD_LEN);
 }
 
+/** Cap on console/network entries rendered per feedback — keeps a noisy page from dominating the document. */
+const MAX_DIAGNOSTIC_ENTRIES = 10;
+
+/**
+ * `screenshotUrl` as a local disk path when it looks like one of ours
+ * (`/api/instafix/screenshots/<file>`, written by `@instafix/adapter-fs`) —
+ * a coding agent with file access can open that path directly. Any other
+ * URL (a real HTTP endpoint, an S3/CDN link from a configured
+ * `ScreenshotStorage`) is shown as-is; it's still useful context for a
+ * human even when an agent can't fetch it itself.
+ */
+function screenshotLine(fb: FeedbackResponse): string | null {
+  if (!fb.screenshotUrl) return null;
+  if (fb.screenshotUrl.startsWith("data:")) return null; // inline data URLs are too long to be useful as text
+  const localMatch = /^\/api\/instafix\/screenshots\/(.+)$/.exec(fb.screenshotUrl);
+  const shown = localMatch ? `.instafix/screenshots/${localMatch[1]}` : truncate(fb.screenshotUrl, MAX_FIELD_LEN);
+  return `Screenshot: ${inlineCode(shown)}`;
+}
+
+/** Render captured console errors/warnings and failed network requests, if any were captured. */
+function diagnosticsLines(fb: FeedbackResponse): string[] {
+  const diagnostics = fb.diagnostics;
+  if (!diagnostics) return [];
+  const lines: string[] = [];
+
+  const notable = diagnostics.console.filter((entry) => entry.level === "error" || entry.level === "warn");
+  if (notable.length > 0) {
+    const shown = notable.slice(-MAX_DIAGNOSTIC_ENTRIES);
+    lines.push("Console errors/warnings (most recent last):");
+    lines.push("```");
+    for (const entry of shown) lines.push(`[${entry.level}] ${truncate(entry.message, MAX_FIELD_LEN)}`);
+    lines.push("```");
+  }
+
+  if (diagnostics.network.length > 0) {
+    const shown = diagnostics.network.slice(-MAX_DIAGNOSTIC_ENTRIES);
+    lines.push("Failed network requests:");
+    for (const entry of shown) {
+      const status = entry.status === 0 ? "network error" : `HTTP ${entry.status}`;
+      lines.push(`- ${entry.method} ${inlineCode(entry.url)} — ${status} (${entry.durationMs}ms)`);
+    }
+  }
+
+  return lines;
+}
+
 function itemHeading(fb: FeedbackResponse, index: number): string {
   const ann = fb.annotations[0];
   const snippet = ann?.textSnippet.trim();
@@ -231,6 +278,11 @@ export function formatFeedbacksForAgent(feedbacks: FeedbackResponse[], options: 
     } else {
       renderMultipleTargets(lines, fb.annotations);
     }
+
+    const shot = screenshotLine(fb);
+    if (shot) lines.push(shot);
+    lines.push(...diagnosticsLines(fb));
+
     lines.push("");
   });
 
@@ -253,8 +305,8 @@ export interface AgentExporter {
   format: (feedbacks: FeedbackResponse[], options?: AgentMarkdownOptions) => string;
 }
 
-export const CLAUDE_CODE_EXPORTER: AgentExporter = {
-  id: "claude-code",
-  label: "Claude Code (Markdown)",
+export const PROMPT_EXPORTER: AgentExporter = {
+  id: "prompt",
+  label: "Prompt (Markdown)",
   format: formatFeedbacksForAgent,
 };

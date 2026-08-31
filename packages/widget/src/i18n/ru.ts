@@ -175,19 +175,20 @@ export const ru: Translations = {
 
   // Export controls
   "export.label": "Экспорт",
-  "export.csv": "Экспорт в CSV",
+  "export.xlsx": "Экспорт в Excel",
   "export.json": "Экспорт в JSON",
+  "export.failedHint": "Не удалось экспортировать — попробуйте ещё раз",
 
-  // Копировать для Claude Code
-  "agent.copyButton": "Копировать для Claude Code",
-  "agent.previewTitle": "Копировать {count} элемент(ов) для Claude Code",
+  // Копировать промпт
+  "agent.copyButton": "Копировать промпт",
+  "agent.previewTitle": "Копировать {count} элемент(ов) как промпт",
   "agent.previewEmpty": "Пока нечего копировать",
   "agent.copyAction": "Копировать",
   "agent.cancel": "Отмена",
   "agent.copiedToast": "{count} элемент(ов) скопировано в буфер обмена",
   "agent.copyFailedHint": "Не удалось скопировать автоматически — выделите текст ниже и скопируйте вручную",
   "agent.previewAria": "Предпросмотр Markdown для агента",
-  "detail.copyForAgent": "Копировать для Claude Code",
+  "detail.copyForAgent": "Копировать промпт",
 
   // Голосовой ввод
   "voice.micLabel": "Голосовой ввод",
@@ -213,7 +214,7 @@ export const ru: Translations = {
     "Выберите «Аннотация», затем щёлкните или перетащите на странице, чтобы отметить то, о чём хотите рассказать.",
   "onboarding.step3Title": "Скопируйте для ИИ",
   "onboarding.step3Body":
-    "Напишите или продиктуйте заметку, затем нажмите «Копировать для Claude Code», чтобы вставить готовый контекст в вашего ИИ-ассистента.",
+    "Напишите или продиктуйте заметку, затем нажмите «Копировать промпт», чтобы вставить готовый контекст в вашего ИИ-ассистента.",
   "onboarding.next": "Далее",
   "onboarding.done": "Понятно",
   "onboarding.skip": "Пропустить",
@@ -227,4 +228,19 @@ export const ru: Translations = {
   // Предпросмотр нескольких целей
   "annotator.targetBadgeAria": "Цель {number}",
   "annotator.targetPreviewAlwaysShow": "Всегда показывать контуры",
+
+  // Settings panel
+  "settings.title": "Настройки",
+  "settings.theme": "Тема",
+  "settings.themeLight": "Светлая",
+  "settings.themeDark": "Тёмная",
+  "settings.themeAuto": "Авто",
+  "settings.locale": "Язык",
+  "settings.position": "Позиция",
+  "settings.positionRight": "Справа",
+  "settings.positionLeft": "Слева",
+  "settings.accentColor": "Акцентный цвет",
+  "settings.screenshots": "Скриншоты",
+  "settings.diagnostics": "Диагностика",
+  "settings.rightClickComments": "Комментарии по правому клику",
 };

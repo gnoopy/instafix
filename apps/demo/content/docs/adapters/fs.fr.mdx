@@ -1,0 +1,77 @@
+---
+title: Adaptateur système de fichiers
+description: Aucune base de données — les feedbacks et captures d'écran vivent dans des fichiers sous .instafix/, pour un développeur seul en local.
+---
+
+`@instafix/adapter-fs` répond à un scénario différent des autres adaptateurs : pas « un client laisse un feedback sur un site en ligne pour qu'une équipe le trie », mais **un développeur seul qui regarde un agent de codage IA construire une page**, annote ce qui ne va pas, et garde un historique local et cherchable des allers-retours — sans faire tourner de base de données.
+
+Les feedbacks (et les captures d'écran éventuelles) sont écrits dans un dossier `.instafix/` à la racine du projet — la même idée que `.git` : créé à la première écriture, en texte brut, pensé pour être lu, diffé ou grepé directement.
+
+```bash
+npm install github:gnoopy/instafix#adapter-fs-dist
+```
+
+## Montage
+
+```ts
+// app/api/instafix/route.ts — Next.js App Router
+import { createInstaFixHandler, FsStore } from "@instafix/adapter-fs";
+
+const store = new FsStore(); // écrit dans ./.instafix
+
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({ store });
+```
+
+`FsStore` a aussi besoin d'une petite route supplémentaire pour resservir les captures d'écran en HTTP (le widget les affiche via `<img src>`) — `npx instafix init` la génère pour vous si vous choisissez l'option « Historique local » ; si vous câblez ça à la main, ajoutez :
+
+```ts
+// app/api/instafix/screenshots/[file]/route.ts
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
+const SAFE_FILENAME = /^[A-Za-z0-9_-]+\.[A-Za-z0-9]+$/;
+
+export async function GET(_request: Request, { params }: { params: Promise<{ file: string }> }) {
+  const { file } = await params;
+  if (!SAFE_FILENAME.test(file)) return new Response("Not found", { status: 404 });
+
+  try {
+    const bytes = await readFile(join(process.cwd(), ".instafix", "screenshots", file));
+    const contentType = file.endsWith(".png") ? "image/png" : "image/jpeg";
+    return new Response(new Uint8Array(bytes), { headers: { "Content-Type": contentType } });
+  } catch {
+    return new Response("Not found", { status: 404 });
+  }
+}
+```
+
+## Ce qu'il y a sur le disque
+
+```
+.instafix/
+  history.jsonl        # un objet JSON par ligne, le plus récent en dernier — grep/jq-friendly
+  screenshots/
+    <clientId>.jpg      # présent uniquement si une capture d'écran a été prise
+```
+
+Les captures d'écran sont nommées d'après l'id généré côté client par le widget (disponible avant que le serveur n'attribue un id d'enregistrement), assaini en un nom de fichier sûr — tout ce qui ne ressemble pas à un id simple retombe sur un nom aléatoire.
+
+## Options de FsStore
+
+| Option | Type | Défaut | Ce que ça fait |
+|---|---|---|---|
+| `dir` | `string` | `.instafix` dans `process.cwd()` | Où vivent `history.jsonl` et `screenshots/` |
+| `screenshotUrlPrefix` | `string` | `/api/instafix/screenshots` | Préfixe d'URL depuis lequel les captures sont servies — doit correspondre à l'endroit où vous montez la route ci-dessus |
+
+Pas d'option `screenshotStorage` ici, contrairement aux adaptateurs Prisma/SQLite — écrire le fichier *est* le stockage de cet adaptateur, il n'y a rien à brancher.
+
+## Notes de comportement
+
+- **Aucune authentification, par conception.** La route générée ne passe pas `apiKey`/`allowedOrigins` — cet adaptateur est pensé pour `localhost` en développement, pas pour recevoir des feedbacks de vrais visiteurs en production. Ne pointez pas le widget public d'un déploiement de production vers une route adossée à `FsStore`.
+- **Les lectures repartent toujours du disque** — rien n'est mis en cache en mémoire entre les requêtes, donc `history.jsonl` reste la source de vérité même si vous l'éditez à la main ou le lisez depuis un autre processus/script pendant que le serveur de dev tourne.
+- **Committer `.instafix/` ou non, c'est votre choix.** Certains projets veulent cet historique comme journal de bord ; d'autres le mettent dans `.gitignore`. Aucun des deux n'est un mauvais choix — cet adaptateur ne décide pas à votre place.
+- Tout le reste du comportement `InstaFixStore` (déduplication par clientId, filtrage, pagination, `StoreNotFoundError` sur update/delete manquant) vient du même moteur `createCollectionStore` que les adaptateurs memory et localStorage — voir [Écrire un adaptateur](/fr/docs/adapters/writing-an-adapter) si vous êtes curieux de voir à quel point ce moteur laisse peu de code à écrire.
+
+## En binôme avec « Copier le prompt »
+
+Cet adaptateur est le complément naturel du bouton [Copier le prompt](/fr/docs/widget/copy-for-claude-code) du widget — les captures d'écran capturées résolvent vers un chemin local (`.instafix/screenshots/<fichier>.jpg`) qu'un agent de codage ayant accès aux fichiers peut ouvrir directement, et les erreurs console capturées sont incluses en ligne, si bien qu'un seul copier-coller transporte la note, la cible DOM exacte, une référence de capture d'écran et les erreurs éventuelles déclenchées par le changement.

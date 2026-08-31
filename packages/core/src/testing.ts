@@ -100,6 +100,18 @@ export interface StoreConformanceOptions {
    * substring matching.
    */
   caseInsensitiveSearch?: boolean | undefined;
+  /**
+   * How a captured screenshot data URL ends up on `screenshotUrl`:
+   * - `"inline"` (default): persisted as-is (memory, localStorage, Prisma
+   *   without a configured `ScreenshotStorage`).
+   * - `"external"`: always uploaded/rewritten to a different URL (e.g. a
+   *   filesystem adapter writing an image file and returning its path) — the
+   *   suite then only asserts the result is non-null and skips checking it
+   *   equals the input data URL. Write a dedicated test for the exact
+   *   upload behavior, the way adapter-prisma's `screenshotStorage` path
+   *   does in its own test file rather than in this shared suite.
+   */
+  screenshotBehavior?: "inline" | "external" | undefined;
 }
 
 /**
@@ -114,6 +126,7 @@ export function testInstaFixStore(
 ): void {
   const duplicateBehavior = options?.duplicateBehavior ?? "return";
   const caseInsensitiveSearch = options?.caseInsensitiveSearch ?? true;
+  const screenshotBehavior = options?.screenshotBehavior ?? "inline";
 
   describe("InstaFixStore conformance", () => {
     let store: InstaFixStore;
@@ -187,14 +200,23 @@ export function testInstaFixStore(
         expect(record.screenshotUrl).toBeNull();
       });
 
-      it("persists the screenshot data URL inline when no external storage is configured", async () => {
-        // Stores without external storage (memory, localStorage) keep the
-        // data URL as-is. Adapter-prisma with a `screenshotStorage` replaces
-        // it with the remote URL — that path is covered by adapter-prisma tests.
-        const dataUrl = "data:image/jpeg;base64,/9j/4AAQ"; // truncated but valid prefix
-        const record = await store.createFeedback(createInput({ screenshotDataUrl: dataUrl }));
-        expect(record.screenshotUrl).toBe(dataUrl);
-      });
+      if (screenshotBehavior === "inline") {
+        it("persists the screenshot data URL inline when no external storage is configured", async () => {
+          // Stores without external storage (memory, localStorage) keep the
+          // data URL as-is. Adapter-prisma with a `screenshotStorage` replaces
+          // it with the remote URL — that path is covered by adapter-prisma tests.
+          const dataUrl = "data:image/jpeg;base64,/9j/4AAQ"; // truncated but valid prefix
+          const record = await store.createFeedback(createInput({ screenshotDataUrl: dataUrl }));
+          expect(record.screenshotUrl).toBe(dataUrl);
+        });
+      } else {
+        it("rewrites the screenshot data URL to an external location", async () => {
+          const dataUrl = "data:image/jpeg;base64,/9j/4AAQ"; // truncated but valid prefix
+          const record = await store.createFeedback(createInput({ screenshotDataUrl: dataUrl }));
+          expect(record.screenshotUrl).not.toBeNull();
+          expect(record.screenshotUrl).not.toBe(dataUrl);
+        });
+      }
 
       it("persists screenshotRegion verbatim when provided", async () => {
         const region = { xPct: 0.1234, yPct: 0.5678, wPct: 0.25, hPct: 0.125 };

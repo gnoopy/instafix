@@ -175,19 +175,20 @@ export const fr: Translations = {
 
   // Export controls
   "export.label": "Exporter",
-  "export.csv": "Exporter CSV",
+  "export.xlsx": "Exporter Excel",
   "export.json": "Exporter JSON",
+  "export.failedHint": "L'export a échoué — veuillez réessayer",
 
-  // Copie pour Claude Code
-  "agent.copyButton": "Copier pour Claude Code",
-  "agent.previewTitle": "Copier {count} élément(s) pour Claude Code",
+  // Copier le prompt
+  "agent.copyButton": "Copier le prompt",
+  "agent.previewTitle": "Copier {count} élément(s) sous forme de prompt",
   "agent.previewEmpty": "Rien à copier pour le moment",
   "agent.copyAction": "Copier",
   "agent.cancel": "Annuler",
   "agent.copiedToast": "{count} élément(s) copié(s) dans le presse-papiers",
   "agent.copyFailedHint": "La copie automatique a échoué — sélectionnez le texte ci-dessous et copiez-le manuellement",
   "agent.previewAria": "Aperçu Markdown pour l'agent de codage",
-  "detail.copyForAgent": "Copier pour Claude Code",
+  "detail.copyForAgent": "Copier le prompt",
 
   // Saisie vocale
   "voice.micLabel": "Utiliser la saisie vocale",
@@ -214,7 +215,7 @@ export const fr: Translations = {
     "Choisissez Annoter, puis cliquez ou faites glisser sur la page pour marquer ce dont vous voulez parler.",
   "onboarding.step3Title": "Copiez pour votre IA",
   "onboarding.step3Body":
-    "Écrivez ou dictez une note, puis utilisez « Copier pour Claude Code » pour coller un contexte prêt à l'emploi dans votre assistant de code.",
+    "Écrivez ou dictez une note, puis utilisez « Copier le prompt » pour coller un contexte prêt à l'emploi dans votre assistant de code.",
   "onboarding.next": "Suivant",
   "onboarding.done": "Compris",
   "onboarding.skip": "Ignorer",
@@ -228,4 +229,19 @@ export const fr: Translations = {
   // Aperçu multi-cible
   "annotator.targetBadgeAria": "Cible {number}",
   "annotator.targetPreviewAlwaysShow": "Toujours afficher les contours",
+
+  // Settings panel
+  "settings.title": "Paramètres",
+  "settings.theme": "Thème",
+  "settings.themeLight": "Clair",
+  "settings.themeDark": "Sombre",
+  "settings.themeAuto": "Auto",
+  "settings.locale": "Langue",
+  "settings.position": "Position",
+  "settings.positionRight": "Droite",
+  "settings.positionLeft": "Gauche",
+  "settings.accentColor": "Couleur d'accent",
+  "settings.screenshots": "Captures d'écran",
+  "settings.diagnostics": "Diagnostics",
+  "settings.rightClickComments": "Commentaires au clic droit",
 };

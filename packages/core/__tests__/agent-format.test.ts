@@ -242,4 +242,76 @@ describe("formatFeedbacksForAgent", () => {
       expect(out).toContain("(5 more target(s) omitted)");
     });
   });
+
+  describe("screenshot", () => {
+    it("shows a local disk path for an adapter-fs screenshot URL", () => {
+      const out = formatFeedbacksForAgent([makeFeedback({ screenshotUrl: "/api/instafix/screenshots/abc123.jpg" })]);
+      expect(out).toContain("Screenshot: `.instafix/screenshots/abc123.jpg`");
+    });
+
+    it("shows a non-local screenshot URL as-is", () => {
+      const out = formatFeedbacksForAgent([
+        makeFeedback({ screenshotUrl: "https://cdn.example.com/shots/abc123.jpg" }),
+      ]);
+      expect(out).toContain("Screenshot: `https://cdn.example.com/shots/abc123.jpg`");
+    });
+
+    it("omits the screenshot line for an inline data URL (too long to be useful as text)", () => {
+      const out = formatFeedbacksForAgent([makeFeedback({ screenshotUrl: "data:image/jpeg;base64,/9j/4AAQ" })]);
+      expect(out).not.toContain("Screenshot:");
+    });
+
+    it("omits the screenshot line when none was captured", () => {
+      const out = formatFeedbacksForAgent([makeFeedback()]);
+      expect(out).not.toContain("Screenshot:");
+    });
+  });
+
+  describe("diagnostics", () => {
+    it("renders console errors and warnings but not log/info entries", () => {
+      const out = formatFeedbacksForAgent([
+        makeFeedback({
+          diagnostics: {
+            console: [
+              { level: "log", timestamp: "2026-01-01T00:00:00.000Z", message: "app started" },
+              { level: "error", timestamp: "2026-01-01T00:00:01.000Z", message: "TypeError: x is undefined" },
+              { level: "warn", timestamp: "2026-01-01T00:00:02.000Z", message: "deprecated API" },
+            ],
+            network: [],
+          },
+        }),
+      ]);
+      expect(out).toContain("Console errors/warnings");
+      expect(out).toContain("[error] TypeError: x is undefined");
+      expect(out).toContain("[warn] deprecated API");
+      expect(out).not.toContain("app started");
+    });
+
+    it("renders failed network requests", () => {
+      const out = formatFeedbacksForAgent([
+        makeFeedback({
+          diagnostics: {
+            console: [],
+            network: [
+              { url: "/api/orders", method: "GET", status: 500, durationMs: 120, timestamp: "2026-01-01T00:00:00Z" },
+            ],
+          },
+        }),
+      ]);
+      expect(out).toContain("Failed network requests:");
+      expect(out).toContain("GET `/api/orders` — HTTP 500 (120ms)");
+    });
+
+    it("omits both diagnostics sections when nothing was captured", () => {
+      const out = formatFeedbacksForAgent([makeFeedback({ diagnostics: { console: [], network: [] } })]);
+      expect(out).not.toContain("Console errors");
+      expect(out).not.toContain("Failed network requests");
+    });
+
+    it("omits diagnostics entirely when not captured at all", () => {
+      const out = formatFeedbacksForAgent([makeFeedback()]);
+      expect(out).not.toContain("Console errors");
+      expect(out).not.toContain("Failed network requests");
+    });
+  });
 });

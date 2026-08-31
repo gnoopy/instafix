@@ -81,7 +81,7 @@ export async function initCommand(): Promise<void> {
   // ask, rather than assuming Prisma and generating an unusable route (the
   // route previously always imported `@instafix/adapter-prisma` + `@/lib/prisma`
   // even in projects with no Prisma at all).
-  function generateRouteOrExit(basePath: string, backend: "prisma" | "sqlite"): void {
+  function generateRouteOrExit(basePath: string, backend: "prisma" | "sqlite" | "fs"): void {
     try {
       const { created, path } = generateRoute(basePath, backend);
       if (created) {
@@ -97,6 +97,7 @@ export async function initCommand(): Promise<void> {
   }
 
   let routeSkipped = false;
+  let fsBackendChosen = false;
 
   if (schemaPath) {
     const shouldRoute = await p.confirm({
@@ -120,7 +121,12 @@ export async function initCommand(): Promise<void> {
         {
           value: "sqlite" as const,
           label: "SQLite",
-          hint: "recommended — a local .db file, no ORM or database server needed",
+          hint: "recommended for a team — a local .db file, no ORM or database server needed",
+        },
+        {
+          value: "fs" as const,
+          label: "Local history (.instafix/ folder)",
+          hint: "no database at all — plain files, for a single developer working solo",
         },
         { value: "skip" as const, label: "Skip — I'll wire storage myself" },
       ],
@@ -133,6 +139,9 @@ export async function initCommand(): Promise<void> {
 
     if (backend === "sqlite") {
       generateRouteOrExit(cwd, "sqlite");
+    } else if (backend === "fs") {
+      generateRouteOrExit(cwd, "fs");
+      fsBackendChosen = true;
     } else {
       routeSkipped = true;
     }
@@ -177,6 +186,17 @@ export async function initCommand(): Promise<void> {
       `${steps.length + 1}. Wire the API route yourself: app/api/instafix/route.ts, using either`,
       "   @instafix/adapter-prisma or @instafix/adapter-sqlite's createInstaFixHandler(),",
       "   or a custom store — see /docs/adapters.",
+    );
+  }
+
+  if (fsBackendChosen) {
+    steps.push(
+      `${steps.length + 1}. Install the adapter:`,
+      "   npm install github:gnoopy/instafix#adapter-fs-dist",
+      "",
+      "   Feedback (and screenshots) will be written to .instafix/ at your",
+      "   project root — nothing to run, nothing to configure. Whether to",
+      "   commit that folder or add it to .gitignore is up to you.",
     );
   }
 

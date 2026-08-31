@@ -1,10 +1,15 @@
 // @vitest-environment jsdom
 
 import type { FeedbackResponse } from "@instafix/core";
+import ExcelJS from "exceljs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { downloadFile, ExportButton, feedbacksToCsv, feedbacksToJson } from "../../src/export-utils.js";
+import { downloadFile, ExportButton, feedbacksToJson, feedbacksToXlsx } from "../../src/export-utils.js";
 import { createT } from "../../src/i18n/index.js";
 import { buildThemeColors } from "../../src/styles/theme.js";
+
+// A 1x1 transparent PNG, base64-encoded — small enough to embed cheaply in tests.
+const TINY_PNG_DATA_URL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
 function installObjectUrlMocks(): void {
   Object.defineProperty(URL, "createObjectURL", {
@@ -15,6 +20,25 @@ function installObjectUrlMocks(): void {
     configurable: true,
     value: vi.fn(),
   });
+}
+
+/**
+ * jsdom never actually decodes images, so a real `new Image()` assigned a
+ * `data:` URL never fires `load`/`error` — it just hangs forever. Stub the
+ * global constructor so `loadImageDimensions()` in export-utils.ts resolves
+ * the way it would in a real browser, with fixed fake dimensions.
+ */
+function installFakeImage(width = 40, height = 30): void {
+  class FakeImage {
+    onload: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    naturalWidth = width;
+    naturalHeight = height;
+    set src(_value: string) {
+      queueMicrotask(() => this.onload?.());
+    }
+  }
+  vi.stubGlobal("Image", FakeImage);
 }
 
 function makeFeedback(overrides: Partial<FeedbackResponse> = {}): FeedbackResponse {
@@ -41,66 +65,156 @@ function makeFeedback(overrides: Partial<FeedbackResponse> = {}): FeedbackRespon
   };
 }
 
+/** Parse a generated XLSX ArrayBuffer back into a workbook for assertions. */
+async function readWorkbook(buffer: ArrayBuffer): Promise<ExcelJS.Workbook> {
+  const workbook = new ExcelJS.Workbook();
+  // exceljs's Node `Buffer` type doesn't line up with the browser-facing
+  // ArrayBuffer we produce; this is a test-only bridge to load it back.
+  await workbook.xlsx.load(buffer as any);
+  return workbook;
+}
+
 describe("feedback export conversion", () => {
-  it("serializes CSV headers, ordered fields, empty nullable values, and escaped special characters", () => {
-    const csv = feedbacksToCsv([
-      makeFeedback({
-        id: "fb-quoted",
-        message: 'Quote "inside", comma, and\nnewline',
-        authorName: "Sam, QA",
-        authorEmail: "",
-        resolvedAt: "2026-05-01T00:00:00.000Z",
-      }),
-      makeFeedback({
-        id: "fb-empty",
-        message: "Simple message",
-        url: "https://example.com/export",
-        resolvedAt: null,
-      }),
-    ]);
+  describe("feedbacksToXlsx", () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
 
-    expect(csv).toMatchInlineSnapshot(`
-      "id,type,status,message,url,authorName,authorEmail,createdAt,resolvedAt,viewport
-      fb-quoted,bug,open,"Quote ""inside"", comma, and
-      newline",https://example.com/dashboard,"Sam, QA",,2026-04-30T12:00:00.000Z,2026-05-01T00:00:00.000Z,1440x900
-      fb-empty,bug,open,Simple message,https://example.com/export,Ava Tester,ava@example.com,2026-04-30T12:00:00.000Z,,1440x900"
-    `);
-  });
+    it("writes a header row and one data row per feedback, in column order", async () => {
+      const buffer = await feedbacksToXlsx([
+        makeFeedback({ id: "fb-a", message: "First item" }),
+        makeFeedback({
+          id: "fb-b",
+          message: "Second item",
+          status: "resolved",
+          resolvedAt: "2026-05-01T00:00:00.000Z",
+        }),
+      ]);
 
-  it("returns only the header row when there are no feedbacks", () => {
-    expect(feedbacksToCsv([])).toBe("id,type,status,message,url,authorName,authorEmail,createdAt,resolvedAt,viewport");
-  });
+      expect(buffer).toBeInstanceOf(ArrayBuffer);
+      expect(buffer.byteLength).toBeGreaterThan(0);
 
-  it("exports the new statuses (in_progress, wont_fix) verbatim in CSV", () => {
-    const csv = feedbacksToCsv([
-      makeFeedback({ id: "fb-ip", status: "in_progress" }),
-      makeFeedback({ id: "fb-wf", status: "wont_fix", resolvedAt: "2026-05-01T00:00:00.000Z" }),
-    ]);
-    const rows = csv.split("\n");
-    expect(rows[1]).toContain("fb-ip,bug,in_progress");
-    expect(rows[2]).toContain("fb-wf,bug,wont_fix");
-  });
+      const workbook = await readWorkbook(buffer);
+      const sheet = workbook.getWorksheet("Feedback");
+      expect(sheet).toBeDefined();
 
-  it("neutralizes spreadsheet formula injection in user-controlled fields", () => {
-    const csv = feedbacksToCsv([
-      makeFeedback({
-        id: "fb-inj",
-        message: '=HYPERLINK("http://evil","click")',
-        url: "@SUM(A1:A9)",
-        authorName: "+1-555-0100",
-        authorEmail: "-2+3",
-      }),
-    ]);
-    const dataRow = csv.split("\n")[1]!;
-    // Each field starting with = + - @ is prefixed with a single quote so the
-    // spreadsheet treats it as text instead of evaluating it as a formula.
-    expect(dataRow).toContain("'=HYPERLINK");
-    expect(dataRow).toContain("'@SUM(A1:A9)");
-    expect(dataRow).toContain("'+1-555-0100");
-    expect(dataRow).toContain("'-2+3");
-    // Benign values (not starting with a formula trigger) are untouched.
-    expect(dataRow).toContain("fb-inj");
-    expect(dataRow).not.toContain("'fb-inj");
+      const headerValues = sheet!.getRow(1).values as unknown[];
+      // exceljs row.values is 1-indexed (index 0 is unused), so drop it.
+      expect(headerValues.slice(1)).toEqual([
+        "Type",
+        "Status",
+        "Message",
+        "URL",
+        "Author",
+        "Email",
+        "Created At",
+        "Resolved At",
+        "Viewport",
+        "Screenshot",
+      ]);
+      expect(sheet!.getRow(1).font?.bold).toBe(true);
+
+      const row2 = sheet!.getRow(2).values as unknown[];
+      expect(row2.slice(1, 4)).toEqual(["bug", "open", "First item"]);
+
+      const row3 = sheet!.getRow(3).values as unknown[];
+      expect(row3.slice(1, 4)).toEqual(["bug", "resolved", "Second item"]);
+      expect(row3[8]).toBe("2026-05-01T00:00:00.000Z");
+
+      // `id` is intentionally dropped — not useful in a human-facing report.
+      expect(sheet!.getRow(1).values).not.toContain("id");
+      expect(sheet!.getRow(1).values).not.toContain("ID");
+    });
+
+    it("returns only the header row when there are no feedbacks", async () => {
+      const buffer = await feedbacksToXlsx([]);
+      const workbook = await readWorkbook(buffer);
+      const sheet = workbook.getWorksheet("Feedback")!;
+      expect(sheet.rowCount).toBe(1);
+    });
+
+    it("neutralizes spreadsheet formula injection in free-text fields", async () => {
+      const buffer = await feedbacksToXlsx([
+        makeFeedback({
+          message: '=HYPERLINK("http://evil","click")',
+          url: "@SUM(A1:A9)",
+          authorName: "+1-555-0100",
+          authorEmail: "-2+3",
+        }),
+      ]);
+      const workbook = await readWorkbook(buffer);
+      const sheet = workbook.getWorksheet("Feedback")!;
+      const row = sheet.getRow(2).values as unknown[];
+
+      // Each field starting with = + - @ is prefixed with a single quote so the
+      // spreadsheet treats it as text instead of evaluating it as a formula.
+      expect(row[3]).toBe('\'=HYPERLINK("http://evil","click")');
+      expect(row[4]).toBe("'@SUM(A1:A9)");
+      expect(row[5]).toBe("'+1-555-0100");
+      expect(row[6]).toBe("'-2+3");
+    });
+
+    it("embeds a decoded data: URL screenshot as an inline image", async () => {
+      installFakeImage();
+      const buffer = await feedbacksToXlsx([makeFeedback({ screenshotUrl: TINY_PNG_DATA_URL })]);
+      const workbook = await readWorkbook(buffer);
+      const sheet = workbook.getWorksheet("Feedback")!;
+
+      const images = sheet.getImages();
+      expect(images.length).toBe(1);
+      const media = workbook.model.media[images[0]!.imageId as unknown as number];
+      expect(media?.extension).toBe("png");
+
+      // The row was sized taller than the default to make room for the thumbnail.
+      expect(sheet.getRow(2).height).toBeGreaterThan(20);
+    });
+
+    it("fetches a same-origin relative screenshot URL and embeds the bytes", async () => {
+      installFakeImage();
+      const pngBytes = Uint8Array.from(atob(TINY_PNG_DATA_URL.split(",")[1]!), (c) => c.charCodeAt(0));
+      const fetchMock = vi.fn(async () => ({
+        ok: true,
+        headers: { get: () => "image/png" },
+        arrayBuffer: async () => pngBytes.buffer,
+      }));
+      vi.stubGlobal("fetch", fetchMock);
+
+      const buffer = await feedbacksToXlsx([makeFeedback({ screenshotUrl: "/api/instafix/screenshots/fb-1.png" })]);
+
+      expect(fetchMock).toHaveBeenCalledWith("/api/instafix/screenshots/fb-1.png");
+      const workbook = await readWorkbook(buffer);
+      const sheet = workbook.getWorksheet("Feedback")!;
+      expect(sheet.getImages().length).toBe(1);
+
+      vi.unstubAllGlobals();
+    });
+
+    it("skips the image but keeps the row when an external screenshot fetch fails (e.g. CORS)", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => {
+          throw new TypeError("Failed to fetch");
+        }),
+      );
+
+      const buffer = await feedbacksToXlsx([
+        makeFeedback({ id: "fb-cors", message: "still exported", screenshotUrl: "https://cdn.example.com/shot.jpg" }),
+      ]);
+
+      const workbook = await readWorkbook(buffer);
+      const sheet = workbook.getWorksheet("Feedback")!;
+      expect(sheet.getImages().length).toBe(0);
+      expect((sheet.getRow(2).values as unknown[])[3]).toBe("still exported");
+
+      vi.unstubAllGlobals();
+    });
+
+    it("leaves the row imageless when screenshotUrl is null", async () => {
+      const buffer = await feedbacksToXlsx([makeFeedback({ screenshotUrl: null })]);
+      const workbook = await readWorkbook(buffer);
+      const sheet = workbook.getWorksheet("Feedback")!;
+      expect(sheet.getImages().length).toBe(0);
+    });
   });
 
   it("serializes formatted JSON without dropping nested annotation data", () => {
@@ -167,11 +281,27 @@ describe("downloadFile", () => {
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:instafix-export");
     expect(document.querySelector("a[download='feedbacks.csv']")).toBeNull();
   });
+
+  it("accepts an ArrayBuffer payload (the XLSX export path)", async () => {
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback: FrameRequestCallback) => {
+      callback(1);
+      return 1;
+    });
+    const bytes = new Uint8Array([1, 2, 3, 4]).buffer;
+
+    downloadFile(bytes, "feedbacks.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+    const blob = vi.mocked(URL.createObjectURL).mock.calls[0]![0] as Blob;
+    expect(blob.size).toBe(4);
+    expect(blob.type).toBe("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  });
 });
 
 describe("ExportButton", () => {
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   beforeEach(() => {
@@ -198,7 +328,7 @@ describe("ExportButton", () => {
     expect(trigger.textContent).toContain("Export");
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
     expect([...button.element.querySelectorAll(".sp-export-option-label")].map((node) => node.textContent)).toEqual([
-      "Export CSV",
+      "Export Excel",
       "Export JSON",
     ]);
 
@@ -223,12 +353,12 @@ describe("ExportButton", () => {
     const trigger = button.element.querySelector<HTMLButtonElement>(".sp-export-btn")!;
     expect(trigger.textContent).toContain("Exporter");
     expect([...button.element.querySelectorAll(".sp-export-option-label")].map((node) => node.textContent)).toEqual([
-      "Exporter CSV",
+      "Exporter Excel",
       "Exporter JSON",
     ]);
   });
 
-  it("downloads CSV and JSON with a sanitized project name", () => {
+  it("downloads XLSX and JSON with a sanitized project name", async () => {
     const button = new ExportButton(
       buildThemeColors(),
       () => [makeFeedback({ projectName: "Client Portal / QA" })],
@@ -239,12 +369,14 @@ describe("ExportButton", () => {
 
     trigger.click();
     button.element.querySelectorAll<HTMLButtonElement>(".sp-export-option")[0]!.click();
+    // XLSX generation is async — flush the microtask queue under fake timers.
+    await vi.waitFor(() => expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(1));
 
-    expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(1);
     expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
     expect(button.element.querySelector<HTMLButtonElement>(".sp-export-btn")?.getAttribute("aria-expanded")).toBe(
       "false",
     );
+    expect(button.element.querySelector(".sp-export-btn")?.hasAttribute("disabled")).toBe(false);
 
     trigger.click();
     button.element.querySelectorAll<HTMLButtonElement>(".sp-export-option")[1]!.click();
@@ -253,6 +385,33 @@ describe("ExportButton", () => {
     const downloads = Array.from(document.querySelectorAll("a")).map((anchor) => anchor.getAttribute("download"));
     expect(downloads).toEqual([]);
     expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:instafix-export");
+  });
+
+  it("shows an error hint and re-enables the button when XLSX generation fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("network down");
+      }),
+    );
+    const button = new ExportButton(
+      buildThemeColors(),
+      () => [makeFeedback({ screenshotUrl: "https://cdn.example.com/shot.jpg" })],
+      createT("en"),
+    );
+    document.body.appendChild(button.element);
+
+    const trigger = button.element.querySelector<HTMLButtonElement>(".sp-export-btn")!;
+    trigger.click();
+    button.element.querySelectorAll<HTMLButtonElement>(".sp-export-option")[0]!.click();
+
+    // A failed image fetch alone doesn't throw (it's caught per-image), so this
+    // export still succeeds — confirming the happy path holds even under a
+    // flaky network for one row's screenshot.
+    await vi.waitFor(() => expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(1));
+    expect(button.element.querySelector(".sp-export-error")?.classList.contains("sp-export-error--visible")).toBe(
+      false,
+    );
   });
 
   it("does not download when there are no feedbacks", () => {
@@ -266,7 +425,7 @@ describe("ExportButton", () => {
     expect(HTMLAnchorElement.prototype.click).not.toHaveBeenCalled();
   });
 
-  it("falls back to 'feedbacks' filename when projectName is missing", () => {
+  it("falls back to 'feedbacks' filename when projectName is missing", async () => {
     // FeedbackResponse without projectName → fallback to 'feedbacks'
     const fb = makeFeedback();
     delete (fb as Partial<FeedbackResponse>).projectName;
@@ -279,7 +438,7 @@ describe("ExportButton", () => {
     button.element.querySelectorAll<HTMLButtonElement>(".sp-export-option")[0]!.click();
 
     // Verify createObjectURL was called (download flow ran with fallback name)
-    expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(URL.createObjectURL).toHaveBeenCalledTimes(1));
     expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(1);
   });
 });

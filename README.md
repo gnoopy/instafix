@@ -99,6 +99,7 @@ The full documentation lives at **[instafix.realstory.blog/docs](https://instafi
 | [`@instafix/dashboard`](./packages/dashboard) | Triage inbox component + headless hook | [Dashboard](https://instafix.realstory.blog/docs/dashboard) · [Theming](https://instafix.realstory.blog/docs/dashboard/theming) |
 | [`@instafix/adapter-prisma`](./packages/adapter-prisma) | Production server adapter (auth, CORS, webhooks) | [Prisma adapter](https://instafix.realstory.blog/docs/adapters/prisma) |
 | [`@instafix/adapter-sqlite`](./packages/adapter-sqlite) | Production server adapter, zero external services | [SQLite adapter](https://instafix.realstory.blog/docs/adapters/sqlite) |
+| [`@instafix/adapter-fs`](./packages/adapter-fs) | No database — plain files under `.instafix/`, for a single developer working locally | [Filesystem adapter](https://instafix.realstory.blog/docs/adapters/fs) |
 | [`@instafix/adapter-memory`](./packages/adapter-memory) | In-memory store (tests, demos) | [Memory adapter](https://instafix.realstory.blog/docs/adapters/memory) |
 | [`@instafix/adapter-localstorage`](./packages/adapter-localstorage) | Client-side store (zero server) | [localStorage adapter](https://instafix.realstory.blog/docs/adapters/localstorage) |
 | [`@instafix/cli`](./packages/cli) | `init` / `sync` / `status` / `doctor` | [CLI](https://instafix.realstory.blog/docs/cli) |

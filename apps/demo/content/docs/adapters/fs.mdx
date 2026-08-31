@@ -1,0 +1,77 @@
+---
+title: Filesystem adapter
+description: No database at all — feedback and screenshots live as plain files under .instafix/, for a single developer working locally.
+---
+
+`@instafix/adapter-fs` is built for a different scenario than the other adapters: not "a client leaves feedback on a live site for a team to triage," but **one developer watching an AI coding agent build a page**, marking up what's wrong, and keeping a local, searchable history of the back-and-forth — without running a database.
+
+Feedback (and any captured screenshots) are written under a `.instafix/` folder at your project root — the same idea as `.git`: created on first write, plain text, meant to be read, diffed, or grepped directly.
+
+```bash
+npm install github:gnoopy/instafix#adapter-fs-dist
+```
+
+## Mounting
+
+```ts
+// app/api/instafix/route.ts — Next.js App Router
+import { createInstaFixHandler, FsStore } from "@instafix/adapter-fs";
+
+const store = new FsStore(); // writes to ./.instafix
+
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({ store });
+```
+
+`FsStore` also needs a small extra route to serve screenshots back over HTTP (the widget renders them as `<img src>`) — `npx instafix init` generates this for you when you pick the "Local history" option; if you're wiring things by hand, add:
+
+```ts
+// app/api/instafix/screenshots/[file]/route.ts
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
+const SAFE_FILENAME = /^[A-Za-z0-9_-]+\.[A-Za-z0-9]+$/;
+
+export async function GET(_request: Request, { params }: { params: Promise<{ file: string }> }) {
+  const { file } = await params;
+  if (!SAFE_FILENAME.test(file)) return new Response("Not found", { status: 404 });
+
+  try {
+    const bytes = await readFile(join(process.cwd(), ".instafix", "screenshots", file));
+    const contentType = file.endsWith(".png") ? "image/png" : "image/jpeg";
+    return new Response(new Uint8Array(bytes), { headers: { "Content-Type": contentType } });
+  } catch {
+    return new Response("Not found", { status: 404 });
+  }
+}
+```
+
+## What's on disk
+
+```
+.instafix/
+  history.jsonl        # one JSON object per line, newest last — grep/jq friendly
+  screenshots/
+    <clientId>.jpg      # only present for feedback that captured a screenshot
+```
+
+Screenshots are named after the widget's client-generated id (available before the server assigns a record id), sanitized to a safe filename — anything that doesn't look like a plain id falls back to a random one.
+
+## FsStore options
+
+| Option | Type | Default | What it does |
+|---|---|---|---|
+| `dir` | `string` | `.instafix` in `process.cwd()` | Where `history.jsonl` and `screenshots/` live |
+| `screenshotUrlPrefix` | `string` | `/api/instafix/screenshots` | URL prefix screenshots are served from — must match wherever you mount the screenshot route above |
+
+There's no `screenshotStorage` option here, unlike the Prisma/SQLite adapters — writing the file *is* this adapter's storage, so there's nothing to plug in.
+
+## Behavior notes
+
+- **No auth by design.** The generated route doesn't pass `apiKey`/`allowedOrigins` — this adapter is meant for `localhost` during development, not for taking feedback from real site visitors. Don't point a production deployment's public widget at an `FsStore`-backed route.
+- **Reads are always fresh off disk** — nothing is cached in memory across requests, so `history.jsonl` stays the single source of truth even if you edit it by hand or read it from another process/script while the dev server is running.
+- **Whether to commit `.instafix/` is your call.** Some projects want the history as a build log; others gitignore it. Neither is wrong — this adapter doesn't decide for you.
+- Every other `InstaFixStore` behavior (clientId dedup, filtering, pagination, `StoreNotFoundError` on missing update/delete) comes from the same `createCollectionStore` engine the memory and localStorage adapters use — see [Writing an Adapter](/docs/adapters/writing-an-adapter) if you're curious how little code that engine leaves an adapter to write.
+
+## Pairing with "Copy Prompt"
+
+This adapter is the natural fit for the widget's [Copy Prompt](/docs/widget/copy-for-claude-code) button — captured screenshots resolve to a local path (`.instafix/screenshots/<file>.jpg`) that a coding agent with file access can open directly, and captured console errors are included inline, so a single copy-paste carries the note, the exact DOM target, a screenshot reference, and any errors the change triggered.

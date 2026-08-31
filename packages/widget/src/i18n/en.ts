@@ -174,19 +174,20 @@ export const en: Translations = {
 
   // Export controls
   "export.label": "Export",
-  "export.csv": "Export CSV",
+  "export.xlsx": "Export Excel",
   "export.json": "Export JSON",
+  "export.failedHint": "Export failed — please try again",
 
-  // Copy for Claude Code
-  "agent.copyButton": "Copy for Claude Code",
-  "agent.previewTitle": "Copy {count} item(s) for Claude Code",
+  // Copy Prompt
+  "agent.copyButton": "Copy Prompt",
+  "agent.previewTitle": "Copy {count} item(s) as a prompt",
   "agent.previewEmpty": "Nothing to copy yet",
   "agent.copyAction": "Copy",
   "agent.cancel": "Cancel",
   "agent.copiedToast": "Copied {count} item(s) to clipboard",
   "agent.copyFailedHint": "Automatic copy failed — select the text below and copy it manually",
   "agent.previewAria": "Markdown preview for the coding agent",
-  "detail.copyForAgent": "Copy for Claude Code",
+  "detail.copyForAgent": "Copy Prompt",
 
   // Voice input
   "voice.micLabel": "Use voice input",
@@ -210,7 +211,7 @@ export const en: Translations = {
   "onboarding.step2Body": "Choose Annotate, then click or drag on the page to mark what you want to talk about.",
   "onboarding.step3Title": "Copy for your AI",
   "onboarding.step3Body":
-    'Write or dictate a note, then use "Copy for Claude Code" to paste ready-made context into your coding assistant.',
+    'Write or dictate a note, then use "Copy Prompt" to paste ready-made context into your coding assistant.',
   "onboarding.next": "Next",
   "onboarding.done": "Got it",
   "onboarding.skip": "Skip",
@@ -224,4 +225,19 @@ export const en: Translations = {
   // Multi-target preview
   "annotator.targetBadgeAria": "Target {number}",
   "annotator.targetPreviewAlwaysShow": "Always show outlines",
+
+  // Settings panel
+  "settings.title": "Settings",
+  "settings.theme": "Theme",
+  "settings.themeLight": "Light",
+  "settings.themeDark": "Dark",
+  "settings.themeAuto": "Auto",
+  "settings.locale": "Language",
+  "settings.position": "Position",
+  "settings.positionRight": "Right",
+  "settings.positionLeft": "Left",
+  "settings.accentColor": "Accent color",
+  "settings.screenshots": "Screenshots",
+  "settings.diagnostics": "Diagnostics",
+  "settings.rightClickComments": "Right-click comments",
 };

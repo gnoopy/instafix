@@ -179,8 +179,9 @@ export interface Translations {
 
   // Export controls
   "export.label": string;
-  "export.csv": string;
+  "export.xlsx": string;
   "export.json": string;
+  "export.failedHint": string;
 
   // Copy for Claude Code (agent-targeted Markdown export)
   "agent.copyButton": string;
@@ -233,6 +234,24 @@ export interface Translations {
   /** aria-label per badge, e.g. "Target 2". */
   "annotator.targetBadgeAria": string;
   "annotator.targetPreviewAlwaysShow": string;
+
+  // Settings panel — gear icon in the feedback list header, lets visitors
+  // adjust theme/locale/position/accent/feature toggles live via
+  // InstaFixInstance.updateConfig(), no host code required. Doubles as the
+  // gear button's own aria-label.
+  "settings.title": string;
+  "settings.theme": string;
+  "settings.themeLight": string;
+  "settings.themeDark": string;
+  "settings.themeAuto": string;
+  "settings.locale": string;
+  "settings.position": string;
+  "settings.positionRight": string;
+  "settings.positionLeft": string;
+  "settings.accentColor": string;
+  "settings.screenshots": string;
+  "settings.diagnostics": string;
+  "settings.rightClickComments": string;
 }
 
 /** Every valid key of `Translations` as a string-literal union. */

@@ -3634,7 +3634,7 @@ describe("Panel", () => {
   // -------------------------------------------------------------------------
 
   describe("export button", () => {
-    it("clicking CSV export invokes the feedbacks-getter callback", async () => {
+    it("clicking XLSX export invokes the feedbacks-getter callback", async () => {
       const fb = makeFeedback({ id: "fb-1" });
       apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
 
@@ -3657,10 +3657,11 @@ describe("Panel", () => {
       const options = shadow.querySelectorAll<HTMLButtonElement>(".sp-export-option");
       expect(options.length).toBeGreaterThan(0);
 
-      // Click the first option (CSV) — this invokes exportAs which calls getFeedbacks()
+      // Click the first option (Excel/XLSX) — this invokes exportAs which calls
+      // getFeedbacks(); generation is async (lazy-loads exceljs), so wait for it.
       options[0]!.click();
 
-      expect(createObjectURL).toHaveBeenCalled();
+      await vi.waitFor(() => expect(createObjectURL).toHaveBeenCalled());
 
       // Wait for the cleanup rAF to run (calls revokeObjectURL)
       await new Promise((r) => requestAnimationFrame(() => r(undefined)));
@@ -3798,6 +3799,121 @@ describe("Panel", () => {
       // The card from the first load should still be there (no error UI replacement)
       const card = shadow.querySelector<HTMLElement>('[data-feedback-id="fb-1"]');
       expect(card).not.toBeNull();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Settings — gear icon in the header, wired only when the launcher
+  // supplies settingsOptions
+  // -------------------------------------------------------------------------
+
+  describe("settings", () => {
+    it("does not render a settings button when settingsOptions is omitted", () => {
+      // The shared `panel` from beforeEach is constructed without settingsOptions.
+      expect(shadow.querySelector(".sp-settings-btn")).toBeNull();
+      expect(shadow.querySelector(".sp-settings")).toBeNull();
+    });
+
+    it("renders a settings button and opens the settings view when clicked", () => {
+      const onUpdateConfig = vi.fn();
+      const settingsShadow = createShadowRoot();
+      const settingsPanel = new Panel(
+        settingsShadow,
+        colors,
+        new EventBus<WidgetEvents>(),
+        apiClient as never,
+        "test-project",
+        markers as never,
+        t,
+        "fr",
+        undefined,
+        { config: { projectName: "test-project", endpoint: "/api/instafix" }, onUpdateConfig },
+      );
+
+      const btn = settingsShadow.querySelector<HTMLButtonElement>(".sp-settings-btn");
+      expect(btn).not.toBeNull();
+
+      const settingsEl = settingsShadow.querySelector<HTMLElement>(".sp-settings");
+      expect(settingsEl?.classList.contains("sp-settings--visible")).toBe(false);
+
+      btn?.click();
+      expect(settingsEl?.classList.contains("sp-settings--visible")).toBe(true);
+
+      settingsPanel.destroy();
+    });
+
+    it("calls onUpdateConfig with the right patch when the theme control changes", () => {
+      const onUpdateConfig = vi.fn();
+      const settingsShadow = createShadowRoot();
+      const settingsPanel = new Panel(
+        settingsShadow,
+        colors,
+        new EventBus<WidgetEvents>(),
+        apiClient as never,
+        "test-project",
+        markers as never,
+        t,
+        "fr",
+        undefined,
+        { config: { projectName: "test-project", endpoint: "/api/instafix", theme: "light" }, onUpdateConfig },
+      );
+
+      settingsShadow.querySelector<HTMLButtonElement>(".sp-settings-btn")!.click();
+      const darkBtn = settingsShadow.querySelector<HTMLButtonElement>('[data-theme="dark"]')!;
+      darkBtn.click();
+
+      expect(onUpdateConfig).toHaveBeenCalledWith({ theme: "dark" });
+
+      settingsPanel.destroy();
+    });
+
+    it("Escape closes the settings view before closing the whole panel", async () => {
+      const onUpdateConfig = vi.fn();
+      const settingsShadow = createShadowRoot();
+      const settingsPanel = new Panel(
+        settingsShadow,
+        colors,
+        new EventBus<WidgetEvents>(),
+        apiClient as never,
+        "test-project",
+        markers as never,
+        t,
+        "fr",
+        undefined,
+        { config: { projectName: "test-project", endpoint: "/api/instafix" }, onUpdateConfig },
+      );
+
+      await settingsPanel.open();
+      settingsShadow.querySelector<HTMLButtonElement>(".sp-settings-btn")!.click();
+      const settingsEl = settingsShadow.querySelector<HTMLElement>(".sp-settings")!;
+      expect(settingsEl.classList.contains("sp-settings--visible")).toBe(true);
+
+      settingsEl.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      expect(settingsEl.classList.contains("sp-settings--visible")).toBe(false);
+      // The panel itself stays open — only the settings sub-view closed.
+      expect(settingsShadow.querySelector(".sp-panel")?.classList.contains("sp-panel--open")).toBe(true);
+
+      settingsPanel.destroy();
+    });
+
+    it("destroy() cleans up the settings view without throwing", () => {
+      const onUpdateConfig = vi.fn();
+      const settingsShadow = createShadowRoot();
+      const settingsPanel = new Panel(
+        settingsShadow,
+        colors,
+        new EventBus<WidgetEvents>(),
+        apiClient as never,
+        "test-project",
+        markers as never,
+        t,
+        "fr",
+        undefined,
+        { config: { projectName: "test-project", endpoint: "/api/instafix" }, onUpdateConfig },
+      );
+
+      expect(() => settingsPanel.destroy()).not.toThrow();
+      expect(settingsShadow.querySelector(".sp-settings")).toBeNull();
     });
   });
 });

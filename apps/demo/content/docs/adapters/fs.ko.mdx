@@ -1,0 +1,77 @@
+---
+title: 파일시스템 어댑터
+description: DB 전혀 없이 — 피드백과 스크린샷이 .instafix/ 폴더 아래 평문 파일로 저장됩니다. 혼자 개발하는 경우에 맞춘 어댑터입니다.
+---
+
+`@instafix/adapter-fs`는 다른 어댑터들과는 다른 시나리오를 위해 만들어졌습니다. "외부 클라이언트가 라이브 사이트에 피드백을 남기고 팀이 트리아지한다"가 아니라, **개발자 한 명이 AI 코딩 에이전트가 화면을 만드는 걸 지켜보면서** 문제되는 부분을 표시하고, 그 작업 과정을 로컬에서 검색 가능한 히스토리로 남기는 용도입니다 — 데이터베이스 없이요.
+
+피드백(과 캡처된 스크린샷)은 프로젝트 최상단의 `.instafix/` 폴더에 기록됩니다 — `.git`과 같은 성격입니다: 첫 기록 시 생성되고, 평문이라 직접 읽거나 diff하거나 grep할 수 있습니다.
+
+```bash
+npm install github:gnoopy/instafix#adapter-fs-dist
+```
+
+## 연결하기
+
+```ts
+// app/api/instafix/route.ts — Next.js App Router
+import { createInstaFixHandler, FsStore } from "@instafix/adapter-fs";
+
+const store = new FsStore(); // ./.instafix 에 기록
+
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({ store });
+```
+
+`FsStore`는 스크린샷을 다시 HTTP로 내려주기 위한 작은 라우트도 하나 더 필요합니다(위젯이 `<img src>`로 렌더링하므로) — `npx instafix init`에서 "로컬 히스토리" 옵션을 선택하면 자동으로 생성해줍니다. 직접 연결한다면 아래를 추가하세요:
+
+```ts
+// app/api/instafix/screenshots/[file]/route.ts
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
+const SAFE_FILENAME = /^[A-Za-z0-9_-]+\.[A-Za-z0-9]+$/;
+
+export async function GET(_request: Request, { params }: { params: Promise<{ file: string }> }) {
+  const { file } = await params;
+  if (!SAFE_FILENAME.test(file)) return new Response("Not found", { status: 404 });
+
+  try {
+    const bytes = await readFile(join(process.cwd(), ".instafix", "screenshots", file));
+    const contentType = file.endsWith(".png") ? "image/png" : "image/jpeg";
+    return new Response(new Uint8Array(bytes), { headers: { "Content-Type": contentType } });
+  } catch {
+    return new Response("Not found", { status: 404 });
+  }
+}
+```
+
+## 디스크에 남는 것
+
+```
+.instafix/
+  history.jsonl        # 한 줄당 JSON 객체 하나, 최신 항목이 맨 아래 — grep/jq로 바로 검색 가능
+  screenshots/
+    <clientId>.jpg      # 스크린샷이 캡처된 경우에만 생성
+```
+
+스크린샷 파일명은 위젯이 생성하는 클라이언트 id(서버가 레코드 id를 부여하기 전부터 이미 존재)를 안전한 파일명으로 정제해서 사용합니다 — 단순한 id 형태가 아니면 무작위 이름으로 대체됩니다.
+
+## FsStore 옵션
+
+| 옵션 | 타입 | 기본값 | 하는 일 |
+|---|---|---|---|
+| `dir` | `string` | `process.cwd()` 기준 `.instafix` | `history.jsonl`과 `screenshots/`가 저장되는 위치 |
+| `screenshotUrlPrefix` | `string` | `/api/instafix/screenshots` | 스크린샷이 서빙되는 URL 접두사 — 위에서 마운트한 라우트 경로와 일치해야 함 |
+
+Prisma/SQLite 어댑터와 달리 `screenshotStorage` 옵션은 없습니다 — 파일을 쓰는 것 자체가 이 어댑터의 저장 방식이라 따로 끼워 넣을 게 없습니다.
+
+## 동작 관련 참고사항
+
+- **의도적으로 인증이 없습니다.** 생성된 라우트는 `apiKey`/`allowedOrigins`를 넘기지 않습니다 — 이 어댑터는 개발 중 `localhost` 용도이지, 실제 사이트 방문자의 피드백을 받는 프로덕션 용도가 아닙니다. 프로덕션에 공개된 위젯을 `FsStore` 기반 라우트에 연결하지 마세요.
+- **읽기는 항상 디스크에서 새로 읽습니다** — 요청 간 메모리 캐시가 없어서, 개발 서버가 떠 있는 동안 직접 파일을 수정하거나 다른 프로세스/스크립트로 읽어도 `history.jsonl`이 항상 유일한 진실 소스로 유지됩니다.
+- **`.instafix/`를 커밋할지 여부는 프로젝트마다 다른 선택입니다.** 개발 기록으로 남기고 싶다면 커밋해도 되고, `.gitignore`에 넣어도 됩니다 — 이 어댑터가 대신 결정하지 않습니다.
+- 그 외 `InstaFixStore`의 모든 동작(clientId 중복제거, 필터링, 페이지네이션, update/delete 대상이 없을 때의 `StoreNotFoundError`)은 memory·localStorage 어댑터와 동일한 `createCollectionStore` 엔진에서 나옵니다 — 이 엔진이 어댑터 작성자에게 얼마나 적은 코드만 남기는지 궁금하다면 [어댑터 작성하기](/ko/docs/adapters/writing-an-adapter) 참고.
+
+## "프롬프트 복사"와 함께 쓰기
+
+이 어댑터는 위젯의 [프롬프트 복사](/ko/docs/widget/copy-for-claude-code) 버튼과 자연스럽게 짝을 이룹니다 — 캡처된 스크린샷이 로컬 경로(`.instafix/screenshots/<파일>.jpg`)로 해석되어 파일 접근 권한이 있는 코딩 에이전트가 바로 열어볼 수 있고, 캡처된 콘솔 에러도 함께 포함되어서, 한 번의 복사-붙여넣기로 메모·정확한 DOM 대상·스크린샷 경로·변경으로 인해 발생한 에러까지 전달됩니다.

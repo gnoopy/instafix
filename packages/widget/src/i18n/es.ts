@@ -176,19 +176,20 @@ export const es: Translations = {
 
   // Export controls
   "export.label": "Exportar",
-  "export.csv": "Exportar CSV",
+  "export.xlsx": "Exportar Excel",
   "export.json": "Exportar JSON",
+  "export.failedHint": "La exportación falló — inténtalo de nuevo",
 
-  // Copiar para Claude Code
-  "agent.copyButton": "Copiar para Claude Code",
-  "agent.previewTitle": "Copiar {count} elemento(s) para Claude Code",
+  // Copiar prompt
+  "agent.copyButton": "Copiar prompt",
+  "agent.previewTitle": "Copiar {count} elemento(s) como prompt",
   "agent.previewEmpty": "Nada que copiar todavía",
   "agent.copyAction": "Copiar",
   "agent.cancel": "Cancelar",
   "agent.copiedToast": "{count} elemento(s) copiado(s) al portapapeles",
   "agent.copyFailedHint": "La copia automática falló — selecciona el texto de abajo y cópialo manualmente",
   "agent.previewAria": "Vista previa Markdown para el agente de código",
-  "detail.copyForAgent": "Copiar para Claude Code",
+  "detail.copyForAgent": "Copiar prompt",
 
   // Entrada de voz
   "voice.micLabel": "Usar entrada de voz",
@@ -213,7 +214,7 @@ export const es: Translations = {
   "onboarding.step2Body": "Elige Anotar y luego haz clic o arrastra en la página para marcar lo que quieres comentar.",
   "onboarding.step3Title": "Copia para tu IA",
   "onboarding.step3Body":
-    "Escribe o dicta una nota y usa «Copiar para Claude Code» para pegar contexto listo en tu asistente de código.",
+    "Escribe o dicta una nota y usa «Copiar prompt» para pegar contexto listo en tu asistente de código.",
   "onboarding.next": "Siguiente",
   "onboarding.done": "Entendido",
   "onboarding.skip": "Omitir",
@@ -227,4 +228,19 @@ export const es: Translations = {
   // Vista previa multi-objetivo
   "annotator.targetBadgeAria": "Objetivo {number}",
   "annotator.targetPreviewAlwaysShow": "Mostrar siempre los contornos",
+
+  // Settings panel
+  "settings.title": "Configuración",
+  "settings.theme": "Tema",
+  "settings.themeLight": "Claro",
+  "settings.themeDark": "Oscuro",
+  "settings.themeAuto": "Automático",
+  "settings.locale": "Idioma",
+  "settings.position": "Posición",
+  "settings.positionRight": "Derecha",
+  "settings.positionLeft": "Izquierda",
+  "settings.accentColor": "Color de acento",
+  "settings.screenshots": "Capturas de pantalla",
+  "settings.diagnostics": "Diagnósticos",
+  "settings.rightClickComments": "Comentarios con clic derecho",
 };
