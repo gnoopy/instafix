@@ -13,3 +13,10 @@ coverage/
 coverage-report/
 .source/
 apps/demo/data/
+
+# Internal AI-agent planning/process docs — not part of the public project.
+/CLAUDE.md
+/GOAL.md
+/REBRANDING_PLAN.md
+/package-install-guide.md
+/Caddyfile.instafix

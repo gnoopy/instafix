@@ -151,6 +151,10 @@ This project follows the [all-contributors](https://allcontributors.org) specifi
 
 ---
 
+## Provenance
+
+InstaFix began as a rebrand of **SitePing**, originally created and maintained by [NeosiaNexus](https://github.com/NeosiaNexus) ([NeosiaNexus/SitePing](https://github.com/NeosiaNexus/SitePing), MIT licensed). Development continues here under the new name and repository — see [LICENSE](./LICENSE) for the original and current copyright notices.
+
 ## License
 
 [MIT](./LICENSE)
