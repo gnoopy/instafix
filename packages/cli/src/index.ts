@@ -11,7 +11,7 @@ const program = new Command()
 
 program
   .command("init")
-  .description("Set up the Prisma schema and API route in your project")
+  .description("Set up storage (Prisma or SQLite), the API route, and the widget component")
   .action(initCommand)
   .addHelpText("after", "\n  Examples:\n    $ instafix init");
 
