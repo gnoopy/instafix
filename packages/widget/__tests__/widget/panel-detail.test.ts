@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { AnnotationResponse, FeedbackResponse } from "@siteping/core";
+import type { AnnotationResponse, FeedbackResponse } from "@instafix/core";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { createT } from "../../src/i18n/index.js";
 import { DETAIL_CSS, type DetailCallbacks, DetailView } from "../../src/panel-detail.js";
@@ -632,7 +632,7 @@ describe("DetailView", () => {
       setup.view.element.querySelector<HTMLButtonElement>(".sp-detail-reconnect-btn")!.click();
 
       const chrome = document.createElement("div");
-      chrome.setAttribute("data-siteping-ignore", "true");
+      chrome.setAttribute("data-instafix-ignore", "true");
       document.body.appendChild(chrome);
 
       chrome.dispatchEvent(new MouseEvent("click", { bubbles: true }));

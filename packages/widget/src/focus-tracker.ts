@@ -2,7 +2,7 @@
  * Tracks the last *page* element the user focused, so FAB-launched keyboard
  * annotation has a real target: opening the radial menu moves focus into the
  * shadow root, which retargets `document.activeElement` to the 0x0
- * `<siteping-widget>` host — by the time the annotator activates, the element
+ * `<instafix-widget>` host — by the time the annotator activates, the element
  * the user actually cares about is no longer the active one. See issue #162.
  */
 export interface FocusTracker {
@@ -13,23 +13,23 @@ export interface FocusTracker {
 /**
  * True when `el` belongs to the widget's own chrome rather than the host
  * page: the shadow host, body-level annotation overlay / toolbar / drawing
- * rect / popup (all carry `data-siteping-ignore`), the markers container
+ * rect / popup (all carry `data-instafix-ignore`), the markers container
  * (whose markers are focusable but carry no ignore attribute), or the
  * tooltip. Host-independent (tagName/closest checks only) so the annotator
  * can share it without holding a host reference — mirrors the screenshot
  * `ignoreElements` predicate.
  *
- * Host pages may put `data-siteping-ignore` on their own elements to mask
+ * Host pages may put `data-instafix-ignore` on their own elements to mask
  * them from screenshots — those are deliberately excluded from keyboard
  * annotation targeting too: an element opted out of capture shouldn't become
  * an annotation target through the Enter path.
  */
 export function isWidgetChrome(el: Element): boolean {
   return (
-    el.tagName === "SITEPING-WIDGET" ||
-    el.closest("siteping-widget") !== null ||
-    el.closest('[data-siteping-ignore="true"]') !== null ||
-    el.closest("#siteping-markers") !== null ||
+    el.tagName === "INSTAFIX-WIDGET" ||
+    el.closest("instafix-widget") !== null ||
+    el.closest('[data-instafix-ignore="true"]') !== null ||
+    el.closest("#instafix-markers") !== null ||
     el.closest("#sp-tooltip") !== null
   );
 }

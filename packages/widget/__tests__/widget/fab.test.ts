@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { SitepingConfig } from "@siteping/core";
+import type { InstaFixConfig } from "@instafix/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EventBus, type WidgetEvents } from "../../src/events.js";
 import { Fab } from "../../src/fab.js";
@@ -11,11 +11,11 @@ import { createShadowRoot } from "../helpers.js";
 // Helpers
 // ---------------------------------------------------------------------------
 
-const TOOLBAR_HIDDEN_KEY = "siteping_toolbar_hidden";
+const TOOLBAR_HIDDEN_KEY = "instafix_toolbar_hidden";
 
 function defaultConfig() {
   return {
-    endpoint: "/api/siteping",
+    endpoint: "/api/instafix",
     projectName: "test-project",
     position: "bottom-right" as const,
   };
@@ -613,7 +613,7 @@ describe("Fab", () => {
       shadow.host.remove();
 
       shadow = createShadowRoot();
-      const config: SitepingConfig = { endpoint: "/api/siteping", projectName: "test-project" };
+      const config: InstaFixConfig = { endpoint: "/api/instafix", projectName: "test-project" };
       fab = new Fab(shadow, config, bus, createT("fr"));
 
       const btn = shadow.querySelector<HTMLButtonElement>(".sp-fab")!;

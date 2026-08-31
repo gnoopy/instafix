@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ensureStyles } from "../../src/inject-styles.js";
 import { INBOX_CSS } from "../../src/styles.js";
 
-const STYLE_ID = "siteping-inbox-styles";
+const STYLE_ID = "instafix-inbox-styles";
 
 afterEach(() => {
   // Restore any stubbed `document` before touching it for cleanup.

@@ -22,7 +22,7 @@ We are committed to providing a friendly, safe, and welcoming environment for al
 
 ## Enforcement
 
-Project maintainers are responsible for clarifying and enforcing these standards. Instances of unacceptable behavior may be reported by contacting the project team at **contact@neosianexus.dev**. All reports will be reviewed and handled confidentially.
+Project maintainers are responsible for clarifying and enforcing these standards. Instances of unacceptable behavior may be reported by contacting the project team at **contact@gnoopy.dev**. All reports will be reviewed and handled confidentially.
 
 Maintainers may remove, edit, or reject comments, commits, code, issues, and other contributions that do not align with this Code of Conduct.
 

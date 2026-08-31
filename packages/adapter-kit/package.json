@@ -1,7 +1,7 @@
 {
-  "name": "@siteping/adapter-kit",
+  "name": "@instafix/adapter-kit",
   "version": "0.1.0",
-  "description": "Everything needed to build and conformance-test a custom Siteping store adapter",
+  "description": "Everything needed to build and conformance-test a custom InstaFix store adapter",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -38,7 +38,7 @@
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "siteping",
+    "instafix",
     "adapter",
     "store",
     "conformance",
@@ -46,16 +46,16 @@
     "feedback",
     "typescript"
   ],
-  "author": "neosianexus",
+  "author": "gnoopy",
   "license": "MIT",
-  "homepage": "https://siteping.dev",
+  "homepage": "https://instafix.realstory.blog",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "url": "git+https://github.com/gnoopy/InstaFix.git",
     "directory": "packages/adapter-kit"
   },
   "bugs": {
-    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+    "url": "https://github.com/gnoopy/InstaFix/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -72,6 +72,6 @@
     }
   },
   "devDependencies": {
-    "@siteping/core": "workspace:*"
+    "@instafix/core": "workspace:*"
   }
 }

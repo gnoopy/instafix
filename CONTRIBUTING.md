@@ -1,4 +1,4 @@
-# Contributing to SitePing
+# Contributing to InstaFix
 
 Thanks for your interest in contributing! This guide covers everything you need to get started.
 
@@ -11,8 +11,8 @@ Thanks for your interest in contributing! This guide covers everything you need 
 ## Setup
 
 ```bash
-git clone https://github.com/NeosiaNexus/SitePing.git
-cd SitePing
+git clone https://github.com/gnoopy/InstaFix.git
+cd InstaFix
 bun install
 ```
 
@@ -48,17 +48,17 @@ Monorepo with bun workspaces + Turborepo. Libraries live in `packages/`, the web
 
 | Package | npm | Target | Description |
 |---------|-----|--------|-------------|
-| `@siteping/core` | private | — | Shared types, schema, store errors, helpers, conformance tests |
-| `@siteping/widget` | published | Browser | Feedback widget (Shadow DOM, closed). Accepts `store` for client-side mode |
-| `@siteping/dashboard` | published | Browser (React) | Linear-style triage inbox (`<SitepingInbox />` + headless `useSitepingInbox()`) |
-| `@siteping/adapter-prisma` | published | Node | Prisma database adapter |
-| `@siteping/adapter-memory` | published | Any | In-memory adapter (testing, demos, serverless) |
-| `@siteping/adapter-localstorage` | published | Browser | localStorage adapter (demos, prototyping) |
-| `@siteping/adapter-kit` | published | Any | Everything third-party adapter authors need: store contract, helpers, `createCollectionStore`, and the conformance suite (`/testing`) |
-| `@siteping/cli` | published | Node | CLI tool (`npx @siteping/cli init/sync/status/doctor`) |
-| `@siteping/demo` (`apps/demo`) | private | Next.js | [siteping.dev](https://siteping.dev) — landing, live demo, **and the documentation site** ([editing it](#editing-the-documentation)) |
+| `@instafix/core` | private | — | Shared types, schema, store errors, helpers, conformance tests |
+| `@instafix/widget` | published | Browser | Feedback widget (Shadow DOM, closed). Accepts `store` for client-side mode |
+| `@instafix/dashboard` | published | Browser (React) | Linear-style triage inbox (`<InstaFixInbox />` + headless `useInstaFixInbox()`) |
+| `@instafix/adapter-prisma` | published | Node | Prisma database adapter |
+| `@instafix/adapter-memory` | published | Any | In-memory adapter (testing, demos, serverless) |
+| `@instafix/adapter-localstorage` | published | Browser | localStorage adapter (demos, prototyping) |
+| `@instafix/adapter-kit` | published | Any | Everything third-party adapter authors need: store contract, helpers, `createCollectionStore`, and the conformance suite (`/testing`) |
+| `@instafix/cli` | published | Node | CLI tool (`npx @instafix/cli init/sync/status/doctor`) |
+| `@instafix/demo` (`apps/demo`) | private | Next.js | [instafix.realstory.blog](https://instafix.realstory.blog) — landing, live demo, **and the documentation site** ([editing it](#editing-the-documentation)) |
 
-- **Core** is an Internal Package — it exports raw TypeScript (no build step). Consumers bundle it via `noExternal: ["@siteping/core"]` in their tsup config.
+- **Core** is an Internal Package — it exports raw TypeScript (no build step). Consumers bundle it via `noExternal: ["@instafix/core"]` in their tsup config.
 - **Turborepo** handles build orchestration, dependency ordering, and local caching.
 - Each published package is built independently with tsup.
 
@@ -66,7 +66,7 @@ Monorepo with bun workspaces + Turborepo. Libraries live in `packages/`, the web
 
 ## Editing the Documentation
 
-All end-user documentation lives at **[siteping.dev/docs](https://siteping.dev/docs)**, built from MDX in this repo — the package READMEs are deliberately thin npm cards that point at it. Every docs page has an "Edit on GitHub" link that drops you straight on the right file.
+All end-user documentation lives at **[instafix.realstory.blog/docs](https://instafix.realstory.blog/docs)**, built from MDX in this repo — the package READMEs are deliberately thin npm cards that point at it. Every docs page has an "Edit on GitHub" link that drops you straight on the right file.
 
 ```bash
 cd apps/demo
@@ -124,7 +124,7 @@ is the smallest). The pieces that matter:
    `import`/`require` exports map with per-condition `types`, `sideEffects: false`,
    `publishConfig.access: public`, `engines.node >= 20`, and the build script
    **must** chain fix-dts: `"build": "tsup && node ../../scripts/fix-dts.mjs dist"`
-   (`bun run check:consistency` fails if it's missing). `@siteping/core` is a
+   (`bun run check:consistency` fails if it's missing). `@instafix/core` is a
    `devDependency`, never a `dependency` — it is bundled at build time and not
    published to npm.
 2. **`tsconfig.json`** — `{ "extends": "../../tsconfig.base.json", "include": ["src", "__tests__"] }`.
@@ -132,9 +132,9 @@ is the smallest). The pieces that matter:
 3. **`tsup.config.ts`** — use the shared preset:
    ```ts
    import { defineConfig } from "tsup";
-   import { sitepingLibrary } from "../../tsup.preset.js";
+   import { instafixLibrary } from "../../tsup.preset.js";
 
-   export default defineConfig(sitepingLibrary({ platform: "node" }));
+   export default defineConfig(instafixLibrary({ platform: "node" }));
    ```
 4. **Register in release-please** — add the package to
    `release-please-config.json` (release-type `node`, `bump-minor-pre-major`)
@@ -151,9 +151,9 @@ registration above is complete — nothing can be *silently* forgotten anymore.
 
 ## Creating a New Adapter
 
-Adapters implement the `SitepingStore` interface. **Third-party adapters**
+Adapters implement the `InstaFixStore` interface. **Third-party adapters**
 (outside this repo) depend on the published
-[`@siteping/adapter-kit`](https://siteping.dev/docs/adapters/writing-an-adapter),
+[`@instafix/adapter-kit`](https://instafix.realstory.blog/docs/adapters/writing-an-adapter),
 which exports the contract, the building blocks and the conformance suite.
 **First-party adapters** start with the scaffold:
 
@@ -164,14 +164,14 @@ bun run new:adapter drizzle -- --platform=node
 Two implementation strategies:
 
 - **Snapshot backends** (KV, flat file, browser storage): hand
-  `createCollectionStore({ load, persist, generateId })` from `@siteping/core`
+  `createCollectionStore({ load, persist, generateId })` from `@instafix/core`
   your three storage primitives and you get the complete store — clientId
   dedup, filtering/pagination, the error contract, `verifyProjectOwnership`,
   and the screenshot-drop retry on failed persists. `adapter-memory` is the
   ~80-line reference.
 - **Query backends** (SQL, ORMs): implement the 6 methods directly. Use
   `buildFeedbackRecord` / `buildAnnotationRecord` for input→record
-  construction, and follow the error contract documented on `SitepingStore`:
+  construction, and follow the error contract documented on `InstaFixStore`:
   `createFeedback` idempotent on `clientId` (or throw `StoreDuplicateError`),
   `updateFeedback`/`deleteFeedback` throw `StoreNotFoundError`,
   `deleteAllFeedbacks` is a no-op when empty, every lost write throws
@@ -183,12 +183,12 @@ this file):
 
 ```ts
 // __tests__/my-store.test.ts
-import { testSitepingStore } from "@siteping/core/testing";
+import { testInstaFixStore } from "@instafix/core/testing";
 import { MyStore } from "../src/index.js";
 
-testSitepingStore(() => new MyStore(testConfig));
+testInstaFixStore(() => new MyStore(testConfig));
 // Options for legitimately varying contracts:
-//   testSitepingStore(factory, { duplicateBehavior: "throw", caseInsensitiveSearch: false })
+//   testInstaFixStore(factory, { duplicateBehavior: "throw", caseInsensitiveSearch: false })
 
 // Add adapter-specific tests below (connection handling, serialization, etc.)
 ```
@@ -272,7 +272,7 @@ non-positive page number, which no hand-written case had thought to try.
 
 ## Supply-chain posture
 
-The repo is scored by [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/NeosiaNexus/SitePing)
+The repo is scored by [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/gnoopy/InstaFix)
 on every push to `main`. Three of its checks are deliberately left alone, and
 each one looks like an easy win until you measure it:
 

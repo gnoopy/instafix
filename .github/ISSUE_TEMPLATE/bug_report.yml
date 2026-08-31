@@ -61,16 +61,16 @@ body:
     id: package
     attributes:
       label: Package
-      description: Which SitePing package is affected?
+      description: Which InstaFix package is affected?
       options:
-        - "@siteping/widget"
-        - "@siteping/dashboard"
-        - "@siteping/adapter-prisma"
-        - "@siteping/adapter-memory"
-        - "@siteping/adapter-localstorage"
-        - "@siteping/adapter-kit"
-        - "@siteping/cli"
-        - "siteping.dev (site / docs / demo)"
+        - "@instafix/widget"
+        - "@instafix/dashboard"
+        - "@instafix/adapter-prisma"
+        - "@instafix/adapter-memory"
+        - "@instafix/adapter-localstorage"
+        - "@instafix/adapter-kit"
+        - "@instafix/cli"
+        - "instafix.realstory.blog (site / docs / demo)"
         - "Not sure"
     validations:
       required: true
@@ -78,7 +78,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: SitePing version
+      label: InstaFix version
       description: The version of the package you are using.
       placeholder: "e.g. 0.1.0"
     validations:

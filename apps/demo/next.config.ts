@@ -2,7 +2,7 @@ import { createMDX } from "fumadocs-mdx/next";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@siteping/core"],
+  transpilePackages: ["@instafix/core"],
   output: "standalone",
 };
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SITEPING_MODELS } from "../src/schema.js";
+import { INSTAFIX_MODELS } from "../src/schema.js";
 import type { FeedbackStatus, FeedbackType } from "../src/types.js";
 import { CLOSED_FEEDBACK_STATUSES, FEEDBACK_STATUSES, FEEDBACK_TYPES, isClosedStatus } from "../src/types.js";
 
@@ -23,21 +23,21 @@ const VALID_PRISMA_TYPES = new Set([
 // Model structure
 // ---------------------------------------------------------------------------
 
-describe("SITEPING_MODELS structure", () => {
-  it("contains exactly 2 models: SitepingFeedback and SitepingAnnotation", () => {
-    const modelNames = Object.keys(SITEPING_MODELS);
+describe("INSTAFIX_MODELS structure", () => {
+  it("contains exactly 2 models: InstaFixFeedback and InstaFixAnnotation", () => {
+    const modelNames = Object.keys(INSTAFIX_MODELS);
     expect(modelNames).toHaveLength(2);
-    expect(modelNames).toContain("SitepingFeedback");
-    expect(modelNames).toContain("SitepingAnnotation");
+    expect(modelNames).toContain("InstaFixFeedback");
+    expect(modelNames).toContain("InstaFixAnnotation");
   });
 });
 
 // ---------------------------------------------------------------------------
-// SitepingFeedback model
+// InstaFixFeedback model
 // ---------------------------------------------------------------------------
 
-describe("SitepingFeedback model", () => {
-  const model = SITEPING_MODELS.SitepingFeedback;
+describe("InstaFixFeedback model", () => {
+  const model = INSTAFIX_MODELS.InstaFixFeedback;
   const fields = model.fields;
 
   it("has all expected fields", () => {
@@ -111,11 +111,11 @@ describe("SitepingFeedback model", () => {
     expect(fields.updatedAt.isUpdatedAt).toBe(true);
   });
 
-  it("annotations is a 1-to-many relation to SitepingAnnotation", () => {
-    expect(fields.annotations.type).toBe("SitepingAnnotation");
+  it("annotations is a 1-to-many relation to InstaFixAnnotation", () => {
+    expect(fields.annotations.type).toBe("InstaFixAnnotation");
     expect(fields.annotations.relation).toBeDefined();
     expect(fields.annotations.relation!.kind).toBe("1-to-many");
-    expect(fields.annotations.relation!.model).toBe("SitepingAnnotation");
+    expect(fields.annotations.relation!.model).toBe("InstaFixAnnotation");
   });
 
   it("has @@index([projectName]) for project-scoped queries", () => {
@@ -138,11 +138,11 @@ describe("SitepingFeedback model", () => {
 });
 
 // ---------------------------------------------------------------------------
-// SitepingAnnotation model
+// InstaFixAnnotation model
 // ---------------------------------------------------------------------------
 
-describe("SitepingAnnotation model", () => {
-  const model = SITEPING_MODELS.SitepingAnnotation;
+describe("InstaFixAnnotation model", () => {
+  const model = INSTAFIX_MODELS.InstaFixAnnotation;
   const fields = model.fields;
 
   it("has all expected fields", () => {
@@ -182,11 +182,11 @@ describe("SitepingAnnotation model", () => {
     expect(fields.id.default).toBe("cuid()");
   });
 
-  it("feedback is a many-to-1 relation to SitepingFeedback with Cascade delete", () => {
+  it("feedback is a many-to-1 relation to InstaFixFeedback with Cascade delete", () => {
     const rel = fields.feedback.relation;
     expect(rel).toBeDefined();
     expect(rel!.kind).toBe("many-to-1");
-    expect(rel!.model).toBe("SitepingFeedback");
+    expect(rel!.model).toBe("InstaFixFeedback");
     expect(rel!.fields).toEqual(["feedbackId"]);
     expect(rel!.references).toEqual(["id"]);
     expect(rel!.onDelete).toBe("Cascade");
@@ -236,7 +236,7 @@ describe("SitepingAnnotation model", () => {
 // ---------------------------------------------------------------------------
 
 describe("Field type validity", () => {
-  for (const [modelName, modelDef] of Object.entries(SITEPING_MODELS)) {
+  for (const [modelName, modelDef] of Object.entries(INSTAFIX_MODELS)) {
     it(`all non-relation fields in ${modelName} use valid Prisma types`, () => {
       for (const [fieldName, fieldDef] of Object.entries(modelDef.fields)) {
         if (fieldDef.relation) continue;
@@ -248,12 +248,12 @@ describe("Field type validity", () => {
     });
   }
 
-  for (const [modelName, modelDef] of Object.entries(SITEPING_MODELS)) {
+  for (const [modelName, modelDef] of Object.entries(INSTAFIX_MODELS)) {
     it(`relation fields in ${modelName} reference existing models`, () => {
       for (const [fieldName, fieldDef] of Object.entries(modelDef.fields)) {
         if (!fieldDef.relation) continue;
         expect(
-          SITEPING_MODELS,
+          INSTAFIX_MODELS,
           `${modelName}.${fieldName} references non-existent model "${fieldDef.relation.model}"`,
         ).toHaveProperty(fieldDef.relation.model);
       }

@@ -3,7 +3,7 @@ import type { Translations } from "./types.js";
 export const es: Translations = {
   // Panel
   "panel.title": "Comentarios",
-  "panel.ariaLabel": "Panel de comentarios de Siteping",
+  "panel.ariaLabel": "Panel de comentarios de InstaFix",
   "panel.feedbackList": "Lista de comentarios",
   "panel.loading": "Cargando comentarios",
   "panel.close": "Cerrar panel",
@@ -208,7 +208,7 @@ export const es: Translations = {
 
   // Recorrido de bienvenida
   "onboarding.step1Title": "Tus herramientas están listas",
-  "onboarding.step1Body": "Los iconos junto al botón de Siteping siempre están ahí — no hace falta hacer clic primero.",
+  "onboarding.step1Body": "Los iconos junto al botón de InstaFix siempre están ahí — no hace falta hacer clic primero.",
   "onboarding.step2Title": "Selecciona cualquier cosa",
   "onboarding.step2Body": "Elige Anotar y luego haz clic o arrastra en la página para marcar lo que quieres comentar.",
   "onboarding.step3Title": "Copia para tu IA",

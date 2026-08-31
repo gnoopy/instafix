@@ -1,9 +1,9 @@
 import type { Options } from "tsup";
 
 /**
- * Shared tsup defaults for `@siteping/*` library packages.
+ * Shared tsup defaults for `@instafix/*` library packages.
  *
- * Every published package builds dual ESM+CJS with bundled `@siteping/core`
+ * Every published package builds dual ESM+CJS with bundled `@instafix/core`
  * (core is an Internal Package — raw TS, never published; the regex also
  * catches its `/testing` subpath). Packages override only what genuinely
  * differs: platform, extra entries, externals, minification.
@@ -14,7 +14,7 @@ import type { Options } from "tsup";
  * run after the declarations exist. `scripts/check-consistency.mjs` asserts
  * no package forgets the chain.
  */
-export function sitepingLibrary(overrides: Partial<Options> & Pick<Options, "platform">): Options {
+export function instafixLibrary(overrides: Partial<Options> & Pick<Options, "platform">): Options {
   return {
     entry: ["src/index.ts"],
     format: ["esm", "cjs"],
@@ -22,7 +22,7 @@ export function sitepingLibrary(overrides: Partial<Options> & Pick<Options, "pla
     dts: true,
     sourcemap: true,
     clean: true,
-    noExternal: [/^@siteping\/core(\/|$)/],
+    noExternal: [/^@instafix\/core(\/|$)/],
     ...overrides,
   };
 }

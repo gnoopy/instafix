@@ -12,9 +12,9 @@ interface ProjectSwitcherProps {
 export function ProjectSwitcher({ projects, project, onChange }: ProjectSwitcherProps): ReactElement {
   const { t } = useInboxUi();
   return (
-    <div className="spd-project">
+    <div className="ifd-project">
       <select
-        className="spd-project-select"
+        className="ifd-project-select"
         aria-label={t("inbox.project")}
         value={project}
         onChange={(event) => onChange(event.target.value)}

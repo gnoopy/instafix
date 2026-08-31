@@ -1,5 +1,5 @@
-import type { FeedbackStatus } from "@siteping/core";
-import { FEEDBACK_STATUSES } from "@siteping/core";
+import type { FeedbackStatus } from "@instafix/core";
+import { FEEDBACK_STATUSES } from "@instafix/core";
 import type { ReactElement, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { getStatusLabel } from "../i18n/index.js";
@@ -107,12 +107,12 @@ export function StatusMenu({ status, onSelect }: StatusMenuProps): ReactElement 
   const activeStatus = FEEDBACK_STATUSES[activeIndex] ?? "open";
 
   return (
-    <div ref={rootRef} className="spd-status-menu">
+    <div ref={rootRef} className="ifd-status-menu">
       {/* No aria-label: the accessible name is the visible status text (WCAG 2.5.3). */}
       <button
         ref={triggerRef}
         type="button"
-        className="spd-status-menu-trigger"
+        className="ifd-status-menu-trigger"
         data-status={status}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -126,7 +126,7 @@ export function StatusMenu({ status, onSelect }: StatusMenuProps): ReactElement 
       {open ? (
         <div
           ref={popRef}
-          className="spd-status-menu-pop"
+          className="ifd-status-menu-pop"
           role="listbox"
           tabIndex={-1}
           aria-label={t("drawer.status")}
@@ -144,7 +144,7 @@ export function StatusMenu({ status, onSelect }: StatusMenuProps): ReactElement 
                 tabIndex={-1}
                 aria-selected={value === status}
                 data-status={value}
-                className={`spd-status-menu-item${index === activeIndex ? " spd-status-menu-item-active" : ""}`}
+                className={`ifd-status-menu-item${index === activeIndex ? " ifd-status-menu-item-active" : ""}`}
                 onClick={() => select(value)}
                 onMouseEnter={() => setActiveIndex(index)}
               >

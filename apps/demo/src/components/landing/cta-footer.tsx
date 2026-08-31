@@ -14,7 +14,7 @@ export function CtaFooter() {
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <a
-            href="https://github.com/NeosiaNexus/SitePing#getting-started"
+            href="https://github.com/gnoopy/InstaFix#getting-started"
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-lg bg-white px-6 py-3 text-base font-medium text-accent transition-colors hover:bg-gray-100"

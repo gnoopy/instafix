@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { PageScope, SitepingConfig, SitepingHttpConfig } from "@siteping/core";
+import type { InstaFixConfig, InstaFixHttpConfig, PageScope } from "@instafix/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockMatchMedia } from "../helpers.js";
 
@@ -98,9 +98,9 @@ import { launch } from "../../src/launcher.js";
 // Helpers
 // ---------------------------------------------------------------------------
 
-function defaultConfig(overrides: Partial<Omit<SitepingHttpConfig, "store">> = {}): SitepingConfig {
+function defaultConfig(overrides: Partial<Omit<InstaFixHttpConfig, "store">> = {}): InstaFixConfig {
   return {
-    endpoint: "/api/siteping",
+    endpoint: "/api/instafix",
     projectName: "test-project",
     forceShow: true,
     ...overrides,
@@ -126,7 +126,7 @@ describe("launcher — SPA navigation watcher", () => {
   let currentScope: PageScope = { url: "/page-1", urlPattern: null };
 
   afterEach(() => {
-    for (const el of document.querySelectorAll("siteping-widget")) el.remove();
+    for (const el of document.querySelectorAll("instafix-widget")) el.remove();
     for (const el of document.querySelectorAll('[role="status"]')) el.remove();
     vi.clearAllMocks();
     mockGetFeedbacks.mockResolvedValue({ feedbacks: [], total: 0 });

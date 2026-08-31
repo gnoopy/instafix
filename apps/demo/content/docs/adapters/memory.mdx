@@ -3,22 +3,22 @@ title: Memory adapter
 description: An in-process store for tests, previews, and throwaway demos.
 ---
 
-`@siteping/adapter-memory` keeps everything in a plain array. No persistence, no configuration — restart the process and it's gone.
+`@instafix/adapter-memory` keeps everything in a plain array. No persistence, no configuration — restart the process and it's gone.
 
 ```bash
-npm i @siteping/adapter-memory
+npm i @instafix/adapter-memory
 ```
 
 ```ts
-import { MemoryStore } from "@siteping/adapter-memory";
+import { MemoryStore } from "@instafix/adapter-memory";
 
 const store = new MemoryStore();
 
 // Server-side, behind the HTTP handler:
-createSitepingHandler({ store });
+createInstaFixHandler({ store });
 
 // Or client-side, directly in the widget:
-initSiteping({ store, projectName: "preview" });
+initInstaFix({ store, projectName: "preview" });
 ```
 
 ## Behavior notes

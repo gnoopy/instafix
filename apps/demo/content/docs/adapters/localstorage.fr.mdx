@@ -3,17 +3,17 @@ title: Adapter localStorage
 description: Un store côté client — toute la boucle de feedback dans le navigateur, sans serveur.
 ---
 
-`@siteping/adapter-localstorage` persiste les feedbacks dans le navigateur du visiteur. Combiné à l'option `store` du widget, vous obtenez une boucle de feedback complète sans aucun backend — idéal pour les démos, les prototypes et les sites de documentation (ce site l'utilise).
+`@instafix/adapter-localstorage` persiste les feedbacks dans le navigateur du visiteur. Combiné à l'option `store` du widget, vous obtenez une boucle de feedback complète sans aucun backend — idéal pour les démos, les prototypes et les sites de documentation (ce site l'utilise).
 
 ```bash
-npm i @siteping/adapter-localstorage
+npm i @instafix/adapter-localstorage
 ```
 
 ```ts
-import { initSiteping } from "@siteping/widget";
-import { LocalStorageStore } from "@siteping/adapter-localstorage";
+import { initInstaFix } from "@instafix/widget";
+import { LocalStorageStore } from "@instafix/adapter-localstorage";
 
-initSiteping({
+initInstaFix({
   store: new LocalStorageStore(),
   projectName: "ma-demo",
 });
@@ -23,7 +23,7 @@ initSiteping({
 
 | Option | Type | Défaut | Ce que ça fait |
 |---|---|---|---|
-| `key` | `string` | `"siteping_feedbacks"` | L'unique clé localStorage contenant tout le tableau de feedbacks |
+| `key` | `string` | `"instafix_feedbacks"` | L'unique clé localStorage contenant tout le tableau de feedbacks |
 
 ## Notes de comportement
 

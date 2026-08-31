@@ -69,7 +69,7 @@ function BannerContent({ onInbox, localMode }: { onInbox: boolean; localMode: bo
           </Link>
         )}
         <Link href="/" className="font-medium text-amber-900 underline underline-offset-2 hover:text-amber-700">
-          Back to SitePing
+          Back to InstaFix
         </Link>
       </div>
     </>

@@ -5,23 +5,23 @@ import {
   type FeedbackQuery,
   type FeedbackRecord,
   type FeedbackUpdateInput,
+  type InstaFixStore,
   type Serialized,
-  type SitepingStore,
   StorePersistenceError,
-} from "@siteping/core";
+} from "@instafix/core";
 
-export type { SitepingStore } from "@siteping/core";
-export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@siteping/core";
+export type { InstaFixStore } from "@instafix/core";
+export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@instafix/core";
 
-const DEFAULT_KEY = "siteping_feedbacks";
+const DEFAULT_KEY = "instafix_feedbacks";
 
 export interface LocalStorageStoreOptions {
-  /** localStorage key prefix — defaults to `'siteping_feedbacks'` */
+  /** localStorage key prefix — defaults to `'instafix_feedbacks'` */
   key?: string | undefined;
 }
 
 /**
- * Client-side `SitepingStore` implementation backed by `localStorage`.
+ * Client-side `InstaFixStore` implementation backed by `localStorage`.
  *
  * Designed for demos, prototyping, and static sites that don't need a server.
  * Data persists across page reloads but is scoped to the current origin.
@@ -38,18 +38,18 @@ export interface LocalStorageStoreOptions {
  *
  * @example
  * ```ts
- * import { initSiteping } from '@siteping/widget'
- * import { LocalStorageStore } from '@siteping/adapter-localstorage'
+ * import { initInstaFix } from '@instafix/widget'
+ * import { LocalStorageStore } from '@instafix/adapter-localstorage'
  *
  * const store = new LocalStorageStore()
  *
- * initSiteping({
+ * initInstaFix({
  *   store,
  *   projectName: 'my-demo',
  * })
  * ```
  */
-export class LocalStorageStore implements SitepingStore {
+export class LocalStorageStore implements InstaFixStore {
   private readonly key: string;
 
   private readonly engine = createCollectionStore({
@@ -102,7 +102,7 @@ export class LocalStorageStore implements SitepingStore {
   }
 
   // ---------------------------------------------------------------------------
-  // SitepingStore implementation — delegated to the collection engine
+  // InstaFixStore implementation — delegated to the collection engine
   // ---------------------------------------------------------------------------
 
   createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord> {

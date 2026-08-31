@@ -23,27 +23,27 @@ export function EmptyState({ state, custom }: EmptyStateProps): ReactElement {
 
   if (inboxZero) {
     return (
-      <div className="spd-empty">
-        <span className="spd-empty-glyph" aria-hidden="true">
+      <div className="ifd-empty">
+        <span className="ifd-empty-glyph" aria-hidden="true">
           <CheckIcon />
         </span>
-        <div className="spd-empty-title">{t("inbox.inboxZeroTitle")}</div>
-        <div className="spd-empty-sub">{t("inbox.inboxZeroSub")}</div>
+        <div className="ifd-empty-title">{t("inbox.inboxZeroTitle")}</div>
+        <div className="ifd-empty-sub">{t("inbox.inboxZeroSub")}</div>
       </div>
     );
   }
 
   if (filtered) {
     return (
-      <div className="spd-empty">
-        <span className="spd-empty-glyph" aria-hidden="true">
+      <div className="ifd-empty">
+        <span className="ifd-empty-glyph" aria-hidden="true">
           <SearchIcon />
         </span>
-        <div className="spd-empty-title">{t("inbox.emptyFilteredTitle")}</div>
-        <div className="spd-empty-sub">{t("inbox.emptyFilteredSub")}</div>
+        <div className="ifd-empty-title">{t("inbox.emptyFilteredTitle")}</div>
+        <div className="ifd-empty-sub">{t("inbox.emptyFilteredSub")}</div>
         <button
           type="button"
-          className="spd-btn-ghost"
+          className="ifd-btn-ghost"
           onClick={() => {
             state.setStatus("all");
             state.setType("all");
@@ -59,12 +59,12 @@ export function EmptyState({ state, custom }: EmptyStateProps): ReactElement {
   if (custom !== undefined) return <>{custom}</>;
 
   return (
-    <div className="spd-empty">
-      <span className="spd-empty-glyph" aria-hidden="true">
+    <div className="ifd-empty">
+      <span className="ifd-empty-glyph" aria-hidden="true">
         <StatusOpenIcon />
       </span>
-      <div className="spd-empty-title">{t("inbox.emptyTitle")}</div>
-      <div className="spd-empty-sub">{t("inbox.emptySub")}</div>
+      <div className="ifd-empty-title">{t("inbox.emptyTitle")}</div>
+      <div className="ifd-empty-sub">{t("inbox.emptySub")}</div>
     </div>
   );
 }
@@ -74,14 +74,14 @@ interface ErrorStateProps {
   onRetry: () => void;
 }
 
-/** Load failure — `.spd-empty` layout with a retry action. */
+/** Load failure — `.ifd-empty` layout with a retry action. */
 export function ErrorState({ error, onRetry }: ErrorStateProps): ReactElement {
   const { t } = useInboxUi();
   return (
-    <div className="spd-empty spd-error">
-      <div className="spd-empty-title">{t("inbox.loadError")}</div>
-      <div className="spd-empty-sub">{error.message}</div>
-      <button type="button" className="spd-btn" onClick={onRetry}>
+    <div className="ifd-empty ifd-error">
+      <div className="ifd-empty-title">{t("inbox.loadError")}</div>
+      <div className="ifd-empty-sub">{error.message}</div>
+      <button type="button" className="ifd-btn" onClick={onRetry}>
         {t("inbox.retry")}
       </button>
     </div>

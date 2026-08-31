@@ -7,7 +7,7 @@
 | latest  | :white_check_mark: |
 | < latest | :x:               |
 
-Only the latest published version of each `@siteping/*` package receives security updates.
+Only the latest published version of each `@instafix/*` package receives security updates.
 
 ## Reporting a Vulnerability
 
@@ -15,8 +15,8 @@ Only the latest published version of each `@siteping/*` package receives securit
 
 Instead, please report vulnerabilities through one of these channels:
 
-1. **GitHub Security Advisories** (preferred) -- [Report a vulnerability](https://github.com/NeosiaNexus/SitePing/security/advisories/new)
-2. **Email** -- Send details to **security@neosianexus.dev**
+1. **GitHub Security Advisories** (preferred) -- [Report a vulnerability](https://github.com/gnoopy/InstaFix/security/advisories/new)
+2. **Email** -- Send details to **security@gnoopy.dev**
 
 ### What to include
 
@@ -41,17 +41,17 @@ Instead, please report vulnerabilities through one of these channels:
 
 ## Scope
 
-This policy applies to all packages in the `@siteping/*` scope:
+This policy applies to all packages in the `@instafix/*` scope:
 
-- `@siteping/widget`
-- `@siteping/adapter-prisma`
-- `@siteping/adapter-memory`
-- `@siteping/adapter-localstorage`
-- `@siteping/cli`
+- `@instafix/widget`
+- `@instafix/adapter-prisma`
+- `@instafix/adapter-memory`
+- `@instafix/adapter-localstorage`
+- `@instafix/cli`
 
 ## Hardening checklist for self-hosters
 
-- **`apiKey` is required in production.** Starting `createSitepingHandler({ prisma })` with `NODE_ENV=production` and no `apiKey` throws at startup. Destructive endpoints (DELETE, PATCH) refuse to operate without authentication unless you explicitly opt out via `requireAuthForDestructive: false` (only safe behind your own auth middleware).
+- **`apiKey` is required in production.** Starting `createInstaFixHandler({ prisma })` with `NODE_ENV=production` and no `apiKey` throws at startup. Destructive endpoints (DELETE, PATCH) refuse to operate without authentication unless you explicitly opt out via `requireAuthForDestructive: false` (only safe behind your own auth middleware).
 - **Set `allowedOrigins`.** Without it, no CORS headers are emitted and cross-origin browser requests are blocked. With `allowedOrigins: ["https://your-site.com"]`, only listed origins can call the API.
 - **Rate-limit POST.** The widget submits from unauthenticated browser contexts. Apply rate limiting at the reverse proxy or middleware layer (Next.js middleware, Nginx, Cloudflare).
-- **Run the CLI doctor.** `npx @siteping/cli doctor` flags missing `apiKey`, missing `allowedOrigins`, and other production red flags.
+- **Run the CLI doctor.** `npx @instafix/cli doctor` flags missing `apiKey`, missing `allowedOrigins`, and other production red flags.

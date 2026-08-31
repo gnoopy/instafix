@@ -89,7 +89,7 @@ export function createI18n<T extends Record<keyof T & string, string>>(en: T, lo
     createT(locale) {
       const lang = normaliseLang(locale);
       if (lang !== "en" && !locales[lang] && !isBuiltinNonEn(lang)) {
-        console.warn(`[siteping] Unknown locale "${locale}", falling back to "en"`);
+        console.warn(`[instafix] Unknown locale "${locale}", falling back to "en"`);
       }
       // Read the registry at call time so the returned function picks up
       // dictionaries registered/loaded after it was created.

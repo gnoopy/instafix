@@ -1,5 +1,5 @@
 {
-  "name": "@siteping/widget",
+  "name": "@instafix/widget",
   "version": "0.10.7",
   "description": "Feedback widget for client review during development — annotations, bugs, questions directly on the site",
   "type": "module",
@@ -54,16 +54,16 @@
     "shadow-dom",
     "lightweight"
   ],
-  "author": "neosianexus",
+  "author": "gnoopy",
   "license": "MIT",
-  "homepage": "https://siteping.dev",
+  "homepage": "https://instafix.realstory.blog",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "url": "git+https://github.com/gnoopy/InstaFix.git",
     "directory": "packages/widget"
   },
   "bugs": {
-    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+    "url": "https://github.com/gnoopy/InstaFix/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -76,7 +76,7 @@
     "html2canvas": "^1.4.1"
   },
   "devDependencies": {
-    "@siteping/core": "workspace:*",
+    "@instafix/core": "workspace:*",
     "@size-limit/preset-small-lib": "^12.1.0",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.18",

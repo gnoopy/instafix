@@ -1,4 +1,4 @@
-import type { AnchorData, RectData } from "@siteping/core";
+import type { AnchorData, RectData } from "@instafix/core";
 import { ANCHOR_KEY_ATTR } from "./anchor.js";
 import { attrHash, scoreFingerprint } from "./fingerprint.js";
 import {

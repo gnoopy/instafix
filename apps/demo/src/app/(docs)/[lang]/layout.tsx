@@ -8,12 +8,12 @@ import "./docs.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://siteping.dev"),
+  metadataBase: new URL("https://instafix.realstory.blog"),
   title: {
-    default: "SitePing Documentation",
-    template: "%s — SitePing Docs",
+    default: "InstaFix Documentation",
+    template: "%s — InstaFix Docs",
   },
-  description: "Every option, default, and behavior of the SitePing feedback widget — verified against the source.",
+  description: "Every option, default, and behavior of the InstaFix feedback widget — verified against the source.",
 };
 
 // Root layout of the docs route group: unlike the landing (fixed dark), the

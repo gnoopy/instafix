@@ -4,7 +4,7 @@ import type { Translations } from "./types.js";
 export const pt: Translations = {
   // Panel
   "panel.title": "Feedbacks",
-  "panel.ariaLabel": "Painel de feedback do Siteping",
+  "panel.ariaLabel": "Painel de feedback do InstaFix",
   "panel.feedbackList": "Lista de feedbacks",
   "panel.loading": "Carregando feedbacks",
   "panel.close": "Fechar painel",
@@ -208,7 +208,7 @@ export const pt: Translations = {
 
   // Tour de boas-vindas
   "onboarding.step1Title": "Suas ferramentas estão prontas",
-  "onboarding.step1Body": "Os ícones ao lado do botão do Siteping estão sempre ali — não precisa clicar antes.",
+  "onboarding.step1Body": "Os ícones ao lado do botão do InstaFix estão sempre ali — não precisa clicar antes.",
   "onboarding.step2Title": "Selecione qualquer coisa",
   "onboarding.step2Body": "Escolha Anotar e depois clique ou arraste na página para marcar o que você quer comentar.",
   "onboarding.step3Title": "Copie para sua IA",

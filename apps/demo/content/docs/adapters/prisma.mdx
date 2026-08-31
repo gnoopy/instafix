@@ -3,10 +3,10 @@ title: Prisma adapter
 description: The production adapter — HTTP handlers backed by your database, with auth, CORS, redaction, and webhooks.
 ---
 
-`@siteping/adapter-prisma` turns one URL of your app into a complete feedback API. It supports Prisma Client v5, v6, and v7, and requires Node 20+.
+`@instafix/adapter-prisma` turns one URL of your app into a complete feedback API. It supports Prisma Client v5, v6, and v7, and requires Node 20+.
 
 ```bash
-npm i @siteping/adapter-prisma
+npm i @instafix/adapter-prisma
 ```
 
 ## Mounting
@@ -14,11 +14,11 @@ npm i @siteping/adapter-prisma
 The factory returns one Web-standard handler (`Request` → `Response`) per HTTP method — mounting them is your framework's job:
 
 ```ts
-// app/api/siteping/route.ts — Next.js App Router
-import { createSitepingHandler } from "@siteping/adapter-prisma";
+// app/api/instafix/route.ts — Next.js App Router
+import { createInstaFixHandler } from "@instafix/adapter-prisma";
 import { prisma } from "@/lib/prisma";
 
-export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ prisma });
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({ prisma });
 ```
 
 Any framework that speaks Web `Request`/`Response` (Hono, Remix, SvelteKit, …) can mount the same handlers on a single endpoint and dispatch by method.
@@ -27,10 +27,10 @@ Any framework that speaks Web `Request`/`Response` (Hono, Remix, SvelteKit, …)
 
 | Option | Type | Default | What it does |
 |---|---|---|---|
-| `prisma` | `SitepingPrismaClient` | — | Your Prisma client. Required unless you pass `store` |
-| `store` | `SitepingStore` | — | Use any store instead of Prisma (takes precedence) |
+| `prisma` | `InstaFixPrismaClient` | — | Your Prisma client. Required unless you pass `store` |
+| `store` | `InstaFixStore` | — | Use any store instead of Prisma (takes precedence) |
 | `apiKey` | `string` | — | Enables Bearer auth. Requests send `Authorization: Bearer <key>` |
-| `publicEndpoints` | `SitepingHttpMethod[]` | `["POST", "OPTIONS"]` when `apiKey` is set | Methods that skip auth. **Passing a value replaces the default** — include `"POST"` yourself or the widget can no longer submit |
+| `publicEndpoints` | `InstaFixHttpMethod[]` | `["POST", "OPTIONS"]` when `apiKey` is set | Methods that skip auth. **Passing a value replaces the default** — include `"POST"` yourself or the widget can no longer submit |
 | `requireAuthForDestructive` | `boolean` | `true` | Without an `apiKey`, PATCH and DELETE answer `401`. In `NODE_ENV=production` the factory refuses to start without an `apiKey` |
 | `redactUnauthenticatedEmails` | `boolean` | `true` | See [what responses expose](#what-responses-expose) |
 | `allowedOrigins` | `string[]` | — | Exact-match CORS allowlist. **No wildcard support** — `["*"]` matches nothing; unset means no CORS headers at all |
@@ -75,10 +75,10 @@ One endpoint, five methods. All bodies are JSON.
 
 ## Database schema
 
-This is the exact schema the adapter needs — it's what `npx @siteping/cli sync` generates. Prefer the CLI; if you write it by hand, don't drop columns: the adapter writes `urlPattern`, `screenshotUrl`, and `anchorKey` on every insert, so a partial schema fails on the first submission.
+This is the exact schema the adapter needs — it's what `npx @instafix/cli sync` generates. Prefer the CLI; if you write it by hand, don't drop columns: the adapter writes `urlPattern`, `screenshotUrl`, and `anchorKey` on every insert, so a partial schema fails on the first submission.
 
 ```prisma
-model SitepingFeedback {
+model InstaFixFeedback {
   id               String               @id @default(cuid())
   projectName      String
   type             String
@@ -97,17 +97,17 @@ model SitepingFeedback {
   resolvedAt       DateTime?
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
-  annotations      SitepingAnnotation[]
+  annotations      InstaFixAnnotation[]
 
   @@index([projectName])
   @@index([projectName, status, createdAt])
   @@index([projectName, url])
 }
 
-model SitepingAnnotation {
+model InstaFixAnnotation {
   id               String           @id @default(cuid())
   feedbackId       String
-  feedback         SitepingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  feedback         InstaFixFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
   cssSelector      String           @db.Text
   xpath            String           @db.Text
   textSnippet      String           @db.Text
@@ -140,11 +140,11 @@ model SitepingAnnotation {
 By default, screenshots are stored inline as `data:` URLs in the `screenshotUrl` column — fine for trying things out, heavy for a real database. For production, plug in a `ScreenshotStorage`:
 
 ```ts
-createSitepingHandler({
+createInstaFixHandler({
   prisma,
   screenshotStorage: {
     async upload(dataUrl, { feedbackId, mimeType }) {
-      const url = await uploadToS3(dataUrl, `siteping/${feedbackId}.jpg`, mimeType);
+      const url = await uploadToS3(dataUrl, `instafix/${feedbackId}.jpg`, mimeType);
       return { url };
     },
   },
@@ -158,11 +158,11 @@ If an upload fails, the feedback is still saved (with `screenshotUrl: null`) and
 Get pinged on every new feedback:
 
 ```ts
-createSitepingHandler({
+createInstaFixHandler({
   prisma,
   webhooks: [
     { url: process.env.SLACK_WEBHOOK_URL!, type: "slack" },
-    { url: "https://my-api.dev/hooks/siteping", type: "generic", headers: { "x-secret": "…" } },
+    { url: "https://my-api.dev/hooks/instafix", type: "generic", headers: { "x-secret": "…" } },
   ],
 });
 ```
@@ -171,7 +171,7 @@ createSitepingHandler({
 
 ## Using a custom store
 
-`createSitepingHandler({ store })` mounts any `SitepingStore` (the memory adapter, or your own) behind the same HTTP surface — same validation, auth, and redaction.
+`createInstaFixHandler({ store })` mounts any `InstaFixStore` (the memory adapter, or your own) behind the same HTTP surface — same validation, auth, and redaction.
 
 Two caveats, straight from the source:
 

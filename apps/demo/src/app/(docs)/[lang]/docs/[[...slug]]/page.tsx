@@ -30,7 +30,7 @@ export default async function Page({ params }: PageProps) {
           backing this locale: the `.fr.mdx` twin when one exists, the English
           source when the page falls back. */}
       <EditOnGitHub
-        href={`https://github.com/NeosiaNexus/SitePing/blob/main/apps/demo/content/docs/${page.path}`}
+        href={`https://github.com/gnoopy/InstaFix/blob/main/apps/demo/content/docs/${page.path}`}
         className="mt-8"
       />
     </DocsPage>
@@ -59,7 +59,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     openGraph: {
       type: "article",
-      siteName: "SitePing",
+      siteName: "InstaFix",
       title,
       ...(description ? { description } : {}),
       url,

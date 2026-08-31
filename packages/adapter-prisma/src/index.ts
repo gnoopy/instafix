@@ -10,12 +10,12 @@ import {
   type FeedbackUpdateInput,
   flattenAnnotation,
   hasOwn,
+  type InstaFixStore,
   isStoreDuplicate,
   isStoreNotFound,
   type ScreenshotStorage,
-  type SitepingStore,
   toFeedbackUpdate,
-} from "@siteping/core";
+} from "@instafix/core";
 import {
   feedbackCreateSchema,
   feedbackDeleteSchema,
@@ -25,14 +25,14 @@ import {
 } from "./validation.js";
 import { dispatchWebhooks, type WebhookConfig } from "./webhooks.js";
 
-export type { ScreenshotStorage, SitepingStore } from "@siteping/core";
+export type { InstaFixStore, ScreenshotStorage } from "@instafix/core";
 export {
   flattenAnnotation,
   isStorePersistence,
   StoreDuplicateError,
   StoreNotFoundError,
   StorePersistenceError,
-} from "@siteping/core";
+} from "@instafix/core";
 export type { FeedbackDeleteInput, FeedbackPatchInput, GetQueryInput } from "./validation.js";
 
 /**
@@ -54,7 +54,7 @@ export { dispatchWebhook, dispatchWebhooks } from "./webhooks.js";
 // ---------------------------------------------------------------------------
 
 /**
- * Structural type for a Prisma model delegate (`prisma.sitepingFeedback`).
+ * Structural type for a Prisma model delegate (`prisma.instafixFeedback`).
  *
  * Arguments are kept `unknown` so any Prisma version's generated client
  * satisfies the constraint; the adapter assembles type-safe payloads
@@ -107,12 +107,12 @@ type _AssertDelegateBivariance = AssertTrue<GeneratedDelegateProbe extends Prism
  * defines the subset of methods the adapter actually uses, so it can be
  * referenced in handler option types without importing `@prisma/client`.
  */
-export interface SitepingPrismaClient {
-  sitepingFeedback: PrismaModelDelegate;
+export interface InstaFixPrismaClient {
+  instafixFeedback: PrismaModelDelegate;
 }
 
 // ---------------------------------------------------------------------------
-// PrismaStore — SitepingStore implementation backed by Prisma
+// PrismaStore — InstaFixStore implementation backed by Prisma
 // ---------------------------------------------------------------------------
 
 const INCLUDE_ANNOTATIONS = { annotations: true } as const;
@@ -205,7 +205,7 @@ interface FeedbackWhereInput {
 }
 
 /**
- * Prisma-backed implementation of `SitepingStore`.
+ * Prisma-backed implementation of `InstaFixStore`.
  *
  * Wraps a PrismaClient to satisfy the abstract store interface.
  *
@@ -214,16 +214,16 @@ interface FeedbackWhereInput {
  * the database stays small. Without `screenshotStorage`, the data URL is
  * persisted inline (logged once on first use as a heads-up).
  */
-export class PrismaStore implements SitepingStore {
+export class PrismaStore implements InstaFixStore {
   /** @internal */
-  private prisma: SitepingPrismaClient;
+  private prisma: InstaFixPrismaClient;
   private readonly screenshotStorage: ScreenshotStorage | undefined;
   /** Module-level flag would leak across PrismaStore instances in tests; use per-instance. */
   private inlineFallbackWarned = false;
   /** @internal */
   private caseInsensitiveSearch: boolean;
 
-  constructor(prisma: SitepingPrismaClient, options: PrismaStoreOptions = {}) {
+  constructor(prisma: InstaFixPrismaClient, options: PrismaStoreOptions = {}) {
     this.prisma = prisma;
     this.screenshotStorage = options.screenshotStorage;
     if (typeof options.caseInsensitiveSearch === "boolean") {
@@ -242,7 +242,7 @@ export class PrismaStore implements SitepingStore {
   async createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord> {
     const screenshotUrl = await this.persistScreenshot(data.screenshotDataUrl, data.clientId);
 
-    return (await this.prisma.sitepingFeedback.create({
+    return (await this.prisma.instafixFeedback.create({
       data: {
         projectName: data.projectName,
         type: data.type,
@@ -253,10 +253,10 @@ export class PrismaStore implements SitepingStore {
         screenshotUrl,
         // Persisted as JSON when the model has a `screenshotRegion Json?`
         // column — same omit-when-null contract as `diagnostics` below, so
-        // hosts that haven't run `npx siteping sync` keep working.
+        // hosts that haven't run `npx instafix sync` keep working.
         ...(data.screenshotRegion ? { screenshotRegion: data.screenshotRegion } : {}),
         // Persisted as JSON when the model has a `diagnostics Json?` column.
-        // Hosts that haven't run `npx siteping sync` keep their schema as-is
+        // Hosts that haven't run `npx instafix sync` keep their schema as-is
         // and Prisma will throw if we pass an unknown column, so omit the
         // key entirely when diagnostics is null.
         ...(data.diagnostics ? { diagnostics: data.diagnostics } : {}),
@@ -288,7 +288,7 @@ export class PrismaStore implements SitepingStore {
             devicePixelRatio: ann.devicePixelRatio,
             // Persisted as JSON when the model has a `target Json?` column —
             // same omit-when-null contract as `screenshotRegion`/`diagnostics`
-            // above, so hosts that haven't run `npx siteping sync` keep working.
+            // above, so hosts that haven't run `npx instafix sync` keep working.
             ...(ann.target ? { target: ann.target } : {}),
           })),
         },
@@ -329,7 +329,7 @@ export class PrismaStore implements SitepingStore {
         return url;
       } catch (err) {
         console.warn(
-          "[siteping] screenshotStorage.upload failed — feedback will be saved without a screenshot. Wrap your storage's upload to handle this differently:",
+          "[instafix] screenshotStorage.upload failed — feedback will be saved without a screenshot. Wrap your storage's upload to handle this differently:",
           err,
         );
         return null;
@@ -339,14 +339,14 @@ export class PrismaStore implements SitepingStore {
     if (!this.inlineFallbackWarned) {
       this.inlineFallbackWarned = true;
       console.warn(
-        "[siteping] enableScreenshot is on but no `screenshotStorage` is configured — base64 data URLs will be persisted inline on Feedback.screenshotUrl. Configure a ScreenshotStorage (S3/R2/…) for production.",
+        "[instafix] enableScreenshot is on but no `screenshotStorage` is configured — base64 data URLs will be persisted inline on Feedback.screenshotUrl. Configure a ScreenshotStorage (S3/R2/…) for production.",
       );
     }
     return dataUrl;
   }
 
   async findByClientId(clientId: string): Promise<FeedbackRecord | null> {
-    return (await this.prisma.sitepingFeedback.findUnique({
+    return (await this.prisma.instafixFeedback.findUnique({
       where: { clientId },
       include: INCLUDE_ANNOTATIONS,
     })) as FeedbackRecord | null;
@@ -371,21 +371,21 @@ export class PrismaStore implements SitepingStore {
     }
 
     const [feedbacks, total] = await Promise.all([
-      this.prisma.sitepingFeedback.findMany({
+      this.prisma.instafixFeedback.findMany({
         where,
         include: INCLUDE_ANNOTATIONS,
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
       }),
-      this.prisma.sitepingFeedback.count({ where }),
+      this.prisma.instafixFeedback.count({ where }),
     ]);
 
     return { feedbacks: feedbacks as FeedbackRecord[], total };
   }
 
   async updateFeedback(id: string, data: FeedbackUpdateInput): Promise<FeedbackRecord> {
-    return (await this.prisma.sitepingFeedback.update({
+    return (await this.prisma.instafixFeedback.update({
       where: { id },
       data: {
         status: data.status,
@@ -429,11 +429,11 @@ export class PrismaStore implements SitepingStore {
   }
 
   async deleteFeedback(id: string): Promise<void> {
-    await this.prisma.sitepingFeedback.delete({ where: { id } });
+    await this.prisma.instafixFeedback.delete({ where: { id } });
   }
 
   async deleteAllFeedbacks(projectName: string): Promise<void> {
-    await this.prisma.sitepingFeedback.deleteMany({ where: { projectName } });
+    await this.prisma.instafixFeedback.deleteMany({ where: { projectName } });
   }
 
   /**
@@ -441,7 +441,7 @@ export class PrismaStore implements SitepingStore {
    * Returns `true` when the record exists and matches, `false` otherwise.
    */
   async verifyProjectOwnership(id: string, projectName: string): Promise<boolean> {
-    const record = (await this.prisma.sitepingFeedback.findUnique({
+    const record = (await this.prisma.instafixFeedback.findUnique({
       where: { id },
       // Only need projectName for the check — skip annotations
     })) as { projectName: string } | null;
@@ -454,13 +454,13 @@ export class PrismaStore implements SitepingStore {
 // ---------------------------------------------------------------------------
 
 /** HTTP methods that may be listed in `HandlerOptions.publicEndpoints`. */
-export type SitepingHttpMethod = "GET" | "POST" | "PATCH" | "DELETE" | "OPTIONS";
+export type InstaFixHttpMethod = "GET" | "POST" | "PATCH" | "DELETE" | "OPTIONS";
 
 export interface HandlerOptions {
   /** Prisma client — used when `store` is not provided. Wrapped in a `PrismaStore` internally. */
-  prisma?: SitepingPrismaClient;
+  prisma?: InstaFixPrismaClient;
   /** Abstract store — when provided, takes precedence over `prisma`. */
-  store?: SitepingStore;
+  store?: InstaFixStore;
   /**
    * Optional storage backend for screenshots. Used only with `prisma`
    * (ignored when a custom `store` is passed — that store is responsible
@@ -484,7 +484,7 @@ export interface HandlerOptions {
    * Defaults to `['POST', 'OPTIONS']` when `apiKey` is set — POST must stay open
    * because the browser widget submits feedback from unauthenticated contexts.
    */
-  publicEndpoints?: ReadonlyArray<SitepingHttpMethod>;
+  publicEndpoints?: ReadonlyArray<InstaFixHttpMethod>;
   /** Allowed CORS origins — when set, validates the Origin header */
   allowedOrigins?: ReadonlyArray<string> | undefined;
   /**
@@ -505,8 +505,8 @@ export interface HandlerOptions {
    *   for local dev/tests, but DELETE/PATCH return 401 until you set
    *   `apiKey` or explicitly opt out with `requireAuthForDestructive: false`.
    *
-   * Set to `false` only when you wrap `createSitepingHandler` in your own
-   * auth middleware (session, OAuth, etc.) and want SitePing to stay open.
+   * Set to `false` only when you wrap `createInstaFixHandler` in your own
+   * auth middleware (session, OAuth, etc.) and want InstaFix to stay open.
    */
   requireAuthForDestructive?: boolean;
   /**
@@ -535,9 +535,9 @@ export interface HandlerOptions {
 }
 
 /**
- * Object returned by `createSitepingHandler` — one handler per HTTP method.
+ * Object returned by `createInstaFixHandler` — one handler per HTTP method.
  */
-export interface SitepingHandler {
+export interface InstaFixHandler {
   OPTIONS: (request: Request) => Response;
   POST: (request: Request) => Promise<Response>;
   GET: (request: Request) => Promise<Response>;
@@ -621,7 +621,7 @@ function toWireFeedback(feedback: FeedbackRecord, includeEmail: boolean): Omit<F
 }
 
 /**
- * Create request handlers for the Siteping API endpoint.
+ * Create request handlers for the InstaFix API endpoint.
  *
  * Accepts either a `store` (abstract) or a `prisma` client (backwards compatible).
  * When `prisma` is provided without `store`, it is wrapped in a `PrismaStore`.
@@ -631,24 +631,24 @@ function toWireFeedback(feedback: FeedbackRecord, includeEmail: boolean): Omit<F
  * The POST endpoint in particular should be rate-limited to prevent abuse, since
  * the widget typically calls it from unauthenticated browser contexts.
  *
- * @example Next.js App Router — `app/api/siteping/route.ts`
+ * @example Next.js App Router — `app/api/instafix/route.ts`
  * ```ts
- * import { createSitepingHandler } from '@siteping/adapter-prisma'
+ * import { createInstaFixHandler } from '@instafix/adapter-prisma'
  * import { prisma } from '@/lib/prisma'
  *
- * export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ prisma })
+ * export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({ prisma })
  * ```
  *
  * @example With abstract store
  * ```ts
- * import { createSitepingHandler, PrismaStore } from '@siteping/adapter-prisma'
+ * import { createInstaFixHandler, PrismaStore } from '@instafix/adapter-prisma'
  * import { prisma } from '@/lib/prisma'
  *
  * const store = new PrismaStore(prisma)
- * export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ store })
+ * export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({ store })
  * ```
  */
-export function createSitepingHandler({
+export function createInstaFixHandler({
   prisma,
   store: providedStore,
   screenshotStorage,
@@ -659,30 +659,30 @@ export function createSitepingHandler({
   requireAuthForDestructive = true,
   redactUnauthenticatedEmails = true,
   webhooks,
-}: HandlerOptions): SitepingHandler {
+}: HandlerOptions): InstaFixHandler {
   if (!providedStore && !prisma) {
-    throw new Error("[siteping] createSitepingHandler requires either `store` or `prisma`.");
+    throw new Error("[instafix] createInstaFixHandler requires either `store` or `prisma`.");
   }
 
   // Refuse to expose destructive endpoints publicly in production. Without
   // this guard, anyone could `DELETE { deleteAll: true }` against the API.
   if (!apiKey && requireAuthForDestructive && process.env.NODE_ENV === "production") {
     throw new Error(
-      "[siteping] adapter-prisma: apiKey is required in production. " +
+      "[instafix] adapter-prisma: apiKey is required in production. " +
         "Set `apiKey` to enable destructive endpoints, or pass " +
-        "`requireAuthForDestructive: false` if SitePing sits behind your own auth middleware.",
+        "`requireAuthForDestructive: false` if InstaFix sits behind your own auth middleware.",
     );
   }
 
   // Safe: the throw above guarantees at least one is defined
-  const store: SitepingStore =
+  const store: InstaFixStore =
     providedStore ??
     new PrismaStore(prisma as NonNullable<typeof prisma>, {
       screenshotStorage,
       ...(typeof caseInsensitiveSearch === "boolean" ? { caseInsensitiveSearch } : {}),
     });
 
-  const publicMethods: ReadonlySet<SitepingHttpMethod> | null = publicEndpoints ? new Set(publicEndpoints) : null;
+  const publicMethods: ReadonlySet<InstaFixHttpMethod> | null = publicEndpoints ? new Set(publicEndpoints) : null;
 
   // Normalise the webhook config to an array once so every POST avoids the
   // allocation. Empty array short-circuits `dispatchWebhooks` cheaply.
@@ -709,7 +709,7 @@ export function createSitepingHandler({
   }
 
   /** Verify Bearer token when apiKey is configured. Skips methods listed in `publicEndpoints`. */
-  function authenticate(request: Request, method: SitepingHttpMethod): Response | null {
+  function authenticate(request: Request, method: InstaFixHttpMethod): Response | null {
     if (!apiKey) {
       // No apiKey + destructive method + guard enabled → reject. GET/POST/OPTIONS
       // stay open by default so the widget keeps working in dev without config.
@@ -794,7 +794,7 @@ export function createSitepingHandler({
         }
 
         const message = actionableErrorMessage(error);
-        console.error("[siteping] Failed to create feedback:", error);
+        console.error("[instafix] Failed to create feedback:", error);
         return withCors(Response.json({ error: message }, { status: 500 }), corsHeaders);
       }
     },
@@ -835,7 +835,7 @@ export function createSitepingHandler({
         return withCors(Response.json(body, { headers: { "Cache-Control": "private, max-age=5" } }), corsHeaders);
       } catch (error) {
         const message = actionableErrorMessage(error);
-        console.error("[siteping] Failed to fetch feedbacks:", error);
+        console.error("[instafix] Failed to fetch feedbacks:", error);
         return withCors(Response.json({ error: message }, { status: 500 }), corsHeaders);
       }
     },
@@ -857,7 +857,7 @@ export function createSitepingHandler({
 
       try {
         // Verify project ownership before updating. Any store implementing
-        // the optional SitepingStore.verifyProjectOwnership gets the check;
+        // the optional InstaFixStore.verifyProjectOwnership gets the check;
         // duck-typing instead of `instanceof` keeps it bundling-safe and
         // open to third-party adapters.
         if (store.verifyProjectOwnership) {
@@ -888,7 +888,7 @@ export function createSitepingHandler({
           return withCors(Response.json({ error: "Feedback not found" }, { status: 404 }), corsHeaders);
         }
         const message = actionableErrorMessage(error);
-        console.error("[siteping] Failed to update feedback:", error);
+        console.error("[instafix] Failed to update feedback:", error);
         return withCors(Response.json({ error: message }, { status: 500 }), corsHeaders);
       }
     },
@@ -915,7 +915,7 @@ export function createSitepingHandler({
         }
 
         // Verify project ownership before deleting. Any store implementing
-        // the optional SitepingStore.verifyProjectOwnership gets the check;
+        // the optional InstaFixStore.verifyProjectOwnership gets the check;
         // duck-typing instead of `instanceof` keeps it bundling-safe and
         // open to third-party adapters.
         if (store.verifyProjectOwnership) {
@@ -932,7 +932,7 @@ export function createSitepingHandler({
           return withCors(Response.json({ error: "Feedback not found" }, { status: 404 }), corsHeaders);
         }
         const message = actionableErrorMessage(error);
-        console.error("[siteping] Failed to delete feedback:", error);
+        console.error("[instafix] Failed to delete feedback:", error);
         return withCors(Response.json({ error: message }, { status: 500 }), corsHeaders);
       }
     },
@@ -949,7 +949,7 @@ function isTableNotFoundError(error: unknown): error is { code: "P2021" } {
  */
 function actionableErrorMessage(error: unknown): string {
   if (isTableNotFoundError(error)) {
-    return "Table 'SitepingFeedback' not found. Run 'npx prisma db push' to create it.";
+    return "Table 'InstaFixFeedback' not found. Run 'npx prisma db push' to create it.";
   }
   return "Internal server error";
 }

@@ -8,10 +8,10 @@ import {
   type FeedbackStatus,
   feedbackQueryToSearchParams,
   hasOwn,
+  type InstaFixHeadersOption,
   networkErrorFromException,
   type Prettify,
-  type SitepingHeadersOption,
-} from "@siteping/core";
+} from "@instafix/core";
 import type { Identity } from "./identity.js";
 
 /**
@@ -49,7 +49,7 @@ export interface ApiClientAuth {
   /** Sent as `Authorization: Bearer <apiKey>` on every request. */
   apiKey?: string | undefined;
   /** Extra headers, static or per-request factory. An explicit `Authorization` entry wins over `apiKey`. */
-  headers?: SitepingHeadersOption | undefined;
+  headers?: InstaFixHeadersOption | undefined;
 }
 
 /**
@@ -75,7 +75,7 @@ export async function buildRequestHeaders(auth: ApiClientAuth, json: boolean): P
 
 const MAX_RETRIES = 3;
 const TIMEOUT_MS = 10_000;
-const RETRY_QUEUE_KEY = "siteping_retry_queue";
+const RETRY_QUEUE_KEY = "instafix_retry_queue";
 const MAX_QUEUE_SIZE = 20;
 
 // ---------------------------------------------------------------------------
@@ -123,7 +123,7 @@ interface RetryEntry {
   payload: FeedbackPayload;
 }
 
-const LOCK_NAME = "siteping_retry_queue";
+const LOCK_NAME = "instafix_retry_queue";
 
 /**
  * Acquire a Web Lock to serialize cross-tab access to the retry queue.
@@ -229,7 +229,7 @@ export async function flushRetryQueue(
       if (toRetry.length === 0 && dropped === 0) return;
 
       if (dropped > 0) {
-        console.debug("[siteping] flushRetryQueue: dropped", dropped, "stale entries (identity changed)");
+        console.debug("[instafix] flushRetryQueue: dropped", dropped, "stale entries (identity changed)");
       }
 
       // Process items sequentially to avoid overwhelming the server

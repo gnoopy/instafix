@@ -352,7 +352,7 @@ export function Features() {
             </div>
             <h3 className="mt-4 text-xl font-semibold text-white">Triage inbox</h3>
             <p className="mt-2 max-w-xl leading-relaxed text-gray-400">
-              Drop <code className="font-mono text-sm text-accent-light">&lt;SitepingInbox /&gt;</code> into your admin
+              Drop <code className="font-mono text-sm text-accent-light">&lt;InstaFixInbox /&gt;</code> into your admin
               page and work through reports with <kbd className="font-mono text-sm text-gray-300">j</kbd>/
               <kbd className="font-mono text-sm text-gray-300">k</kbd> — four statuses, the client&apos;s annotation
               re-drawn on the screenshot. Slack, Discord, and generic webhooks ping your team the moment feedback lands.
@@ -486,7 +486,7 @@ export function Features() {
               Three lines of code. Works with Next.js, any framework, or vanilla JavaScript.
             </p>
             <div className="mt-4 rounded-lg border border-gray-800/60 bg-gray-950/80 px-3 py-2">
-              <code className="font-mono text-xs text-accent-light">npm i @siteping/widget</code>
+              <code className="font-mono text-xs text-accent-light">npm i @instafix/widget</code>
             </div>
           </article>
 
@@ -549,7 +549,7 @@ export function Features() {
             <div className="mt-4 rounded-lg border border-gray-800/60 bg-gray-950/80 px-3 py-2">
               <code className="font-mono text-xs">
                 <span className="text-gray-500">$</span>{" "}
-                <span className="text-accent-light">npx @siteping/cli init</span>
+                <span className="text-accent-light">npx @instafix/cli init</span>
               </code>
             </div>
           </article>

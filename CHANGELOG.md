@@ -2,9 +2,9 @@
 
 For changelogs of individual packages, see:
 
-- [`@siteping/core`](./packages/core/CHANGELOG.md) (internal)
-- [`@siteping/widget`](./packages/widget/CHANGELOG.md)
-- [`@siteping/adapter-prisma`](./packages/adapter-prisma/CHANGELOG.md)
-- [`@siteping/adapter-memory`](./packages/adapter-memory/CHANGELOG.md)
-- [`@siteping/adapter-localstorage`](./packages/adapter-localstorage/CHANGELOG.md)
-- [`@siteping/cli`](./packages/cli/CHANGELOG.md)
+- [`@instafix/core`](./packages/core/CHANGELOG.md) (internal)
+- [`@instafix/widget`](./packages/widget/CHANGELOG.md)
+- [`@instafix/adapter-prisma`](./packages/adapter-prisma/CHANGELOG.md)
+- [`@instafix/adapter-memory`](./packages/adapter-memory/CHANGELOG.md)
+- [`@instafix/adapter-localstorage`](./packages/adapter-localstorage/CHANGELOG.md)
+- [`@instafix/cli`](./packages/cli/CHANGELOG.md)

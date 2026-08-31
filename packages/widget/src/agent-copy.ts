@@ -1,12 +1,12 @@
 /**
  * "Copy for Claude Code" — the widget-side wiring around
- * `formatFeedbacksForAgent` (pure, in `@siteping/core`): a button that opens
+ * `formatFeedbacksForAgent` (pure, in `@instafix/core`): a button that opens
  * a preview dialog, copies the generated Markdown to the clipboard, and
  * falls back to a selectable textarea when the Clipboard API is unavailable
  * or denied (non-secure context, permission prompt dismissed, etc).
  */
 
-import { type FeedbackResponse, formatFeedbacksForAgent } from "@siteping/core";
+import { type FeedbackResponse, formatFeedbacksForAgent } from "@instafix/core";
 import { Z_INDEX_MAX } from "./constants.js";
 import { el, parseSvg, setText } from "./dom-utils.js";
 import { type TFunction, tWithParams } from "./i18n/index.js";
@@ -245,7 +245,7 @@ export interface AgentCopyButtonOptions {
 
 /**
  * Self-contained "Copy for Claude Code" button: resolves feedbacks, formats
- * them (pure, testable in `@siteping/core`), shows a preview dialog, and
+ * them (pure, testable in `@instafix/core`), shows a preview dialog, and
  * copies to the clipboard on confirm. The preview textarea doubles as the
  * manual-copy fallback when the Clipboard API fails.
  */

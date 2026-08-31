@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { FeedbackResponse } from "@siteping/core";
+import type { FeedbackResponse } from "@instafix/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { en as STATS_I18N_EN } from "../../src/i18n/en.js";
 import { fr as STATS_I18N_FR } from "../../src/i18n/fr.js";

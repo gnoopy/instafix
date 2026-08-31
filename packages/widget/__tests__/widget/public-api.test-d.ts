@@ -6,26 +6,26 @@
 import type {
   FeedbackQuery,
   FeedbackResponse,
-  SitepingInstance,
-  SitepingPublicEvents,
-  SitepingStore,
-} from "@siteping/core";
+  InstaFixInstance,
+  InstaFixPublicEvents,
+  InstaFixStore,
+} from "@instafix/core";
 import { describe, expectTypeOf, it } from "vitest";
 import type { GetFeedbacksOptions } from "../../src/api-client.js";
-import { initSiteping, registerLocale, type Translations } from "../../src/index.js";
+import { initInstaFix, registerLocale, type Translations } from "../../src/index.js";
 
-declare const store: SitepingStore;
-declare const instance: SitepingInstance;
+declare const store: InstaFixStore;
+declare const instance: InstaFixInstance;
 
-describe("initSiteping config modes", () => {
+describe("initInstaFix config modes", () => {
   it("accepts HTTP mode and store mode", () => {
-    expectTypeOf(initSiteping).toBeCallableWith({ projectName: "p", endpoint: "/api/siteping" });
-    expectTypeOf(initSiteping).toBeCallableWith({ projectName: "p", store });
+    expectTypeOf(initInstaFix).toBeCallableWith({ projectName: "p", endpoint: "/api/instafix" });
+    expectTypeOf(initInstaFix).toBeCallableWith({ projectName: "p", store });
   });
 
   it("rejects mixed modes", () => {
     // @ts-expect-error — endpoint and store are mutually exclusive
-    initSiteping({ projectName: "p", endpoint: "/api", store });
+    initInstaFix({ projectName: "p", endpoint: "/api", store });
   });
 });
 
@@ -48,7 +48,7 @@ describe("public events", () => {
   });
 
   it("keeps the public map in sync with the instance signature", () => {
-    expectTypeOf<Parameters<SitepingInstance["on"]>[0]>().toEqualTypeOf<keyof SitepingPublicEvents>();
+    expectTypeOf<Parameters<InstaFixInstance["on"]>[0]>().toEqualTypeOf<keyof InstaFixPublicEvents>();
   });
 });
 

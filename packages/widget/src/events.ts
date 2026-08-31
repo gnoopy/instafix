@@ -1,4 +1,4 @@
-import type { FeedbackResponse, SitepingUnsubscribe } from "@siteping/core";
+import type { FeedbackResponse, InstaFixUnsubscribe } from "@instafix/core";
 import type { AnnotationComplete } from "./annotator.js";
 
 /** Listener signature for a single key of an `EventBus` event map. */
@@ -13,7 +13,7 @@ export type EventListener<E extends Record<keyof E, unknown[]>, K extends keyof 
 export class EventBus<E extends Record<keyof E, unknown[]>> {
   private readonly listeners = new Map<keyof E, Set<EventListener<E, keyof E>>>();
 
-  on<K extends keyof E>(event: K, listener: EventListener<E, K>): SitepingUnsubscribe {
+  on<K extends keyof E>(event: K, listener: EventListener<E, K>): InstaFixUnsubscribe {
     let set = this.listeners.get(event);
     if (!set) {
       set = new Set();
@@ -38,7 +38,7 @@ export class EventBus<E extends Record<keyof E, unknown[]>> {
         (fn as (...a: E[K]) => void)(...args);
       } catch (err) {
         // Isolate listener errors — one bad listener must not kill others
-        console.error(`[siteping] Error in event listener for "${String(event)}":`, err);
+        console.error(`[instafix] Error in event listener for "${String(event)}":`, err);
       }
     }
   }
@@ -69,15 +69,15 @@ export interface WidgetEvents {
    * Internal-only: a feedback submission was aborted by a benign user action
    * (e.g. cancelling the identity prompt). Distinct from `feedback:error` so a
    * cancellation does not surface through the host's `onError` callback. Not
-   * part of `SitepingPublicEvents` — never exposed to consumers.
+   * part of `InstaFixPublicEvents` — never exposed to consumers.
    */
   "submission:cancelled": [];
   "annotations:toggle": [boolean];
   "panel:toggle": [boolean];
 }
 
-// NOTE: the public event surface is `SitepingPublicEvents` from
-// `@siteping/core`. The launcher bridges internal events onto the public bus
-// through a mapped object keyed by `keyof SitepingPublicEvents`, so adding a
+// NOTE: the public event surface is `InstaFixPublicEvents` from
+// `@instafix/core`. The launcher bridges internal events onto the public bus
+// through a mapped object keyed by `keyof InstaFixPublicEvents`, so adding a
 // public event without bridging it is a compile error there — no alias or
 // duplicate map is needed on this side.

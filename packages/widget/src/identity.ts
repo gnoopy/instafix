@@ -1,13 +1,13 @@
-import { hasOwn, type SitepingIdentity } from "@siteping/core";
+import { hasOwn, type InstaFixIdentity } from "@instafix/core";
 
-const STORAGE_KEY = "siteping_identity";
+const STORAGE_KEY = "instafix_identity";
 
 /**
  * Author identity persisted by the widget — alias of core's
- * `SitepingIdentity` (one concept, one shape; the alias keeps the widget's
+ * `InstaFixIdentity` (one concept, one shape; the alias keeps the widget's
  * historical export name working).
  */
-export type Identity = SitepingIdentity;
+export type Identity = InstaFixIdentity;
 
 /** Type guard — narrows an unknown value to `Identity` only when both fields are non-empty strings. */
 function isIdentity(value: unknown): value is Identity {

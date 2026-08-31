@@ -15,7 +15,7 @@ import type { TFunction } from "./i18n/index.js";
 import { tWithParams } from "./i18n/index.js";
 import type { ThemeColors } from "./styles/theme.js";
 
-const ALWAYS_SHOW_KEY = "siteping_target_preview_always_show";
+const ALWAYS_SHOW_KEY = "instafix_target_preview_always_show";
 
 function loadAlwaysShow(): boolean {
   try {

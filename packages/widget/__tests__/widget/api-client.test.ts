@@ -1,10 +1,10 @@
-import { SitepingAuthError, type SitepingError, SitepingNetworkError, SitepingValidationError } from "@siteping/core";
+import { InstaFixAuthError, type InstaFixError, InstaFixNetworkError, InstaFixValidationError } from "@instafix/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiClient, flushRetryQueue } from "../../src/api-client.js";
 
 describe("ApiClient", () => {
   let client: ApiClient;
-  const endpoint = "http://localhost/api/siteping";
+  const endpoint = "http://localhost/api/instafix";
 
   beforeEach(() => {
     client = new ApiClient(endpoint, "test");
@@ -116,7 +116,7 @@ describe("ApiClient", () => {
 
     // Let the fire-and-forget queue write (behind the Web Lock) settle.
     await vi.waitFor(() => {
-      const raw = store.get("siteping_retry_queue");
+      const raw = store.get("instafix_retry_queue");
       expect(raw).toBeDefined();
       const queue = JSON.parse(raw!) as Array<{ payload: Record<string, unknown> }>;
       expect(queue).toHaveLength(1);
@@ -149,43 +149,43 @@ describe("ApiClient", () => {
   });
 
   // -------------------------------------------------------------------------
-  // Typed error mapping — surface SitepingError subclasses by status code
+  // Typed error mapping — surface InstaFixError subclasses by status code
   // so host apps can `instanceof`-check instead of grepping messages.
   // -------------------------------------------------------------------------
 
-  it("maps 401 to SitepingAuthError (not retryable)", async () => {
+  it("maps 401 to InstaFixAuthError (not retryable)", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response("Nope", { status: 401 }));
-    const err = (await client.getFeedbacks("test").catch((e: SitepingError) => e)) as SitepingError;
-    expect(err).toBeInstanceOf(SitepingAuthError);
+    const err = (await client.getFeedbacks("test").catch((e: InstaFixError) => e)) as InstaFixError;
+    expect(err).toBeInstanceOf(InstaFixAuthError);
     expect(err.code).toBe("AUTH");
     expect(err.retryable).toBe(false);
   });
 
-  it("maps 403 to SitepingAuthError", async () => {
+  it("maps 403 to InstaFixAuthError", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response("Forbidden", { status: 403 }));
-    const err = (await client.getFeedbacks("test").catch((e: SitepingError) => e)) as SitepingError;
-    expect(err).toBeInstanceOf(SitepingAuthError);
+    const err = (await client.getFeedbacks("test").catch((e: InstaFixError) => e)) as InstaFixError;
+    expect(err).toBeInstanceOf(InstaFixAuthError);
   });
 
-  it("maps other 4xx to SitepingValidationError (not retryable)", async () => {
+  it("maps other 4xx to InstaFixValidationError (not retryable)", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response("Bad", { status: 400 }));
-    const err = (await client.getFeedbacks("test").catch((e: SitepingError) => e)) as SitepingError;
-    expect(err).toBeInstanceOf(SitepingValidationError);
+    const err = (await client.getFeedbacks("test").catch((e: InstaFixError) => e)) as InstaFixError;
+    expect(err).toBeInstanceOf(InstaFixValidationError);
     expect(err.code).toBe("VALIDATION");
     expect(err.retryable).toBe(false);
   });
 
-  it("maps a thrown network exception to SitepingNetworkError (retryable)", async () => {
+  it("maps a thrown network exception to InstaFixNetworkError (retryable)", async () => {
     vi.useFakeTimers();
     const fetchMock = vi.fn().mockRejectedValue(new TypeError("offline"));
     vi.stubGlobal("fetch", fetchMock);
-    const promise = client.getFeedbacks("test").catch((e: SitepingError) => e);
+    const promise = client.getFeedbacks("test").catch((e: InstaFixError) => e);
     // 1s + 2s + 4s of backoff before throwing
     await vi.advanceTimersByTimeAsync(1500);
     await vi.advanceTimersByTimeAsync(2500);
     await vi.advanceTimersByTimeAsync(4500);
-    const err = (await promise) as SitepingError;
-    expect(err).toBeInstanceOf(SitepingNetworkError);
+    const err = (await promise) as InstaFixError;
+    expect(err).toBeInstanceOf(InstaFixNetworkError);
     expect(err.code).toBe("NETWORK");
     expect(err.retryable).toBe(true);
     vi.useRealTimers();
@@ -339,10 +339,10 @@ describe("ApiClient", () => {
     await vi.advanceTimersByTimeAsync(4500);
 
     const error = (await promise) as Error;
-    // Network failures are now wrapped in SitepingNetworkError (retryable=true)
+    // Network failures are now wrapped in InstaFixNetworkError (retryable=true)
     // so host apps get a typed signal — the original cause is preserved in
     // the message so existing log scraping still works.
-    expect(error.name).toBe("SitepingNetworkError");
+    expect(error.name).toBe("InstaFixNetworkError");
     expect((error as Error).message).toContain("network down");
     expect(fetchMock).toHaveBeenCalledTimes(4);
 
@@ -507,7 +507,7 @@ describe("ApiClient", () => {
 // ---------------------------------------------------------------------------
 
 describe("ApiClient — auth & headers", () => {
-  const endpoint = "http://localhost/api/siteping";
+  const endpoint = "http://localhost/api/instafix";
 
   const payload = {
     projectName: "test",
@@ -604,7 +604,7 @@ describe("ApiClient — auth & headers", () => {
       },
     });
     const err = await client.getFeedbacks("test").catch((e: unknown) => e);
-    expect(err).toBeInstanceOf(SitepingNetworkError);
+    expect(err).toBeInstanceOf(InstaFixNetworkError);
     expect(fetch).not.toHaveBeenCalled();
   });
 
@@ -638,7 +638,7 @@ describe("ApiClient — auth & headers", () => {
 
     // Let the fire-and-forget queue write (behind the Web Lock) settle.
     await vi.waitFor(() => {
-      const raw = store.get("siteping_retry_queue");
+      const raw = store.get("instafix_retry_queue");
       expect(raw).toBeDefined();
       const queue = JSON.parse(raw!) as Array<Record<string, unknown>>;
       expect(queue).toEqual([{ endpoint, payload }]);
@@ -656,7 +656,7 @@ describe("ApiClient — auth & headers", () => {
 // ---------------------------------------------------------------------------
 
 describe("flushRetryQueue", () => {
-  const endpoint = "http://localhost/api/siteping";
+  const endpoint = "http://localhost/api/instafix";
 
   beforeEach(() => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("", { status: 201 }));
@@ -712,7 +712,7 @@ describe("flushRetryQueue", () => {
     await flushRetryQueue(endpoint);
 
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(localStorage.removeItem).toHaveBeenCalledWith("siteping_retry_queue");
+    expect(localStorage.removeItem).toHaveBeenCalledWith("instafix_retry_queue");
   });
 
   it("replays queued POSTs with auth headers computed at flush time", async () => {
@@ -743,7 +743,7 @@ describe("flushRetryQueue", () => {
       Authorization: "Bearer flush-key",
       "X-Flush": "1",
     });
-    expect(localStorage.removeItem).toHaveBeenCalledWith("siteping_retry_queue");
+    expect(localStorage.removeItem).toHaveBeenCalledWith("instafix_retry_queue");
   });
 
   it("preserves legacy replay behavior when current identity is omitted", async () => {
@@ -777,7 +777,7 @@ describe("flushRetryQueue", () => {
     await flushRetryQueue(endpoint);
 
     expect(fetch).toHaveBeenCalledTimes(2);
-    expect(localStorage.removeItem).toHaveBeenCalledWith("siteping_retry_queue");
+    expect(localStorage.removeItem).toHaveBeenCalledWith("instafix_retry_queue");
   });
 
   it("drops stale queued feedback when the current identity differs", async () => {
@@ -799,9 +799,9 @@ describe("flushRetryQueue", () => {
     await flushRetryQueue(endpoint, { name: "Bob", email: "bob@example.com" });
 
     expect(fetch).not.toHaveBeenCalled();
-    expect(localStorage.removeItem).toHaveBeenCalledWith("siteping_retry_queue");
+    expect(localStorage.removeItem).toHaveBeenCalledWith("instafix_retry_queue");
     expect(console.debug).toHaveBeenCalledWith(
-      "[siteping] flushRetryQueue: dropped",
+      "[instafix] flushRetryQueue: dropped",
       1,
       "stale entries (identity changed)",
     );
@@ -827,7 +827,7 @@ describe("flushRetryQueue", () => {
     await flushRetryQueue(endpoint, { name: "Alice", email: "alice@example.com" });
 
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(localStorage.removeItem).toHaveBeenCalledWith("siteping_retry_queue");
+    expect(localStorage.removeItem).toHaveBeenCalledWith("instafix_retry_queue");
   });
 
   it("retries queued feedback when email casing differs only by case", async () => {
@@ -850,7 +850,7 @@ describe("flushRetryQueue", () => {
     await flushRetryQueue(endpoint, { name: "Alice", email: "alice@example.com" });
 
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(localStorage.removeItem).toHaveBeenCalledWith("siteping_retry_queue");
+    expect(localStorage.removeItem).toHaveBeenCalledWith("instafix_retry_queue");
   });
 
   it("drops only stale same-endpoint entries while retrying matching ones", async () => {
@@ -890,11 +890,11 @@ describe("flushRetryQueue", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(JSON.parse(vi.mocked(fetch).mock.calls[0]![1]!.body as string).clientId).toBe("mixed-1");
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      "siteping_retry_queue",
+      "instafix_retry_queue",
       JSON.stringify([{ endpoint: otherEndpoint, payload: otherPayload }]),
     );
     expect(console.debug).toHaveBeenCalledWith(
-      "[siteping] flushRetryQueue: dropped",
+      "[instafix] flushRetryQueue: dropped",
       1,
       "stale entries (identity changed)",
     );
@@ -927,7 +927,7 @@ describe("flushRetryQueue", () => {
 
     expect(fetch).not.toHaveBeenCalled();
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      "siteping_retry_queue",
+      "instafix_retry_queue",
       JSON.stringify([{ endpoint: otherEndpoint, payload: otherPayload }]),
     );
   });
@@ -963,7 +963,7 @@ describe("flushRetryQueue", () => {
 
     expect(fetch).toHaveBeenCalledTimes(2);
     // Should have saved the failed item back
-    expect(localStorage.setItem).toHaveBeenCalledWith("siteping_retry_queue", expect.stringContaining("item2"));
+    expect(localStorage.setItem).toHaveBeenCalledWith("instafix_retry_queue", expect.stringContaining("item2"));
   });
 
   it("preserves entries for other endpoints", async () => {
@@ -1024,7 +1024,7 @@ describe("flushRetryQueue", () => {
     await flushRetryQueue(endpoint);
 
     // Failed item should be kept in queue
-    expect(localStorage.setItem).toHaveBeenCalledWith("siteping_retry_queue", expect.stringContaining("fail"));
+    expect(localStorage.setItem).toHaveBeenCalledWith("instafix_retry_queue", expect.stringContaining("fail"));
   });
 });
 
@@ -1033,7 +1033,7 @@ describe("flushRetryQueue", () => {
 // ---------------------------------------------------------------------------
 
 describe("queueForRetry (via sendFeedback)", () => {
-  const endpoint = "http://localhost/api/siteping";
+  const endpoint = "http://localhost/api/instafix";
 
   beforeEach(() => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("", { status: 200 }));
@@ -1076,7 +1076,7 @@ describe("queueForRetry (via sendFeedback)", () => {
 
     await expect(client.sendFeedback(payload)).rejects.toThrow();
 
-    expect(localStorage.setItem).toHaveBeenCalledWith("siteping_retry_queue", expect.stringContaining("queued"));
+    expect(localStorage.setItem).toHaveBeenCalledWith("instafix_retry_queue", expect.stringContaining("queued"));
   });
 
   it("treats non-array stored value as empty queue (queueForRetry via sendFeedback)", async () => {
@@ -1204,7 +1204,7 @@ describe("queueForRetry (via sendFeedback)", () => {
 // ---------------------------------------------------------------------------
 
 describe("withRetryLock with navigator.locks present", () => {
-  const endpoint = "http://localhost/api/siteping";
+  const endpoint = "http://localhost/api/instafix";
   let originalNavigator: PropertyDescriptor | undefined;
 
   beforeEach(() => {
@@ -1264,7 +1264,7 @@ describe("withRetryLock with navigator.locks present", () => {
 
     expect(
       (navigator as unknown as { locks: { request: ReturnType<typeof vi.fn> } }).locks.request,
-    ).toHaveBeenCalledWith("siteping_retry_queue", expect.any(Function));
+    ).toHaveBeenCalledWith("instafix_retry_queue", expect.any(Function));
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
@@ -1292,6 +1292,6 @@ describe("withRetryLock with navigator.locks present", () => {
 
     expect(
       (navigator as unknown as { locks: { request: ReturnType<typeof vi.fn> } }).locks.request,
-    ).toHaveBeenCalledWith("siteping_retry_queue", expect.any(Function));
+    ).toHaveBeenCalledWith("instafix_retry_queue", expect.any(Function));
   });
 });

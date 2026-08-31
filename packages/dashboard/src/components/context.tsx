@@ -1,4 +1,4 @@
-import type { FeedbackStatus } from "@siteping/core";
+import type { FeedbackStatus } from "@instafix/core";
 import type { ComponentType } from "react";
 import { createContext, useContext } from "react";
 import type { TFunction } from "../i18n/index.js";
@@ -23,10 +23,10 @@ const InboxUiContext = createContext<InboxUiContextValue | null>(null);
 
 export const InboxUiProvider = InboxUiContext.Provider;
 
-/** Read the inbox UI context — throws outside `<SitepingInbox />`. */
+/** Read the inbox UI context — throws outside `<InstaFixInbox />`. */
 export function useInboxUi(): InboxUiContextValue {
   const ctx = useContext(InboxUiContext);
-  if (!ctx) throw new Error("[siteping] Inbox components must render inside <SitepingInbox />");
+  if (!ctx) throw new Error("[instafix] Inbox components must render inside <InstaFixInbox />");
   return ctx;
 }
 

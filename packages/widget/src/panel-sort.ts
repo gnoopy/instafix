@@ -10,7 +10,7 @@
  * smooth micro-interactions.
  */
 
-import { type FeedbackResponse, type FeedbackType, isClosedStatus } from "@siteping/core";
+import { type FeedbackResponse, type FeedbackType, isClosedStatus } from "@instafix/core";
 import { el, parseSvg, setText } from "./dom-utils.js";
 import type { TFunction } from "./i18n/index.js";
 import type { ThemeColors } from "./styles/theme.js";

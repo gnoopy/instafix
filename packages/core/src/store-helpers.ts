@@ -5,12 +5,12 @@
  * needs the same three ingredients: turn a `FeedbackCreateInput` into a
  * `FeedbackRecord` (null-normalizing optional fields, stamping ids and
  * timestamps), filter/paginate with `applyFeedbackFilters`, and implement
- * the dedup/update/delete choreography of the `SitepingStore` contract.
+ * the dedup/update/delete choreography of the `InstaFixStore` contract.
  *
  * `buildFeedbackRecord` / `buildAnnotationRecord` cover the first part for
  * any adapter. `createCollectionStore` covers all of it: give it `load`,
  * `persist`, and `generateId`, and it returns a fully conformant
- * `SitepingStore` — writing a new snapshot adapter is ~20 lines plus its
+ * `InstaFixStore` — writing a new snapshot adapter is ~20 lines plus its
  * storage specifics.
  */
 
@@ -23,7 +23,7 @@ import type {
   FeedbackQuery,
   FeedbackRecord,
   FeedbackUpdateInput,
-  SitepingStore,
+  InstaFixStore,
 } from "./types.js";
 import { StoreNotFoundError } from "./types.js";
 
@@ -125,13 +125,13 @@ export interface CollectionStoreBackend {
 }
 
 /**
- * A `SitepingStore` with the optional `verifyProjectOwnership` guaranteed —
+ * A `InstaFixStore` with the optional `verifyProjectOwnership` guaranteed —
  * what `createCollectionStore` returns.
  */
-export type CollectionStore = SitepingStore & Required<Pick<SitepingStore, "verifyProjectOwnership">>;
+export type CollectionStore = InstaFixStore & Required<Pick<InstaFixStore, "verifyProjectOwnership">>;
 
 /**
- * Build a fully conformant `SitepingStore` on top of a snapshot backend.
+ * Build a fully conformant `InstaFixStore` on top of a snapshot backend.
  *
  * The engine implements the whole store contract: clientId dedup (idempotent
  * create), newest-first ordering, the standard filter/pagination pipeline,
@@ -144,7 +144,7 @@ export type CollectionStore = SitepingStore & Required<Pick<SitepingStore, "veri
  *
  * @example
  * ```ts
- * export class MemoryStore implements SitepingStore {
+ * export class MemoryStore implements InstaFixStore {
  *   private feedbacks: FeedbackRecord[] = [];
  *   private readonly store = createCollectionStore({
  *     load: () => this.feedbacks,

@@ -1,7 +1,7 @@
 {
-  "name": "@siteping/adapter-prisma",
+  "name": "@instafix/adapter-prisma",
   "version": "0.6.4",
-  "description": "Prisma adapter for Siteping — server-side request handlers",
+  "description": "Prisma adapter for InstaFix — server-side request handlers",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -28,7 +28,7 @@
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "siteping",
+    "instafix",
     "prisma",
     "adapter",
     "feedback",
@@ -38,16 +38,16 @@
     "self-hosted",
     "typescript"
   ],
-  "author": "neosianexus",
+  "author": "gnoopy",
   "license": "MIT",
-  "homepage": "https://siteping.dev",
+  "homepage": "https://instafix.realstory.blog",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "url": "git+https://github.com/gnoopy/InstaFix.git",
     "directory": "packages/adapter-prisma"
   },
   "bugs": {
-    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+    "url": "https://github.com/gnoopy/InstaFix/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -59,7 +59,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@siteping/core": "workspace:*"
+    "@instafix/core": "workspace:*"
   },
   "peerDependencies": {
     "@prisma/client": "^5.0.0 || ^6.0.0 || ^7.0.0"

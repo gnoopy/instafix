@@ -4,7 +4,7 @@ import type { TFunction, TranslationKey } from "./i18n/index.js";
 import { tWithParams } from "./i18n/index.js";
 import { ICON_CLOSE } from "./icons.js";
 
-const STORAGE_KEY = "siteping_onboarding_seen";
+const STORAGE_KEY = "instafix_onboarding_seen";
 
 /** Whether the first-use coachmark has already been shown (or storage says to skip it). */
 export function hasSeenOnboarding(): boolean {

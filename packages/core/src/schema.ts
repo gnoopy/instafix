@@ -1,5 +1,5 @@
 /**
- * Siteping database models — single source of truth.
+ * InstaFix database models — single source of truth.
  *
  * Used by:
  * - CLI to generate Prisma schema (via prisma-ast)
@@ -13,7 +13,7 @@
 import type { AssertEqual } from "./type-utils.js";
 import type { AnnotationRecord, FeedbackRecord } from "./types.js";
 
-/** Prisma scalar types supported by Siteping field definitions. */
+/** Prisma scalar types supported by InstaFix field definitions. */
 export type PrismaScalarType =
   | "String"
   | "Boolean"
@@ -28,7 +28,7 @@ export type PrismaScalarType =
 /** Prisma native column hints applied via `@db.<NativeType>`. */
 export type PrismaNativeType = "Text" | "VarChar" | "Char" | "MediumText" | "LongText" | (string & {});
 
-/** Relation cardinality between two Siteping models. */
+/** Relation cardinality between two InstaFix models. */
 export type RelationKind = "1-to-many" | "many-to-1";
 
 /** Prisma `onDelete` referential action. */
@@ -51,7 +51,7 @@ export interface RelationDef {
 }
 
 /**
- * Definition of a single field in a Siteping database model.
+ * Definition of a single field in a InstaFix database model.
  *
  * The interface intentionally keeps a wide structural shape so it stays
  * easy to extend, but consumers can narrow via {@link isRelationField} /
@@ -84,19 +84,19 @@ export function isScalarField(field: FieldDef): field is FieldDef & { relation?:
   return field.relation === undefined;
 }
 
-/** Definition of a composite index on a Siteping database model. */
+/** Definition of a composite index on a InstaFix database model. */
 export interface IndexDef {
   fields: readonly string[];
 }
 
-/** Definition of a single Siteping database model (fields + indexes). */
+/** Definition of a single InstaFix database model (fields + indexes). */
 export interface ModelDef {
   fields: Record<string, FieldDef>;
   indexes?: readonly IndexDef[];
 }
 
-const _SITEPING_MODELS = {
-  SitepingFeedback: {
+const _INSTAFIX_MODELS = {
+  InstaFixFeedback: {
     fields: {
       id: { type: "String", isId: true, default: "cuid()" },
       projectName: { type: "String" },
@@ -117,8 +117,8 @@ const _SITEPING_MODELS = {
       createdAt: { type: "DateTime", default: "now()" },
       updatedAt: { type: "DateTime", isUpdatedAt: true },
       annotations: {
-        type: "SitepingAnnotation",
-        relation: { kind: "1-to-many", model: "SitepingAnnotation" },
+        type: "InstaFixAnnotation",
+        relation: { kind: "1-to-many", model: "InstaFixAnnotation" },
       },
     },
     indexes: [
@@ -127,15 +127,15 @@ const _SITEPING_MODELS = {
       { fields: ["projectName", "url"] },
     ],
   },
-  SitepingAnnotation: {
+  InstaFixAnnotation: {
     fields: {
       id: { type: "String", isId: true, default: "cuid()" },
       feedbackId: { type: "String" },
       feedback: {
-        type: "SitepingFeedback",
+        type: "InstaFixFeedback",
         relation: {
           kind: "many-to-1",
-          model: "SitepingFeedback",
+          model: "InstaFixFeedback",
           fields: ["feedbackId"],
           references: ["id"],
           onDelete: "Cascade",
@@ -167,30 +167,30 @@ const _SITEPING_MODELS = {
   },
 } as const satisfies Record<string, ModelDef>;
 
-/** Map of Siteping models keyed by model name — frozen at runtime. */
-export const SITEPING_MODELS: typeof _SITEPING_MODELS = Object.freeze(_SITEPING_MODELS);
+/** Map of InstaFix models keyed by model name — frozen at runtime. */
+export const INSTAFIX_MODELS: typeof _INSTAFIX_MODELS = Object.freeze(_INSTAFIX_MODELS);
 
-/** Union of every Siteping model name as a string literal. */
-export type SitepingModelName = keyof typeof SITEPING_MODELS;
+/** Union of every InstaFix model name as a string literal. */
+export type InstaFixModelName = keyof typeof INSTAFIX_MODELS;
 
-/** Field names declared on a specific Siteping model. */
-export type SitepingModelFieldName<M extends SitepingModelName> = keyof (typeof SITEPING_MODELS)[M]["fields"];
+/** Field names declared on a specific InstaFix model. */
+export type InstaFixModelFieldName<M extends InstaFixModelName> = keyof (typeof INSTAFIX_MODELS)[M]["fields"];
 
 // ---------------------------------------------------------------------------
 // Compile-time locks — the Prisma model definitions and the store record
 // interfaces describe the same columns. Adding a field to one side without
 // the other is a compile error here (the CLI generates the actual Prisma
-// schema from SITEPING_MODELS, so a missed column would otherwise only
+// schema from INSTAFIX_MODELS, so a missed column would otherwise only
 // surface as a runtime Prisma error).
 // ---------------------------------------------------------------------------
 
-const _feedbackModelMatchesRecord: AssertEqual<SitepingModelFieldName<"SitepingFeedback">, keyof FeedbackRecord> = true;
+const _feedbackModelMatchesRecord: AssertEqual<InstaFixModelFieldName<"InstaFixFeedback">, keyof FeedbackRecord> = true;
 void _feedbackModelMatchesRecord;
 
 // `feedback` is the relation back-reference — the only field with no record
 // counterpart.
 const _annotationModelMatchesRecord: AssertEqual<
-  Exclude<SitepingModelFieldName<"SitepingAnnotation">, "feedback">,
+  Exclude<InstaFixModelFieldName<"InstaFixAnnotation">, "feedback">,
   keyof AnnotationRecord
 > = true;
 void _annotationModelMatchesRecord;

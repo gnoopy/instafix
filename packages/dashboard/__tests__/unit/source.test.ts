@@ -1,10 +1,10 @@
-import type { FeedbackQuery, FeedbackStatus, FeedbackUpdateInput, SitepingStore } from "@siteping/core";
-import { SitepingAuthError, SitepingNetworkError, SitepingValidationError } from "@siteping/core";
+import type { FeedbackQuery, FeedbackStatus, FeedbackUpdateInput, InstaFixStore } from "@instafix/core";
+import { InstaFixAuthError, InstaFixNetworkError, InstaFixValidationError } from "@instafix/core";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { createEndpointSource, createStoreSource } from "../../src/source.js";
 import { errorFetch, jsonFetch, makeAnnotationResponse, makeRecord, makeResponse } from "../helpers.js";
 
-const ENDPOINT = "https://app.example/api/siteping";
+const ENDPOINT = "https://app.example/api/instafix";
 
 function lastCall(fetchFn: Mock<typeof fetch>): { url: string; init: RequestInit } {
   const [url, init] = fetchFn.mock.calls.at(-1) as [string, RequestInit];
@@ -173,16 +173,16 @@ describe("createEndpointSource — setStatus() & remove()", () => {
 
 describe("createEndpointSource — error mapping", () => {
   it.each([
-    [401, SitepingAuthError],
-    [403, SitepingAuthError],
-    [400, SitepingValidationError],
-    [422, SitepingValidationError],
+    [401, InstaFixAuthError],
+    [403, InstaFixAuthError],
+    [400, InstaFixValidationError],
+    [422, InstaFixValidationError],
   ])("maps %i to the right typed error", async (status, ctor) => {
     const source = createEndpointSource({ endpoint: ENDPOINT, fetchFn: errorFetch(status) });
     await expect(source.list({ projectName: "demo" })).rejects.toBeInstanceOf(ctor);
   });
 
-  it("maps 5xx to SitepingError with code SERVER (not retryable)", async () => {
+  it("maps 5xx to InstaFixError with code SERVER (not retryable)", async () => {
     const source = createEndpointSource({ endpoint: ENDPOINT, fetchFn: errorFetch(500, "kaboom") });
     await expect(source.list({ projectName: "demo" })).rejects.toMatchObject({
       code: "SERVER",
@@ -211,16 +211,16 @@ describe("createEndpointSource — error mapping", () => {
     await expect(source.list({ projectName: "demo" })).rejects.toThrow(/: 500$/);
   });
 
-  it("wraps a fetch rejection in SitepingNetworkError", async () => {
+  it("wraps a fetch rejection in InstaFixNetworkError", async () => {
     const fetchFn = vi.fn(async () => {
       throw new TypeError("Failed to fetch");
     });
     const source = createEndpointSource({ endpoint: ENDPOINT, fetchFn });
-    await expect(source.list({ projectName: "demo" })).rejects.toBeInstanceOf(SitepingNetworkError);
+    await expect(source.list({ projectName: "demo" })).rejects.toBeInstanceOf(InstaFixNetworkError);
   });
 
-  it("passes an existing SitepingNetworkError through unchanged", async () => {
-    const original = new SitepingNetworkError("already network");
+  it("passes an existing InstaFixNetworkError through unchanged", async () => {
+    const original = new InstaFixNetworkError("already network");
     const fetchFn = vi.fn(async () => {
       throw original;
     });
@@ -266,7 +266,7 @@ describe("createStoreSource", () => {
       createFeedback: vi.fn(),
       findByClientId: vi.fn(),
       deleteAllFeedbacks: vi.fn(),
-    } as unknown as SitepingStore & {
+    } as unknown as InstaFixStore & {
       getFeedbacks: ReturnType<typeof vi.fn>;
       updateFeedback: ReturnType<typeof vi.fn>;
       deleteFeedback: ReturnType<typeof vi.fn>;

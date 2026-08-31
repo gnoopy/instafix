@@ -1,4 +1,4 @@
-import { FEEDBACK_TYPES } from "@siteping/core";
+import { FEEDBACK_TYPES } from "@instafix/core";
 import type { ReactElement } from "react";
 import { getTypeLabel } from "../i18n/index.js";
 import type { InboxTypeFilter } from "../types.js";
@@ -14,7 +14,7 @@ export function TypeFilter({ type, onChange }: TypeFilterProps): ReactElement {
   const { t } = useInboxUi();
   return (
     <select
-      className="spd-type-filter"
+      className="ifd-type-filter"
       aria-label={t("inbox.typeFilter")}
       value={type}
       onChange={(event) => onChange(event.target.value as InboxTypeFilter)}

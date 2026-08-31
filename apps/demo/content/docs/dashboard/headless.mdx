@@ -1,16 +1,16 @@
 ---
 title: Headless hook
-description: useSitepingInbox — all the inbox logic, none of the UI. Build your own triage view.
+description: useInstaFixInbox — all the inbox logic, none of the UI. Build your own triage view.
 ---
 
-Everything `SitepingInbox` does — fetching, filters, optimistic mutations, undo, pagination — lives in one hook you can drive from your own components:
+Everything `InstaFixInbox` does — fetching, filters, optimistic mutations, undo, pagination — lives in one hook you can drive from your own components:
 
 ```tsx
-import { useSitepingInbox } from "@siteping/dashboard";
+import { useInstaFixInbox } from "@instafix/dashboard";
 
-const inbox = useSitepingInbox({
+const inbox = useInstaFixInbox({
   projects: "my-project",
-  endpoint: "/api/siteping",
+  endpoint: "/api/instafix",
 });
 ```
 
@@ -22,7 +22,7 @@ The options are a union over the three source modes: supply **exactly one** of `
 |---|---|---|---|
 | `projects` | `string` or `string[]` | **required** | An empty array throws at render. The first entry is selected initially |
 | `endpoint` | `string` | — | HTTP mode |
-| `store` | `SitepingStore` | — | Store mode |
+| `store` | `InstaFixStore` | — | Store mode |
 | `source` | `InboxSource` | — | Fully custom data source; see [Data sources](/docs/dashboard/sources) |
 | `apiKey` | `string` | — | Endpoint mode only. `Authorization: Bearer` on every request |
 | `headers` | object or function | — | Endpoint mode only. An explicit `Authorization` beats `apiKey`. Read live — changing it doesn't rebuild the source |
@@ -31,7 +31,7 @@ The options are a union over the three source modes: supply **exactly one** of `
 | `onDelete` | `(feedback) => void` | — | After the server confirms |
 | `onError` | `(error) => void` | — | Every failed load or mutation |
 
-Each mode is exported on its own — `InboxEndpointOptions`, `InboxStoreOptions`, `InboxCustomSourceOptions`, the shared `InboxSharedOptions`, and the `UseSitepingInboxOptions` union — so a wrapper component can accept just the mode it supports. Plain-JavaScript callers get the old behavior: no source at all still throws at render.
+Each mode is exported on its own — `InboxEndpointOptions`, `InboxStoreOptions`, `InboxCustomSourceOptions`, the shared `InboxSharedOptions`, and the `UseInstaFixInboxOptions` union — so a wrapper component can accept just the mode it supports. Plain-JavaScript callers get the old behavior: no source at all still throws at render.
 
 ## What you get back
 

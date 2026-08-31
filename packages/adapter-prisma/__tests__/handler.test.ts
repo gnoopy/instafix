@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createSitepingHandler } from "../src/index.js";
+import { createInstaFixHandler } from "../src/index.js";
 import { validAnnotation, validPayloadNoAnnotations } from "./fixtures.js";
 
 // NOTE: the type-level regression guard for #99 (delegate bivariance) lives in
@@ -8,7 +8,7 @@ import { validAnnotation, validPayloadNoAnnotations } from "./fixtures.js";
 
 function mockPrisma() {
   return {
-    sitepingFeedback: {
+    instafixFeedback: {
       create: vi.fn().mockResolvedValue({
         id: "fb-1",
         ...validPayloadNoAnnotations,
@@ -29,30 +29,30 @@ function mockPrisma() {
   };
 }
 
-describe("createSitepingHandler", () => {
+describe("createInstaFixHandler", () => {
   let prisma: ReturnType<typeof mockPrisma>;
-  let handler: ReturnType<typeof createSitepingHandler>;
+  let handler: ReturnType<typeof createInstaFixHandler>;
 
   beforeEach(() => {
     prisma = mockPrisma();
     // These tests focus on validation/persistence/error paths; the destructive-op
     // auth gate is exercised in auth-cors.test.ts.
-    handler = createSitepingHandler({ prisma, requireAuthForDestructive: false });
+    handler = createInstaFixHandler({ prisma, requireAuthForDestructive: false });
   });
 
   describe("POST", () => {
     it("creates a feedback with valid payload", async () => {
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "POST",
         body: JSON.stringify(validPayloadNoAnnotations),
       });
       const res = await handler.POST(req);
       expect(res.status).toBe(201);
-      expect(prisma.sitepingFeedback.create).toHaveBeenCalledOnce();
+      expect(prisma.instafixFeedback.create).toHaveBeenCalledOnce();
     });
 
     it("returns 400 for invalid JSON", async () => {
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "POST",
         body: "not json",
       });
@@ -61,7 +61,7 @@ describe("createSitepingHandler", () => {
     });
 
     it("returns 400 for missing required fields", async () => {
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "POST",
         body: JSON.stringify({ type: "bug" }),
       });
@@ -73,7 +73,7 @@ describe("createSitepingHandler", () => {
     });
 
     it("returns 400 for invalid email", async () => {
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "POST",
         body: JSON.stringify({ ...validPayloadNoAnnotations, authorEmail: "not-email" }),
       });
@@ -82,9 +82,9 @@ describe("createSitepingHandler", () => {
     });
 
     it("handles duplicate clientId gracefully", async () => {
-      prisma.sitepingFeedback.create.mockRejectedValue({ code: "P2002" });
-      prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", ...validPayloadNoAnnotations });
-      const req = new Request("http://localhost/api/siteping", {
+      prisma.instafixFeedback.create.mockRejectedValue({ code: "P2002" });
+      prisma.instafixFeedback.findUnique.mockResolvedValue({ id: "fb-1", ...validPayloadNoAnnotations });
+      const req = new Request("http://localhost/api/instafix", {
         method: "POST",
         body: JSON.stringify(validPayloadNoAnnotations),
       });
@@ -94,8 +94,8 @@ describe("createSitepingHandler", () => {
 
     it("returns 500 on unexpected DB error", async () => {
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      prisma.sitepingFeedback.create.mockRejectedValue(new Error("DB down"));
-      const req = new Request("http://localhost/api/siteping", {
+      prisma.instafixFeedback.create.mockRejectedValue(new Error("DB down"));
+      const req = new Request("http://localhost/api/instafix", {
         method: "POST",
         body: JSON.stringify(validPayloadNoAnnotations),
       });
@@ -110,15 +110,15 @@ describe("createSitepingHandler", () => {
         annotations: [validAnnotation],
       };
 
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "POST",
         body: JSON.stringify(payloadWithAnnotation),
       });
 
       await handler.POST(req);
 
-      expect(prisma.sitepingFeedback.create).toHaveBeenCalledOnce();
-      const createArg = prisma.sitepingFeedback.create.mock.calls[0]?.[0] as {
+      expect(prisma.instafixFeedback.create).toHaveBeenCalledOnce();
+      const createArg = prisma.instafixFeedback.create.mock.calls[0]?.[0] as {
         data: { annotations: { create: Array<Record<string, unknown>> } };
       };
       const [flatAnnotation] = createArg.data.annotations.create;
@@ -146,29 +146,29 @@ describe("createSitepingHandler", () => {
 
     it("passes screenshotRegion into Prisma create", async () => {
       const region = { xPct: 0.25, yPct: 0.4, wPct: 0.3, hPct: 0.1 };
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "POST",
         body: JSON.stringify({ ...validPayloadNoAnnotations, screenshotRegion: region }),
       });
       const res = await handler.POST(req);
       expect(res.status).toBe(201);
-      const createArg = prisma.sitepingFeedback.create.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+      const createArg = prisma.instafixFeedback.create.mock.calls[0]?.[0] as { data: Record<string, unknown> };
       expect(createArg.data.screenshotRegion).toEqual(region);
     });
 
     it("omits the screenshotRegion column when the payload has none (unsynced schemas)", async () => {
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "POST",
         body: JSON.stringify(validPayloadNoAnnotations),
       });
       const res = await handler.POST(req);
       expect(res.status).toBe(201);
-      const createArg = prisma.sitepingFeedback.create.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+      const createArg = prisma.instafixFeedback.create.mock.calls[0]?.[0] as { data: Record<string, unknown> };
       expect(createArg.data).not.toHaveProperty("screenshotRegion");
     });
 
     it("returns 400 for an invalid screenshotRegion", async () => {
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "POST",
         body: JSON.stringify({
           ...validPayloadNoAnnotations,
@@ -177,15 +177,15 @@ describe("createSitepingHandler", () => {
       });
       const res = await handler.POST(req);
       expect(res.status).toBe(400);
-      expect(prisma.sitepingFeedback.create).not.toHaveBeenCalled();
+      expect(prisma.instafixFeedback.create).not.toHaveBeenCalled();
     });
   });
 
   describe("GET", () => {
     it("returns feedbacks for a project", async () => {
-      prisma.sitepingFeedback.findMany.mockResolvedValue([]);
-      prisma.sitepingFeedback.count.mockResolvedValue(0);
-      const req = new Request("http://localhost/api/siteping?projectName=test");
+      prisma.instafixFeedback.findMany.mockResolvedValue([]);
+      prisma.instafixFeedback.count.mockResolvedValue(0);
+      const req = new Request("http://localhost/api/instafix?projectName=test");
       const res = await handler.GET(req);
       expect(res.status).toBe(200);
       const body = await res.json();
@@ -194,59 +194,59 @@ describe("createSitepingHandler", () => {
     });
 
     it("returns 400 without projectName", async () => {
-      const req = new Request("http://localhost/api/siteping");
+      const req = new Request("http://localhost/api/instafix");
       const res = await handler.GET(req);
       expect(res.status).toBe(400);
     });
 
     it("rejects limit > 100 via Zod validation", async () => {
-      const req = new Request("http://localhost/api/siteping?projectName=test&limit=999");
+      const req = new Request("http://localhost/api/instafix?projectName=test&limit=999");
       const res = await handler.GET(req);
       expect(res.status).toBe(400);
     });
 
     it("applies type and status filters", async () => {
-      prisma.sitepingFeedback.findMany.mockResolvedValue([]);
-      prisma.sitepingFeedback.count.mockResolvedValue(0);
-      const req = new Request("http://localhost/api/siteping?projectName=test&type=bug&status=open");
+      prisma.instafixFeedback.findMany.mockResolvedValue([]);
+      prisma.instafixFeedback.count.mockResolvedValue(0);
+      const req = new Request("http://localhost/api/instafix?projectName=test&type=bug&status=open");
       await handler.GET(req);
-      const callArgs = prisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as { where: Record<string, unknown> };
+      const callArgs = prisma.instafixFeedback.findMany.mock.calls[0]?.[0] as { where: Record<string, unknown> };
       expect(callArgs.where.type).toBe("bug");
       expect(callArgs.where.status).toBe("open");
     });
 
     it.each(["in_progress", "wont_fix"] as const)("applies the %s status filter", async (status) => {
-      prisma.sitepingFeedback.findMany.mockResolvedValue([]);
-      prisma.sitepingFeedback.count.mockResolvedValue(0);
-      const req = new Request(`http://localhost/api/siteping?projectName=test&status=${status}`);
+      prisma.instafixFeedback.findMany.mockResolvedValue([]);
+      prisma.instafixFeedback.count.mockResolvedValue(0);
+      const req = new Request(`http://localhost/api/instafix?projectName=test&status=${status}`);
       const res = await handler.GET(req);
       expect(res.status).toBe(200);
-      const callArgs = prisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as { where: Record<string, unknown> };
+      const callArgs = prisma.instafixFeedback.findMany.mock.calls[0]?.[0] as { where: Record<string, unknown> };
       expect(callArgs.where.status).toBe(status);
     });
 
     it("applies a statuses bucket as where.status.in", async () => {
-      prisma.sitepingFeedback.findMany.mockResolvedValue([]);
-      prisma.sitepingFeedback.count.mockResolvedValue(0);
-      const req = new Request("http://localhost/api/siteping?projectName=test&statuses=open,in_progress");
+      prisma.instafixFeedback.findMany.mockResolvedValue([]);
+      prisma.instafixFeedback.count.mockResolvedValue(0);
+      const req = new Request("http://localhost/api/instafix?projectName=test&statuses=open,in_progress");
       const res = await handler.GET(req);
       expect(res.status).toBe(200);
-      const callArgs = prisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as { where: Record<string, unknown> };
+      const callArgs = prisma.instafixFeedback.findMany.mock.calls[0]?.[0] as { where: Record<string, unknown> };
       expect(callArgs.where.status).toEqual({ in: ["open", "in_progress"] });
     });
 
     it("prefers the statuses bucket over an exact status when both are present", async () => {
-      prisma.sitepingFeedback.findMany.mockResolvedValue([]);
-      prisma.sitepingFeedback.count.mockResolvedValue(0);
-      const req = new Request("http://localhost/api/siteping?projectName=test&status=open&statuses=resolved,wont_fix");
+      prisma.instafixFeedback.findMany.mockResolvedValue([]);
+      prisma.instafixFeedback.count.mockResolvedValue(0);
+      const req = new Request("http://localhost/api/instafix?projectName=test&status=open&statuses=resolved,wont_fix");
       const res = await handler.GET(req);
       expect(res.status).toBe(200);
-      const callArgs = prisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as { where: Record<string, unknown> };
+      const callArgs = prisma.instafixFeedback.findMany.mock.calls[0]?.[0] as { where: Record<string, unknown> };
       expect(callArgs.where.status).toEqual({ in: ["resolved", "wont_fix"] });
     });
 
     it("rejects a statuses bucket with an unknown value", async () => {
-      const req = new Request("http://localhost/api/siteping?projectName=test&statuses=open,bogus");
+      const req = new Request("http://localhost/api/instafix?projectName=test&statuses=open,bogus");
       const res = await handler.GET(req);
       expect(res.status).toBe(400);
     });
@@ -257,11 +257,11 @@ describe("createSitepingHandler", () => {
         // so detectActiveProvider returns null. The safe default is to omit
         // `mode` — `contains` works on every provider; `mode: "insensitive"`
         // would throw on MySQL/SQLite/SQL Server.
-        prisma.sitepingFeedback.findMany.mockResolvedValue([]);
-        prisma.sitepingFeedback.count.mockResolvedValue(0);
-        const req = new Request("http://localhost/api/siteping?projectName=test&search=hello");
+        prisma.instafixFeedback.findMany.mockResolvedValue([]);
+        prisma.instafixFeedback.count.mockResolvedValue(0);
+        const req = new Request("http://localhost/api/instafix?projectName=test&search=hello");
         await handler.GET(req);
-        const callArgs = prisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as {
+        const callArgs = prisma.instafixFeedback.findMany.mock.calls[0]?.[0] as {
           where: { message?: { contains: string; mode?: string } };
         };
         expect(callArgs.where.message).toEqual({ contains: "hello" });
@@ -269,12 +269,12 @@ describe("createSitepingHandler", () => {
       });
 
       it("omits mode when caseInsensitiveSearch:false is passed explicitly", async () => {
-        const sqliteHandler = createSitepingHandler({ prisma, caseInsensitiveSearch: false });
-        prisma.sitepingFeedback.findMany.mockResolvedValue([]);
-        prisma.sitepingFeedback.count.mockResolvedValue(0);
-        const req = new Request("http://localhost/api/siteping?projectName=test&search=hello");
+        const sqliteHandler = createInstaFixHandler({ prisma, caseInsensitiveSearch: false });
+        prisma.instafixFeedback.findMany.mockResolvedValue([]);
+        prisma.instafixFeedback.count.mockResolvedValue(0);
+        const req = new Request("http://localhost/api/instafix?projectName=test&search=hello");
         await sqliteHandler.GET(req);
-        const callArgs = prisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as {
+        const callArgs = prisma.instafixFeedback.findMany.mock.calls[0]?.[0] as {
           where: { message?: { contains: string; mode?: string } };
         };
         expect(callArgs.where.message).toEqual({ contains: "hello" });
@@ -283,12 +283,12 @@ describe("createSitepingHandler", () => {
 
       it("auto-detects sqlite via _activeProvider and omits mode", async () => {
         const sqlitePrisma = Object.assign(mockPrisma(), { _activeProvider: "sqlite" });
-        const sqliteHandler = createSitepingHandler({ prisma: sqlitePrisma });
-        sqlitePrisma.sitepingFeedback.findMany.mockResolvedValue([]);
-        sqlitePrisma.sitepingFeedback.count.mockResolvedValue(0);
-        const req = new Request("http://localhost/api/siteping?projectName=test&search=hello");
+        const sqliteHandler = createInstaFixHandler({ prisma: sqlitePrisma });
+        sqlitePrisma.instafixFeedback.findMany.mockResolvedValue([]);
+        sqlitePrisma.instafixFeedback.count.mockResolvedValue(0);
+        const req = new Request("http://localhost/api/instafix?projectName=test&search=hello");
         await sqliteHandler.GET(req);
-        const callArgs = sqlitePrisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as {
+        const callArgs = sqlitePrisma.instafixFeedback.findMany.mock.calls[0]?.[0] as {
           where: { message?: { contains: string; mode?: string } };
         };
         expect(callArgs.where.message).toEqual({ contains: "hello" });
@@ -296,12 +296,12 @@ describe("createSitepingHandler", () => {
 
       it("auto-detects postgresql via _activeProvider and keeps mode", async () => {
         const pgPrisma = Object.assign(mockPrisma(), { _activeProvider: "postgresql" });
-        const pgHandler = createSitepingHandler({ prisma: pgPrisma });
-        pgPrisma.sitepingFeedback.findMany.mockResolvedValue([]);
-        pgPrisma.sitepingFeedback.count.mockResolvedValue(0);
-        const req = new Request("http://localhost/api/siteping?projectName=test&search=hello");
+        const pgHandler = createInstaFixHandler({ prisma: pgPrisma });
+        pgPrisma.instafixFeedback.findMany.mockResolvedValue([]);
+        pgPrisma.instafixFeedback.count.mockResolvedValue(0);
+        const req = new Request("http://localhost/api/instafix?projectName=test&search=hello");
         await pgHandler.GET(req);
-        const callArgs = pgPrisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as {
+        const callArgs = pgPrisma.instafixFeedback.findMany.mock.calls[0]?.[0] as {
           where: { message?: { contains: string; mode?: string } };
         };
         expect(callArgs.where.message).toEqual({ contains: "hello", mode: "insensitive" });
@@ -309,27 +309,27 @@ describe("createSitepingHandler", () => {
 
       it("explicit caseInsensitiveSearch:true overrides sqlite auto-detect", async () => {
         const sqlitePrisma = Object.assign(mockPrisma(), { _activeProvider: "sqlite" });
-        const overriddenHandler = createSitepingHandler({
+        const overriddenHandler = createInstaFixHandler({
           prisma: sqlitePrisma,
           caseInsensitiveSearch: true,
         });
-        sqlitePrisma.sitepingFeedback.findMany.mockResolvedValue([]);
-        sqlitePrisma.sitepingFeedback.count.mockResolvedValue(0);
-        const req = new Request("http://localhost/api/siteping?projectName=test&search=hello");
+        sqlitePrisma.instafixFeedback.findMany.mockResolvedValue([]);
+        sqlitePrisma.instafixFeedback.count.mockResolvedValue(0);
+        const req = new Request("http://localhost/api/instafix?projectName=test&search=hello");
         await overriddenHandler.GET(req);
-        const callArgs = sqlitePrisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as {
+        const callArgs = sqlitePrisma.instafixFeedback.findMany.mock.calls[0]?.[0] as {
           where: { message?: { contains: string; mode?: string } };
         };
         expect(callArgs.where.message).toEqual({ contains: "hello", mode: "insensitive" });
       });
 
       it("does not touch where.message when search is absent", async () => {
-        const sqliteHandler = createSitepingHandler({ prisma, caseInsensitiveSearch: false });
-        prisma.sitepingFeedback.findMany.mockResolvedValue([]);
-        prisma.sitepingFeedback.count.mockResolvedValue(0);
-        const req = new Request("http://localhost/api/siteping?projectName=test");
+        const sqliteHandler = createInstaFixHandler({ prisma, caseInsensitiveSearch: false });
+        prisma.instafixFeedback.findMany.mockResolvedValue([]);
+        prisma.instafixFeedback.count.mockResolvedValue(0);
+        const req = new Request("http://localhost/api/instafix?projectName=test");
         await sqliteHandler.GET(req);
-        const callArgs = prisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as {
+        const callArgs = prisma.instafixFeedback.findMany.mock.calls[0]?.[0] as {
           where: Record<string, unknown>;
         };
         expect(callArgs.where).not.toHaveProperty("message");
@@ -339,12 +339,12 @@ describe("createSitepingHandler", () => {
         // MySQL's generated Prisma client does not expose `mode?:` on string
         // filters — passing it raises `Unknown argument 'mode'` at runtime.
         const mysqlPrisma = Object.assign(mockPrisma(), { _activeProvider: "mysql" });
-        const mysqlHandler = createSitepingHandler({ prisma: mysqlPrisma });
-        mysqlPrisma.sitepingFeedback.findMany.mockResolvedValue([]);
-        mysqlPrisma.sitepingFeedback.count.mockResolvedValue(0);
-        const req = new Request("http://localhost/api/siteping?projectName=test&search=hello");
+        const mysqlHandler = createInstaFixHandler({ prisma: mysqlPrisma });
+        mysqlPrisma.instafixFeedback.findMany.mockResolvedValue([]);
+        mysqlPrisma.instafixFeedback.count.mockResolvedValue(0);
+        const req = new Request("http://localhost/api/instafix?projectName=test&search=hello");
         await mysqlHandler.GET(req);
-        const callArgs = mysqlPrisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as {
+        const callArgs = mysqlPrisma.instafixFeedback.findMany.mock.calls[0]?.[0] as {
           where: { message?: { contains: string; mode?: string } };
         };
         expect(callArgs.where.message).not.toHaveProperty("mode");
@@ -354,12 +354,12 @@ describe("createSitepingHandler", () => {
         // MongoDB's generated Prisma client exposes `mode?: QueryMode` (Prisma
         // compiles it to a case-insensitive $regex under the hood).
         const mongoPrisma = Object.assign(mockPrisma(), { _activeProvider: "mongodb" });
-        const mongoHandler = createSitepingHandler({ prisma: mongoPrisma });
-        mongoPrisma.sitepingFeedback.findMany.mockResolvedValue([]);
-        mongoPrisma.sitepingFeedback.count.mockResolvedValue(0);
-        const req = new Request("http://localhost/api/siteping?projectName=test&search=hello");
+        const mongoHandler = createInstaFixHandler({ prisma: mongoPrisma });
+        mongoPrisma.instafixFeedback.findMany.mockResolvedValue([]);
+        mongoPrisma.instafixFeedback.count.mockResolvedValue(0);
+        const req = new Request("http://localhost/api/instafix?projectName=test&search=hello");
         await mongoHandler.GET(req);
-        const callArgs = mongoPrisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as {
+        const callArgs = mongoPrisma.instafixFeedback.findMany.mock.calls[0]?.[0] as {
           where: { message?: { contains: string; mode?: string } };
         };
         expect(callArgs.where.message).toEqual({ contains: "hello", mode: "insensitive" });
@@ -367,12 +367,12 @@ describe("createSitepingHandler", () => {
 
       it("auto-detects cockroachdb via _activeProvider and keeps mode", async () => {
         const cockroachPrisma = Object.assign(mockPrisma(), { _activeProvider: "cockroachdb" });
-        const cockroachHandler = createSitepingHandler({ prisma: cockroachPrisma });
-        cockroachPrisma.sitepingFeedback.findMany.mockResolvedValue([]);
-        cockroachPrisma.sitepingFeedback.count.mockResolvedValue(0);
-        const req = new Request("http://localhost/api/siteping?projectName=test&search=hello");
+        const cockroachHandler = createInstaFixHandler({ prisma: cockroachPrisma });
+        cockroachPrisma.instafixFeedback.findMany.mockResolvedValue([]);
+        cockroachPrisma.instafixFeedback.count.mockResolvedValue(0);
+        const req = new Request("http://localhost/api/instafix?projectName=test&search=hello");
         await cockroachHandler.GET(req);
-        const callArgs = cockroachPrisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as {
+        const callArgs = cockroachPrisma.instafixFeedback.findMany.mock.calls[0]?.[0] as {
           where: { message?: { contains: string; mode?: string } };
         };
         expect(callArgs.where.message).toEqual({ contains: "hello", mode: "insensitive" });
@@ -380,12 +380,12 @@ describe("createSitepingHandler", () => {
 
       it("auto-detects sqlserver via _activeProvider and omits mode", async () => {
         const mssqlPrisma = Object.assign(mockPrisma(), { _activeProvider: "sqlserver" });
-        const mssqlHandler = createSitepingHandler({ prisma: mssqlPrisma });
-        mssqlPrisma.sitepingFeedback.findMany.mockResolvedValue([]);
-        mssqlPrisma.sitepingFeedback.count.mockResolvedValue(0);
-        const req = new Request("http://localhost/api/siteping?projectName=test&search=hello");
+        const mssqlHandler = createInstaFixHandler({ prisma: mssqlPrisma });
+        mssqlPrisma.instafixFeedback.findMany.mockResolvedValue([]);
+        mssqlPrisma.instafixFeedback.count.mockResolvedValue(0);
+        const req = new Request("http://localhost/api/instafix?projectName=test&search=hello");
         await mssqlHandler.GET(req);
-        const callArgs = mssqlPrisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as {
+        const callArgs = mssqlPrisma.instafixFeedback.findMany.mock.calls[0]?.[0] as {
           where: { message?: { contains: string; mode?: string } };
         };
         expect(callArgs.where.message).not.toHaveProperty("mode");
@@ -393,12 +393,12 @@ describe("createSitepingHandler", () => {
 
       it("reads provider from _engineConfig.activeProvider when _activeProvider is missing", async () => {
         const altPrisma = Object.assign(mockPrisma(), { _engineConfig: { activeProvider: "postgresql" } });
-        const altHandler = createSitepingHandler({ prisma: altPrisma });
-        altPrisma.sitepingFeedback.findMany.mockResolvedValue([]);
-        altPrisma.sitepingFeedback.count.mockResolvedValue(0);
-        const req = new Request("http://localhost/api/siteping?projectName=test&search=hello");
+        const altHandler = createInstaFixHandler({ prisma: altPrisma });
+        altPrisma.instafixFeedback.findMany.mockResolvedValue([]);
+        altPrisma.instafixFeedback.count.mockResolvedValue(0);
+        const req = new Request("http://localhost/api/instafix?projectName=test&search=hello");
         await altHandler.GET(req);
-        const callArgs = altPrisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as {
+        const callArgs = altPrisma.instafixFeedback.findMany.mock.calls[0]?.[0] as {
           where: { message?: { contains: string; mode?: string } };
         };
         expect(callArgs.where.message).toEqual({ contains: "hello", mode: "insensitive" });
@@ -415,12 +415,12 @@ describe("createSitepingHandler", () => {
             return Reflect.get(target, prop, receiver);
           },
         }) as unknown as ReturnType<typeof mockPrisma>;
-        const throwingHandler = createSitepingHandler({ prisma: throwingPrisma });
-        throwingPrisma.sitepingFeedback.findMany.mockResolvedValue([]);
-        throwingPrisma.sitepingFeedback.count.mockResolvedValue(0);
-        const req = new Request("http://localhost/api/siteping?projectName=test&search=hello");
+        const throwingHandler = createInstaFixHandler({ prisma: throwingPrisma });
+        throwingPrisma.instafixFeedback.findMany.mockResolvedValue([]);
+        throwingPrisma.instafixFeedback.count.mockResolvedValue(0);
+        const req = new Request("http://localhost/api/instafix?projectName=test&search=hello");
         await throwingHandler.GET(req);
-        const callArgs = throwingPrisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as {
+        const callArgs = throwingPrisma.instafixFeedback.findMany.mock.calls[0]?.[0] as {
           where: { message?: { contains: string; mode?: string } };
         };
         // Probe threw → fallback → no mode (safe default).
@@ -431,28 +431,28 @@ describe("createSitepingHandler", () => {
 
   describe("PATCH", () => {
     it("resolves a feedback", async () => {
-      prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
-      prisma.sitepingFeedback.update.mockResolvedValue({
+      prisma.instafixFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
+      prisma.instafixFeedback.update.mockResolvedValue({
         id: "fb-1",
         projectName: "test-project",
         status: "resolved",
         resolvedAt: new Date().toISOString(),
         annotations: [],
       });
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "PATCH",
         body: JSON.stringify({ id: "fb-1", projectName: "test-project", status: "resolved" }),
       });
       const res = await handler.PATCH(req);
       expect(res.status).toBe(200);
-      const updateArgs = prisma.sitepingFeedback.update.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+      const updateArgs = prisma.instafixFeedback.update.mock.calls[0]?.[0] as { data: Record<string, unknown> };
       expect(updateArgs.data.status).toBe("resolved");
       expect(updateArgs.data.resolvedAt).toBeInstanceOf(Date);
     });
 
     it("edits the message in place when provided (G7)", async () => {
-      prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
-      prisma.sitepingFeedback.update.mockResolvedValue({
+      prisma.instafixFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
+      prisma.instafixFeedback.update.mockResolvedValue({
         id: "fb-1",
         projectName: "test-project",
         status: "open",
@@ -460,44 +460,44 @@ describe("createSitepingHandler", () => {
         message: "edited note",
         annotations: [],
       });
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "PATCH",
         body: JSON.stringify({ id: "fb-1", projectName: "test-project", status: "open", message: "edited note" }),
       });
       const res = await handler.PATCH(req);
       expect(res.status).toBe(200);
-      const updateArgs = prisma.sitepingFeedback.update.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+      const updateArgs = prisma.instafixFeedback.update.mock.calls[0]?.[0] as { data: Record<string, unknown> };
       expect(updateArgs.data.message).toBe("edited note");
     });
 
     it("omits the message key entirely when not provided (no phantom overwrite)", async () => {
-      prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
-      prisma.sitepingFeedback.update.mockResolvedValue({
+      prisma.instafixFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
+      prisma.instafixFeedback.update.mockResolvedValue({
         id: "fb-1",
         projectName: "test-project",
         status: "open",
         resolvedAt: null,
         annotations: [],
       });
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "PATCH",
         body: JSON.stringify({ id: "fb-1", projectName: "test-project", status: "open" }),
       });
       await handler.PATCH(req);
-      const updateArgs = prisma.sitepingFeedback.update.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+      const updateArgs = prisma.instafixFeedback.update.mock.calls[0]?.[0] as { data: Record<string, unknown> };
       expect("message" in updateArgs.data).toBe(false);
     });
 
     it("replaces the annotation set via nested deleteMany+create when provided (G7 reconnect)", async () => {
-      prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
-      prisma.sitepingFeedback.update.mockResolvedValue({
+      prisma.instafixFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
+      prisma.instafixFeedback.update.mockResolvedValue({
         id: "fb-1",
         projectName: "test-project",
         status: "open",
         resolvedAt: null,
         annotations: [],
       });
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "PATCH",
         body: JSON.stringify({
           id: "fb-1",
@@ -527,7 +527,7 @@ describe("createSitepingHandler", () => {
       });
       const res = await handler.PATCH(req);
       expect(res.status).toBe(200);
-      const updateArgs = prisma.sitepingFeedback.update.mock.calls[0]?.[0] as {
+      const updateArgs = prisma.instafixFeedback.update.mock.calls[0]?.[0] as {
         data: { annotations?: { deleteMany: unknown; create: Array<{ cssSelector: string }> } };
       };
       expect(updateArgs.data.annotations?.deleteMany).toEqual({});
@@ -536,38 +536,38 @@ describe("createSitepingHandler", () => {
     });
 
     it("omits the annotations key entirely when not provided (existing targets untouched)", async () => {
-      prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
-      prisma.sitepingFeedback.update.mockResolvedValue({
+      prisma.instafixFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
+      prisma.instafixFeedback.update.mockResolvedValue({
         id: "fb-1",
         projectName: "test-project",
         status: "open",
         resolvedAt: null,
         annotations: [],
       });
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "PATCH",
         body: JSON.stringify({ id: "fb-1", projectName: "test-project", status: "open" }),
       });
       await handler.PATCH(req);
-      const updateArgs = prisma.sitepingFeedback.update.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+      const updateArgs = prisma.instafixFeedback.update.mock.calls[0]?.[0] as { data: Record<string, unknown> };
       expect("annotations" in updateArgs.data).toBe(false);
     });
 
     it("unresolves a feedback (clears resolvedAt)", async () => {
-      prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
-      prisma.sitepingFeedback.update.mockResolvedValue({
+      prisma.instafixFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
+      prisma.instafixFeedback.update.mockResolvedValue({
         id: "fb-1",
         projectName: "test-project",
         status: "open",
         resolvedAt: null,
         annotations: [],
       });
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "PATCH",
         body: JSON.stringify({ id: "fb-1", projectName: "test-project", status: "open" }),
       });
       await handler.PATCH(req);
-      const updateArgs = prisma.sitepingFeedback.update.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+      const updateArgs = prisma.instafixFeedback.update.mock.calls[0]?.[0] as { data: Record<string, unknown> };
       expect(updateArgs.data.resolvedAt).toBeNull();
     });
 
@@ -580,21 +580,21 @@ describe("createSitepingHandler", () => {
       ["resolved", "date"],
       ["wont_fix", "date"],
     ] as const)("PATCH to %s derives resolvedAt = %s", async (status, expected) => {
-      prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
-      prisma.sitepingFeedback.update.mockResolvedValue({
+      prisma.instafixFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
+      prisma.instafixFeedback.update.mockResolvedValue({
         id: "fb-1",
         projectName: "test-project",
         status,
         resolvedAt: expected === "date" ? new Date().toISOString() : null,
         annotations: [],
       });
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "PATCH",
         body: JSON.stringify({ id: "fb-1", projectName: "test-project", status }),
       });
       const res = await handler.PATCH(req);
       expect(res.status).toBe(200);
-      const updateArgs = prisma.sitepingFeedback.update.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+      const updateArgs = prisma.instafixFeedback.update.mock.calls[0]?.[0] as { data: Record<string, unknown> };
       expect(updateArgs.data.status).toBe(status);
       if (expected === "date") {
         expect(updateArgs.data.resolvedAt).toBeInstanceOf(Date);
@@ -604,29 +604,29 @@ describe("createSitepingHandler", () => {
     });
 
     it("returns 404 when feedback belongs to a different project", async () => {
-      prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "other-project" });
-      const req = new Request("http://localhost/api/siteping", {
+      prisma.instafixFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "other-project" });
+      const req = new Request("http://localhost/api/instafix", {
         method: "PATCH",
         body: JSON.stringify({ id: "fb-1", projectName: "test-project", status: "resolved" }),
       });
       const res = await handler.PATCH(req);
       expect(res.status).toBe(404);
-      expect(prisma.sitepingFeedback.update).not.toHaveBeenCalled();
+      expect(prisma.instafixFeedback.update).not.toHaveBeenCalled();
     });
 
     it("returns 404 when feedback does not exist", async () => {
-      prisma.sitepingFeedback.findUnique.mockResolvedValue(null);
-      const req = new Request("http://localhost/api/siteping", {
+      prisma.instafixFeedback.findUnique.mockResolvedValue(null);
+      const req = new Request("http://localhost/api/instafix", {
         method: "PATCH",
         body: JSON.stringify({ id: "nonexistent", projectName: "test-project", status: "resolved" }),
       });
       const res = await handler.PATCH(req);
       expect(res.status).toBe(404);
-      expect(prisma.sitepingFeedback.update).not.toHaveBeenCalled();
+      expect(prisma.instafixFeedback.update).not.toHaveBeenCalled();
     });
 
     it("returns 400 for invalid status", async () => {
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "PATCH",
         body: JSON.stringify({ id: "fb-1", projectName: "test-project", status: "pending" }),
       });
@@ -637,28 +637,28 @@ describe("createSitepingHandler", () => {
 
   describe("DELETE", () => {
     it("deletes a single feedback by id", async () => {
-      prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
-      const req = new Request("http://localhost/api/siteping", {
+      prisma.instafixFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
+      const req = new Request("http://localhost/api/instafix", {
         method: "DELETE",
         body: JSON.stringify({ id: "fb-1", projectName: "test-project" }),
       });
       const res = await handler.DELETE(req);
       expect(res.status).toBe(200);
-      expect(prisma.sitepingFeedback.delete).toHaveBeenCalledWith({ where: { id: "fb-1" } });
+      expect(prisma.instafixFeedback.delete).toHaveBeenCalledWith({ where: { id: "fb-1" } });
     });
 
     it("deletes all feedbacks for a project", async () => {
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "DELETE",
         body: JSON.stringify({ projectName: "test", deleteAll: true }),
       });
       const res = await handler.DELETE(req);
       expect(res.status).toBe(200);
-      expect(prisma.sitepingFeedback.deleteMany).toHaveBeenCalledWith({ where: { projectName: "test" } });
+      expect(prisma.instafixFeedback.deleteMany).toHaveBeenCalledWith({ where: { projectName: "test" } });
     });
 
     it("returns 400 for invalid JSON", async () => {
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "DELETE",
         body: "not json",
       });
@@ -667,7 +667,7 @@ describe("createSitepingHandler", () => {
     });
 
     it("returns 400 for empty body", async () => {
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "DELETE",
         body: JSON.stringify({}),
       });
@@ -676,9 +676,9 @@ describe("createSitepingHandler", () => {
     });
 
     it("returns 404 when feedback not found (P2025)", async () => {
-      prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "nonexistent", projectName: "test-project" });
-      prisma.sitepingFeedback.delete.mockRejectedValue({ code: "P2025" });
-      const req = new Request("http://localhost/api/siteping", {
+      prisma.instafixFeedback.findUnique.mockResolvedValue({ id: "nonexistent", projectName: "test-project" });
+      prisma.instafixFeedback.delete.mockRejectedValue({ code: "P2025" });
+      const req = new Request("http://localhost/api/instafix", {
         method: "DELETE",
         body: JSON.stringify({ id: "nonexistent", projectName: "test-project" }),
       });
@@ -688,9 +688,9 @@ describe("createSitepingHandler", () => {
 
     it("returns 500 on unexpected DB error", async () => {
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
-      prisma.sitepingFeedback.delete.mockRejectedValue(new Error("DB down"));
-      const req = new Request("http://localhost/api/siteping", {
+      prisma.instafixFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
+      prisma.instafixFeedback.delete.mockRejectedValue(new Error("DB down"));
+      const req = new Request("http://localhost/api/instafix", {
         method: "DELETE",
         body: JSON.stringify({ id: "fb-1", projectName: "test-project" }),
       });
@@ -717,12 +717,12 @@ describe("createSitepingHandler", () => {
     }
 
     it("GET without apiKey blanks authorEmail and strips clientId on every feedback", async () => {
-      prisma.sitepingFeedback.findMany.mockResolvedValue([
+      prisma.instafixFeedback.findMany.mockResolvedValue([
         feedbackRow(),
         feedbackRow({ id: "fb-2", clientId: "uuid-456", authorEmail: "bob@example.com" }),
       ]);
-      prisma.sitepingFeedback.count.mockResolvedValue(2);
-      const res = await handler.GET(new Request("http://localhost/api/siteping?projectName=test-project"));
+      prisma.instafixFeedback.count.mockResolvedValue(2);
+      const res = await handler.GET(new Request("http://localhost/api/instafix?projectName=test-project"));
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.feedbacks).toHaveLength(2);
@@ -733,7 +733,7 @@ describe("createSitepingHandler", () => {
     });
 
     it("POST 201 strips clientId but keeps the submitter's own authorEmail", async () => {
-      const req = new Request("http://localhost/api/siteping", {
+      const req = new Request("http://localhost/api/instafix", {
         method: "POST",
         body: JSON.stringify(validPayloadNoAnnotations),
       });
@@ -745,9 +745,9 @@ describe("createSitepingHandler", () => {
     });
 
     it("POST dedup response strips clientId (no record-theft oracle) and keeps authorEmail", async () => {
-      prisma.sitepingFeedback.create.mockRejectedValue({ code: "P2002" });
-      prisma.sitepingFeedback.findUnique.mockResolvedValue(feedbackRow());
-      const req = new Request("http://localhost/api/siteping", {
+      prisma.instafixFeedback.create.mockRejectedValue({ code: "P2002" });
+      prisma.instafixFeedback.findUnique.mockResolvedValue(feedbackRow());
+      const req = new Request("http://localhost/api/instafix", {
         method: "POST",
         body: JSON.stringify(validPayloadNoAnnotations),
       });
@@ -760,9 +760,9 @@ describe("createSitepingHandler", () => {
 
     it("unauthenticated PATCH blanks authorEmail and strips clientId", async () => {
       // handler has requireAuthForDestructive: false and no apiKey → PATCH is reachable unauthenticated
-      prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
-      prisma.sitepingFeedback.update.mockResolvedValue(feedbackRow({ status: "resolved" }));
-      const req = new Request("http://localhost/api/siteping", {
+      prisma.instafixFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
+      prisma.instafixFeedback.update.mockResolvedValue(feedbackRow({ status: "resolved" }));
+      const req = new Request("http://localhost/api/instafix", {
         method: "PATCH",
         body: JSON.stringify({ id: "fb-1", projectName: "test-project", status: "resolved" }),
       });

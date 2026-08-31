@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 
-import type { FeedbackRecord } from "@siteping/core";
+import type { FeedbackRecord } from "@instafix/core";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { SitepingInbox } from "../../src/components/inbox.js";
-import type { InboxCustomSourceOptions, SitepingInboxPresentationProps } from "../../src/types.js";
+import { InstaFixInbox } from "../../src/components/inbox.js";
+import type { InboxCustomSourceOptions, InstaFixInboxPresentationProps } from "../../src/types.js";
 import { makeDiagnostics, makeRecord, makeSource, REGION } from "../helpers.js";
 import { installJsdomStubs } from "../render.js";
 
@@ -19,7 +19,7 @@ function seed(): FeedbackRecord[] {
       status: "open",
       type: "bug",
       message: "Header overlaps the logo",
-      url: "https://demo.siteping.dev/pricing",
+      url: "https://demo.instafix.realstory.blog/pricing",
       createdAt: new Date("2026-07-20T10:06:00Z"),
       screenshotUrl: "data:image/jpeg;base64,AA",
       screenshotRegion: REGION,
@@ -57,14 +57,14 @@ function seed(): FeedbackRecord[] {
  */
 type InboxOverrides = Partial<
   Omit<
-    InboxCustomSourceOptions & SitepingInboxPresentationProps,
+    InboxCustomSourceOptions & InstaFixInboxPresentationProps,
     "source" | "store" | "endpoint" | "apiKey" | "headers"
   >
 >;
 
 function renderInbox(props: InboxOverrides = {}, records = seed()) {
   const source = makeSource(records);
-  const utils = render(<SitepingInbox source={source} projects="demo" theme="dark" {...props} />);
+  const utils = render(<InstaFixInbox source={source} projects="demo" theme="dark" {...props} />);
   return { source, ...utils };
 }
 
@@ -81,7 +81,7 @@ function listRows(): HTMLElement[] {
   return within(screen.getByRole("listbox")).getAllByRole("option");
 }
 
-describe("SitepingInbox — list & tabs", () => {
+describe("InstaFixInbox — list & tabs", () => {
   it("renders one row per open feedback with the right status", async () => {
     renderInbox();
     await ready();
@@ -93,10 +93,10 @@ describe("SitepingInbox — list & tabs", () => {
     const { container } = renderInbox();
     await ready();
     await waitFor(() => {
-      expect(container.querySelector('.spd-tab[data-status="open"] .spd-tab-count')?.textContent).toBe("3");
+      expect(container.querySelector('.ifd-tab[data-status="open"] .ifd-tab-count')?.textContent).toBe("3");
     });
-    expect(container.querySelector('.spd-tab[data-status="all"] .spd-tab-count')?.textContent).toBe("4");
-    expect(container.querySelector('.spd-tab[data-status="resolved"] .spd-tab-count')?.textContent).toBe("1");
+    expect(container.querySelector('.ifd-tab[data-status="all"] .ifd-tab-count')?.textContent).toBe("4");
+    expect(container.querySelector('.ifd-tab[data-status="resolved"] .ifd-tab-count')?.textContent).toBe("1");
   });
 
   it("switches the filter when a status radio is clicked", async () => {
@@ -139,18 +139,18 @@ describe("SitepingInbox — list & tabs", () => {
   });
 });
 
-describe("SitepingInbox — keyboard", () => {
+describe("InstaFixInbox — keyboard", () => {
   it("j / k move the keyboard focus (focus ring), not the selection", async () => {
     renderInbox();
     const listbox = await ready();
     fireEvent.keyDown(listbox, { key: "j" });
-    await waitFor(() => expect(listRows()[0]?.className).toContain("spd-row-focused"));
+    await waitFor(() => expect(listRows()[0]?.className).toContain("ifd-row-focused"));
     // Focus is not selection — nothing is opened yet, so no row is aria-selected.
     expect(listRows().some((row) => row.getAttribute("aria-selected") === "true")).toBe(false);
     fireEvent.keyDown(listbox, { key: "j" });
-    await waitFor(() => expect(listRows()[1]?.className).toContain("spd-row-focused"));
+    await waitFor(() => expect(listRows()[1]?.className).toContain("ifd-row-focused"));
     fireEvent.keyDown(listbox, { key: "k" });
-    await waitFor(() => expect(listRows()[0]?.className).toContain("spd-row-focused"));
+    await waitFor(() => expect(listRows()[0]?.className).toContain("ifd-row-focused"));
   });
 
   it("aria-selected tracks the opened row, not keyboard focus", async () => {
@@ -196,7 +196,7 @@ describe("SitepingInbox — keyboard", () => {
     const { container } = renderInbox();
     const listbox = await ready();
     fireEvent.keyDown(listbox, { key: "/" });
-    expect(document.activeElement).toBe(container.querySelector(".spd-search-input"));
+    expect(document.activeElement).toBe(container.querySelector(".ifd-search-input"));
   });
 
   it("? opens the shortcuts overlay and Esc closes it", async () => {
@@ -227,7 +227,7 @@ describe("SitepingInbox — keyboard", () => {
     await screen.findByRole("dialog", { name: /Feedback details/ });
     fireEvent.keyDown(listbox, { key: "j" }); // should be ignored
     // Focus stays on o1 (the first row keeps its focus ring).
-    expect(listRows()[0]?.className).toContain("spd-row-focused");
+    expect(listRows()[0]?.className).toContain("ifd-row-focused");
   });
 
   it("e targets the opened record while the overlay drawer is open", async () => {
@@ -242,11 +242,11 @@ describe("SitepingInbox — keyboard", () => {
   });
 });
 
-describe("SitepingInbox — search & live regions", () => {
+describe("InstaFixInbox — search & live regions", () => {
   it("shows a clear button once the search has text and clearing it empties the field", async () => {
     const { container } = renderInbox();
     await ready();
-    const input = container.querySelector<HTMLInputElement>(".spd-search-input") as HTMLInputElement;
+    const input = container.querySelector<HTMLInputElement>(".ifd-search-input") as HTMLInputElement;
     expect(screen.queryByRole("button", { name: "Clear search" })).toBeNull();
 
     fireEvent.change(input, { target: { value: "header" } });
@@ -259,7 +259,7 @@ describe("SitepingInbox — search & live regions", () => {
   it("Esc in the search field clears the query first, then exits the field — never the drawer", async () => {
     const { container } = renderInbox();
     await ready();
-    const input = container.querySelector<HTMLInputElement>(".spd-search-input") as HTMLInputElement;
+    const input = container.querySelector<HTMLInputElement>(".ifd-search-input") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "header" } });
     await waitFor(() => expect(input.value).toBe("header"));
 
@@ -276,7 +276,7 @@ describe("SitepingInbox — search & live regions", () => {
   it("keeps a permanently-mounted status live region for result announcements", async () => {
     const { container } = renderInbox();
     await ready();
-    const liveRegion = container.querySelector(".spd-sr-only[role='status']");
+    const liveRegion = container.querySelector(".ifd-sr-only[role='status']");
     expect(liveRegion).not.toBeNull();
     await waitFor(() => expect(liveRegion?.textContent).toContain("feedbacks"));
   });
@@ -285,12 +285,12 @@ describe("SitepingInbox — search & live regions", () => {
     const { container } = renderInbox();
     await ready();
     // The permanent toast region exists (empty) so announcements are reliable.
-    expect(container.querySelector(".spd-toast-region[role='status']")).not.toBeNull();
-    expect(container.querySelector(".spd-toast")).toBeNull();
+    expect(container.querySelector(".ifd-toast-region[role='status']")).not.toBeNull();
+    expect(container.querySelector(".ifd-toast")).toBeNull();
   });
 });
 
-describe("SitepingInbox — drawer", () => {
+describe("InstaFixInbox — drawer", () => {
   async function openFirst(): Promise<void> {
     const listbox = await ready();
     fireEvent.keyDown(listbox, { key: "j" });
@@ -302,14 +302,14 @@ describe("SitepingInbox — drawer", () => {
     renderInbox();
     await openFirst();
     const link = screen.getByRole("link", { name: /Open on page/ });
-    expect(link.getAttribute("href")).toBe("https://demo.siteping.dev/pricing?siteping=o1");
+    expect(link.getAttribute("href")).toBe("https://demo.instafix.realstory.blog/pricing?instafix=o1");
   });
 
   it("honours a custom deepLinkParam", async () => {
     renderInbox({ deepLinkParam: "fb" });
     await openFirst();
     expect(screen.getByRole("link", { name: /Open on page/ }).getAttribute("href")).toBe(
-      "https://demo.siteping.dev/pricing?fb=o1",
+      "https://demo.instafix.realstory.blog/pricing?fb=o1",
     );
   });
 
@@ -326,16 +326,16 @@ describe("SitepingInbox — drawer", () => {
   it("renders the evidence rect for a record with a screenshot region", async () => {
     const { container } = renderInbox();
     await openFirst();
-    expect(container.querySelector(".spd-evidence-rect")).not.toBeNull();
+    expect(container.querySelector(".ifd-evidence-rect")).not.toBeNull();
   });
 
   it("presents the metadata as a definition list", async () => {
     const { container } = renderInbox();
     await openFirst();
-    const dl = container.querySelector("dl.spd-meta-grid");
+    const dl = container.querySelector("dl.ifd-meta-grid");
     expect(dl).not.toBeNull();
-    expect(dl?.querySelectorAll("dt.spd-meta-label").length).toBeGreaterThanOrEqual(5);
-    expect(dl?.querySelectorAll("dd.spd-meta-value").length).toBeGreaterThanOrEqual(5);
+    expect(dl?.querySelectorAll("dt.ifd-meta-label").length).toBeGreaterThanOrEqual(5);
+    expect(dl?.querySelectorAll("dd.ifd-meta-value").length).toBeGreaterThanOrEqual(5);
   });
 
   it("is a modal dialog in overlay (narrow) mode", async () => {
@@ -373,7 +373,7 @@ describe("SitepingInbox — drawer", () => {
   });
 });
 
-describe("SitepingInbox — empty & error states", () => {
+describe("InstaFixInbox — empty & error states", () => {
   it("shows the filtered-empty state, then the project-empty state via View all", async () => {
     renderInbox({}, []);
     // Default "open" filter counts as a filter → the filtered-empty state.
@@ -400,49 +400,49 @@ describe("SitepingInbox — empty & error states", () => {
   it("shows the error state with a retry button when the list fails", async () => {
     const source = makeSource(seed());
     source.list.mockRejectedValue(new Error("boom"));
-    render(<SitepingInbox source={source} projects="demo" theme="dark" />);
+    render(<InstaFixInbox source={source} projects="demo" theme="dark" />);
     expect(await screen.findByText("Failed to load feedbacks")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
   });
 });
 
-describe("SitepingInbox — chrome & theming", () => {
+describe("InstaFixInbox — chrome & theming", () => {
   it("reflects density, theme and accent on the root element", async () => {
     const { container } = renderInbox({ density: "compact", theme: "light", accentColor: "#ff0000" });
     await ready();
-    const root = container.querySelector<HTMLElement>(".spd-root") as HTMLElement;
+    const root = container.querySelector<HTMLElement>(".ifd-root") as HTMLElement;
     expect(root.dataset.density).toBe("compact");
     expect(root.dataset.theme).toBe("light");
-    expect(root.style.getPropertyValue("--spd-accent")).toBe("#ff0000");
+    expect(root.style.getPropertyValue("--ifd-accent")).toBe("#ff0000");
   });
 
   it("appends a custom className to the root", async () => {
     const { container } = renderInbox({ className: "my-inbox" });
     await ready();
-    expect(container.querySelector(".spd-root")?.className).toContain("my-inbox");
+    expect(container.querySelector(".ifd-root")?.className).toContain("my-inbox");
   });
 
   it("renders the project switcher only when more than one project is configured", async () => {
     const multi = makeSource(seed());
-    const { container } = render(<SitepingInbox source={multi} projects={["demo", "landing"]} theme="dark" />);
+    const { container } = render(<InstaFixInbox source={multi} projects={["demo", "landing"]} theme="dark" />);
     await screen.findByRole("listbox");
-    expect(container.querySelector(".spd-project-select")).not.toBeNull();
+    expect(container.querySelector(".ifd-project-select")).not.toBeNull();
 
     cleanup();
     renderInbox();
     await ready();
-    expect(document.querySelector(".spd-project-select")).toBeNull();
+    expect(document.querySelector(".ifd-project-select")).toBeNull();
   });
 
   it("filters by type through the type select", async () => {
     const { container } = renderInbox();
     await ready();
-    const select = container.querySelector<HTMLSelectElement>(".spd-type-filter") as HTMLSelectElement;
+    const select = container.querySelector<HTMLSelectElement>(".ifd-type-filter") as HTMLSelectElement;
     fireEvent.change(select, { target: { value: "question" } });
     await waitFor(() => {
       const rows = listRows();
       expect(rows).toHaveLength(1);
-      expect(rows[0]?.querySelector(".spd-row-message")?.textContent).toBe("Why are there two prices?");
+      expect(rows[0]?.querySelector(".ifd-row-message")?.textContent).toBe("Why are there two prices?");
     });
   });
 });

@@ -1,4 +1,4 @@
-import type { FeedbackRecord, FeedbackStatus } from "@siteping/core";
+import type { FeedbackRecord, FeedbackStatus } from "@instafix/core";
 import type { ReactElement, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { buildDeepLink, formatAbsolute, formatRelativeTime, resolveRecordUrl, shortId } from "../format.js";
@@ -87,13 +87,13 @@ export function Drawer({
     <>
       {overlay ? (
         // biome-ignore lint/a11y/noStaticElementInteractions: standard dialog backdrop — Esc is the keyboard path
-        <div className="spd-drawer-backdrop" role="presentation" onClick={onClose} />
+        <div className="ifd-drawer-backdrop" role="presentation" onClick={onClose} />
       ) : null}
       {/* biome-ignore lint/a11y/noStaticElementInteractions: the panel is a dialog/region widget; the keydown handler drives the focus trap */}
       {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-modal is only emitted in overlay mode, where the role is dialog */}
       <div
         ref={panelRef}
-        className="spd-drawer"
+        className="ifd-drawer"
         // Overlay is a modal dialog; side-by-side is a non-modal complementary panel.
         role={overlay ? "dialog" : "region"}
         aria-modal={overlay || undefined}
@@ -101,14 +101,14 @@ export function Drawer({
         tabIndex={-1}
         onKeyDown={handleKeyDown}
       >
-        <h2 className="spd-sr-only">{t("drawer.title")}</h2>
-        <div className="spd-drawer-head">
-          <div className="spd-drawer-titles">
-            <span className="spd-drawer-type">
-              <i className="spd-type-square" data-type={record.type} aria-hidden="true" />
+        <h2 className="ifd-sr-only">{t("drawer.title")}</h2>
+        <div className="ifd-drawer-head">
+          <div className="ifd-drawer-titles">
+            <span className="ifd-drawer-type">
+              <i className="ifd-type-square" data-type={record.type} aria-hidden="true" />
               {getTypeLabel(record.type, t)}
             </span>
-            <span className="spd-drawer-id" title={record.id}>
+            <span className="ifd-drawer-id" title={record.id}>
               #{shortId(record.id)}
             </span>
           </div>
@@ -116,19 +116,19 @@ export function Drawer({
           <button
             ref={closeRef}
             type="button"
-            className="spd-icon-btn spd-drawer-close"
+            className="ifd-icon-btn ifd-drawer-close"
             aria-label={t("drawer.close")}
             onClick={onClose}
           >
             <CloseIcon />
           </button>
         </div>
-        <div className="spd-drawer-scroll">
+        <div className="ifd-drawer-scroll">
           <EvidenceCard record={record} />
-          <p className="spd-message">{record.message}</p>
-          <dl className="spd-meta-grid">
-            <dt className="spd-meta-label">{t("drawer.author")}</dt>
-            <dd className="spd-meta-value">
+          <p className="ifd-message">{record.message}</p>
+          <dl className="ifd-meta-grid">
+            <dt className="ifd-meta-label">{t("drawer.author")}</dt>
+            <dd className="ifd-meta-value">
               {/* Empty email = redacted by the adapter (unauthenticated request) — skip the <> shell. */}
               {record.authorEmail ? (
                 <>
@@ -138,8 +138,8 @@ export function Drawer({
                 record.authorName
               )}
             </dd>
-            <dt className="spd-meta-label">{t("drawer.page")}</dt>
-            <dd className="spd-meta-value" data-mono>
+            <dt className="ifd-meta-label">{t("drawer.page")}</dt>
+            <dd className="ifd-meta-value" data-mono>
               {pageUrl ? (
                 <a href={pageUrl} target="_blank" rel="noreferrer">
                   {record.url}
@@ -148,35 +148,35 @@ export function Drawer({
                 record.url
               )}
             </dd>
-            <dt className="spd-meta-label">{t("drawer.viewport")}</dt>
-            <dd className="spd-meta-value" data-mono>
+            <dt className="ifd-meta-label">{t("drawer.viewport")}</dt>
+            <dd className="ifd-meta-value" data-mono>
               {record.viewport}
             </dd>
-            <dt className="spd-meta-label">{t("drawer.submitted")}</dt>
-            <dd className="spd-meta-value">
+            <dt className="ifd-meta-label">{t("drawer.submitted")}</dt>
+            <dd className="ifd-meta-value">
               <time dateTime={record.createdAt.toISOString()}>{formatAbsolute(record.createdAt, locale)}</time>
               {" · "}
               {formatRelativeTime(record.createdAt, t)}
             </dd>
-            <dt className="spd-meta-label">{t("drawer.browser")}</dt>
-            <dd className="spd-meta-value spd-clamp-2" title={record.userAgent}>
+            <dt className="ifd-meta-label">{t("drawer.browser")}</dt>
+            <dd className="ifd-meta-value ifd-clamp-2" title={record.userAgent}>
               {record.userAgent}
             </dd>
           </dl>
           {hasDiagnostics && diagnostics ? <Diagnostics diagnostics={diagnostics} /> : null}
-          <div className="spd-danger-zone">
+          <div className="ifd-danger-zone">
             {confirming ? (
-              <div className="spd-confirm">
+              <div className="ifd-confirm">
                 <span>{t("drawer.deleteConfirm")}</span>
-                <button type="button" className="spd-btn-danger" onClick={() => onDelete(record.id)}>
+                <button type="button" className="ifd-btn-danger" onClick={() => onDelete(record.id)}>
                   {t("drawer.deleteYes")}
                 </button>
-                <button type="button" className="spd-btn-ghost" onClick={() => setConfirming(false)}>
+                <button type="button" className="ifd-btn-ghost" onClick={() => setConfirming(false)}>
                   {t("inbox.cancel")}
                 </button>
               </div>
             ) : (
-              <button type="button" className="spd-btn-danger-ghost" onClick={() => setConfirming(true)}>
+              <button type="button" className="ifd-btn-danger-ghost" onClick={() => setConfirming(true)}>
                 <TrashIcon />
                 {t("drawer.delete")}
               </button>
@@ -184,12 +184,12 @@ export function Drawer({
           </div>
         </div>
         {deepLink ? (
-          <div className="spd-drawer-foot">
-            <a className="spd-btn-primary" href={deepLink} target="_blank" rel="noreferrer">
+          <div className="ifd-drawer-foot">
+            <a className="ifd-btn-primary" href={deepLink} target="_blank" rel="noreferrer">
               {t("drawer.openOnPage")}
               <ExternalIcon />
             </a>
-            <kbd className="spd-kbd">⏎</kbd>
+            <kbd className="ifd-kbd">⏎</kbd>
           </div>
         ) : null}
       </div>

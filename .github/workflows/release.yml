@@ -127,7 +127,7 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Publish @siteping/widget
+      - name: Publish @instafix/widget
         run: npm publish --access public --provenance
         working-directory: packages/widget
         env:
@@ -166,7 +166,7 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Publish @siteping/adapter-prisma
+      - name: Publish @instafix/adapter-prisma
         run: npm publish --access public --provenance
         working-directory: packages/adapter-prisma
         env:
@@ -205,7 +205,7 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Publish @siteping/cli
+      - name: Publish @instafix/cli
         run: npm publish --access public --provenance
         working-directory: packages/cli
         env:
@@ -244,7 +244,7 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Publish @siteping/adapter-memory
+      - name: Publish @instafix/adapter-memory
         run: npm publish --access public --provenance
         working-directory: packages/adapter-memory
         env:
@@ -283,7 +283,7 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Publish @siteping/dashboard
+      - name: Publish @instafix/dashboard
         run: npm publish --access public --provenance
         working-directory: packages/dashboard
         env:
@@ -322,7 +322,7 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Publish @siteping/adapter-localstorage
+      - name: Publish @instafix/adapter-localstorage
         run: npm publish --access public --provenance
         working-directory: packages/adapter-localstorage
         env:
@@ -361,7 +361,7 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Publish @siteping/adapter-kit
+      - name: Publish @instafix/adapter-kit
         run: npm publish --access public --provenance
         working-directory: packages/adapter-kit
         env:

@@ -3,13 +3,13 @@
 //
 // Creates packages/adapter-<name>/ with the exact layout the CI gates
 // expect (dual-exports package.json with the fix-dts build chain, shared
-// tsup preset, tsconfig, a SitepingStore skeleton, a test file pre-wired to
+// tsup preset, tsconfig, a InstaFixStore skeleton, a test file pre-wired to
 // the conformance suite) and registers it in the release-please config +
 // manifest. The remaining manual step — release.yml wiring — is printed at
 // the end and enforced by scripts/check-consistency.mjs until done.
 //
 // Third-party adapters (outside this repo) should depend on
-// @siteping/adapter-kit instead — see docs/adapters/writing-an-adapter.
+// @instafix/adapter-kit instead — see docs/adapters/writing-an-adapter.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -45,9 +45,9 @@ writeFileSync(
   abs(`${pkgDir}/package.json`),
   `${JSON.stringify(
     {
-      name: `@siteping/adapter-${name}`,
+      name: `@instafix/adapter-${name}`,
       version: "0.0.0",
-      description: `${className} adapter for Siteping`,
+      description: `${className} adapter for InstaFix`,
       type: "module",
       sideEffects: false,
       exports: {
@@ -65,19 +65,19 @@ writeFileSync(
         check: "tsc --noEmit",
         clean: "rm -rf dist",
       },
-      keywords: ["siteping", name, "adapter", "feedback", "typescript"],
-      author: "neosianexus",
+      keywords: ["instafix", name, "adapter", "feedback", "typescript"],
+      author: "gnoopy",
       license: "MIT",
-      homepage: "https://siteping.dev",
+      homepage: "https://instafix.realstory.blog",
       repository: {
         type: "git",
-        url: "git+https://github.com/NeosiaNexus/SitePing.git",
+        url: "git+https://github.com/gnoopy/InstaFix.git",
         directory: pkgDir,
       },
-      bugs: { url: "https://github.com/NeosiaNexus/SitePing/issues" },
+      bugs: { url: "https://github.com/gnoopy/InstaFix/issues" },
       publishConfig: { access: "public" },
       engines: { node: ">=20" },
-      devDependencies: { "@siteping/core": "workspace:*" },
+      devDependencies: { "@instafix/core": "workspace:*" },
     },
     null,
     2,
@@ -94,9 +94,9 @@ writeFileSync(
 writeFileSync(
   abs(`${pkgDir}/tsup.config.ts`),
   `import { defineConfig } from "tsup";
-import { sitepingLibrary } from "../../tsup.preset.js";
+import { instafixLibrary } from "../../tsup.preset.js";
 
-export default defineConfig(sitepingLibrary({ platform: "${platform}" }));
+export default defineConfig(instafixLibrary({ platform: "${platform}" }));
 `,
 );
 
@@ -110,24 +110,24 @@ writeFileSync(
   type FeedbackQuery,
   type FeedbackRecord,
   type FeedbackUpdateInput,
-  type SitepingStore,
-} from "@siteping/core";
+  type InstaFixStore,
+} from "@instafix/core";
 
-export type { SitepingStore } from "@siteping/core";
-export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@siteping/core";
+export type { InstaFixStore } from "@instafix/core";
+export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@instafix/core";
 
 /**
- * ${className} — \`SitepingStore\` implementation backed by TODO.
+ * ${className} — \`InstaFixStore\` implementation backed by TODO.
  *
  * Two implementation strategies:
  * - Snapshot backend (KV, file, browser storage): delegate everything to
  *   \`createCollectionStore({ load, persist, generateId })\` from
- *   @siteping/core — see adapter-memory for the reference.
+ *   @instafix/core — see adapter-memory for the reference.
  * - Query backend (SQL, ORM): implement the 6 methods below directly;
  *   \`buildFeedbackRecord\`/\`buildAnnotationRecord\` handle record
- *   construction, and the SitepingStore JSDoc documents the error contract.
+ *   construction, and the InstaFixStore JSDoc documents the error contract.
  */
-export class ${className} implements SitepingStore {
+export class ${className} implements InstaFixStore {
   async createFeedback(_data: FeedbackCreateInput): Promise<FeedbackRecord> {
     throw new Error("TODO: implement createFeedback (idempotent on clientId)");
   }
@@ -163,14 +163,14 @@ export class ${className} implements SitepingStore {
 
 writeFileSync(
   abs(`${pkgDir}/__tests__/${name}-store.test.ts`),
-  `import { testSitepingStore } from "@siteping/core/testing";
+  `import { testInstaFixStore } from "@instafix/core/testing";
 import { ${className} } from "../src/index.js";
 
-// The shared conformance suite (~44 tests) verifies the full SitepingStore
+// The shared conformance suite (~44 tests) verifies the full InstaFixStore
 // contract. Options: { duplicateBehavior: "return" | "throw",
 // caseInsensitiveSearch: boolean } for backends whose contract legitimately
 // varies.
-testSitepingStore(() => new ${className}());
+testInstaFixStore(() => new ${className}());
 `,
 );
 
@@ -178,11 +178,11 @@ testSitepingStore(() => new ${className}());
 
 writeFileSync(
   abs(`${pkgDir}/README.md`),
-  `# @siteping/adapter-${name}
+  `# @instafix/adapter-${name}
 
-${className} adapter for [Siteping](https://siteping.dev).
+${className} adapter for [InstaFix](https://instafix.realstory.blog).
 
-**[Documentation → siteping.dev/docs](https://siteping.dev/docs)**
+**[Documentation → instafix.realstory.blog/docs](https://instafix.realstory.blog/docs)**
 
 ## License
 

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { AnnotationResponse, FeedbackResponse } from "@siteping/core";
+import type { AnnotationResponse, FeedbackResponse } from "@instafix/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EventBus, type WidgetEvents } from "../../src/events.js";
 import { createT } from "../../src/i18n/index.js";
@@ -162,7 +162,7 @@ describe("MarkerManager", () => {
   afterEach(() => {
     markers.destroy();
     // Clean up any leftover elements
-    for (const el of document.querySelectorAll("#siteping-markers")) {
+    for (const el of document.querySelectorAll("#instafix-markers")) {
       el.remove();
     }
     if (mockState.element) {
@@ -176,8 +176,8 @@ describe("MarkerManager", () => {
   // -------------------------------------------------------------------------
 
   describe("render", () => {
-    it("creates a container element with id siteping-markers", () => {
-      const container = document.getElementById("siteping-markers");
+    it("creates a container element with id instafix-markers", () => {
+      const container = document.getElementById("instafix-markers");
       expect(container).not.toBeNull();
     });
 
@@ -185,14 +185,14 @@ describe("MarkerManager", () => {
       markers.render([makeFeedback()]);
       markers.render([]);
 
-      const container = document.getElementById("siteping-markers")!;
+      const container = document.getElementById("instafix-markers")!;
       expect(container.children.length).toBe(0);
     });
 
     it("render([feedback]) creates marker elements", () => {
       markers.render([makeFeedback()]);
 
-      const container = document.getElementById("siteping-markers")!;
+      const container = document.getElementById("instafix-markers")!;
       const markerEls = container.querySelectorAll("[data-feedback-id]");
       expect(markerEls.length).toBe(1);
     });
@@ -470,7 +470,7 @@ describe("MarkerManager", () => {
 
       // pinHighlight renders one highlight div per annotation inside the
       // markers container. pulse animation is set on the marker element.
-      const container = document.getElementById("siteping-markers")!;
+      const container = document.getElementById("instafix-markers")!;
       const highlights = container.querySelectorAll<HTMLElement>(":scope > div:not([data-feedback-id])");
       expect(highlights.length).toBeGreaterThan(0);
       expect(marker.style.animation).toContain("sp-pulse-ring");
@@ -485,7 +485,7 @@ describe("MarkerManager", () => {
     it("hides container when toggled to false", () => {
       bus.emit("annotations:toggle", false);
 
-      const container = document.getElementById("siteping-markers")!;
+      const container = document.getElementById("instafix-markers")!;
       expect(container.style.display).toBe("none");
     });
 
@@ -493,7 +493,7 @@ describe("MarkerManager", () => {
       bus.emit("annotations:toggle", false);
       bus.emit("annotations:toggle", true);
 
-      const container = document.getElementById("siteping-markers")!;
+      const container = document.getElementById("instafix-markers")!;
       expect(container.style.display).toBe("block");
     });
   });
@@ -706,7 +706,7 @@ describe("MarkerManager", () => {
      * They also aren't nested inside markers (cluster badges are nested).
      */
     function countHighlights(): number {
-      const container = document.getElementById("siteping-markers")!;
+      const container = document.getElementById("instafix-markers")!;
       // Direct children that are not markers and not badges
       return Array.from(container.children).filter(
         (child) => !child.hasAttribute("data-feedback-id") && !child.classList.contains("sp-cluster-badge"),
@@ -835,8 +835,8 @@ describe("MarkerManager", () => {
       markers.pinHighlight(fb);
 
       // The highlight is a div with no [data-feedback-id] inside
-      // #siteping-markers — distinct from marker dots which carry the id.
-      const container = document.getElementById("siteping-markers")!;
+      // #instafix-markers — distinct from marker dots which carry the id.
+      const container = document.getElementById("instafix-markers")!;
       const findHighlights = () => Array.from(container.children).filter((c) => !(c as HTMLElement).dataset.feedbackId);
 
       const before = findHighlights();
@@ -1051,7 +1051,7 @@ describe("MarkerManager", () => {
       const topBefore = markerEl.style.top;
 
       // Add element inside the markers container (should be filtered out)
-      const container = document.getElementById("siteping-markers")!;
+      const container = document.getElementById("instafix-markers")!;
       const internalDiv = document.createElement("div");
       internalDiv.className = "internal-widget-element";
       container.appendChild(internalDiv);
@@ -1074,7 +1074,7 @@ describe("MarkerManager", () => {
     it("removes the container element from DOM", () => {
       markers.destroy();
 
-      const container = document.getElementById("siteping-markers");
+      const container = document.getElementById("instafix-markers");
       expect(container).toBeNull();
     });
 
@@ -1549,7 +1549,7 @@ describe("MarkerManager", () => {
 
       markers.showHighlight(fb);
 
-      const container = document.getElementById("siteping-markers")!;
+      const container = document.getElementById("instafix-markers")!;
       // Only the marker remains, no highlight overlay was added (resolved=null skipped)
       const directChildren = Array.from(container.children).filter(
         (child) => !child.hasAttribute("data-feedback-id") && !child.classList.contains("sp-cluster-badge"),
@@ -1572,7 +1572,7 @@ describe("MarkerManager", () => {
       markers.render([fb]);
       markers.pinHighlight(fb);
 
-      const container = document.getElementById("siteping-markers")!;
+      const container = document.getElementById("instafix-markers")!;
       // Children include marker + highlight; both are inside container
       const insideMarker = container.querySelector("[data-feedback-id]")!;
 
@@ -1581,7 +1581,7 @@ describe("MarkerManager", () => {
 
       // No fade-out — pinnedFeedback should still be present (highlights remain)
       vi.advanceTimersByTime(500);
-      const container2 = document.getElementById("siteping-markers")!;
+      const container2 = document.getElementById("instafix-markers")!;
       const highlights = Array.from(container2.children).filter(
         (child) => !child.hasAttribute("data-feedback-id") && !child.classList.contains("sp-cluster-badge"),
       );
@@ -1609,7 +1609,7 @@ describe("MarkerManager", () => {
       otherMarker.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
 
       // Even after mouseleave, pinned highlights should remain
-      const container = document.getElementById("siteping-markers")!;
+      const container = document.getElementById("instafix-markers")!;
       const highlights = Array.from(container.children).filter(
         (child) => !child.hasAttribute("data-feedback-id") && !child.classList.contains("sp-cluster-badge"),
       );
@@ -1818,7 +1818,7 @@ describe("MarkerManager", () => {
       expect(() => markers.destroy()).not.toThrow();
 
       // Container should still be removed despite falsy handlers
-      expect(document.getElementById("siteping-markers")).toBeNull();
+      expect(document.getElementById("instafix-markers")).toBeNull();
     });
   });
 

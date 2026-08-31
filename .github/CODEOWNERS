@@ -1,15 +1,15 @@
 # Default — catch-all
-* @NeosiaNexus
+* @gnoopy
 
 # Packages
-packages/widget/    @NeosiaNexus
-packages/dashboard/ @NeosiaNexus
-packages/adapter-prisma/ @NeosiaNexus
-packages/adapter-memory/ @NeosiaNexus
-packages/adapter-localstorage/ @NeosiaNexus
-packages/adapter-kit/ @NeosiaNexus
-packages/cli/       @NeosiaNexus
-packages/core/      @NeosiaNexus
+packages/widget/    @gnoopy
+packages/dashboard/ @gnoopy
+packages/adapter-prisma/ @gnoopy
+packages/adapter-memory/ @gnoopy
+packages/adapter-localstorage/ @gnoopy
+packages/adapter-kit/ @gnoopy
+packages/cli/       @gnoopy
+packages/core/      @gnoopy
 
 # CI/CD & config
-.github/            @NeosiaNexus
+.github/            @gnoopy

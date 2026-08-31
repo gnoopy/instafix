@@ -1,6 +1,6 @@
-import type { FeedbackRecord } from "@siteping/core";
+import type { FeedbackRecord } from "@instafix/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createSitepingHandler } from "../src/index.js";
+import { createInstaFixHandler } from "../src/index.js";
 import { buildWebhookPayload, dispatchWebhook, dispatchWebhooks, type WebhookConfig } from "../src/webhooks.js";
 import { validPayloadNoAnnotations } from "./fixtures.js";
 
@@ -251,7 +251,7 @@ describe("dispatchWebhooks", () => {
 function mockPrisma() {
   const fbRecord = { ...FEEDBACK, createdAt: new Date(), updatedAt: new Date() };
   return {
-    sitepingFeedback: {
+    instafixFeedback: {
       create: vi.fn().mockResolvedValue(fbRecord),
       findMany: vi.fn().mockResolvedValue([]),
       findUnique: vi.fn().mockResolvedValue(null),
@@ -263,13 +263,13 @@ function mockPrisma() {
   };
 }
 
-describe("createSitepingHandler — webhooks option", () => {
+describe("createInstaFixHandler — webhooks option", () => {
   it("dispatches a single webhook after a successful POST", async () => {
     const prisma = mockPrisma();
     const webhook: WebhookConfig = { url: "https://hooks.example.com" };
-    const handler = createSitepingHandler({ prisma, webhooks: webhook });
+    const handler = createInstaFixHandler({ prisma, webhooks: webhook });
 
-    const req = new Request("http://localhost/api/siteping", {
+    const req = new Request("http://localhost/api/instafix", {
       method: "POST",
       body: JSON.stringify(validPayloadNoAnnotations),
     });
@@ -282,7 +282,7 @@ describe("createSitepingHandler — webhooks option", () => {
 
   it("dispatches every webhook in an array config", async () => {
     const prisma = mockPrisma();
-    const handler = createSitepingHandler({
+    const handler = createInstaFixHandler({
       prisma,
       webhooks: [
         { url: "https://slack.example.com", type: "slack" },
@@ -290,7 +290,7 @@ describe("createSitepingHandler — webhooks option", () => {
       ],
     });
 
-    const req = new Request("http://localhost/api/siteping", {
+    const req = new Request("http://localhost/api/instafix", {
       method: "POST",
       body: JSON.stringify(validPayloadNoAnnotations),
     });
@@ -304,12 +304,12 @@ describe("createSitepingHandler — webhooks option", () => {
 
   it("does not fire webhooks when POST fails validation", async () => {
     const prisma = mockPrisma();
-    const handler = createSitepingHandler({
+    const handler = createInstaFixHandler({
       prisma,
       webhooks: { url: "https://hooks.example.com" },
     });
 
-    const req = new Request("http://localhost/api/siteping", {
+    const req = new Request("http://localhost/api/instafix", {
       method: "POST",
       body: JSON.stringify({ type: "bug" }), // missing required fields
     });

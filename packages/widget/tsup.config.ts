@@ -7,7 +7,7 @@ import { defineConfig } from "tsup";
 //    consumers — Jest setups, legacy bundlers (#220).
 //  - IIFE main: single global script for <script src> consumers — splitting is
 //    incompatible with IIFE, so everything is inlined.
-//  - ESM+CJS React entry (`@siteping/widget/react`): React stays external so
+//  - ESM+CJS React entry (`@instafix/widget/react`): React stays external so
 //    consumers pin their own version.
 //
 // `esbuildOptions.pure` strips `console.debug` / `console.info` calls in the
@@ -37,7 +37,7 @@ export default defineConfig([
     minify: true,
     splitting: true,
     treeshake: "recommended",
-    noExternal: ["@medv/finder", "@siteping/core"],
+    noExternal: ["@medv/finder", "@instafix/core"],
     esbuildOptions(o) {
       o.pure = [...pureCalls];
       o.define = { ...o.define, ...keepNodeEnvLiteral };
@@ -46,7 +46,7 @@ export default defineConfig([
   {
     entry: ["src/index.ts"],
     format: ["iife"],
-    globalName: "SitePing",
+    globalName: "InstaFix",
     platform: "browser",
     target: "es2022",
     dts: false,
@@ -55,7 +55,7 @@ export default defineConfig([
     minify: true,
     splitting: false,
     treeshake: "recommended",
-    noExternal: ["@medv/finder", "@siteping/core"],
+    noExternal: ["@medv/finder", "@instafix/core"],
     esbuildOptions(o) {
       o.pure = [...pureCalls];
       o.define = { ...o.define, ...keepNodeEnvLiteral };
@@ -72,7 +72,7 @@ export default defineConfig([
     minify: true,
     splitting: true,
     treeshake: "recommended",
-    noExternal: ["@medv/finder", "@siteping/core"],
+    noExternal: ["@medv/finder", "@instafix/core"],
     external: ["react"],
     esbuildOptions(o) {
       o.pure = [...pureCalls];

@@ -1,7 +1,7 @@
 {
-  "name": "@siteping/adapter-localstorage",
+  "name": "@instafix/adapter-localstorage",
   "version": "0.5.3",
-  "description": "localStorage adapter for Siteping — client-side feedback persistence without a server",
+  "description": "localStorage adapter for InstaFix — client-side feedback persistence without a server",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -28,7 +28,7 @@
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "siteping",
+    "instafix",
     "localstorage",
     "adapter",
     "feedback",
@@ -37,16 +37,16 @@
     "demo",
     "typescript"
   ],
-  "author": "neosianexus",
+  "author": "gnoopy",
   "license": "MIT",
-  "homepage": "https://siteping.dev",
+  "homepage": "https://instafix.realstory.blog",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "url": "git+https://github.com/gnoopy/InstaFix.git",
     "directory": "packages/adapter-localstorage"
   },
   "bugs": {
-    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+    "url": "https://github.com/gnoopy/InstaFix/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -55,6 +55,6 @@
     "node": ">=20"
   },
   "devDependencies": {
-    "@siteping/core": "workspace:*"
+    "@instafix/core": "workspace:*"
   }
 }

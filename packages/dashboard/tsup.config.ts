@@ -1,5 +1,5 @@
 import { defineConfig } from "tsup";
-import { sitepingLibrary } from "../../tsup.preset.js";
+import { instafixLibrary } from "../../tsup.preset.js";
 
 // React (and its JSX runtime) stays external so consumers pin their own
 // version. Splitting keeps the lazy locale dictionaries in their own chunks
@@ -12,7 +12,7 @@ import { sitepingLibrary } from "../../tsup.preset.js";
 // `console.error` are kept because they signal real problems consumers need
 // to see in their dashboards.
 export default defineConfig(
-  sitepingLibrary({
+  instafixLibrary({
     platform: "browser",
     minify: true,
     splitting: true,

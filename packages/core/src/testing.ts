@@ -1,5 +1,5 @@
 /**
- * Shared conformance test suite for `SitepingStore` implementations.
+ * Shared conformance test suite for `InstaFixStore` implementations.
  *
  * Adapters import this and run it with their store factory to verify they
  * satisfy the full store contract — no need to write the same 40+ tests
@@ -7,15 +7,15 @@
  *
  * @example
  * ```ts
- * import { testSitepingStore } from '@siteping/core/testing'
+ * import { testInstaFixStore } from '@instafix/core/testing'
  * import { DrizzleStore } from '../src/index.js'
  *
- * testSitepingStore(() => new DrizzleStore(db))
+ * testInstaFixStore(() => new DrizzleStore(db))
  * ```
  */
 
 import { beforeEach, describe, expect, it } from "vitest";
-import type { DiagnosticsSnapshot, FeedbackCreateInput, SitepingStore } from "./types.js";
+import type { DiagnosticsSnapshot, FeedbackCreateInput, InstaFixStore } from "./types.js";
 import { isStoreDuplicate, StoreNotFoundError } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -88,7 +88,7 @@ const MINIMAL_ANNOTATION = {
 export interface StoreConformanceOptions {
   /**
    * How `createFeedback` reacts to a duplicate `clientId` — both are valid
-   * per the `SitepingStore` contract:
+   * per the `InstaFixStore` contract:
    * - `"return"` (default): idempotently return the existing record.
    * - `"throw"`: throw `StoreDuplicateError` (matched via `isStoreDuplicate`).
    */
@@ -103,20 +103,20 @@ export interface StoreConformanceOptions {
 }
 
 /**
- * Run the full `SitepingStore` conformance test suite.
+ * Run the full `InstaFixStore` conformance test suite.
  *
  * @param factory — called before each test to create a fresh, empty store instance. May be async.
  * @param options — contract variations, see {@link StoreConformanceOptions}.
  */
-export function testSitepingStore(
-  factory: () => SitepingStore | Promise<SitepingStore>,
+export function testInstaFixStore(
+  factory: () => InstaFixStore | Promise<InstaFixStore>,
   options?: StoreConformanceOptions,
 ): void {
   const duplicateBehavior = options?.duplicateBehavior ?? "return";
   const caseInsensitiveSearch = options?.caseInsensitiveSearch ?? true;
 
-  describe("SitepingStore conformance", () => {
-    let store: SitepingStore;
+  describe("InstaFixStore conformance", () => {
+    let store: InstaFixStore;
 
     beforeEach(async () => {
       store = await factory();

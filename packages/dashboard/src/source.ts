@@ -7,10 +7,10 @@ import {
   type FeedbackResponseList,
   type FeedbackStatus,
   feedbackQueryToSearchParams,
+  type InstaFixStore,
   networkErrorFromException,
-  type SitepingStore,
   toFeedbackUpdate,
-} from "@siteping/core";
+} from "@instafix/core";
 import type { EndpointSourceOptions, InboxSource } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -43,8 +43,8 @@ async function parseJsonAs<T>(response: Response): Promise<T> {
 // ---------------------------------------------------------------------------
 
 /**
- * Build an `InboxSource` talking HTTP to a Siteping endpoint (e.g. the
- * `@siteping/adapter-prisma` request handlers mounted at `/api/siteping`).
+ * Build an `InboxSource` talking HTTP to a InstaFix endpoint (e.g. the
+ * `@instafix/adapter-prisma` request handlers mounted at `/api/instafix`).
  *
  * Auth: `apiKey` becomes `Authorization: Bearer <apiKey>`; `headers` (static
  * or per-request function, sync or async) are merged on top, so an explicit
@@ -110,17 +110,17 @@ export function createEndpointSource(options: EndpointSourceOptions): InboxSourc
 }
 
 // ---------------------------------------------------------------------------
-// Store source — direct SitepingStore (client-side mode, no server)
+// Store source — direct InstaFixStore (client-side mode, no server)
 // ---------------------------------------------------------------------------
 
 /**
- * Build an `InboxSource` over a `SitepingStore` directly (client-side mode).
+ * Build an `InboxSource` over a `InstaFixStore` directly (client-side mode).
  *
  * Closure semantics live at this edge: `resolvedAt` is set when a feedback
  * enters a closed status and cleared otherwise — the store persists what it
  * is given.
  */
-export function createStoreSource(store: SitepingStore): InboxSource {
+export function createStoreSource(store: InstaFixStore): InboxSource {
   return {
     list(query: FeedbackQuery): Promise<FeedbackPage> {
       return store.getFeedbacks(query);

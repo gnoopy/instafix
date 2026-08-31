@@ -151,7 +151,7 @@ describe("collectMarqueeElements", () => {
 
   it("excludes widget chrome elements", () => {
     const chrome = document.createElement("div");
-    chrome.setAttribute("data-siteping-ignore", "true");
+    chrome.setAttribute("data-instafix-ignore", "true");
     container.appendChild(chrome);
     stubRect(chrome, { x: 0, y: 0, width: 100, height: 100 });
 

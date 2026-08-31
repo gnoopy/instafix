@@ -1,12 +1,12 @@
-import type { MemoryStore } from "@siteping/adapter-memory";
-import type { AnnotationCreateInput, DiagnosticsSnapshot, FeedbackStatus, FeedbackType } from "@siteping/core";
+import type { MemoryStore } from "@instafix/adapter-memory";
+import type { AnnotationCreateInput, DiagnosticsSnapshot, FeedbackStatus, FeedbackType } from "@instafix/core";
 import { SEED_SCREENSHOTS } from "./seed-screenshots";
 
 /**
  * Seeds the demo MemoryStore with a realistic triage backlog so the inbox at
- * /demo/inbox has something to show. The scenario: "Horizon Studio" (the fake
+ * /demo/inbox has something to show. The scenario: "InstaFixStudio" (the fake
  * agency site at /demo) is a client reviewing their in-progress website; the
- * "landing" project collects dogfood feedback from the SitePing landing page.
+ * "landing" project collects dogfood feedback from the InstaFix landing page.
  *
  * Records are created oldest-first because MemoryStore lists in insertion
  * order (newest unshifted to the head). Timestamps are back-dated by mutating
@@ -76,7 +76,7 @@ function buildSeeds(): Seed[] {
       message:
         "Could each project card autoplay a short video on hover? Saw it on an awards site and it looked impressive.",
       authorName: "Marcus Webb",
-      authorEmail: "marcus@horizonstudio.example",
+      authorEmail: "marcus@instafixstudio.example",
       viewport: "1728x1024",
       userAgent: MAC_CHROME,
       ageMinutes: 60 * 24 * 6,
@@ -104,7 +104,7 @@ function buildSeeds(): Seed[] {
       status: "resolved",
       message: "The service cards jump around when I tap them on my iPad — the hover shadow flickers on and off.",
       authorName: "Priya Anand",
-      authorEmail: "priya@horizonstudio.example",
+      authorEmail: "priya@instafixstudio.example",
       viewport: "1024x1366",
       userAgent: IPAD_SAFARI,
       ageMinutes: 60 * 24 * 5,
@@ -134,7 +134,7 @@ function buildSeeds(): Seed[] {
       status: "resolved",
       message: "Do we really need the Twitter icon in the footer? We haven't posted there in two years.",
       authorName: "Marcus Webb",
-      authorEmail: "marcus@horizonstudio.example",
+      authorEmail: "marcus@instafixstudio.example",
       viewport: "1728x1024",
       userAgent: MAC_CHROME,
       ageMinutes: 60 * 24 * 4,
@@ -162,7 +162,7 @@ function buildSeeds(): Seed[] {
       status: "resolved",
       message: 'Make "View our work" the filled blue button and "Our services" the outlined one — work should win.',
       authorName: "Claire Fontaine",
-      authorEmail: "claire@horizonstudio.example",
+      authorEmail: "claire@instafixstudio.example",
       viewport: "1440x900",
       userAgent: MAC_CHROME,
       ageMinutes: 60 * 24 * 3,
@@ -198,7 +198,7 @@ function buildSeeds(): Seed[] {
       annotation: {
         cssSelector: "#comparison",
         xpath: "//section[@id='comparison']",
-        textSnippet: "SitePing Marker.io BugHerd Pricing Free & open source",
+        textSnippet: "InstaFix Marker.io BugHerd Pricing Free & open source",
         elementTag: "SECTION",
         textPrefix: "How it works",
         textSuffix: "FAQ",
@@ -220,7 +220,7 @@ function buildSeeds(): Seed[] {
       status: "in_progress",
       message: "Elena sent a shorter version of her quote by email last week — please swap it in before launch.",
       authorName: "Claire Fontaine",
-      authorEmail: "claire@horizonstudio.example",
+      authorEmail: "claire@instafixstudio.example",
       viewport: "1440x900",
       userAgent: MAC_CHROME,
       ageMinutes: 60 * 26,
@@ -247,7 +247,7 @@ function buildSeeds(): Seed[] {
       status: "open",
       message: "At 150% browser zoom the Contact button in the nav wraps under the logo and everything shifts down.",
       authorName: "Priya Anand",
-      authorEmail: "priya@horizonstudio.example",
+      authorEmail: "priya@instafixstudio.example",
       viewport: "1280x800",
       userAgent: WIN_FIREFOX,
       ageMinutes: 60 * 25,
@@ -286,7 +286,7 @@ function buildSeeds(): Seed[] {
         elementTag: "SECTION",
         textPrefix: "Features",
         textSuffix: "Comparison",
-        neighborText: "npm install @siteping/widget @siteping/adapter-prisma",
+        neighborText: "npm install @instafix/widget @instafix/adapter-prisma",
         xPct: 0.3,
         yPct: 0.4,
         wPct: 0.4,
@@ -314,7 +314,7 @@ function buildSeeds(): Seed[] {
       status: "in_progress",
       message: 'Under "Development" — does that include maintenance after launch? Clients keep asking us.',
       authorName: "Marcus Webb",
-      authorEmail: "marcus@horizonstudio.example",
+      authorEmail: "marcus@instafixstudio.example",
       viewport: "1728x1024",
       userAgent: MAC_CHROME,
       ageMinutes: 60 * 7,
@@ -370,7 +370,7 @@ function buildSeeds(): Seed[] {
       status: "open",
       message: "Clicking the Vertex SaaS card does nothing — shouldn't it open the case study page?",
       authorName: "Claire Fontaine",
-      authorEmail: "claire@horizonstudio.example",
+      authorEmail: "claire@instafixstudio.example",
       viewport: "1440x900",
       userAgent: MAC_CHROME,
       ageMinutes: 60 * 4,
@@ -409,7 +409,7 @@ function buildSeeds(): Seed[] {
       status: "open",
       message: "No changes — just wanted to say this is looking great. Huge step up from the old site!",
       authorName: "Marcus Webb",
-      authorEmail: "marcus@horizonstudio.example",
+      authorEmail: "marcus@instafixstudio.example",
       viewport: "1728x1024",
       userAgent: MAC_CHROME,
       ageMinutes: 60 * 3,
@@ -419,7 +419,7 @@ function buildSeeds(): Seed[] {
         textSnippet: "We craft digital experiences that matter.",
         elementTag: "H1",
         textPrefix: "Digital agency",
-        textSuffix: "Horizon Studio is a design",
+        textSuffix: "InstaFixStudio is a design",
         neighborText: "Digital agency",
         xPct: 0.05,
         yPct: 0.1,
@@ -435,7 +435,7 @@ function buildSeeds(): Seed[] {
       status: "open",
       message: 'Can we try "digital experiences that ship." instead of "that matter."? Feels more us.',
       authorName: "Claire Fontaine",
-      authorEmail: "claire@horizonstudio.example",
+      authorEmail: "claire@instafixstudio.example",
       viewport: "1440x900",
       userAgent: MAC_CHROME,
       ageMinutes: 120,
@@ -445,7 +445,7 @@ function buildSeeds(): Seed[] {
         textSnippet: "We craft digital experiences that matter.",
         elementTag: "H1",
         textPrefix: "Digital agency",
-        textSuffix: "Horizon Studio is a design",
+        textSuffix: "InstaFixStudio is a design",
         neighborText: "Digital agency",
         xPct: 0.3,
         yPct: 0.55,

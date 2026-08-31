@@ -3,7 +3,7 @@ import type { Translations } from "./types.js";
 export const ru: Translations = {
   // Panel
   "panel.title": "Обратная связь",
-  "panel.ariaLabel": "Панель обратной связи Siteping",
+  "panel.ariaLabel": "Панель обратной связи InstaFix",
   "panel.feedbackList": "Список отзывов",
   "panel.loading": "Загрузка отзывов",
   "panel.close": "Закрыть панель",
@@ -207,7 +207,7 @@ export const ru: Translations = {
 
   // Ознакомительный тур
   "onboarding.step1Title": "Инструменты уже готовы",
-  "onboarding.step1Body": "Значки рядом с кнопкой Siteping видны всегда — нажимать на неё не нужно.",
+  "onboarding.step1Body": "Значки рядом с кнопкой InstaFix видны всегда — нажимать на неё не нужно.",
   "onboarding.step2Title": "Выделите что угодно",
   "onboarding.step2Body":
     "Выберите «Аннотация», затем щёлкните или перетащите на странице, чтобы отметить то, о чём хотите рассказать.",

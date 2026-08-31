@@ -3,14 +3,14 @@ title: FAQ
 description: The questions everyone asks, answered from how the code actually behaves.
 ---
 
-## I called initSiteping and nothing shows. Why?
+## I called initInstaFix and nothing shows. Why?
 
 In order of likelihood:
 
 1. **You're in a production build.** The widget skips when `NODE_ENV` is `production` (only `process.env.NODE_ENV` is read). Pass `forceShow: true` on staging, or check with `onSkip`.
 2. **The viewport is under 768 px.** Same fix: `onSkip` tells you, `minViewportWidth: 0` overrides.
 3. **Invalid config** — a missing `endpoint`/`store` or `projectName` logs a `console.error` and mounts nothing. This case does *not* fire `onSkip`, so open the console.
-4. **It's already mounted.** A second `initSiteping()` returns the existing instance instead of a second button.
+4. **It's already mounted.** A second `initInstaFix()` returns the existing instance instead of a second button.
 
 ## Do my clients need an account?
 
@@ -22,13 +22,13 @@ MIT license, no paid tier, no phoning home. You host one API endpoint (any frame
 
 ## Which frameworks work?
 
-- **Widget:** any site — it's a plain script (ESM, CJS, or a `<script>` global). A React hook (`@siteping/widget/react`) is included.
+- **Widget:** any site — it's a plain script (ESM, CJS, or a `<script>` global). A React hook (`@instafix/widget/react`) is included.
 - **Server:** the adapter returns standard `Request` → `Response` handlers — Next.js, Remix, SvelteKit, Hono, … The CLI's route generator targets Next.js App Router specifically; other frameworks mount the handlers manually.
 - **Dashboard:** React 18 or 19.
 
 ## What data does a feedback contain?
 
-The comment, its type and status, the page (the URL **path** only by default — query strings never leave the browser), viewport size, user agent, the author's name and email, and the DOM anchor of each annotation. Opt-in extras: a screenshot of the annotated area and recent console/network diagnostics. Mask anything sensitive with `data-siteping-ignore="true"` — masked elements are excluded from screenshots.
+The comment, its type and status, the page (the URL **path** only by default — query strings never leave the browser), viewport size, user agent, the author's name and email, and the DOM anchor of each annotation. Opt-in extras: a screenshot of the annotated area and recent console/network diagnostics. Mask anything sensitive with `data-instafix-ignore="true"` — masked elements are excluded from screenshots.
 
 ## Can anyone read my feedback API?
 
@@ -44,4 +44,4 @@ The marker hides on that page (nothing to anchor to) rather than pointing at the
 
 ## My language isn't built in.
 
-The dashboard accepts runtime locales via `registerLocale`. The widget's locales are compiled in — adding one is the friendliest first contribution to the project: see [CONTRIBUTING](https://github.com/NeosiaNexus/SitePing/blob/main/CONTRIBUTING.md).
+The dashboard accepts runtime locales via `registerLocale`. The widget's locales are compiled in — adding one is the friendliest first contribution to the project: see [CONTRIBUTING](https://github.com/gnoopy/InstaFix/blob/main/CONTRIBUTING.md).

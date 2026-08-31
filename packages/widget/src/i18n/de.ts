@@ -3,7 +3,7 @@ import type { Translations } from "./types.js";
 export const de: Translations = {
   // Panel
   "panel.title": "Feedbacks",
-  "panel.ariaLabel": "Siteping-Feedback-Panel",
+  "panel.ariaLabel": "InstaFix-Feedback-Panel",
   "panel.feedbackList": "Feedbackliste",
   "panel.loading": "Feedbacks werden geladen",
   "panel.close": "Panel schließen",
@@ -209,7 +209,7 @@ export const de: Translations = {
 
   // Erste-Schritte-Tour
   "onboarding.step1Title": "Deine Werkzeuge sind bereit",
-  "onboarding.step1Body": "Die Symbole neben dem Siteping-Button sind immer da — kein Klick nötig, um sie zu sehen.",
+  "onboarding.step1Body": "Die Symbole neben dem InstaFix-Button sind immer da — kein Klick nötig, um sie zu sehen.",
   "onboarding.step2Title": "Beliebiges auswählen",
   "onboarding.step2Body":
     "Wähle Kommentieren und klicke oder ziehe dann auf der Seite, um zu markieren, worüber du sprechen möchtest.",

@@ -1,33 +1,33 @@
 ---
 title: Writing an adapter
-description: Build your own store adapter with @siteping/adapter-kit — the engine, the contract, and the conformance suite.
+description: Build your own store adapter with @instafix/adapter-kit — the engine, the contract, and the conformance suite.
 ---
 
-The three bundled adapters cover most setups, but SitePing stores are pluggable: anything that can hold records can back the widget and the dashboard. `@siteping/adapter-kit` is the published package for that — it carries the `SitepingStore` contract, the building blocks the first-party adapters run on, and the conformance suite that proves your implementation behaves like the others.
+The three bundled adapters cover most setups, but InstaFix stores are pluggable: anything that can hold records can back the widget and the dashboard. `@instafix/adapter-kit` is the published package for that — it carries the `InstaFixStore` contract, the building blocks the first-party adapters run on, and the conformance suite that proves your implementation behaves like the others.
 
 ```bash
-npm i -D @siteping/adapter-kit vitest
+npm i -D @instafix/adapter-kit vitest
 ```
 
-`vitest` is an **optional peer dependency**, needed only by the `@siteping/adapter-kit/testing` entry. If you don't run the conformance suite, skip it. The kit itself has no runtime dependencies (`@siteping/core` is bundled into its `dist`), so a dev dependency works when you bundle your own package; if you publish unbundled output, move it to `dependencies`.
+`vitest` is an **optional peer dependency**, needed only by the `@instafix/adapter-kit/testing` entry. If you don't run the conformance suite, skip it. The kit itself has no runtime dependencies (`@instafix/core` is bundled into its `dist`), so a dev dependency works when you bundle your own package; if you publish unbundled output, move it to `dependencies`.
 
-> Why a separate package: `@siteping/core` is an internal package — it exports raw TypeScript and is never published to npm. The kit is the supported way to depend on those types and helpers from outside this repo.
+> Why a separate package: `@instafix/core` is an internal package — it exports raw TypeScript and is never published to npm. The kit is the supported way to depend on those types and helpers from outside this repo.
 
 ## Pick your path
 
 | Your backend | What you write | Guide |
 |---|---|---|
 | Snapshot — KV, flat file, IndexedDB, a cookie, an array | `load` / `persist` / `generateId` | [Snapshot backends](#snapshot-backends) |
-| Query — SQL, an ORM, an HTTP API | The 6 `SitepingStore` methods | [Query backends](#query-backends) |
+| Query — SQL, an ORM, an HTTP API | The 6 `InstaFixStore` methods | [Query backends](#query-backends) |
 
 ## Snapshot backends
 
 If your storage can hand back the whole feedback list and take a whole list back, `createCollectionStore` gives you a complete, conformant store. It implements every semantic of the contract — `clientId` deduplication, newest-first ordering, the filter and pagination pipeline, `StoreNotFoundError` on missing records, project-scoped bulk delete, and `verifyProjectOwnership`:
 
 ```ts
-import { createCollectionStore, type FeedbackRecord, type SitepingStore } from "@siteping/adapter-kit";
+import { createCollectionStore, type FeedbackRecord, type InstaFixStore } from "@instafix/adapter-kit";
 
-export function createArrayStore(): SitepingStore {
+export function createArrayStore(): InstaFixStore {
   let feedbacks: FeedbackRecord[] = [];
   let counter = 1;
 
@@ -51,7 +51,7 @@ That is a real, fully conformant adapter — it's the dogfood example the kit's 
 | `persist(feedbacks)` | Write the full snapshot back. Throw `StorePersistenceError` when the write is lost (quota, storage disabled) — never swallow it |
 | `generateId()` | A unique id, used for both feedback and annotation records |
 
-`createCollectionStore` returns a `CollectionStore` — a `SitepingStore` where `verifyProjectOwnership` is guaranteed rather than optional, so you can delegate to it without a null check.
+`createCollectionStore` returns a `CollectionStore` — a `InstaFixStore` where `verifyProjectOwnership` is guaranteed rather than optional, so you can delegate to it without a null check.
 
 **Quota pressure drops screenshots first.** When `persist` throws during `createFeedback` and the record carries an inline screenshot, the engine clears `screenshotUrl` — by far the heaviest field — and retries once, so the written comment survives a full storage bucket. If that second write also fails, the error propagates: returning the record would claim a success that never happened.
 
@@ -65,10 +65,10 @@ import {
   StoreNotFoundError,
   type FeedbackCreateInput,
   type FeedbackRecord,
-  type SitepingStore,
-} from "@siteping/adapter-kit";
+  type InstaFixStore,
+} from "@instafix/adapter-kit";
 
-export class DrizzleStore implements SitepingStore {
+export class DrizzleStore implements InstaFixStore {
   async createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord> {
     const record = buildFeedbackRecord(data, {
       id: crypto.randomUUID(),
@@ -131,10 +131,10 @@ The same suite the first-party adapters run. Point it at a factory that returns 
 
 ```ts
 // __tests__/my-store.test.ts
-import { testSitepingStore } from "@siteping/adapter-kit/testing";
+import { testInstaFixStore } from "@instafix/adapter-kit/testing";
 import { MyStore } from "../src/index.js";
 
-testSitepingStore(() => new MyStore());
+testInstaFixStore(() => new MyStore());
 ```
 
 The factory runs before each test and may be async, which is where you spin up a transaction or a fresh schema. Two knobs cover contract variations that are legitimately backend-specific:
@@ -145,7 +145,7 @@ The factory runs before each test and may be async, which is where you spin up a
 | `caseInsensitiveSearch` | `true` | Your collation makes `search` case-sensitive — pass `false` and the suite only asserts same-case substring matching |
 
 ```ts
-testSitepingStore(() => new PostgresStore(db), {
+testInstaFixStore(() => new PostgresStore(db), {
   duplicateBehavior: "throw",
   caseInsensitiveSearch: false,
 });
@@ -158,13 +158,13 @@ testSitepingStore(() => new PostgresStore(db), {
 Nothing else changes. Server-side, hand it to the request handlers; client-side, hand it straight to the widget or the inbox:
 
 ```ts
-// Server — the request handlers accept any SitepingStore, Prisma or not
-import { createSitepingHandler } from "@siteping/adapter-prisma";
-export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ store: new MyStore() });
+// Server — the request handlers accept any InstaFixStore, Prisma or not
+import { createInstaFixHandler } from "@instafix/adapter-prisma";
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({ store: new MyStore() });
 
 // Browser — client-side mode, no server at all
-import { initSiteping } from "@siteping/widget";
-initSiteping({ store: new MyStore(), projectName: "my-app" });
+import { initInstaFix } from "@instafix/widget";
+initInstaFix({ store: new MyStore(), projectName: "my-app" });
 ```
 
-If you publish one, [open an issue](https://github.com/NeosiaNexus/SitePing/issues) — we'll link it from this page.
+If you publish one, [open an issue](https://github.com/gnoopy/InstaFix/issues) — we'll link it from this page.

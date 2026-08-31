@@ -239,7 +239,7 @@ describe("captureAnnotatedScreenshot — capture rect and region", () => {
 // The predicate is the only thing standing between widget chrome (annotator
 // overlay, drawing rect, popup) and the captured JPEG, and between host-
 // marked sensitive elements and the captured JPEG. Both code paths share
-// the same `data-siteping-ignore="true"` attribute, so we verify both here.
+// the same `data-instafix-ignore="true"` attribute, so we verify both here.
 // Regression for issue #124 (annotator selection overlay leaking into the
 // screenshot).
 // -----------------------------------------------------------------------
@@ -254,15 +254,15 @@ describe("captureAnnotatedScreenshot — ignoreElements predicate", () => {
     return ignore as IgnoreFn;
   }
 
-  it("excludes the siteping-widget shadow host (widget's own DOM)", async () => {
+  it("excludes the instafix-widget shadow host (widget's own DOM)", async () => {
     const ignore = await getIgnorePredicate();
-    const host = document.createElement("siteping-widget");
+    const host = document.createElement("instafix-widget");
     expect(ignore(host)).toBe(true);
   });
 
-  it("excludes descendants of the siteping-widget shadow host", async () => {
+  it("excludes descendants of the instafix-widget shadow host", async () => {
     const ignore = await getIgnorePredicate();
-    const host = document.createElement("siteping-widget");
+    const host = document.createElement("instafix-widget");
     const child = document.createElement("div");
     host.appendChild(child);
     document.body.appendChild(host);
@@ -270,10 +270,10 @@ describe("captureAnnotatedScreenshot — ignoreElements predicate", () => {
     host.remove();
   });
 
-  it("excludes elements explicitly marked data-siteping-ignore=true (host masking + annotator chrome)", async () => {
+  it("excludes elements explicitly marked data-instafix-ignore=true (host masking + annotator chrome)", async () => {
     const ignore = await getIgnorePredicate();
     const masked = document.createElement("div");
-    masked.setAttribute("data-siteping-ignore", "true");
+    masked.setAttribute("data-instafix-ignore", "true");
     expect(ignore(masked)).toBe(true);
   });
 

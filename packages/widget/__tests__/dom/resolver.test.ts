@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { AnchorData, RectData } from "@siteping/core";
+import type { AnchorData, RectData } from "@instafix/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { generateFingerprint } from "../../src/dom/fingerprint";
 import { resolveAnchor, resolveAnnotation } from "../../src/dom/resolver";

@@ -12,12 +12,12 @@ export default defineConfig({
     // "Dynamic require of \"events\" is not supported" at startup under Node.
     js: [
       "#!/usr/bin/env node",
-      'import { createRequire as __sitepingCreateRequire } from "node:module";',
-      "const require = __sitepingCreateRequire(import.meta.url);",
+      'import { createRequire as __instafixCreateRequire } from "node:module";',
+      "const require = __instafixCreateRequire(import.meta.url);",
     ].join("\n"),
   },
   dts: false,
   sourcemap: true,
   clean: true,
-  noExternal: ["@siteping/core", "commander", "@clack/prompts", "@mrleebo/prisma-ast"],
+  noExternal: ["@instafix/core", "commander", "@clack/prompts", "@mrleebo/prisma-ast"],
 });

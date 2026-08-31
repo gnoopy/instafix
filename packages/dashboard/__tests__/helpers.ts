@@ -8,8 +8,8 @@ import type {
   FeedbackResponse,
   FeedbackStatus,
   ScreenshotRegion,
-} from "@siteping/core";
-import { isClosedStatus, StoreNotFoundError } from "@siteping/core";
+} from "@instafix/core";
+import { isClosedStatus, StoreNotFoundError } from "@instafix/core";
 import { type Mock, vi } from "vitest";
 import type { InboxSource } from "../src/types.js";
 
@@ -62,7 +62,7 @@ export function makeRecord(overrides: Partial<FeedbackRecord> = {}): FeedbackRec
     message: "The header overlaps the logo on mobile",
     status: "open",
     projectName: "demo",
-    url: "https://demo.siteping.dev/pricing",
+    url: "https://demo.instafix.realstory.blog/pricing",
     urlPattern: null,
     authorName: "Alex Client",
     authorEmail: "alex@client.example",
@@ -116,7 +116,7 @@ export function makeResponse(overrides: Partial<FeedbackResponse> = {}): Feedbac
     type: "bug",
     message: "Something is off",
     status: "open",
-    url: "https://demo.siteping.dev/pricing",
+    url: "https://demo.instafix.realstory.blog/pricing",
     urlPattern: null,
     viewport: "1280×800",
     userAgent: "UA",

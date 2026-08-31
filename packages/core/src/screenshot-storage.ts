@@ -29,7 +29,7 @@
  *   },
  * };
  *
- * createSitepingHandler({ prisma, screenshotStorage });
+ * createInstaFixHandler({ prisma, screenshotStorage });
  * ```
  */
 export interface ScreenshotStorage {

@@ -1,4 +1,4 @@
-import type { ConsoleDiagnosticEntry, DiagnosticsSnapshot, NetworkDiagnosticEntry } from "@siteping/core";
+import type { ConsoleDiagnosticEntry, DiagnosticsSnapshot, NetworkDiagnosticEntry } from "@instafix/core";
 import type { ReactElement } from "react";
 import { useMemo, useState } from "react";
 import { tWithParams } from "../i18n/index.js";
@@ -65,11 +65,11 @@ export function Diagnostics({ diagnostics }: DiagnosticsProps): ReactElement {
   };
 
   return (
-    <section className="spd-diagnostics">
-      <div className="spd-meta-label">
+    <section className="ifd-diagnostics">
+      <div className="ifd-meta-label">
         {t("drawer.diagnostics")} · {merged.length}
       </div>
-      <ul className="spd-diag-list">
+      <ul className="ifd-diag-list">
         {visible.map((item) => {
           if (item.kind === "console") {
             const clampable = isClampable(item.console.message);
@@ -77,25 +77,25 @@ export function Diagnostics({ diagnostics }: DiagnosticsProps): ReactElement {
             return (
               <li
                 key={item.key}
-                className="spd-diag-entry"
+                className="ifd-diag-entry"
                 data-level={item.console.level}
                 data-expanded={clampable && isExpanded ? "true" : undefined}
               >
-                <time className="spd-diag-time" dateTime={item.timestamp}>
+                <time className="ifd-diag-time" dateTime={item.timestamp}>
                   {formatTime(item.timestamp)}
                 </time>
-                <span className="spd-diag-level">{item.console.level}</span>
+                <span className="ifd-diag-level">{item.console.level}</span>
                 {clampable ? (
                   <button
                     type="button"
-                    className="spd-diag-msg"
+                    className="ifd-diag-msg"
                     aria-expanded={isExpanded}
                     onClick={() => toggleExpanded(item.key)}
                   >
                     {item.console.message}
                   </button>
                 ) : (
-                  <span className="spd-diag-msg" style={{ cursor: "auto" }}>
+                  <span className="ifd-diag-msg" style={{ cursor: "auto" }}>
                     {item.console.message}
                   </span>
                 )}
@@ -105,29 +105,29 @@ export function Diagnostics({ diagnostics }: DiagnosticsProps): ReactElement {
           return (
             <li
               key={item.key}
-              className="spd-diag-entry"
+              className="ifd-diag-entry"
               data-level={item.network.status >= 400 || item.network.status === 0 ? "error" : "info"}
             >
-              <time className="spd-diag-time" dateTime={item.timestamp}>
+              <time className="ifd-diag-time" dateTime={item.timestamp}>
                 {formatTime(item.timestamp)}
               </time>
-              <span className="spd-diag-method">{item.network.method}</span>
+              <span className="ifd-diag-method">{item.network.method}</span>
               <span
-                className="spd-diag-status"
+                className="ifd-diag-status"
                 data-failed={item.network.status >= 400 || item.network.status === 0 || undefined}
               >
                 {item.network.status}
               </span>
-              <span className="spd-diag-url" title={item.network.url}>
+              <span className="ifd-diag-url" title={item.network.url}>
                 {item.network.url}
               </span>
-              <span className="spd-diag-dur">{Math.round(item.network.durationMs)}ms</span>
+              <span className="ifd-diag-dur">{Math.round(item.network.durationMs)}ms</span>
             </li>
           );
         })}
       </ul>
       {!showAll && merged.length > VISIBLE_COUNT ? (
-        <button type="button" className="spd-btn-ghost" onClick={() => setShowAll(true)}>
+        <button type="button" className="ifd-btn-ghost" onClick={() => setShowAll(true)}>
           {tWithParams(t, "drawer.showAllDiagnostics", { count: merged.length })}
         </button>
       ) : null}

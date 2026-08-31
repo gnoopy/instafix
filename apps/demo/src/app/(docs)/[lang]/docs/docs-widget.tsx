@@ -22,11 +22,11 @@ export function DocsWidget({ locale }: { locale: string }) {
     let destroyed = false;
     let instance: { destroy: () => void } | null = null;
 
-    Promise.all([import("@siteping/widget"), import("@siteping/adapter-localstorage")]).then(
-      ([{ initSiteping }, { LocalStorageStore }]) => {
+    Promise.all([import("@instafix/widget"), import("@instafix/adapter-localstorage")]).then(
+      ([{ initInstaFix }, { LocalStorageStore }]) => {
         if (destroyed) return;
-        instance = initSiteping({
-          store: new LocalStorageStore({ key: "siteping_docs_feedbacks" }),
+        instance = initInstaFix({
+          store: new LocalStorageStore({ key: "instafix_docs_feedbacks" }),
           projectName: "docs",
           forceShow: true,
           accentColor: "#173CFF",

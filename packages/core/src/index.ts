@@ -1,7 +1,7 @@
 export type { AgentExporter, AgentMarkdownOptions } from "./agent-format.js";
 export { CLAUDE_CODE_EXPORTER, formatFeedbacksForAgent } from "./agent-format.js";
-export type { SitepingErrorCode } from "./errors.js";
-export { SitepingAuthError, SitepingError, SitepingNetworkError, SitepingValidationError } from "./errors.js";
+export type { InstaFixErrorCode } from "./errors.js";
+export { InstaFixAuthError, InstaFixError, InstaFixNetworkError, InstaFixValidationError } from "./errors.js";
 export type { FilterResult } from "./filters.js";
 export { applyFeedbackFilters } from "./filters.js";
 export type { I18n, LocaleLoaders, TranslateFunction } from "./i18n.js";
@@ -9,16 +9,16 @@ export { createI18n, interpolate, tWithParams } from "./i18n.js";
 export type {
   FieldDef,
   IndexDef,
+  InstaFixModelFieldName,
+  InstaFixModelName,
   ModelDef,
   PrismaNativeType,
   PrismaScalarType,
   RelationDef,
   RelationKind,
   RelationOnDelete,
-  SitepingModelFieldName,
-  SitepingModelName,
 } from "./schema.js";
-export { isRelationField, isScalarField, SITEPING_MODELS } from "./schema.js";
+export { INSTAFIX_MODELS, isRelationField, isScalarField } from "./schema.js";
 export type { ScreenshotStorage } from "./screenshot-storage.js";
 export type { CollectionStore, CollectionStoreBackend } from "./store-helpers.js";
 export { buildAnnotationRecord, buildFeedbackRecord, createCollectionStore } from "./store-helpers.js";
@@ -50,27 +50,27 @@ export type {
   FeedbackStatus,
   FeedbackType,
   FeedbackUpdateInput,
+  InstaFixBaseConfig,
+  InstaFixConfig,
+  InstaFixDeepLinkOptions,
+  InstaFixHeadersOption,
+  InstaFixHttpConfig,
+  InstaFixIdentity,
+  InstaFixInstance,
+  InstaFixLocale,
+  InstaFixPosition,
+  InstaFixPublicEventListener,
+  InstaFixPublicEvents,
+  InstaFixSkipReason,
+  InstaFixStore,
+  InstaFixStoreConfig,
+  InstaFixTheme,
+  InstaFixUnsubscribe,
   NetworkDiagnosticEntry,
   OpenFeedbackStatus,
   PageScope,
   RectData,
   ScreenshotRegion,
-  SitepingBaseConfig,
-  SitepingConfig,
-  SitepingDeepLinkOptions,
-  SitepingHeadersOption,
-  SitepingHttpConfig,
-  SitepingIdentity,
-  SitepingInstance,
-  SitepingLocale,
-  SitepingPosition,
-  SitepingPublicEventListener,
-  SitepingPublicEvents,
-  SitepingSkipReason,
-  SitepingStore,
-  SitepingStoreConfig,
-  SitepingTheme,
-  SitepingUnsubscribe,
   TextTargetData,
 } from "./types.js";
 export {

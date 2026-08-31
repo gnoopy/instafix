@@ -1,27 +1,27 @@
-[![npm version](https://img.shields.io/npm/v/@siteping/adapter-localstorage)](https://www.npmjs.com/package/@siteping/adapter-localstorage)
-[![Docs](https://img.shields.io/badge/docs-siteping.dev-0066ff)](https://siteping.dev/docs/adapters/localstorage)
+[![npm version](https://img.shields.io/npm/v/@instafix/adapter-localstorage)](https://www.npmjs.com/package/@instafix/adapter-localstorage)
+[![Docs](https://img.shields.io/badge/docs-instafix.realstory.blog-0066ff)](https://instafix.realstory.blog/docs/adapters/localstorage)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
-# @siteping/adapter-localstorage
+# @instafix/adapter-localstorage
 
-Client-side store for [SitePing](https://github.com/NeosiaNexus/SitePing) — the whole feedback loop in the browser, no server required. Ideal for demos, prototypes, and docs sites.
+Client-side store for [InstaFix](https://github.com/gnoopy/InstaFix) — the whole feedback loop in the browser, no server required. Ideal for demos, prototypes, and docs sites.
 
-**[Documentation](https://siteping.dev/docs/adapters/localstorage)**
+**[Documentation](https://instafix.realstory.blog/docs/adapters/localstorage)**
 
 ## Install
 
 ```bash
-npm install @siteping/adapter-localstorage
+npm install @instafix/adapter-localstorage
 ```
 
 ## Usage
 
 ```ts
-import { initSiteping } from "@siteping/widget";
-import { LocalStorageStore } from "@siteping/adapter-localstorage";
+import { initInstaFix } from "@instafix/widget";
+import { LocalStorageStore } from "@instafix/adapter-localstorage";
 
-initSiteping({
-  store: new LocalStorageStore(),   // options: { key?: string } — default "siteping_feedbacks"
+initInstaFix({
+  store: new LocalStorageStore(),   // options: { key?: string } — default "instafix_feedbacks"
   projectName: "my-demo",
 });
 ```
@@ -30,4 +30,4 @@ Each visitor sees only their own feedback — data never leaves their browser. C
 
 ## License
 
-[MIT](https://github.com/NeosiaNexus/SitePing/blob/main/LICENSE)
+[MIT](https://github.com/gnoopy/InstaFix/blob/main/LICENSE)

@@ -8,7 +8,7 @@ The inbox reads and writes through a small abstraction with three ways to supply
 ## Endpoint mode (production default)
 
 ```tsx
-<SitepingInbox projects="my-project" endpoint="/api/siteping" apiKey={KEY} />
+<InstaFixInbox projects="my-project" endpoint="/api/instafix" apiKey={KEY} />
 ```
 
 Talks to your [adapter endpoint](/docs/adapters/prisma): `GET` for lists, `PATCH` for statuses, `DELETE` for removals, always with `cache: "no-store"`. Errors arrive typed by `code` (`AUTH` for 401/403, `VALIDATION` for other 4xx, `SERVER` for 5xx, `NETWORK` for fetch failures). There are deliberately **no retries** — a triage UI should tell you immediately.
@@ -16,30 +16,30 @@ Talks to your [adapter endpoint](/docs/adapters/prisma): `GET` for lists, `PATCH
 ## Store mode
 
 ```tsx
-<SitepingInbox projects="my-demo" store={new LocalStorageStore()} />
+<InstaFixInbox projects="my-demo" store={new LocalStorageStore()} />
 ```
 
-Runs against any `SitepingStore` in-process — the same stores the widget's client-side mode uses. Demos and prototypes never need a server.
+Runs against any `InstaFixStore` in-process — the same stores the widget's client-side mode uses. Demos and prototypes never need a server.
 
 ## Custom source
 
 For tRPC, GraphQL, or server actions, implement the three-method `InboxSource` contract and pass it as `source`:
 
 ```ts
-import type { InboxSource } from "@siteping/dashboard";
+import type { InboxSource } from "@instafix/dashboard";
 
 const source: InboxSource = {
   async list(query) {
     // query: projectName, page, limit, status?, type?, search?, url?, urlPattern?
-    const { feedbacks, total } = await trpc.siteping.list.query(query);
+    const { feedbacks, total } = await trpc.instafix.list.query(query);
     // Important: createdAt / updatedAt / resolvedAt must be real Date objects
     return { feedbacks: feedbacks.map(reviveDates), total };
   },
   async setStatus(id, projectName, status) {
-    return reviveDates(await trpc.siteping.setStatus.mutate({ id, projectName, status }));
+    return reviveDates(await trpc.instafix.setStatus.mutate({ id, projectName, status }));
   },
   async remove(id, projectName) {
-    await trpc.siteping.remove.mutate({ id, projectName });
+    await trpc.instafix.remove.mutate({ id, projectName });
   },
 };
 ```
@@ -48,13 +48,13 @@ The two building blocks behind the built-in modes are exported too — `createEn
 
 ## Types without extra dependencies
 
-`@siteping/dashboard` re-exports everything you need to type a wrapper around it, so you never install another package:
+`@instafix/dashboard` re-exports everything you need to type a wrapper around it, so you never install another package:
 
 | What you're typing | Exports |
 |---|---|
-| Feedback data | `FeedbackRecord`, `FeedbackStatus`, `FeedbackType`, `SitepingStore`, plus the `FEEDBACK_STATUSES` / `FEEDBACK_TYPES` constants and `isClosedStatus()` |
-| Hook options | `UseSitepingInboxOptions` and its three members — `InboxEndpointOptions`, `InboxStoreOptions`, `InboxCustomSourceOptions` — plus the shared `InboxSharedOptions` |
+| Feedback data | `FeedbackRecord`, `FeedbackStatus`, `FeedbackType`, `InstaFixStore`, plus the `FEEDBACK_STATUSES` / `FEEDBACK_TYPES` constants and `isClosedStatus()` |
+| Hook options | `UseInstaFixInboxOptions` and its three members — `InboxEndpointOptions`, `InboxStoreOptions`, `InboxCustomSourceOptions` — plus the shared `InboxSharedOptions` |
 | Hook result | `InboxState`, `InboxStatusFilter`, `InboxTypeFilter` |
 | Sources | `InboxSource`, `EndpointSourceOptions` (the argument of `createEndpointSource`) |
-| Component props | `SitepingInboxProps`, or `SitepingInboxPresentationProps` for the presentation half alone |
+| Component props | `InstaFixInboxProps`, or `InstaFixInboxPresentationProps` for the presentation half alone |
 | Theming | `InboxTheme` (`"light"` \| `"dark"` \| `"auto"`) and `ResolvedTheme` (`"light"` \| `"dark"` — what `auto` resolves to) |

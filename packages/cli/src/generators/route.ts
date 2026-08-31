@@ -1,13 +1,13 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-const ROUTE_TEMPLATE = `import { createSitepingHandler } from "@siteping/adapter-prisma";
+const ROUTE_TEMPLATE = `import { createInstaFixHandler } from "@instafix/adapter-prisma";
 import { prisma } from "@/lib/prisma";
 
-export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({
   prisma,
   // Uncomment to require authentication:
-  // apiKey: process.env.SITEPING_API_KEY,
+  // apiKey: process.env.INSTAFIX_API_KEY,
   // allowedOrigins: ["https://your-site.com"],
 });
 `;
@@ -23,7 +23,7 @@ export interface RouteGenerationResult {
 /**
  * Generate the Next.js App Router API route file.
  *
- * Creates `app/api/siteping/route.ts` with the handler setup.
+ * Creates `app/api/instafix/route.ts` with the handler setup.
  * Skips if the file already exists.
  */
 export function generateRoute(basePath: string = process.cwd()): RouteGenerationResult {
@@ -34,7 +34,7 @@ export function generateRoute(basePath: string = process.cwd()): RouteGeneration
     throw new Error("Cannot find the app/ directory. Are you in a Next.js App Router project?");
   }
 
-  const routePath = join(appDir, "api", "siteping", "route.ts");
+  const routePath = join(appDir, "api", "instafix", "route.ts");
 
   if (existsSync(routePath)) {
     return { created: false, path: routePath };

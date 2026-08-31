@@ -45,7 +45,7 @@ describe("hasSeenOnboarding", () => {
   });
 
   it("returns true once the tour has been marked seen", () => {
-    localStorage.setItem("siteping_onboarding_seen", "1");
+    localStorage.setItem("instafix_onboarding_seen", "1");
     expect(hasSeenOnboarding()).toBe(true);
   });
 
@@ -139,7 +139,7 @@ describe("Onboarding", () => {
     nextBtn.click(); // finish
 
     expect(tour.element.isConnected).toBe(false);
-    expect(store.siteping_onboarding_seen).toBe("1");
+    expect(store.instafix_onboarding_seen).toBe("1");
   });
 
   it("Skip finishes immediately from step 1 and marks the tour seen", async () => {
@@ -150,7 +150,7 @@ describe("Onboarding", () => {
     skipBtn.click();
 
     expect(tour.element.isConnected).toBe(false);
-    expect(store.siteping_onboarding_seen).toBe("1");
+    expect(store.instafix_onboarding_seen).toBe("1");
   });
 
   it("the close (X) button finishes the tour and marks it seen", async () => {
@@ -161,7 +161,7 @@ describe("Onboarding", () => {
     closeBtn.click();
 
     expect(tour.element.isConnected).toBe(false);
-    expect(store.siteping_onboarding_seen).toBe("1");
+    expect(store.instafix_onboarding_seen).toBe("1");
   });
 
   it("Escape finishes the tour and marks it seen", async () => {
@@ -171,7 +171,7 @@ describe("Onboarding", () => {
     document.dispatchEvent(makeKeydown("Escape"));
 
     expect(tour.element.isConnected).toBe(false);
-    expect(store.siteping_onboarding_seen).toBe("1");
+    expect(store.instafix_onboarding_seen).toBe("1");
   });
 
   it("finish() restores focus to the anchor (FAB)", async () => {
@@ -191,7 +191,7 @@ describe("Onboarding", () => {
     tour.destroy();
 
     expect(tour.element.isConnected).toBe(false);
-    expect(store.siteping_onboarding_seen).toBeUndefined();
+    expect(store.instafix_onboarding_seen).toBeUndefined();
     expect(hasSeenOnboarding()).toBe(false);
   });
 
@@ -201,7 +201,7 @@ describe("Onboarding", () => {
     tour.destroy();
 
     expect(() => document.dispatchEvent(makeKeydown("Escape"))).not.toThrow();
-    expect(store.siteping_onboarding_seen).toBeUndefined();
+    expect(store.instafix_onboarding_seen).toBeUndefined();
   });
 
   describe("Tab focus trap", () => {

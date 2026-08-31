@@ -5,11 +5,11 @@ import { Playground } from "./playground";
 
 export const metadata: Metadata = {
   title: "Live Demo",
-  description: "Try SitePing live — draw annotations, leave comments, directly on a demo website.",
+  description: "Try InstaFix live — draw annotations, leave comments, directly on a demo website.",
   openGraph: {
-    title: "SitePing — Live Demo",
-    description: "Try SitePing live — draw annotations, leave comments, directly on a demo website.",
-    url: "https://siteping.dev/demo",
+    title: "InstaFix — Live Demo",
+    description: "Try InstaFix live — draw annotations, leave comments, directly on a demo website.",
+    url: "https://instafix.realstory.blog/demo",
   },
 };
 

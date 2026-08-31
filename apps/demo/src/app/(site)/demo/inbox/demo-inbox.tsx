@@ -1,13 +1,13 @@
 "use client";
 
-import { LocalStorageStore } from "@siteping/adapter-localstorage";
-import { createStoreSource, SitepingInbox } from "@siteping/dashboard";
+import { LocalStorageStore } from "@instafix/adapter-localstorage";
+import { createStoreSource, InstaFixInbox } from "@instafix/dashboard";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { type ReactNode, useMemo } from "react";
 
 // Same key the /demo playground writes to in local mode.
-const LOCAL_STORE_KEY = "siteping_demo_local";
+const LOCAL_STORE_KEY = "instafix_demo_local";
 
 /** In-copy link back to /demo — keeps ?mode=local so local-mode visitors stay on their store. */
 export function DemoSiteLink({ children }: { children: ReactNode }) {
@@ -136,9 +136,9 @@ export function DemoInbox() {
       </div>
       <div className="min-h-0 flex-1">
         {source ? (
-          <SitepingInbox source={source} projects={["demo"]} {...shared} />
+          <InstaFixInbox source={source} projects={["demo"]} {...shared} />
         ) : (
-          <SitepingInbox endpoint="/api/siteping" projects={["demo", "landing"]} {...shared} />
+          <InstaFixInbox endpoint="/api/instafix" projects={["demo", "landing"]} {...shared} />
         )}
       </div>
     </div>

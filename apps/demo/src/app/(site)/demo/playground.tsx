@@ -1,6 +1,6 @@
 "use client";
 
-import type { SitepingInstance } from "@siteping/widget";
+import type { InstaFixInstance } from "@instafix/widget";
 import { useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { CopyButton } from "@/components/landing/copy-button";
@@ -66,7 +66,7 @@ const HEX_RE = /^([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 /** The widget's own default accent — options matching widget defaults drop out of the snippet. */
 const WIDGET_DEFAULT_ACCENT = "#0066ff";
 
-const LOCAL_STORE_KEY = "siteping_demo_local";
+const LOCAL_STORE_KEY = "instafix_demo_local";
 
 const DEMO_IDENTITY = { name: "Alex Client", email: "alex@client.example" };
 
@@ -99,7 +99,7 @@ function parseState(params: ParamsLike): PlaygroundState {
   };
 }
 
-/** Serialize non-default state into the query, preserving params we don't own (e.g. ?siteping=). */
+/** Serialize non-default state into the query, preserving params we don't own (e.g. ?instafix=). */
 function writeState(next: PlaygroundState): void {
   const sp = new URLSearchParams(window.location.search);
   for (const key of OWN_PARAMS) sp.delete(key);
@@ -188,7 +188,7 @@ function buildOptionLines(state: PlaygroundState): { key: string; tokens: RawTok
       ],
     });
   } else {
-    lines.push({ key: "endpoint", tokens: [str("/api/siteping")] });
+    lines.push({ key: "endpoint", tokens: [str("/api/instafix")] });
   }
   lines.push({ key: "projectName", tokens: [str("demo")] });
   if (state.theme !== "light") lines.push({ key: "theme", tokens: [str(state.theme)] });
@@ -222,14 +222,14 @@ function buildOptionLines(state: PlaygroundState): { key: string; tokens: RawTok
 
 function buildSnippet(state: PlaygroundState): { lines: SnippetLine[]; text: string } {
   const raw: { key: string; tokens: RawToken[] }[] = [];
-  raw.push({ key: "import-widget", tokens: importLine("initSiteping", "@siteping/widget") });
+  raw.push({ key: "import-widget", tokens: importLine("initInstaFix", "@instafix/widget") });
   if (state.mode === "local") {
-    raw.push({ key: "import-store", tokens: importLine("LocalStorageStore", "@siteping/adapter-localstorage") });
+    raw.push({ key: "import-store", tokens: importLine("LocalStorageStore", "@instafix/adapter-localstorage") });
   }
   raw.push({ key: "blank", tokens: [] });
   raw.push({
     key: "open",
-    tokens: [{ text: "initSiteping", cls: IDENT }, punct("({")],
+    tokens: [{ text: "initInstaFix", cls: IDENT }, punct("({")],
   });
   for (const option of buildOptionLines(state)) {
     raw.push({
@@ -319,7 +319,7 @@ function ToggleRow({ label, checked, onChange, caption }: ToggleRowProps) {
 // Playground panel
 // ---------------------------------------------------------------------------
 
-const PANEL_ID = "siteping-playground";
+const PANEL_ID = "instafix-playground";
 
 export function Playground() {
   const params = useSearchParams();
@@ -332,7 +332,7 @@ export function Playground() {
   const tabRef = useRef<HTMLButtonElement>(null);
   const collapseRef = useRef<HTMLButtonElement>(null);
   const toggledRef = useRef(false);
-  // Deep links (?siteping=<id>) focus their annotation on the FIRST init only —
+  // Deep links (?instafix=<id>) focus their annotation on the FIRST init only —
   // playground rebuilds must not re-scroll the visitor back to it on every toggle.
   const firstInitRef = useRef(true);
 
@@ -359,18 +359,18 @@ export function Playground() {
   // guard requires destroy() before re-init.
   useEffect(() => {
     let cancelled = false;
-    let instance: SitepingInstance | null = null;
+    let instance: InstaFixInstance | null = null;
 
     (async () => {
-      const [{ initSiteping }, storeModule] = await Promise.all([
-        import("@siteping/widget"),
-        mode === "local" ? import("@siteping/adapter-localstorage") : Promise.resolve(null),
+      const [{ initInstaFix }, storeModule] = await Promise.all([
+        import("@instafix/widget"),
+        mode === "local" ? import("@instafix/adapter-localstorage") : Promise.resolve(null),
       ]);
       if (cancelled) return;
-      instance = initSiteping({
+      instance = initInstaFix({
         projectName: "demo",
         forceShow: true,
-        // "Open on page" links from the inbox (?siteping=<id>) focus the annotation.
+        // "Open on page" links from the inbox (?instafix=<id>) focus the annotation.
         deepLink: firstInitRef.current,
         theme,
         locale,
@@ -382,7 +382,7 @@ export function Playground() {
         ...(identity ? { identity: DEMO_IDENTITY } : {}),
         ...(storeModule
           ? { store: new storeModule.LocalStorageStore({ key: LOCAL_STORE_KEY }) }
-          : { endpoint: "/api/siteping" }),
+          : { endpoint: "/api/instafix" }),
       });
       firstInitRef.current = false;
     })();
@@ -438,9 +438,9 @@ export function Playground() {
   const snippet = buildSnippet(state);
 
   return (
-    // data-siteping-ignore keeps the panel out of widget screenshots.
+    // data-instafix-ignore keeps the panel out of widget screenshots.
     <aside
-      data-siteping-ignore="true"
+      data-instafix-ignore="true"
       aria-label="Widget playground"
       className="fixed left-0 top-28 z-40 flex max-h-[calc(100vh-8.5rem)]"
     >

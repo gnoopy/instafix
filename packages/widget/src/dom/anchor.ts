@@ -1,5 +1,5 @@
+import type { AnchorData, RectData } from "@instafix/core";
 import { finder } from "@medv/finder";
-import type { AnchorData, RectData } from "@siteping/core";
 import { isWidgetChrome } from "../focus-tracker.js";
 import { generateFingerprint } from "./fingerprint.js";
 import { adjacentText, neighborText } from "./text-context.js";

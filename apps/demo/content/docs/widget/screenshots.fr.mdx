@@ -6,8 +6,8 @@ description: Capturer la zone annotée en image — avec masquage des données s
 Avec `enableScreenshot: true`, le widget capture un JPEG de la zone autour de chaque annotation au moment où le client clique sur Envoyer. Votre vue de tri montre alors exactement ce qu'il voyait — y compris les états transitoires (menu déroulant ouvert, styles de survol) qu'une visite ultérieure ne pourrait pas reproduire.
 
 ```ts
-initSiteping({
-  endpoint: "/api/siteping",
+initInstaFix({
+  endpoint: "/api/instafix",
   projectName: "mon-projet",
   enableScreenshot: true,
 });
@@ -22,17 +22,17 @@ initSiteping({
 
 ## Masquer les données sensibles
 
-Ajoutez `data-siteping-ignore="true"` à tout élément qui ne doit jamais apparaître dans une capture. L'élément et tous ses descendants sont retirés du rendu :
+Ajoutez `data-instafix-ignore="true"` à tout élément qui ne doit jamais apparaître dans une capture. L'élément et tous ses descendants sont retirés du rendu :
 
 ```html
-<div data-siteping-ignore="true">
+<div data-instafix-ignore="true">
   <CreditCardForm />
 </div>
 ```
 
-La valeur doit être exactement `"true"` — l'attribut nu ou `"false"` ne masque rien. L'interface du widget elle-même s'exclut de la même façon, donc les captures ne contiennent jamais l'habillage SitePing.
+La valeur doit être exactement `"true"` — l'attribut nu ou `"false"` ne masque rien. L'interface du widget elle-même s'exclut de la même façon, donc les captures ne contiennent jamais l'habillage InstaFix.
 
-> Masquer un élément désactive aussi le [commentaire au clic droit](/fr/docs/widget/right-click) dessus — le widget traite `data-siteping-ignore` comme un « ne pas y toucher ».
+> Masquer un élément désactive aussi le [commentaire au clic droit](/fr/docs/widget/right-click) dessus — le widget traite `data-instafix-ignore` comme un « ne pas y toucher ».
 
 ## L'échec est toujours sans danger
 

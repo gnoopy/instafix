@@ -1,5 +1,5 @@
 /**
- * General-purpose TypeScript utility types used across `@siteping/*`.
+ * General-purpose TypeScript utility types used across `@instafix/*`.
  *
  * These are kept dependency-free and re-exported from the package entry
  * so adapters and integrators can rely on the same primitives the core

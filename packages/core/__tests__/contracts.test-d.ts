@@ -20,30 +20,30 @@ import type {
   FeedbackRecord,
   FeedbackResponse,
   FeedbackUpdateInput,
-  SitepingConfig,
-  SitepingStore,
+  InstaFixConfig,
+  InstaFixStore,
 } from "../src/types.js";
 
-declare const store: SitepingStore;
+declare const store: InstaFixStore;
 
-describe("SitepingConfig discriminated union", () => {
+describe("InstaFixConfig discriminated union", () => {
   it("accepts each mode on its own", () => {
-    expectTypeOf({ projectName: "p", endpoint: "/api/siteping" }).toExtend<SitepingConfig>();
-    expectTypeOf({ projectName: "p", endpoint: "/api", apiKey: "k" }).toExtend<SitepingConfig>();
-    expectTypeOf({ projectName: "p", store }).toExtend<SitepingConfig>();
+    expectTypeOf({ projectName: "p", endpoint: "/api/instafix" }).toExtend<InstaFixConfig>();
+    expectTypeOf({ projectName: "p", endpoint: "/api", apiKey: "k" }).toExtend<InstaFixConfig>();
+    expectTypeOf({ projectName: "p", store }).toExtend<InstaFixConfig>();
   });
 
   it("rejects invalid mode combinations", () => {
     // @ts-expect-error — neither endpoint nor store: no union arm matches
-    const neither: SitepingConfig = { projectName: "p" };
+    const neither: InstaFixConfig = { projectName: "p" };
     void neither;
 
     // @ts-expect-error — endpoint and store are mutually exclusive
-    const both: SitepingConfig = { projectName: "p", endpoint: "/api", store };
+    const both: InstaFixConfig = { projectName: "p", endpoint: "/api", store };
     void both;
 
     // @ts-expect-error — apiKey is HTTP-mode only
-    const storeWithApiKey: SitepingConfig = { projectName: "p", store, apiKey: "leaked" };
+    const storeWithApiKey: InstaFixConfig = { projectName: "p", store, apiKey: "leaked" };
     void storeWithApiKey;
   });
 });
@@ -95,15 +95,15 @@ describe("wire types derived from record types", () => {
   });
 });
 
-describe("SitepingStore contract", () => {
+describe("InstaFixStore contract", () => {
   it("is satisfied by the collection-store engine, including verifyProjectOwnership", () => {
     const engine = createCollectionStore({ load: () => [], persist: () => {}, generateId: () => "id" });
-    expectTypeOf(engine).toExtend<SitepingStore>();
+    expectTypeOf(engine).toExtend<InstaFixStore>();
     expectTypeOf(engine.verifyProjectOwnership).returns.resolves.toEqualTypeOf<boolean>();
   });
 
   it("keeps verifyProjectOwnership optional for minimal adapters", () => {
-    expectTypeOf<SitepingStore["verifyProjectOwnership"]>().toEqualTypeOf<
+    expectTypeOf<InstaFixStore["verifyProjectOwnership"]>().toEqualTypeOf<
       ((id: string, projectName: string) => Promise<boolean>) | undefined
     >();
   });

@@ -1,8 +1,8 @@
 {
-  "name": "@siteping/core",
+  "name": "@instafix/core",
   "version": "0.7.2",
   "private": true,
-  "description": "Shared types and schema definitions for @siteping packages",
+  "description": "Shared types and schema definitions for @instafix packages",
   "type": "module",
   "sideEffects": false,
   "types": "./dist/index.d.ts",
@@ -15,7 +15,7 @@
       "default": "./src/testing.ts"
     }
   },
-  "author": "neosianexus",
+  "author": "gnoopy",
   "scripts": {
     "build": "tsc",
     "check": "tsc --noEmit -p tsconfig.check.json",
@@ -24,12 +24,12 @@
   "engines": {
     "node": ">=20"
   },
-  "homepage": "https://siteping.dev",
+  "homepage": "https://instafix.realstory.blog",
   "bugs": {
-    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+    "url": "https://github.com/gnoopy/InstaFix/issues"
   },
   "keywords": [
-    "siteping",
+    "instafix",
     "types",
     "schema",
     "feedback"
@@ -37,7 +37,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "url": "git+https://github.com/gnoopy/InstaFix.git",
     "directory": "packages/core"
   }
 }

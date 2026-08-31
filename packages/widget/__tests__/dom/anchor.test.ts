@@ -339,7 +339,7 @@ describe("findLargestAncestor", () => {
 
   it("does not climb past widget chrome", () => {
     const chrome = document.createElement("div");
-    chrome.setAttribute("data-siteping-ignore", "true");
+    chrome.setAttribute("data-instafix-ignore", "true");
     const child = document.createElement("span");
     chrome.appendChild(child);
     document.body.appendChild(chrome);

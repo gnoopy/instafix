@@ -172,7 +172,7 @@ describe("MultiTargetPreview", () => {
       (b) => b.textContent === t("annotator.targetPreviewAlwaysShow"),
     )!;
     toggle.click();
-    expect(store.siteping_target_preview_always_show).toBe("1");
+    expect(store.instafix_target_preview_always_show).toBe("1");
 
     preview.destroy();
     preview = new MultiTargetPreview(colors, elements, t, ANCHOR_RECT);
@@ -191,7 +191,7 @@ describe("MultiTargetPreview", () => {
     toggle.click(); // on
     toggle.click(); // off
 
-    expect(store.siteping_target_preview_always_show).toBeUndefined();
+    expect(store.instafix_target_preview_always_show).toBeUndefined();
   });
 
   it("does not throw when localStorage is unavailable", () => {

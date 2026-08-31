@@ -6,8 +6,8 @@ description: Capture the annotated area as an image — with privacy masking and
 With `enableScreenshot: true`, the widget captures a JPEG of the area around each annotation when the client hits Send. Your triage view then shows exactly what they saw — including transient states like open dropdowns or hover styles that a later visit can't reproduce.
 
 ```ts
-initSiteping({
-  endpoint: "/api/siteping",
+initInstaFix({
+  endpoint: "/api/instafix",
   projectName: "my-project",
   enableScreenshot: true,
 });
@@ -22,17 +22,17 @@ initSiteping({
 
 ## Privacy masking
 
-Add `data-siteping-ignore="true"` to any element that must never appear in a screenshot. The element and all its descendants are removed from the render:
+Add `data-instafix-ignore="true"` to any element that must never appear in a screenshot. The element and all its descendants are removed from the render:
 
 ```html
-<div data-siteping-ignore="true">
+<div data-instafix-ignore="true">
   <CreditCardForm />
 </div>
 ```
 
-The value must be exactly `"true"` — the bare attribute or `"false"` does not mask. The widget's own UI opts out the same way, so screenshots never contain SitePing chrome.
+The value must be exactly `"true"` — the bare attribute or `"false"` does not mask. The widget's own UI opts out the same way, so screenshots never contain InstaFix chrome.
 
-> Masking an element also disables [right-click commenting](/docs/widget/right-click) on it — the widget treats `data-siteping-ignore` as "not mine to touch".
+> Masking an element also disables [right-click commenting](/docs/widget/right-click) on it — the widget treats `data-instafix-ignore` as "not mine to touch".
 
 ## Failure is always safe
 

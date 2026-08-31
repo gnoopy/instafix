@@ -4,9 +4,9 @@ test.beforeEach(async ({ page, browserName }) => {
   const project = `e2e-${browserName}`;
   await page.request.get(`http://localhost:3999/api/reset?projectName=${project}`);
   await page.goto(`http://localhost:3999?project=${project}`);
-  await page.waitForSelector("siteping-widget", { state: "attached" });
+  await page.waitForSelector("instafix-widget", { state: "attached" });
   await page.waitForFunction(() => {
-    const host = document.querySelector("siteping-widget");
+    const host = document.querySelector("instafix-widget");
     return host?.shadowRoot?.querySelector(".sp-fab") !== null;
   });
 });
@@ -25,28 +25,28 @@ function shadow(page: Page) {
     /** Query inside the shadow root */
     async query(selector: string) {
       return page.evaluate((sel) => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("instafix-widget");
         return host?.shadowRoot?.querySelector(sel) !== null;
       }, selector);
     },
     /** Get text content of an element inside shadow root */
     async text(selector: string) {
       return page.evaluate((sel) => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("instafix-widget");
         return host?.shadowRoot?.querySelector(sel)?.textContent ?? null;
       }, selector);
     },
     /** Click an element inside shadow root */
     async click(selector: string) {
       await page.evaluate((sel) => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("instafix-widget");
         (host?.shadowRoot?.querySelector(sel) as HTMLElement)?.click();
       }, selector);
     },
     /** Count matching elements */
     async count(selector: string) {
       return page.evaluate((sel) => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("instafix-widget");
         return host?.shadowRoot?.querySelectorAll(sel).length ?? 0;
       }, selector);
     },
@@ -54,7 +54,7 @@ function shadow(page: Page) {
     async attr(selector: string, attr: string) {
       return page.evaluate(
         ({ sel, a }) => {
-          const host = document.querySelector("siteping-widget");
+          const host = document.querySelector("instafix-widget");
           return host?.shadowRoot?.querySelector(sel)?.getAttribute(a) ?? null;
         },
         { sel: selector, a: attr },
@@ -64,7 +64,7 @@ function shadow(page: Page) {
     async waitFor(selector: string, options?: { timeout?: number }) {
       await page.waitForFunction(
         (sel) => {
-          const host = document.querySelector("siteping-widget");
+          const host = document.querySelector("instafix-widget");
           return host?.shadowRoot?.querySelector(sel) !== null;
         },
         selector,
@@ -75,7 +75,7 @@ function shadow(page: Page) {
     async waitForHidden(selector: string, options?: { timeout?: number }) {
       await page.waitForFunction(
         (sel) => {
-          const host = document.querySelector("siteping-widget");
+          const host = document.querySelector("instafix-widget");
           return host?.shadowRoot?.querySelector(sel) === null;
         },
         selector,
@@ -90,8 +90,8 @@ function shadow(page: Page) {
 // ---------------------------------------------------------------------------
 
 test.describe("Widget injection", () => {
-  test("injects the siteping-widget element", async ({ page }) => {
-    await expect(page.locator("siteping-widget")).toBeAttached();
+  test("injects the instafix-widget element", async ({ page }) => {
+    await expect(page.locator("instafix-widget")).toBeAttached();
   });
 
   test("renders the FAB button", async ({ page }) => {
@@ -100,7 +100,7 @@ test.describe("Widget injection", () => {
   });
 
   test("FAB has correct z-index on host", async ({ page }) => {
-    const zIndex = await page.locator("siteping-widget").evaluate((el) => getComputedStyle(el).zIndex);
+    const zIndex = await page.locator("instafix-widget").evaluate((el) => getComputedStyle(el).zIndex);
     expect(zIndex).toBe("2147483647");
   });
 });
@@ -266,7 +266,7 @@ test.describe("Keyboard-only annotation", () => {
 
     // 2. Open the FAB via keyboard (Enter on the focused button = click).
     await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("instafix-widget");
       (host?.shadowRoot?.querySelector(".sp-fab") as HTMLElement)?.focus();
     });
     await page.keyboard.press("Enter");
@@ -275,12 +275,12 @@ test.describe("Keyboard-only annotation", () => {
     // 3. The first radial item (chat) receives focus after the open animation
     //    — ArrowDown to the annotate item, then Enter to activate it.
     await page.waitForFunction(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("instafix-widget");
       return host?.shadowRoot?.activeElement?.classList.contains("sp-radial-item") ?? false;
     });
     await page.keyboard.press("ArrowDown");
     await page.waitForFunction(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("instafix-widget");
       return host?.shadowRoot?.activeElement?.getAttribute("data-item-id") === "annotate";
     });
     await page.keyboard.press("Enter");
@@ -297,7 +297,7 @@ test.describe("Keyboard-only annotation", () => {
     // covers the target element.
     const hasHighlight = await page.evaluate(() => {
       const overlay = document.querySelector("div[style*='crosshair']");
-      const rect = overlay?.querySelector("div[data-siteping-ignore]") as HTMLElement | null;
+      const rect = overlay?.querySelector("div[data-instafix-ignore]") as HTMLElement | null;
       return !!rect && rect.style.position === "fixed" && parseFloat(rect.style.width) > 0;
     });
     expect(hasHighlight).toBe(true);
@@ -344,22 +344,22 @@ test.describe("Full annotation flow", () => {
     // Wait for either the identity modal to appear or a marker to be created
     await page.waitForFunction(
       () => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("instafix-widget");
         const hasIdentity = host?.shadowRoot?.querySelector(".sp-identity-title") !== null;
         const hasMarker =
-          (document.getElementById("siteping-markers")?.querySelectorAll("[data-feedback-id]").length ?? 0) >= 1;
+          (document.getElementById("instafix-markers")?.querySelectorAll("[data-feedback-id]").length ?? 0) >= 1;
         return hasIdentity || hasMarker;
       },
       undefined,
       { timeout: 5000 },
     );
     const identityTitle = await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("instafix-widget");
       return host?.shadowRoot?.querySelector(".sp-identity-title") !== null;
     });
     if (identityTitle) {
       await page.evaluate(() => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("instafix-widget");
         const sr = host?.shadowRoot;
         const inputs = sr?.querySelectorAll(".sp-input") as NodeListOf<HTMLInputElement>;
         const [nameInput, emailInput] = Array.from(inputs ?? []);
@@ -374,7 +374,7 @@ test.describe("Full annotation flow", () => {
       // Wait for the feedback to be submitted and a marker to appear
       await page.waitForFunction(
         () => {
-          const c = document.getElementById("siteping-markers");
+          const c = document.getElementById("instafix-markers");
           return (c?.querySelectorAll("[data-feedback-id]").length ?? 0) >= 1;
         },
         undefined,
@@ -385,14 +385,14 @@ test.describe("Full annotation flow", () => {
     // 7. Verify marker appeared
     await page.waitForFunction(
       () => {
-        const c = document.getElementById("siteping-markers");
+        const c = document.getElementById("instafix-markers");
         return (c?.querySelectorAll("[data-feedback-id]").length ?? 0) >= 1;
       },
       undefined,
       { timeout: 5000 },
     );
     const markerCount = await page.evaluate(() => {
-      const c = document.getElementById("siteping-markers");
+      const c = document.getElementById("instafix-markers");
       return c?.querySelectorAll("[data-feedback-id]").length ?? 0;
     });
     expect(markerCount).toBeGreaterThanOrEqual(1);
@@ -401,14 +401,14 @@ test.describe("Full annotation flow", () => {
     const project = getProject(page);
     await page.waitForFunction(
       async (pn) => {
-        const r = await fetch(`http://localhost:3999/api/siteping?projectName=${pn}`);
+        const r = await fetch(`http://localhost:3999/api/instafix?projectName=${pn}`);
         const d = await r.json();
         return d.total >= 1;
       },
       project,
       { timeout: 5000 },
     );
-    const res = await page.request.get(`http://localhost:3999/api/siteping?projectName=${project}`);
+    const res = await page.request.get(`http://localhost:3999/api/instafix?projectName=${project}`);
     const data = await res.json();
     expect(data.total).toBe(1);
     expect(data.feedbacks[0].type).toBe("bug");
@@ -426,11 +426,11 @@ test.describe("Annotation toggle", () => {
     await s.click('[data-item-id="toggle-annotations"]');
 
     await page.waitForFunction(() => {
-      const c = document.getElementById("siteping-markers");
+      const c = document.getElementById("instafix-markers");
       return c?.style.display === "none";
     });
     const hidden = await page.evaluate(() => {
-      const c = document.getElementById("siteping-markers");
+      const c = document.getElementById("instafix-markers");
       return c?.style.display === "none";
     });
     expect(hidden).toBe(true);
@@ -441,11 +441,11 @@ test.describe("Annotation toggle", () => {
     await s.click('[data-item-id="toggle-annotations"]');
 
     await page.waitForFunction(() => {
-      const c = document.getElementById("siteping-markers");
+      const c = document.getElementById("instafix-markers");
       return c?.style.display !== "none";
     });
     const visible = await page.evaluate(() => {
-      const c = document.getElementById("siteping-markers");
+      const c = document.getElementById("instafix-markers");
       return c?.style.display !== "none";
     });
     expect(visible).toBe(true);
@@ -457,17 +457,17 @@ test.describe("Annotation toggle", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("Double-init guard", () => {
-  test("calling initSiteping() twice does not create duplicate widgets", async ({ page }) => {
-    // Call initSiteping a second time from the page context
+  test("calling initInstaFix() twice does not create duplicate widgets", async ({ page }) => {
+    // Call initInstaFix a second time from the page context
     const project = getProject(page);
     await page.evaluate((pn) => {
-      // Dynamic import to call initSiteping again
+      // Dynamic import to call initInstaFix again
       const script = document.createElement("script");
       script.type = "module";
       script.textContent = `
-        import { initSiteping } from '/widget.js';
-        window.__siteping2 = initSiteping({
-          endpoint: '/api/siteping',
+        import { initInstaFix } from '/widget.js';
+        window.__instafix2 = initInstaFix({
+          endpoint: '/api/instafix',
           projectName: '${pn}',
           forceShow: true,
           accentColor: '#6366f1',
@@ -478,20 +478,20 @@ test.describe("Double-init guard", () => {
 
     // Wait for the second script to execute
     await page.waitForFunction(
-      () => (window as unknown as Record<string, unknown>).__siteping2 !== undefined,
+      () => (window as unknown as Record<string, unknown>).__instafix2 !== undefined,
       undefined,
       {
         timeout: 3000,
       },
     );
 
-    // There should still be exactly one <siteping-widget> element
-    const widgetCount = await page.evaluate(() => document.querySelectorAll("siteping-widget").length);
+    // There should still be exactly one <instafix-widget> element
+    const widgetCount = await page.evaluate(() => document.querySelectorAll("instafix-widget").length);
     expect(widgetCount).toBe(1);
 
     // There should still be exactly one FAB inside the shadow root
     const fabCount = await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("instafix-widget");
       return host?.shadowRoot?.querySelectorAll(".sp-fab").length ?? 0;
     });
     expect(fabCount).toBe(1);
@@ -505,7 +505,7 @@ test.describe("Event delegation", () => {
    */
   async function createFeedbackAndOpenPanel(page: Page) {
     // Seed a feedback via the API
-    const res = await page.request.post("http://localhost:3999/api/siteping", {
+    const res = await page.request.post("http://localhost:3999/api/instafix", {
       data: {
         projectName: getProject(page),
         type: "bug",
@@ -538,7 +538,7 @@ test.describe("Event delegation", () => {
 
     // Find the card and its resolve button
     const hasResolveBtn = await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("instafix-widget");
       const card = host?.shadowRoot?.querySelector(".sp-card");
       return card?.querySelector('[data-action="resolve"]') !== null;
     });
@@ -546,7 +546,7 @@ test.describe("Event delegation", () => {
 
     // Click the resolve button via evaluate (event delegation should handle it)
     await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("instafix-widget");
       const resolveBtn = host?.shadowRoot?.querySelector('[data-action="resolve"]') as HTMLElement;
       resolveBtn?.click();
     });
@@ -554,27 +554,27 @@ test.describe("Event delegation", () => {
     // Wait for the card to get the resolved class (panel reloads after resolve)
     await page.waitForFunction(
       () => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("instafix-widget");
         return host?.shadowRoot?.querySelector(".sp-card--resolved") !== null;
       },
       undefined,
       { timeout: 5000 },
     );
     const isResolved = await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("instafix-widget");
       return host?.shadowRoot?.querySelector(".sp-card--resolved") !== null;
     });
     expect(isResolved).toBe(true);
 
     // Verify via API that the status changed
-    const apiRes = await page.request.get(`http://localhost:3999/api/siteping?projectName=${getProject(page)}`);
+    const apiRes = await page.request.get(`http://localhost:3999/api/instafix?projectName=${getProject(page)}`);
     const data = await apiRes.json();
     expect(data.feedbacks[0].status).toBe("resolved");
   });
 
   test("clicking resolve button on a resolved card reopens it", async ({ page }) => {
     // Seed a feedback and resolve it via API
-    const createRes = await page.request.post("http://localhost:3999/api/siteping", {
+    const createRes = await page.request.post("http://localhost:3999/api/instafix", {
       data: {
         projectName: getProject(page),
         type: "change",
@@ -590,7 +590,7 @@ test.describe("Event delegation", () => {
     const fb = await createRes.json();
 
     // Resolve it via PATCH
-    await page.request.patch("http://localhost:3999/api/siteping", {
+    await page.request.patch("http://localhost:3999/api/instafix", {
       data: { id: fb.id, status: "resolved" },
     });
 
@@ -604,7 +604,7 @@ test.describe("Event delegation", () => {
 
     // Click the resolve (reopen) button
     await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("instafix-widget");
       const card = host?.shadowRoot?.querySelector(".sp-card--resolved");
       const reopenBtn = card?.querySelector('[data-action="resolve"]') as HTMLElement;
       reopenBtn?.click();
@@ -613,7 +613,7 @@ test.describe("Event delegation", () => {
     // Wait for the card to lose the resolved class
     await page.waitForFunction(
       () => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("instafix-widget");
         const cards = host?.shadowRoot?.querySelectorAll(".sp-card") ?? [];
         // All cards should not have the resolved class (we only have one feedback)
         return cards.length > 0 && host?.shadowRoot?.querySelector(".sp-card--resolved") === null;
@@ -622,7 +622,7 @@ test.describe("Event delegation", () => {
       { timeout: 5000 },
     );
 
-    const apiRes = await page.request.get(`http://localhost:3999/api/siteping?projectName=${getProject(page)}`);
+    const apiRes = await page.request.get(`http://localhost:3999/api/instafix?projectName=${getProject(page)}`);
     const data = await apiRes.json();
     expect(data.feedbacks[0].status).toBe("open");
   });
@@ -632,8 +632,8 @@ test.describe("Default locale is English", () => {
   test("FAB aria-label uses English text", async ({ page }) => {
     const s = shadow(page);
     const ariaLabel = await s.attr(".sp-fab", "aria-label");
-    // English: "Siteping — Feedback menu"
-    expect(ariaLabel).toBe("Siteping \u2014 Feedback menu");
+    // English: "InstaFix — Feedback menu"
+    expect(ariaLabel).toBe("InstaFix \u2014 Feedback menu");
   });
 
   test("radial menu items use English labels", async ({ page }) => {
@@ -676,7 +676,7 @@ test.describe("Default locale is English", () => {
     await s.waitFor(".sp-panel--open");
 
     const placeholder = await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("instafix-widget");
       const input = host?.shadowRoot?.querySelector(".sp-search") as HTMLInputElement;
       return input?.placeholder ?? null;
     });
@@ -705,7 +705,7 @@ test.describe("Panel search", () => {
   test("typing in search input filters feedbacks", async ({ page }) => {
     const project = getProject(page);
     // Seed two feedbacks with different messages
-    await page.request.post("http://localhost:3999/api/siteping", {
+    await page.request.post("http://localhost:3999/api/instafix", {
       data: {
         projectName: project,
         type: "bug",
@@ -718,7 +718,7 @@ test.describe("Panel search", () => {
         annotations: [],
       },
     });
-    await page.request.post("http://localhost:3999/api/siteping", {
+    await page.request.post("http://localhost:3999/api/instafix", {
       data: {
         projectName: project,
         type: "question",
@@ -742,7 +742,7 @@ test.describe("Panel search", () => {
     // Wait for at least 2 cards (parallel workers may add more via shared store)
     await page.waitForFunction(
       () => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("instafix-widget");
         return (host?.shadowRoot?.querySelectorAll(".sp-card").length ?? 0) >= 2;
       },
       undefined,
@@ -753,7 +753,7 @@ test.describe("Panel search", () => {
 
     // Type in the search input — "login" should filter to only matching feedbacks
     await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("instafix-widget");
       const input = host?.shadowRoot?.querySelector(".sp-search") as HTMLInputElement;
       input.value = "login";
       input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -762,7 +762,7 @@ test.describe("Panel search", () => {
     // Wait for cards to decrease (search is filtering)
     await page.waitForFunction(
       (before) => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("instafix-widget");
         return (host?.shadowRoot?.querySelectorAll(".sp-card").length ?? before) < before;
       },
       countBefore,
@@ -771,7 +771,7 @@ test.describe("Panel search", () => {
 
     // The remaining card(s) should all contain "login"
     const cardText = await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("instafix-widget");
       const card = host?.shadowRoot?.querySelector(".sp-card-message");
       return card?.textContent ?? "";
     });
@@ -781,7 +781,7 @@ test.describe("Panel search", () => {
   test("clearing search shows all feedbacks again", async ({ page }) => {
     const project = getProject(page);
     // Seed two feedbacks
-    await page.request.post("http://localhost:3999/api/siteping", {
+    await page.request.post("http://localhost:3999/api/instafix", {
       data: {
         projectName: project,
         type: "bug",
@@ -794,7 +794,7 @@ test.describe("Panel search", () => {
         annotations: [],
       },
     });
-    await page.request.post("http://localhost:3999/api/siteping", {
+    await page.request.post("http://localhost:3999/api/instafix", {
       data: {
         projectName: project,
         type: "change",
@@ -817,7 +817,7 @@ test.describe("Panel search", () => {
     // Wait for both cards
     await page.waitForFunction(
       () => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("instafix-widget");
         return (host?.shadowRoot?.querySelectorAll(".sp-card").length ?? 0) >= 2;
       },
       undefined,
@@ -826,7 +826,7 @@ test.describe("Panel search", () => {
 
     // Search for "Alpha"
     await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("instafix-widget");
       const input = host?.shadowRoot?.querySelector(".sp-search") as HTMLInputElement;
       input.value = "Alpha";
       input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -834,7 +834,7 @@ test.describe("Panel search", () => {
 
     await page.waitForFunction(
       () => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("instafix-widget");
         return (host?.shadowRoot?.querySelectorAll(".sp-card").length ?? 0) === 1;
       },
       undefined,
@@ -843,7 +843,7 @@ test.describe("Panel search", () => {
 
     // Clear the search
     await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("instafix-widget");
       const input = host?.shadowRoot?.querySelector(".sp-search") as HTMLInputElement;
       input.value = "";
       input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -852,7 +852,7 @@ test.describe("Panel search", () => {
     // All feedbacks should reappear
     await page.waitForFunction(
       () => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("instafix-widget");
         return (host?.shadowRoot?.querySelectorAll(".sp-card").length ?? 0) >= 2;
       },
       undefined,
@@ -863,7 +863,7 @@ test.describe("Panel search", () => {
 
   test("search with no matches shows empty state", async ({ page }) => {
     // Seed a feedback
-    await page.request.post("http://localhost:3999/api/siteping", {
+    await page.request.post("http://localhost:3999/api/instafix", {
       data: {
         projectName: getProject(page),
         type: "bug",
@@ -886,7 +886,7 @@ test.describe("Panel search", () => {
 
     // Search for something that does not exist
     await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("instafix-widget");
       const input = host?.shadowRoot?.querySelector(".sp-search") as HTMLInputElement;
       input.value = "xyznonexistent";
       input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -998,26 +998,26 @@ test.describe("Production guard at dist level (#104)", () => {
     const project = `e2e-${browserName}-noforce`;
     await page.request.get(`http://localhost:3999/api/reset?projectName=${project}`);
     await page.goto(`http://localhost:3999?project=${project}&noForceShow=1`);
-    await page.waitForSelector("siteping-widget", { state: "attached" });
+    await page.waitForSelector("instafix-widget", { state: "attached" });
     await page.waitForFunction(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("instafix-widget");
       return host?.shadowRoot?.querySelector(".sp-fab") !== null;
     });
-    await expect(page.locator("siteping-widget")).toBeAttached();
+    await expect(page.locator("instafix-widget")).toBeAttached();
   });
 });
 
 test.describe("Cleanup", () => {
   test("destroy() removes all injected elements", async ({ page }) => {
-    await expect(page.locator("siteping-widget")).toBeAttached();
+    await expect(page.locator("instafix-widget")).toBeAttached();
 
     await page.evaluate(() => {
-      (window as unknown as { __siteping: { destroy: () => void } }).__siteping.destroy();
+      (window as unknown as { __instafix: { destroy: () => void } }).__instafix.destroy();
     });
 
-    await page.waitForFunction(() => !document.querySelector("siteping-widget"));
-    const widgetGone = await page.evaluate(() => !document.querySelector("siteping-widget"));
-    const markersGone = await page.evaluate(() => !document.getElementById("siteping-markers"));
+    await page.waitForFunction(() => !document.querySelector("instafix-widget"));
+    const widgetGone = await page.evaluate(() => !document.querySelector("instafix-widget"));
+    const markersGone = await page.evaluate(() => !document.getElementById("instafix-markers"));
     expect(widgetGone).toBe(true);
     expect(markersGone).toBe(true);
   });

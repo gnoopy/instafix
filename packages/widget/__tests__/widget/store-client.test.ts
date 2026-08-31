@@ -3,16 +3,16 @@ import type {
   FeedbackCreateInput,
   FeedbackPayload,
   FeedbackRecord,
-  SitepingStore,
-} from "@siteping/core";
+  InstaFixStore,
+} from "@instafix/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StoreClient } from "../../src/store-client.js";
 
 // ---------------------------------------------------------------------------
-// Mock SitepingStore
+// Mock InstaFixStore
 // ---------------------------------------------------------------------------
 
-function mockStore(): SitepingStore {
+function mockStore(): InstaFixStore {
   return {
     createFeedback: vi.fn(),
     getFeedbacks: vi.fn(),

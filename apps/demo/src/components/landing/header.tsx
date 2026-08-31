@@ -15,7 +15,7 @@ export function Header() {
         <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-tight text-white">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent">
             <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-              <title>SitePing</title>
+              <title>InstaFix</title>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
               <path
                 strokeLinecap="round"
@@ -24,7 +24,7 @@ export function Header() {
               />
             </svg>
           </span>
-          SitePing
+          InstaFix
         </Link>
 
         {/* Center nav */}
@@ -44,7 +44,7 @@ export function Header() {
         {/* Right actions */}
         <div className="hidden items-center gap-2.5 md:flex">
           <a
-            href="https://github.com/NeosiaNexus/SitePing"
+            href="https://github.com/gnoopy/InstaFix"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-sm text-gray-300 transition-all hover:border-white/20 hover:bg-white/[0.08] hover:text-white"

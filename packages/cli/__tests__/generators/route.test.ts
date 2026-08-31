@@ -9,7 +9,7 @@ describe("generateRoute", () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "siteping-route-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "instafix-route-test-"));
   });
 
   afterEach(() => {
@@ -20,23 +20,23 @@ describe("generateRoute", () => {
   // Directory detection
   // -------------------------------------------------------------------------
 
-  it("creates route in app/api/siteping/route.ts when app/ exists", () => {
+  it("creates route in app/api/instafix/route.ts when app/ exists", () => {
     mkdirSync(join(tmpDir, "app"), { recursive: true });
 
     const result = generateRoute(tmpDir);
 
     expect(result.created).toBe(true);
-    expect(result.path).toBe(join(tmpDir, "app", "api", "siteping", "route.ts"));
+    expect(result.path).toBe(join(tmpDir, "app", "api", "instafix", "route.ts"));
     expect(existsSync(result.path)).toBe(true);
   });
 
-  it("creates route in src/app/api/siteping/route.ts when src/app/ exists", () => {
+  it("creates route in src/app/api/instafix/route.ts when src/app/ exists", () => {
     mkdirSync(join(tmpDir, "src", "app"), { recursive: true });
 
     const result = generateRoute(tmpDir);
 
     expect(result.created).toBe(true);
-    expect(result.path).toBe(join(tmpDir, "src", "app", "api", "siteping", "route.ts"));
+    expect(result.path).toBe(join(tmpDir, "src", "app", "api", "instafix", "route.ts"));
     expect(existsSync(result.path)).toBe(true);
   });
 
@@ -46,7 +46,7 @@ describe("generateRoute", () => {
 
     const result = generateRoute(tmpDir);
 
-    expect(result.path).toBe(join(tmpDir, "src", "app", "api", "siteping", "route.ts"));
+    expect(result.path).toBe(join(tmpDir, "src", "app", "api", "instafix", "route.ts"));
   });
 
   // -------------------------------------------------------------------------
@@ -84,11 +84,11 @@ describe("generateRoute", () => {
     const result = generateRoute(tmpDir);
     const content = readFileSync(result.path, "utf-8");
 
-    expect(content).toContain('import { createSitepingHandler } from "@siteping/adapter-prisma"');
+    expect(content).toContain('import { createInstaFixHandler } from "@instafix/adapter-prisma"');
     expect(content).toContain('import { prisma } from "@/lib/prisma"');
-    expect(content).toContain("export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({");
+    expect(content).toContain("export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({");
     expect(content).toContain("prisma,");
-    expect(content).toContain("// apiKey: process.env.SITEPING_API_KEY,");
+    expect(content).toContain("// apiKey: process.env.INSTAFIX_API_KEY,");
     expect(content).toContain('// allowedOrigins: ["https://your-site.com"],');
   });
 
@@ -100,11 +100,11 @@ describe("generateRoute", () => {
     mkdirSync(join(tmpDir, "app"), { recursive: true });
 
     // Create the directory structure so mkdirSync succeeds, but writeFileSync will fail
-    mkdirSync(join(tmpDir, "app", "api", "siteping"), { recursive: true });
+    mkdirSync(join(tmpDir, "app", "api", "instafix"), { recursive: true });
 
     // Make the target directory read-only to trigger EACCES on write
     const { chmodSync } = require("node:fs");
-    const targetDir = join(tmpDir, "app", "api", "siteping");
+    const targetDir = join(tmpDir, "app", "api", "instafix");
     chmodSync(targetDir, 0o444);
 
     try {
@@ -117,7 +117,7 @@ describe("generateRoute", () => {
 
   it("rethrows non-permission errors (e.g. ENOTDIR) verbatim", () => {
     // Create app/ as a directory, then create a regular file at app/api so
-    // mkdirSync recursive cannot create app/api/siteping (ENOTDIR).
+    // mkdirSync recursive cannot create app/api/instafix (ENOTDIR).
     mkdirSync(join(tmpDir, "app"), { recursive: true });
     writeFileSync(join(tmpDir, "app", "api"), "blocker");
 

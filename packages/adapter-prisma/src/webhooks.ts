@@ -1,7 +1,7 @@
 /**
  * Outgoing webhook notifications for newly-created feedbacks.
  *
- * Plug a Slack, Discord, or generic HTTP endpoint into `createSitepingHandler`
+ * Plug a Slack, Discord, or generic HTTP endpoint into `createInstaFixHandler`
  * to receive a payload whenever a feedback is successfully persisted. Webhooks
  * are dispatched as fire-and-forget (`void Promise.all(...)`) so a slow or
  * down receiver never blocks the client response — the feedback is already in
@@ -15,7 +15,7 @@
  *   surfaced without crashing the request.
  */
 
-import type { FeedbackRecord, FeedbackType } from "@siteping/core";
+import type { FeedbackRecord, FeedbackType } from "@instafix/core";
 
 /** Supported webhook integrations — drives the JSON body shape. */
 export type WebhookType = "slack" | "discord" | "generic";
@@ -223,12 +223,12 @@ function reportError(config: WebhookConfig, err: Error, feedbackId: string): voi
       // and crash the request that already succeeded persisting the
       // feedback. Surface the original error too so it isn't silently lost.
       console.warn(
-        `[siteping] webhook onError() callback threw for feedback ${feedbackId}: ${String(callbackErr)} (original error: ${err.message})`,
+        `[instafix] webhook onError() callback threw for feedback ${feedbackId}: ${String(callbackErr)} (original error: ${err.message})`,
       );
     }
     return;
   }
-  console.warn(`[siteping] webhook to ${config.url} failed for feedback ${feedbackId}: ${err.message}`);
+  console.warn(`[instafix] webhook to ${config.url} failed for feedback ${feedbackId}: ${err.message}`);
 }
 
 /**

@@ -17,7 +17,7 @@ function renderDrawer(recordOverrides = {}) {
     <Drawer
       record={record}
       overlay={false}
-      deepLinkParam="siteping"
+      deepLinkParam="instafix"
       onClose={vi.fn()}
       onChangeStatus={vi.fn()}
       onDelete={vi.fn()}
@@ -29,14 +29,14 @@ function renderDrawer(recordOverrides = {}) {
 describe("Drawer — author line", () => {
   it("renders the author email in angle brackets when present", () => {
     const { container } = renderDrawer({ authorName: "Alex Client", authorEmail: "alex@client.example" });
-    const author = container.querySelector(".spd-meta-value");
+    const author = container.querySelector(".ifd-meta-value");
     expect(author?.textContent).toContain("Alex Client");
     expect(author?.textContent).toContain("<alex@client.example>");
   });
 
   it("renders no empty '<>' shell when authorEmail is redacted to an empty string", () => {
     const { container } = renderDrawer({ authorName: "Alex Client", authorEmail: "" });
-    const author = container.querySelector(".spd-meta-value");
+    const author = container.querySelector(".ifd-meta-value");
     expect(author?.textContent).toContain("Alex Client");
     expect(author?.textContent).not.toContain("<>");
   });

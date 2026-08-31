@@ -4,7 +4,7 @@ import { p } from "../prompts.js";
 import { findPrismaSchema } from "../utils/find-schema.js";
 
 export async function initCommand(): Promise<void> {
-  p.intro("siteping — Setup");
+  p.intro("instafix — Setup");
 
   const cwd = process.cwd();
 
@@ -15,7 +15,7 @@ export async function initCommand(): Promise<void> {
     p.log.info(`Prisma schema found: ${schemaPath}`);
 
     const shouldSync = await p.confirm({
-      message: "Sync Siteping models to your Prisma schema?",
+      message: "Sync InstaFix models to your Prisma schema?",
     });
 
     if (p.isCancel(shouldSync)) {
@@ -44,13 +44,13 @@ export async function initCommand(): Promise<void> {
         }
       } catch (error) {
         p.log.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-        p.outro("Fix the errors above and re-run `siteping init`.");
+        p.outro("Fix the errors above and re-run `instafix init`.");
         process.exit(1);
       }
     }
   } else {
     p.log.warn("No schema.prisma file found. You will need to add the models manually.");
-    p.log.info("See the documentation: https://github.com/NeosiaNexus/SitePing#prisma-schema-1");
+    p.log.info("See the documentation: https://github.com/gnoopy/InstaFix#prisma-schema-1");
   }
 
   // Step 2: API route
@@ -73,7 +73,7 @@ export async function initCommand(): Promise<void> {
       }
     } catch (error) {
       p.log.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-      p.outro("Fix the errors above and re-run `siteping init`.");
+      p.outro("Fix the errors above and re-run `instafix init`.");
       process.exit(1);
     }
   }
@@ -84,10 +84,10 @@ export async function initCommand(): Promise<void> {
       "1. Run: npx prisma db push",
       "2. Add the widget to your layout:",
       "",
-      '   import { initSiteping } from "@siteping/widget"',
+      '   import { initInstaFix } from "@instafix/widget"',
       "",
-      "   initSiteping({",
-      '     endpoint: "/api/siteping",',
+      "   initInstaFix({",
+      '     endpoint: "/api/instafix",',
       '     projectName: "my-project",',
       "   })",
     ].join("\n"),

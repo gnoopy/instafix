@@ -1,11 +1,11 @@
-import type { FeedbackRecord } from "@siteping/core";
+import type { FeedbackRecord } from "@instafix/core";
 import type { ReactElement } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import type { InboxState } from "../types.js";
 import { useInboxUi } from "./context.js";
 import { Row } from "./row.js";
 
-/** How long removed rows linger for their `.spd-row-leaving` exit animation (CSS runs 160ms). */
+/** How long removed rows linger for their `.ifd-row-leaving` exit animation (CSS runs 160ms). */
 const LEAVE_MS = 200;
 
 /** A removed row remembered with its former index so the ghost renders in place. */
@@ -74,7 +74,7 @@ export function List({ state }: ListProps): ReactElement {
   return (
     <div
       ref={listRef}
-      className="spd-list"
+      className="ifd-list"
       role="listbox"
       tabIndex={0}
       aria-label={t("inbox.listLabel")}

@@ -1,8 +1,8 @@
-import type { SitepingConfig } from "@siteping/core";
+import type { InstaFixConfig } from "@instafix/core";
 import { parseSvg, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
 import { type TFunction, type Translations, tWithParams } from "./i18n/index.js";
-import { ICON_CLOSE, ICON_EDIT, ICON_EYE, ICON_EYE_OFF, ICON_LIST, ICON_SITEPING } from "./icons.js";
+import { ICON_CLOSE, ICON_EDIT, ICON_EYE, ICON_EYE_OFF, ICON_INSTAFIX, ICON_LIST } from "./icons.js";
 
 /** Closed set of toolbar item ids — keeps the label lookup exhaustive. */
 type ToolbarItemId = "chat" | "annotate" | "toggle-annotations";
@@ -22,7 +22,7 @@ const ITEM_LABEL_KEYS: Record<ToolbarItemId, keyof Translations> = {
   "toggle-annotations": "fab.annotations",
 };
 
-const TOOLBAR_HIDDEN_KEY = "siteping_toolbar_hidden";
+const TOOLBAR_HIDDEN_KEY = "instafix_toolbar_hidden";
 
 /** Whether the user has explicitly hidden the toolbar on a previous visit — visible by default otherwise. */
 function loadToolbarHidden(): boolean {
@@ -65,7 +65,7 @@ export class Fab {
 
   constructor(
     shadowRoot: ShadowRoot,
-    config: SitepingConfig,
+    config: InstaFixConfig,
     private readonly bus: EventBus<WidgetEvents>,
     private readonly t: TFunction,
   ) {
@@ -92,7 +92,7 @@ export class Fab {
     this.fab = document.createElement("button");
     this.fab.className = `sp-fab sp-fab--${position} sp-anim-fab-in`;
     this.fab.style.position = "fixed"; // ensure fixed even with relative children
-    this.fab.appendChild(parseSvg(this.toolbarVisible ? ICON_CLOSE : ICON_SITEPING));
+    this.fab.appendChild(parseSvg(this.toolbarVisible ? ICON_CLOSE : ICON_INSTAFIX));
     this.fab.setAttribute("aria-expanded", String(this.toolbarVisible));
     this.fab.addEventListener("click", () => this.toggle());
 
@@ -258,7 +258,7 @@ export class Fab {
   private hide(): void {
     this.toolbarVisible = false;
     saveToolbarHidden(true);
-    this.setFabIcon(ICON_SITEPING);
+    this.setFabIcon(ICON_INSTAFIX);
     this.fab.setAttribute("aria-expanded", "false");
     this.fab.setAttribute("aria-label", this.t("fab.showTools"));
     this.toolbar.classList.remove("sp-toolbar--visible");

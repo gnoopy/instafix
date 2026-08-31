@@ -10,7 +10,7 @@ Deux chemins : l'**installation complète** (Next.js + Prisma — la forme de pr
 ### 1. Installer
 
 ```bash
-npm i @siteping/widget @siteping/adapter-prisma
+npm i @instafix/widget @instafix/adapter-prisma
 ```
 
 Il vous faut Prisma déjà en place, plus un singleton client dans `@/lib/prisma`. Si vous n'en avez pas :
@@ -27,10 +27,10 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 ### 2. Générer
 
 ```bash
-npx @siteping/cli init
+npx @instafix/cli init
 ```
 
-Confirmez les deux questions : le CLI ajoute les deux modèles SitePing à votre schéma Prisma et génère la route API (`app/api/siteping/route.ts`, ou sous `src/app/` selon votre projet). Poussez ensuite le schéma vers votre base :
+Confirmez les deux questions : le CLI ajoute les deux modèles InstaFix à votre schéma Prisma et génère la route API (`app/api/instafix/route.ts`, ou sous `src/app/` selon votre projet). Poussez ensuite le schéma vers votre base :
 
 ```bash
 npx prisma db push
@@ -41,24 +41,24 @@ npx prisma db push
 ```tsx
 // N'importe où côté client — par exemple votre layout racine
 "use client";
-import { useSiteping } from "@siteping/widget/react";
+import { useInstaFix } from "@instafix/widget/react";
 
 export function Feedback() {
-  useSiteping({ endpoint: "/api/siteping", projectName: "mon-projet" });
+  useInstaFix({ endpoint: "/api/instafix", projectName: "mon-projet" });
   return null;
 }
 ```
 
-Lancez votre serveur de dev et regardez en bas à droite : le bouton SitePing est là. Dessinez un rectangle sur n'importe quoi, tapez un commentaire, envoyez.
+Lancez votre serveur de dev et regardez en bas à droite : le bouton InstaFix est là. Dessinez un rectangle sur n'importe quoi, tapez un commentaire, envoyez.
 
 Par défaut le widget apparaît en développement mais **jamais dans un build de production** — c'est voulu : les clients relisent sur des URLs de dev/staging. Pour un staging construit en mode production, passez `forceShow: true`.
 
 ### 4. Trier ce qui arrive
 
 ```tsx
-import { SitepingInbox } from "@siteping/dashboard";
+import { InstaFixInbox } from "@instafix/dashboard";
 
-<SitepingInbox projects="mon-projet" endpoint="/api/siteping" theme="auto" />
+<InstaFixInbox projects="mon-projet" endpoint="/api/instafix" theme="auto" />
 ```
 
 La boucle est complète. Pour aller plus loin : [options du widget](/fr/docs/widget/configuration) · [captures d'écran](/fr/docs/widget/screenshots) · [auth et sécurité](/fr/docs/adapters/prisma#le-modèle-de-sécurité-franchement).
@@ -68,14 +68,14 @@ La boucle est complète. Pour aller plus loin : [options du widget](/fr/docs/wid
 Pas de backend, pas de base — le feedback vit dans le navigateur du visiteur. Parfait pour les prototypes et démos :
 
 ```bash
-npm i @siteping/widget @siteping/adapter-localstorage
+npm i @instafix/widget @instafix/adapter-localstorage
 ```
 
 ```ts
-import { initSiteping } from "@siteping/widget";
-import { LocalStorageStore } from "@siteping/adapter-localstorage";
+import { initInstaFix } from "@instafix/widget";
+import { LocalStorageStore } from "@instafix/adapter-localstorage";
 
-initSiteping({
+initInstaFix({
   store: new LocalStorageStore(),
   projectName: "ma-demo",
   forceShow: true,

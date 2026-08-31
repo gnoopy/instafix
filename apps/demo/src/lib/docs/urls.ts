@@ -1,7 +1,7 @@
 import { i18n } from "./i18n";
 
 /** Canonical origin of the public site — every absolute docs URL derives from it. */
-export const SITE_URL = "https://siteping.dev";
+export const SITE_URL = "https://instafix.realstory.blog";
 
 /**
  * Strip the locale prefix from a page URL.

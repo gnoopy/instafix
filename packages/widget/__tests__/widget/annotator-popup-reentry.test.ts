@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import type { FeedbackResponse } from "@siteping/core";
+import type { FeedbackResponse } from "@instafix/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { EventBus, type WidgetEvents } from "../../src/events.js";
 import { createT } from "../../src/i18n/index.js";
@@ -32,7 +32,7 @@ import { Annotator } from "../../src/annotator.js";
 const flush = () => new Promise((r) => setTimeout(r, 20));
 
 function findOverlay(): HTMLElement {
-  return document.body.querySelector<HTMLElement>('div[data-siteping-ignore][tabindex="0"]')!;
+  return document.body.querySelector<HTMLElement>('div[data-instafix-ignore][tabindex="0"]')!;
 }
 
 function drag(overlay: HTMLElement, x1: number, y1: number, x2: number, y2: number) {

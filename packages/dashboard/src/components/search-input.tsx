@@ -13,11 +13,11 @@ interface SearchInputProps {
 export function SearchInput({ value, onChange, inputRef }: SearchInputProps): ReactElement {
   const { t } = useInboxUi();
   return (
-    <div className="spd-search">
+    <div className="ifd-search">
       <SearchIcon />
       <input
         ref={inputRef}
-        className="spd-search-input"
+        className="ifd-search-input"
         type="search"
         placeholder={t("inbox.searchPlaceholder")}
         aria-label={t("inbox.searchAria")}
@@ -27,7 +27,7 @@ export function SearchInput({ value, onChange, inputRef }: SearchInputProps): Re
       {value ? (
         <button
           type="button"
-          className="spd-search-clear"
+          className="ifd-search-clear"
           aria-label={t("inbox.clearSearch")}
           onClick={() => {
             onChange("");
@@ -37,7 +37,7 @@ export function SearchInput({ value, onChange, inputRef }: SearchInputProps): Re
           <CloseIcon />
         </button>
       ) : (
-        <kbd className="spd-kbd">/</kbd>
+        <kbd className="ifd-kbd">/</kbd>
       )}
     </div>
   );

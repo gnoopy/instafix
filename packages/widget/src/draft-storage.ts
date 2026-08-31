@@ -5,7 +5,7 @@
  * non-empty) are unit-testable without a DOM.
  */
 
-import type { FeedbackType } from "@siteping/core";
+import type { FeedbackType } from "@instafix/core";
 
 export interface AnnotationDraft {
   type: FeedbackType | null;
@@ -15,7 +15,7 @@ export interface AnnotationDraft {
   savedAt: number;
 }
 
-const DRAFT_KEY = "siteping_draft_v1";
+const DRAFT_KEY = "instafix_draft_v1";
 /** A draft older than this is considered stale and never offered back. */
 const MAX_AGE_MS = 30 * 60 * 1000;
 

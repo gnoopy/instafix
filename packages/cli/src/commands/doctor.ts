@@ -1,20 +1,20 @@
 import { p } from "../prompts.js";
 
-/** Options accepted by the `siteping doctor` subcommand. */
+/** Options accepted by the `instafix doctor` subcommand. */
 export interface DoctorCommandOptions {
   /** Override the development server origin (defaults to prompt / `http://localhost:3000`). */
   url?: string;
-  /** Override the API endpoint path (defaults to prompt / `/api/siteping`). */
+  /** Override the API endpoint path (defaults to prompt / `/api/instafix`). */
   endpoint?: string;
 }
 
-/** Shape of the `GET /api/siteping?projectName=…` health-check response. */
-interface SitepingHealthResponse {
+/** Shape of the `GET /api/instafix?projectName=…` health-check response. */
+interface InstaFixHealthResponse {
   total?: number;
 }
 
 export async function doctorCommand(options: DoctorCommandOptions): Promise<void> {
-  p.intro("siteping — Network diagnostics");
+  p.intro("instafix — Network diagnostics");
 
   const url =
     options.url ??
@@ -38,8 +38,8 @@ export async function doctorCommand(options: DoctorCommandOptions): Promise<void
     options.endpoint ??
     (await p.text({
       message: "API endpoint path",
-      placeholder: "/api/siteping",
-      defaultValue: "/api/siteping",
+      placeholder: "/api/instafix",
+      defaultValue: "/api/instafix",
     }));
 
   if (p.isCancel(endpoint)) {
@@ -47,7 +47,7 @@ export async function doctorCommand(options: DoctorCommandOptions): Promise<void
     process.exit(0);
   }
 
-  const projectName = "__siteping_health_check__";
+  const projectName = "__instafix_health_check__";
   const fullUrl = new URL(`${endpoint}?projectName=${encodeURIComponent(projectName)}`, url).toString();
 
   const spinner = p.spinner();
@@ -59,9 +59,9 @@ export async function doctorCommand(options: DoctorCommandOptions): Promise<void
     const elapsed = Math.round(performance.now() - start);
 
     if (response.ok) {
-      let data: SitepingHealthResponse | null;
+      let data: InstaFixHealthResponse | null;
       try {
-        data = (await response.json()) as SitepingHealthResponse;
+        data = (await response.json()) as InstaFixHealthResponse;
       } catch {
         data = null;
       }
@@ -70,7 +70,7 @@ export async function doctorCommand(options: DoctorCommandOptions): Promise<void
       if (data && typeof data.total === "number") {
         p.log.success(`API is working — ${data.total} feedback(s) found`);
       } else {
-        p.log.warn("Unexpected response — make sure the endpoint uses createSitepingHandler()");
+        p.log.warn("Unexpected response — make sure the endpoint uses createInstaFixHandler()");
       }
     } else {
       spinner.stop(`HTTP error ${response.status} (${elapsed}ms)`);

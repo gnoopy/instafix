@@ -1,4 +1,4 @@
-import type { FeedbackType } from "@siteping/core";
+import type { FeedbackType } from "@instafix/core";
 import { Z_INDEX_MAX } from "./constants.js";
 import { el, parseSvg, setText } from "./dom-utils.js";
 import { clearDraft, loadDraft, saveDraft } from "./draft-storage.js";
@@ -164,7 +164,7 @@ export class Popup {
     // Screenshot capture now runs while the popup is still visible (so the
     // spinner can show during the upload). Without this attribute the popup
     // would appear baked into the captured JPEG.
-    this.root.setAttribute("data-siteping-ignore", "true");
+    this.root.setAttribute("data-instafix-ignore", "true");
     // The dialog `aria-label` is bound by `applyLabels()` at the end of the
     // constructor, alongside every other `t()`-derived string.
 

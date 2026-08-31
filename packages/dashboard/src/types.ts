@@ -4,9 +4,9 @@ import type {
   FeedbackRecord,
   FeedbackStatus,
   FeedbackType,
-  SitepingLocale,
-  SitepingStore,
-} from "@siteping/core";
+  InstaFixLocale,
+  InstaFixStore,
+} from "@instafix/core";
 import type { ReactNode } from "react";
 import type { InboxTheme } from "./theme.js";
 
@@ -15,10 +15,10 @@ import type { InboxTheme } from "./theme.js";
 // ---------------------------------------------------------------------------
 
 /**
- * Abstract data source consumed by `useSitepingInbox`.
+ * Abstract data source consumed by `useInstaFixInbox`.
  *
  * Two built-in factories exist — `createEndpointSource` (HTTP, talks to the
- * adapter request handlers) and `createStoreSource` (direct `SitepingStore`,
+ * adapter request handlers) and `createStoreSource` (direct `InstaFixStore`,
  * client-side mode) — but consumers can hand-roll one to plug the inbox into
  * any backend (tRPC, GraphQL, server actions, …).
  */
@@ -36,7 +36,7 @@ export interface InboxSource {
 
 /** Options accepted by `createEndpointSource`. */
 export interface EndpointSourceOptions {
-  /** HTTP endpoint exposing the Siteping request handlers (e.g. `/api/siteping`). */
+  /** HTTP endpoint exposing the InstaFix request handlers (e.g. `/api/instafix`). */
   endpoint: string;
   /** Convenience auth — sent as `Authorization: Bearer <apiKey>` on every request. */
   apiKey?: string | undefined;
@@ -60,7 +60,7 @@ export type InboxStatusFilter = FeedbackStatus | "all";
 /** Type filter — a concrete feedback type, or `"all"`. */
 export type InboxTypeFilter = FeedbackType | "all";
 
-/** Options shared by every `useSitepingInbox` source mode. */
+/** Options shared by every `useInstaFixInbox` source mode. */
 export interface InboxSharedOptions {
   /** Project name(s) to triage. The first entry is selected initially. */
   projects: string | readonly string[];
@@ -70,7 +70,7 @@ export interface InboxSharedOptions {
   onStatusChange?: ((feedback: FeedbackRecord, previous: FeedbackStatus) => void) | undefined;
   /** Called after a feedback is permanently deleted. */
   onDelete?: ((feedback: FeedbackRecord) => void) | undefined;
-  /** Called on every load or mutation failure, with a typed `SitepingError` where available. */
+  /** Called on every load or mutation failure, with a typed `InstaFixError` where available. */
   onError?: ((error: Error) => void) | undefined;
 }
 
@@ -88,10 +88,10 @@ export interface InboxCustomSourceOptions extends InboxSharedOptions {
   headers?: never;
 }
 
-/** Store mode — direct `SitepingStore` access, no server round-trip. */
+/** Store mode — direct `InstaFixStore` access, no server round-trip. */
 export interface InboxStoreOptions extends InboxSharedOptions {
   /** Direct store for client-side mode. */
-  store: SitepingStore;
+  store: InstaFixStore;
   /** Use exactly one of `source`, `store`, `endpoint`. */
   source?: never;
   /** Use exactly one of `source`, `store`, `endpoint`. */
@@ -102,9 +102,9 @@ export interface InboxStoreOptions extends InboxSharedOptions {
   headers?: never;
 }
 
-/** Endpoint mode — HTTP against the Siteping request handlers. */
+/** Endpoint mode — HTTP against the InstaFix request handlers. */
 export interface InboxEndpointOptions extends InboxSharedOptions {
-  /** HTTP endpoint exposing the Siteping request handlers. */
+  /** HTTP endpoint exposing the InstaFix request handlers. */
   endpoint: string;
   /** Sent as `Authorization: Bearer <apiKey>`. */
   apiKey?: string | undefined;
@@ -117,16 +117,16 @@ export interface InboxEndpointOptions extends InboxSharedOptions {
 }
 
 /**
- * Options accepted by `useSitepingInbox` (and, by extension,
- * `<SitepingInbox />`) — a union over the three source modes. Supplying no
+ * Options accepted by `useInstaFixInbox` (and, by extension,
+ * `<InstaFixInbox />`) — a union over the three source modes. Supplying no
  * source, several sources, or endpoint-only options (`apiKey`/`headers`)
  * alongside `store`/`source` is a compile error instead of a runtime throw
  * or a silently ignored option.
  */
-export type UseSitepingInboxOptions = InboxCustomSourceOptions | InboxStoreOptions | InboxEndpointOptions;
+export type UseInstaFixInboxOptions = InboxCustomSourceOptions | InboxStoreOptions | InboxEndpointOptions;
 
 /**
- * Full state + actions returned by `useSitepingInbox` — everything needed to
+ * Full state + actions returned by `useInstaFixInbox` — everything needed to
  * render a triage inbox. Mutations are optimistic: state updates immediately,
  * rolls back on failure (the rejected promise carries the error so UIs can
  * surface a toast on top of the `onError` callback).
@@ -163,7 +163,7 @@ export interface InboxState {
   hasMore: boolean;
   /**
    * High-level view resolution — the exact algebra the shipped
-   * `<SitepingInbox />` uses to pick between skeleton, error state, empty
+   * `<InstaFixInbox />` uses to pick between skeleton, error state, empty
    * state and the list, exposed so headless consumers don't have to
    * re-derive it from the flags:
    * - `"loading"` — first page is loading and nothing is displayable.
@@ -202,8 +202,8 @@ export interface InboxState {
 // Component props
 // ---------------------------------------------------------------------------
 
-/** Presentation props specific to the shipped `<SitepingInbox />` component. */
-export interface SitepingInboxPresentationProps {
+/** Presentation props specific to the shipped `<InstaFixInbox />` component. */
+export interface InstaFixInboxPresentationProps {
   /** Accent color (any `#RGB`/`#RRGGBB`/`#RRGGBBAA` hex) — defaults to `"#0066ff"`. */
   accentColor?: string | undefined;
   /** Color theme — defaults to `"auto"`, which tracks the system preference live. */
@@ -211,14 +211,14 @@ export interface SitepingInboxPresentationProps {
   /** Row density — defaults to `"comfortable"`. */
   density?: "comfortable" | "compact" | undefined;
   /** UI locale — defaults to `"en"`; non-English built-ins are lazy-loaded. */
-  locale?: SitepingLocale | undefined;
+  locale?: InstaFixLocale | undefined;
   /** Extra class name(s) appended to the root element. */
   className?: string | undefined;
-  /** Query parameter used by "Open on page" deep links — defaults to `"siteping"`. */
+  /** Query parameter used by "Open on page" deep links — defaults to `"instafix"`. */
   deepLinkParam?: string | undefined;
   /** Replaces the default empty state shown when the project has no feedback at all. */
   emptyState?: ReactNode | undefined;
 }
 
-/** Props accepted by `<SitepingInbox />` — source-mode options plus presentation. */
-export type SitepingInboxProps = UseSitepingInboxOptions & SitepingInboxPresentationProps;
+/** Props accepted by `<InstaFixInbox />` — source-mode options plus presentation. */
+export type InstaFixInboxProps = UseInstaFixInboxOptions & InstaFixInboxPresentationProps;

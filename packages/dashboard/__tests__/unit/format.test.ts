@@ -65,11 +65,11 @@ describe("formatAbsolute", () => {
 
 describe("pathFromUrl", () => {
   it("returns pathname + hash of an absolute URL", () => {
-    expect(pathFromUrl("https://demo.siteping.dev/a/b#section")).toBe("/a/b#section");
+    expect(pathFromUrl("https://demo.instafix.realstory.blog/a/b#section")).toBe("/a/b#section");
   });
 
   it("drops the query string but keeps the hash", () => {
-    expect(pathFromUrl("https://demo.siteping.dev/a?ref=x#h")).toBe("/a#h");
+    expect(pathFromUrl("https://demo.instafix.realstory.blog/a?ref=x#h")).toBe("/a#h");
   });
 
   it("resolves a relative path against the dummy base", () => {
@@ -83,7 +83,9 @@ describe("pathFromUrl", () => {
 
 describe("resolveRecordUrl", () => {
   it("returns an absolute URL unchanged (normalized)", () => {
-    expect(resolveRecordUrl("https://demo.siteping.dev/pricing")).toBe("https://demo.siteping.dev/pricing");
+    expect(resolveRecordUrl("https://demo.instafix.realstory.blog/pricing")).toBe(
+      "https://demo.instafix.realstory.blog/pricing",
+    );
   });
 
   it("resolves a relative URL against the current base", () => {
@@ -103,13 +105,13 @@ describe("resolveRecordUrl", () => {
 
 describe("buildDeepLink", () => {
   it("appends the deep-link param to an absolute URL", () => {
-    const url = buildDeepLink({ id: "fb-123", url: "https://demo.siteping.dev/pricing" }, "siteping");
-    expect(url).toBe("https://demo.siteping.dev/pricing?siteping=fb-123");
+    const url = buildDeepLink({ id: "fb-123", url: "https://demo.instafix.realstory.blog/pricing" }, "instafix");
+    expect(url).toBe("https://demo.instafix.realstory.blog/pricing?instafix=fb-123");
   });
 
   it("resolves a relative record URL against the current base", () => {
-    const url = buildDeepLink({ id: "fb-1", url: "/pricing" }, "siteping");
-    expect(url).toBe("http://localhost/pricing?siteping=fb-1");
+    const url = buildDeepLink({ id: "fb-1", url: "/pricing" }, "instafix");
+    expect(url).toBe("http://localhost/pricing?instafix=fb-1");
   });
 
   it("honours a custom param name", () => {
@@ -118,11 +120,11 @@ describe("buildDeepLink", () => {
   });
 
   it("returns null on parse failure", () => {
-    expect(buildDeepLink({ id: "fb-1", url: "http://[" }, "siteping")).toBeNull();
+    expect(buildDeepLink({ id: "fb-1", url: "http://[" }, "instafix")).toBeNull();
   });
 
   it("returns null for non-http(s) schemes (stored-XSS guard)", () => {
-    expect(buildDeepLink({ id: "fb-1", url: "javascript:alert(1)" }, "siteping")).toBeNull();
+    expect(buildDeepLink({ id: "fb-1", url: "javascript:alert(1)" }, "instafix")).toBeNull();
   });
 });
 

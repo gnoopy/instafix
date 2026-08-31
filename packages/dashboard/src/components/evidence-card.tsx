@@ -1,4 +1,4 @@
-import type { AnnotationRecord, FeedbackRecord, ScreenshotRegion } from "@siteping/core";
+import type { AnnotationRecord, FeedbackRecord, ScreenshotRegion } from "@instafix/core";
 import type { CSSProperties, ReactElement } from "react";
 import { useRef, useState } from "react";
 import { pathFromUrl } from "../format.js";
@@ -71,19 +71,19 @@ function AnchorFallback({ annotation, withCorners }: AnchorFallbackProps): React
   };
 
   return (
-    <div className="spd-evidence-fallback">
+    <div className="ifd-evidence-fallback">
       {withCorners ? (
-        <div className="spd-evidence-corners" aria-hidden="true">
+        <div className="ifd-evidence-corners" aria-hidden="true">
           <i />
           <i />
         </div>
       ) : null}
-      <div className="spd-meta-label">{t("drawer.anchor")}</div>
+      <div className="ifd-meta-label">{t("drawer.anchor")}</div>
       {hasClipboard ? (
         <button
           ref={selectorRef}
           type="button"
-          className="spd-anchor-selector"
+          className="ifd-anchor-selector"
           title={annotation.cssSelector}
           onClick={() => {
             void copySelector();
@@ -92,12 +92,12 @@ function AnchorFallback({ annotation, withCorners }: AnchorFallbackProps): React
           {annotation.cssSelector}
         </button>
       ) : (
-        <div className="spd-anchor-selector" title={annotation.cssSelector}>
+        <div className="ifd-anchor-selector" title={annotation.cssSelector}>
           {annotation.cssSelector}
         </div>
       )}
       {annotation.textSnippet ? (
-        <blockquote className="spd-anchor-snippet">« {annotation.textSnippet} »</blockquote>
+        <blockquote className="ifd-anchor-snippet">« {annotation.textSnippet} »</blockquote>
       ) : null}
     </div>
   );
@@ -131,13 +131,13 @@ export function EvidenceCard({ record }: EvidenceCardProps): ReactElement {
   }
 
   return (
-    <div className="spd-evidence">
+    <div className="ifd-evidence">
       {record.screenshotUrl ? (
         <>
-          <div className={`spd-evidence-stage${zoomed ? " spd-evidence-zoomed" : ""}`}>
+          <div className={`ifd-evidence-stage${zoomed ? " ifd-evidence-zoomed" : ""}`}>
             <button
               type="button"
-              className="spd-evidence-zoom"
+              className="ifd-evidence-zoom"
               aria-pressed={zoomed}
               aria-label={t("drawer.zoomScreenshot")}
               style={{ display: "block", width: "100%", cursor: zoomed ? "zoom-out" : "zoom-in" }}
@@ -151,7 +151,7 @@ export function EvidenceCard({ record }: EvidenceCardProps): ReactElement {
               }}
             >
               <img
-                className="spd-evidence-img"
+                className="ifd-evidence-img"
                 src={record.screenshotUrl}
                 alt={t("drawer.screenshotAlt")}
                 onLoad={(event) => {
@@ -166,22 +166,22 @@ export function EvidenceCard({ record }: EvidenceCardProps): ReactElement {
               <>
                 {dimStyles(region).map((style, index) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: the four dim panels are positional by nature
-                  <div key={index} className="spd-evidence-dim" style={style} />
+                  <div key={index} className="ifd-evidence-dim" style={style} />
                 ))}
-                <div className="spd-evidence-rect" style={rectStyle(region)} />
+                <div className="ifd-evidence-rect" style={rectStyle(region)} />
               </>
             ) : null}
-            <div className="spd-evidence-corners" aria-hidden="true">
+            <div className="ifd-evidence-corners" aria-hidden="true">
               <i />
               <i />
             </div>
           </div>
-          <div className="spd-evidence-caption">
+          <div className="ifd-evidence-caption">
             <span>{captionParts.join(" · ")}</span>
             {region ? (
               <button
                 type="button"
-                className="spd-evidence-toggle"
+                className="ifd-evidence-toggle"
                 onClick={() => setShowAnnotation((value) => !value)}
               >
                 {showAnnotation ? t("drawer.hideAnnotation") : t("drawer.showAnnotation")}
@@ -192,12 +192,12 @@ export function EvidenceCard({ record }: EvidenceCardProps): ReactElement {
       ) : primary ? (
         <AnchorFallback annotation={primary} withCorners />
       ) : (
-        <div className="spd-evidence-fallback">
-          <div className="spd-evidence-corners" aria-hidden="true">
+        <div className="ifd-evidence-fallback">
+          <div className="ifd-evidence-corners" aria-hidden="true">
             <i />
             <i />
           </div>
-          <div className="spd-empty-sub">{t("drawer.noScreenshot")}</div>
+          <div className="ifd-empty-sub">{t("drawer.noScreenshot")}</div>
         </div>
       )}
       {extras.map((annotation) => (

@@ -1,12 +1,12 @@
-import type { FeedbackStatus } from "@siteping/core";
+import type { FeedbackStatus } from "@instafix/core";
 import type { CSSProperties, ReactElement, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useCallback, useEffect, useInsertionEffect, useMemo, useRef, useState } from "react";
 import { buildDeepLink } from "../format.js";
 import { createT, getStatusLabel, loadLocale, tWithParams } from "../i18n/index.js";
 import { ensureStyles } from "../inject-styles.js";
 import { normalizeAccent, resolveInitialTheme, watchSystemTheme } from "../theme.js";
-import type { SitepingInboxProps } from "../types.js";
-import { useSitepingInbox } from "../use-inbox.js";
+import type { InstaFixInboxProps } from "../types.js";
+import { useInstaFixInbox } from "../use-inbox.js";
 import type { InboxUiContextValue } from "./context.js";
 import { InboxUiProvider } from "./context.js";
 import { Drawer } from "./drawer.js";
@@ -30,20 +30,20 @@ function toastStatusLabel(label: string, locale: string): string {
 }
 
 /**
- * Linear-style triage inbox for SitePing feedback.
+ * Linear-style triage inbox for InstaFix feedback.
  *
  * Renders in plain DOM (no Shadow DOM) with all styles scoped under
- * `.spd-root`. Keyboard-first: j/k navigate, Enter opens, e/p/x change
+ * `.ifd-root`. Keyboard-first: j/k navigate, Enter opens, e/p/x change
  * status, u undoes, "?" shows the full cheat sheet.
  */
-export function SitepingInbox(props: SitepingInboxProps): ReactElement {
+export function InstaFixInbox(props: InstaFixInboxProps): ReactElement {
   const {
     accentColor,
     theme: themePref = "auto",
     density = "comfortable",
     locale = "en",
     className,
-    deepLinkParam = "siteping",
+    deepLinkParam = "instafix",
     emptyState,
     onError,
   } = props;
@@ -95,7 +95,7 @@ export function SitepingInbox(props: SitepingInboxProps): ReactElement {
   // Forward the source-mode options as-is (the union shape must survive —
   // rebuilding the object field-by-field would mix the modes) and only
   // override onError with the toast-wiring handler.
-  const state = useSitepingInbox({ ...props, onError: handleError });
+  const state = useInstaFixInbox({ ...props, onError: handleError });
 
   /** Run a mutation; returns true when it (and its rollback path) stayed silent. */
   const runMutation = useCallback(
@@ -153,7 +153,7 @@ export function SitepingInbox(props: SitepingInboxProps): ReactElement {
   }, [themePref]);
   const resolvedTheme = themePref === "auto" ? systemTheme : themePref;
   const rootStyle = useMemo(
-    () => ({ "--spd-accent": normalizeAccent(accentColor ?? "#0066ff") }) as CSSProperties,
+    () => ({ "--ifd-accent": normalizeAccent(accentColor ?? "#0066ff") }) as CSSProperties,
     [accentColor],
   );
 
@@ -173,7 +173,7 @@ export function SitepingInbox(props: SitepingInboxProps): ReactElement {
 
   // ----- return keyboard focus to the listbox (after a drawer/toast unmounts)
   const focusList = useCallback(() => {
-    rootRef.current?.querySelector<HTMLElement>(".spd-list")?.focus();
+    rootRef.current?.querySelector<HTMLElement>(".ifd-list")?.focus();
   }, []);
 
   // ----- announce the result count whenever a fetch settles (separate from the toast)
@@ -325,7 +325,7 @@ export function SitepingInbox(props: SitepingInboxProps): ReactElement {
     <InboxUiProvider value={ui}>
       <section
         ref={rootRef}
-        className={className ? `spd-root ${className}` : "spd-root"}
+        className={className ? `ifd-root ${className}` : "ifd-root"}
         style={rootStyle}
         data-theme={resolvedTheme}
         data-density={density}
@@ -334,8 +334,8 @@ export function SitepingInbox(props: SitepingInboxProps): ReactElement {
         onKeyDown={handleKeyDown}
       >
         <Toolbar state={state} searchRef={searchRef} />
-        <div className="spd-body">
-          <div className="spd-list-pane">
+        <div className="ifd-body">
+          <div className="ifd-list-pane">
             {showSkeleton ? (
               <Skeleton />
             ) : showError && state.error ? (
@@ -351,10 +351,10 @@ export function SitepingInbox(props: SitepingInboxProps): ReactElement {
               <>
                 <List state={state} />
                 {state.hasMore ? (
-                  <div className="spd-loadmore">
+                  <div className="ifd-loadmore">
                     <button
                       type="button"
-                      className="spd-btn-ghost"
+                      className="ifd-btn-ghost"
                       disabled={state.loadingMore}
                       onClick={() => {
                         void state.loadMore();
@@ -383,28 +383,28 @@ export function SitepingInbox(props: SitepingInboxProps): ReactElement {
             />
           ) : null}
         </div>
-        <div className="spd-hints" aria-hidden="true">
-          <span className="spd-hint">
-            <kbd className="spd-kbd">j</kbd>
-            <kbd className="spd-kbd">k</kbd> {t("hints.navigate")}
+        <div className="ifd-hints" aria-hidden="true">
+          <span className="ifd-hint">
+            <kbd className="ifd-kbd">j</kbd>
+            <kbd className="ifd-kbd">k</kbd> {t("hints.navigate")}
           </span>
-          <span className="spd-hint">
-            <kbd className="spd-kbd">⏎</kbd> {t("hints.open")}
+          <span className="ifd-hint">
+            <kbd className="ifd-kbd">⏎</kbd> {t("hints.open")}
           </span>
-          <span className="spd-hint">
-            <kbd className="spd-kbd">e</kbd> {t("hints.resolve")}
+          <span className="ifd-hint">
+            <kbd className="ifd-kbd">e</kbd> {t("hints.resolve")}
           </span>
-          <span className="spd-hint">
-            <kbd className="spd-kbd">p</kbd> {t("hints.inProgress")}
+          <span className="ifd-hint">
+            <kbd className="ifd-kbd">p</kbd> {t("hints.inProgress")}
           </span>
-          <span className="spd-hint">
-            <kbd className="spd-kbd">x</kbd> {t("hints.wontFix")}
+          <span className="ifd-hint">
+            <kbd className="ifd-kbd">x</kbd> {t("hints.wontFix")}
           </span>
-          <span className="spd-hint">
-            <kbd className="spd-kbd">?</kbd> {t("hints.help")}
+          <span className="ifd-hint">
+            <kbd className="ifd-kbd">?</kbd> {t("hints.help")}
           </span>
         </div>
-        <div className="spd-sr-only" role="status">
+        <div className="ifd-sr-only" role="status">
           {resultsMsg}
         </div>
         <Toast

@@ -9,7 +9,7 @@
  * animations, accent gradients, premium micro-interactions.
  */
 
-import { type AnnotationPayload, type FeedbackResponse, type FeedbackStatus, isClosedStatus } from "@siteping/core";
+import { type AnnotationPayload, type FeedbackResponse, type FeedbackStatus, isClosedStatus } from "@instafix/core";
 import { AgentCopyButton } from "./agent-copy.js";
 import { generateAnchor } from "./dom/anchor.js";
 import { resolveAnchor } from "./dom/resolver.js";

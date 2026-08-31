@@ -62,7 +62,7 @@ describe("pauseMotion", () => {
 
   it("leaves widget chrome animations untouched", () => {
     const chromeTarget = document.createElement("div");
-    chromeTarget.setAttribute("data-siteping-ignore", "true");
+    chromeTarget.setAttribute("data-instafix-ignore", "true");
     document.body.append(chromeTarget);
     const chromeAnim = makeFakeAnimation(chromeTarget, "running");
     (document as unknown as { getAnimations: () => unknown[] }).getAnimations = () => [chromeAnim];

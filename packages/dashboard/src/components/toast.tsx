@@ -45,28 +45,28 @@ export function Toast({ toast, onUndo, onDismiss }: ToastProps): ReactElement {
   }, [toast, paused, onDismiss]);
 
   return (
-    <div className="spd-toast-region" role="status" aria-live="polite">
+    <div className="ifd-toast-region" role="status" aria-live="polite">
       {toast ? (
         // biome-ignore lint/a11y/noStaticElementInteractions: hover/focus only pause the auto-dismiss timer; the live region role lives on the parent
         <div
-          className="spd-toast"
+          className="ifd-toast"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
           onFocus={() => setPaused(true)}
           onBlur={() => setPaused(false)}
         >
-          <span className="spd-toast-msg">{toast.message}</span>
+          <span className="ifd-toast-msg">{toast.message}</span>
           {toast.undoable ? (
             <button
               type="button"
-              className="spd-btn-ghost"
+              className="ifd-btn-ghost"
               onClick={() => {
                 onUndo();
                 // The button unmounts on undo; hand focus back to the listbox.
                 focusList();
               }}
             >
-              {t("inbox.undo")} <kbd className="spd-kbd">u</kbd>
+              {t("inbox.undo")} <kbd className="ifd-kbd">u</kbd>
             </button>
           ) : null}
         </div>

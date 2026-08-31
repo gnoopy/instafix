@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { SitepingConfig, SitepingHttpConfig, SitepingStore } from "@siteping/core";
+import type { InstaFixConfig, InstaFixHttpConfig, InstaFixStore } from "@instafix/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { withViewportWidth } from "../helpers.js";
 
@@ -101,9 +101,9 @@ import { launch } from "../../src/launcher.js";
 // Helpers
 // ---------------------------------------------------------------------------
 
-function defaultConfig(overrides: Partial<Omit<SitepingHttpConfig, "store">> = {}): SitepingConfig {
+function defaultConfig(overrides: Partial<Omit<InstaFixHttpConfig, "store">> = {}): InstaFixConfig {
   return {
-    endpoint: "/api/siteping",
+    endpoint: "/api/instafix",
     projectName: "test-project",
     forceShow: true, // bypass production guard in tests
     ...overrides,
@@ -116,8 +116,8 @@ function defaultConfig(overrides: Partial<Omit<SitepingHttpConfig, "store">> = {
 
 describe("launch", () => {
   afterEach(() => {
-    // Clean up any siteping-widget elements left in the DOM
-    for (const el of document.querySelectorAll("siteping-widget")) {
+    // Clean up any instafix-widget elements left in the DOM
+    for (const el of document.querySelectorAll("instafix-widget")) {
       el.remove();
     }
     for (const el of document.querySelectorAll('[role="status"]')) {
@@ -140,7 +140,7 @@ describe("launch", () => {
         const instance = launch({ endpoint: "/api", projectName: "test" });
 
         // No widget element should be added
-        const widget = document.querySelector("siteping-widget");
+        const widget = document.querySelector("instafix-widget");
         expect(widget).toBeNull();
 
         // Should return an instance with no-op methods
@@ -168,7 +168,7 @@ describe("launch", () => {
       try {
         const instance = launch(defaultConfig({ forceShow: true }));
 
-        const widget = document.querySelector("siteping-widget");
+        const widget = document.querySelector("instafix-widget");
         expect(widget).not.toBeNull();
 
         instance.destroy();
@@ -201,7 +201,7 @@ describe("launch", () => {
       const onSkip = vi.fn();
       const instance = launch({ endpoint: "/api", projectName: "test", onSkip });
       try {
-        expect(document.querySelector("siteping-widget")).not.toBeNull();
+        expect(document.querySelector("instafix-widget")).not.toBeNull();
         expect(onSkip).not.toHaveBeenCalled();
       } finally {
         instance.destroy();
@@ -223,7 +223,7 @@ describe("launch", () => {
       withViewportWidth(600, () => {
         const instance = launch(defaultConfig({ forceShow: false }));
         try {
-          expect(document.querySelector("siteping-widget")).toBeNull();
+          expect(document.querySelector("instafix-widget")).toBeNull();
         } finally {
           instance.destroy();
         }
@@ -248,7 +248,7 @@ describe("launch", () => {
         // with the bypass active the test would pass at any width.
         const instance = launch(defaultConfig({ forceShow: false }));
         try {
-          expect(document.querySelector("siteping-widget")).not.toBeNull();
+          expect(document.querySelector("instafix-widget")).not.toBeNull();
         } finally {
           instance.destroy();
         }
@@ -260,7 +260,7 @@ describe("launch", () => {
         const onSkip = vi.fn();
         const instance = launch(defaultConfig({ forceShow: true, onSkip }));
         try {
-          expect(document.querySelector("siteping-widget")).not.toBeNull();
+          expect(document.querySelector("instafix-widget")).not.toBeNull();
           expect(onSkip).not.toHaveBeenCalled();
         } finally {
           instance.destroy();
@@ -272,7 +272,7 @@ describe("launch", () => {
       withViewportWidth(600, () => {
         const instance = launch(defaultConfig({ forceShow: false, minViewportWidth: 0 }));
         try {
-          expect(document.querySelector("siteping-widget")).not.toBeNull();
+          expect(document.querySelector("instafix-widget")).not.toBeNull();
         } finally {
           instance.destroy();
         }
@@ -284,7 +284,7 @@ describe("launch", () => {
         const onSkip = vi.fn();
         const instance = launch(defaultConfig({ forceShow: false, minViewportWidth: 1200, onSkip }));
         try {
-          expect(document.querySelector("siteping-widget")).toBeNull();
+          expect(document.querySelector("instafix-widget")).toBeNull();
           expect(onSkip).toHaveBeenCalledWith("mobile");
         } finally {
           instance.destroy();
@@ -300,7 +300,7 @@ describe("launch", () => {
         const onSkip = vi.fn();
         const instance = launch(defaultConfig({ forceShow: false, minViewportWidth: Number.NaN, onSkip }));
         try {
-          expect(document.querySelector("siteping-widget")).toBeNull();
+          expect(document.querySelector("instafix-widget")).toBeNull();
           expect(onSkip).toHaveBeenCalledWith("mobile");
         } finally {
           instance.destroy();
@@ -363,10 +363,10 @@ describe("launch", () => {
   // -------------------------------------------------------------------------
 
   describe("widget DOM structure", () => {
-    it("creates a siteping-widget custom element", () => {
+    it("creates a instafix-widget custom element", () => {
       const instance = launch(defaultConfig());
 
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("instafix-widget");
       expect(widget).not.toBeNull();
 
       instance.destroy();
@@ -384,7 +384,7 @@ describe("launch", () => {
     it("uses open shadow mode in test environment", () => {
       const instance = launch(defaultConfig());
 
-      const widget = document.querySelector("siteping-widget")!;
+      const widget = document.querySelector("instafix-widget")!;
       expect(widget.shadowRoot).not.toBeNull();
 
       instance.destroy();
@@ -396,11 +396,11 @@ describe("launch", () => {
   // -------------------------------------------------------------------------
 
   describe("destroy", () => {
-    it("removes the siteping-widget element", () => {
+    it("removes the instafix-widget element", () => {
       const instance = launch(defaultConfig());
       instance.destroy();
 
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("instafix-widget");
       expect(widget).toBeNull();
     });
 
@@ -450,7 +450,7 @@ describe("launch", () => {
       // Wait for the lazy-loaded Panel to actually open before closing it —
       // otherwise close() short-circuits while the import is still in flight.
       await vi.waitFor(() => {
-        expect(document.querySelector("siteping-widget")?.shadowRoot?.querySelector(".sp-panel--open")).not.toBeNull();
+        expect(document.querySelector("instafix-widget")?.shadowRoot?.querySelector(".sp-panel--open")).not.toBeNull();
       });
       instance.close();
 
@@ -468,7 +468,7 @@ describe("launch", () => {
     it("defaults to French locale", () => {
       const instance = launch(defaultConfig());
 
-      const widget = document.querySelector("siteping-widget")!;
+      const widget = document.querySelector("instafix-widget")!;
       const shadow = widget.shadowRoot!;
       const fabBtn = shadow.querySelector<HTMLButtonElement>(".sp-fab")!;
       // French is loaded async and this test's harness doesn't resolve real
@@ -485,14 +485,14 @@ describe("launch", () => {
       instance.open();
 
       // Panel is lazy-loaded — wait for it to mount into the shadow root.
-      const widget = document.querySelector("siteping-widget")!;
+      const widget = document.querySelector("instafix-widget")!;
       const shadow = widget.shadowRoot!;
       let panel: HTMLElement | null = null;
       await vi.waitFor(() => {
         panel = shadow.querySelector<HTMLElement>('[role="complementary"]');
         expect(panel).not.toBeNull();
       });
-      expect(panel!.getAttribute("aria-label")).toBe("Siteping feedback panel");
+      expect(panel!.getAttribute("aria-label")).toBe("InstaFix feedback panel");
 
       instance.destroy();
     });
@@ -504,9 +504,9 @@ describe("launch", () => {
 
   describe("config validation guards", () => {
     it("returns no-op when endpoint is missing", () => {
-      const instance = launch({ projectName: "test", forceShow: true } as SitepingConfig);
+      const instance = launch({ projectName: "test", forceShow: true } as InstaFixConfig);
 
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("instafix-widget");
       expect(widget).toBeNull();
       expect(instance.destroy).toBeTypeOf("function");
       instance.destroy();
@@ -515,15 +515,15 @@ describe("launch", () => {
     it("returns no-op when endpoint is empty string", () => {
       const instance = launch(defaultConfig({ endpoint: "" }));
 
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("instafix-widget");
       expect(widget).toBeNull();
       instance.destroy();
     });
 
     it("returns no-op when projectName is missing", () => {
-      const instance = launch({ endpoint: "/api", forceShow: true } as SitepingConfig);
+      const instance = launch({ endpoint: "/api", forceShow: true } as InstaFixConfig);
 
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("instafix-widget");
       expect(widget).toBeNull();
       instance.destroy();
     });
@@ -531,7 +531,7 @@ describe("launch", () => {
     it("returns no-op when projectName is empty string", () => {
       const instance = launch(defaultConfig({ projectName: "" }));
 
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("instafix-widget");
       expect(widget).toBeNull();
       instance.destroy();
     });
@@ -539,7 +539,7 @@ describe("launch", () => {
     it("returns no-op when endpoint is not a string (number)", () => {
       const instance = launch(defaultConfig({ endpoint: 42 as unknown as string }));
 
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("instafix-widget");
       expect(widget).toBeNull();
       instance.destroy();
     });
@@ -547,7 +547,7 @@ describe("launch", () => {
     it("returns no-op when projectName is not a string", () => {
       const instance = launch(defaultConfig({ projectName: 123 as unknown as string }));
 
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("instafix-widget");
       expect(widget).toBeNull();
       instance.destroy();
     });
@@ -620,7 +620,7 @@ describe("launch", () => {
         // The first init log is fired synchronously
         expect(debugSpy).toHaveBeenCalled();
         const initialCalls = debugSpy.mock.calls.filter(
-          (c: unknown[]) => typeof c[0] === "string" && c[0].includes("[siteping]"),
+          (c: unknown[]) => typeof c[0] === "string" && c[0].includes("[instafix]"),
         );
         expect(initialCalls.length).toBeGreaterThan(0);
 
@@ -640,11 +640,11 @@ describe("launch", () => {
       try {
         const instance = launch(defaultConfig());
 
-        // No "[siteping]" debug messages should be emitted
-        const sitepingCalls = debugSpy.mock.calls.filter(
-          (c: unknown[]) => typeof c[0] === "string" && c[0].includes("[siteping]"),
+        // No "[instafix]" debug messages should be emitted
+        const instafixCalls = debugSpy.mock.calls.filter(
+          (c: unknown[]) => typeof c[0] === "string" && c[0].includes("[instafix]"),
         );
-        expect(sitepingCalls.length).toBe(0);
+        expect(instafixCalls.length).toBe(0);
 
         instance.destroy();
       } finally {
@@ -687,7 +687,7 @@ describe("launch", () => {
 
         // Without process.env, the production guard's typeof check returns "undefined"
         // and the guard short-circuits — widget should mount
-        const widget = document.querySelector("siteping-widget");
+        const widget = document.querySelector("instafix-widget");
         expect(widget).not.toBeNull();
 
         instance.destroy();
@@ -714,13 +714,13 @@ describe("launch", () => {
         deleteAllFeedbacks: vi.fn(),
       };
       const instance = launch({
-        store: fakeStore as unknown as SitepingStore,
+        store: fakeStore as unknown as InstaFixStore,
         projectName: "test",
         forceShow: true,
       });
 
       // Widget should be mounted (no endpoint required)
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("instafix-widget");
       expect(widget).not.toBeNull();
       // store.getFeedbacks should be called for initial markers load
       expect(fakeStore.getFeedbacks).toHaveBeenCalled();
@@ -744,7 +744,7 @@ describe("launch", () => {
       await new Promise((r) => setTimeout(r, 50));
 
       // Widget should still mount even if flushRetryQueue rejects
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("instafix-widget");
       expect(widget).not.toBeNull();
 
       instance.destroy();
@@ -798,7 +798,7 @@ describe("launch", () => {
       try {
         const instance = launch(defaultConfig());
 
-        const widget = document.querySelector("siteping-widget")!;
+        const widget = document.querySelector("instafix-widget")!;
         expect(widget).not.toBeNull();
         // Shadow root should have been mutated with the constructed sheet
         const shadow = widget.shadowRoot as ShadowRoot & { adoptedStyleSheets: CSSStyleSheet[] };
@@ -917,10 +917,10 @@ describe("launch", () => {
       instance.destroy();
     });
 
-    it("right-click on SitePing's own UI is ignored", () => {
+    it("right-click on InstaFix's own UI is ignored", () => {
       const instance = launch(defaultConfig({ enableRightClickComment: true }));
 
-      // Simulate a click on the SitePing widget (or something inside it)
+      // Simulate a click on the InstaFix widget (or something inside it)
       const event = new MouseEvent("contextmenu", {
         button: 2,
         clientX: 100,
@@ -929,7 +929,7 @@ describe("launch", () => {
         cancelable: true,
       });
 
-      const widget = document.querySelector("siteping-widget")!;
+      const widget = document.querySelector("instafix-widget")!;
       // Need composedPath() to include the widget, so dispatch from it or a shadow child
       widget.dispatchEvent(event);
 

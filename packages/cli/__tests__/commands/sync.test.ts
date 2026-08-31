@@ -30,7 +30,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model InstaFixFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -51,7 +51,7 @@ describe("syncCommand", () => {
   let logSuccessSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "siteping-sync-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "instafix-sync-test-"));
     exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
     logErrorSpy = vi.spyOn(p.log, "error").mockImplementation(() => {});
     logInfoSpy = vi.spyOn(p.log, "info").mockImplementation(() => {});
@@ -84,7 +84,7 @@ describe("syncCommand", () => {
     // Should succeed without exit(1)
     expect(exitSpy).not.toHaveBeenCalled();
     // Models should have been created
-    expect(logSuccessSpy).toHaveBeenCalledWith(expect.stringContaining("SitepingFeedback"));
+    expect(logSuccessSpy).toHaveBeenCalledWith(expect.stringContaining("InstaFixFeedback"));
   });
 
   it("adds both models to an empty schema", () => {
@@ -93,14 +93,14 @@ describe("syncCommand", () => {
 
     syncCommand({ schema: schemaPath });
 
-    expect(logSuccessSpy).toHaveBeenCalledWith(expect.stringContaining("SitepingFeedback"));
-    expect(logSuccessSpy).toHaveBeenCalledWith(expect.stringContaining("SitepingAnnotation"));
+    expect(logSuccessSpy).toHaveBeenCalledWith(expect.stringContaining("InstaFixFeedback"));
+    expect(logSuccessSpy).toHaveBeenCalledWith(expect.stringContaining("InstaFixAnnotation"));
     expect(exitSpy).not.toHaveBeenCalled();
 
     // Verify file was actually modified
     const output = readFileSync(schemaPath, "utf-8");
-    expect(output).toContain("model SitepingFeedback");
-    expect(output).toContain("model SitepingAnnotation");
+    expect(output).toContain("model InstaFixFeedback");
+    expect(output).toContain("model InstaFixAnnotation");
   });
 
   it("reports field-level changes on a partial schema", () => {
@@ -109,8 +109,8 @@ describe("syncCommand", () => {
 
     syncCommand({ schema: schemaPath });
 
-    // SitepingAnnotation is new, should appear in model creation log
-    expect(logSuccessSpy).toHaveBeenCalledWith(expect.stringContaining("SitepingAnnotation"));
+    // InstaFixAnnotation is new, should appear in model creation log
+    expect(logSuccessSpy).toHaveBeenCalledWith(expect.stringContaining("InstaFixAnnotation"));
     // Field additions should be logged (e.g. status, url, etc.)
     expect(logSuccessSpy).toHaveBeenCalledWith(expect.stringContaining("status"));
     expect(exitSpy).not.toHaveBeenCalled();
@@ -171,8 +171,8 @@ model User {
 
     const output = readFileSync(schemaPath, "utf-8");
     expect(output).toContain("model User");
-    expect(output).toContain("model SitepingFeedback");
-    expect(output).toContain("model SitepingAnnotation");
+    expect(output).toContain("model InstaFixFeedback");
+    expect(output).toContain("model InstaFixAnnotation");
     expect(exitSpy).not.toHaveBeenCalled();
   });
 
@@ -211,7 +211,7 @@ model User {
   });
 
   it("logs only field-level changes when both models already exist (no model creation)", () => {
-    // Schema where both Siteping models are present but each has a single
+    // Schema where both InstaFix models are present but each has a single
     // field — exercises the `addedModels.length > 0` false branch (no model
     // additions logged) while still emitting per-field "added" success logs.
     const schemaPath = join(tmpDir, "schema.prisma");
@@ -227,11 +227,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model InstaFixFeedback {
   id String @id @default(cuid())
 }
 
-model SitepingAnnotation {
+model InstaFixAnnotation {
   id String @id @default(cuid())
 }
 `,
@@ -243,7 +243,7 @@ model SitepingAnnotation {
     const successCalls = logSuccessSpy.mock.calls.map((call: unknown[]) => String(call[0]));
     expect(successCalls.some((m: string) => m.startsWith("Models synced"))).toBe(false);
     // Field-level adds for the missing fields must still be logged.
-    expect(successCalls.some((m: string) => /\+ SitepingFeedback\..*added/.test(m))).toBe(true);
+    expect(successCalls.some((m: string) => /\+ InstaFixFeedback\..*added/.test(m))).toBe(true);
     expect(exitSpy).not.toHaveBeenCalled();
   });
 

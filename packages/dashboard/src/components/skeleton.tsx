@@ -6,11 +6,11 @@ const BARS = [0, 1, 2];
 /** Five placeholder rows shown while the first page loads. Purely decorative. */
 export function Skeleton(): ReactElement {
   return (
-    <div className="spd-skeleton" aria-hidden="true">
+    <div className="ifd-skeleton" aria-hidden="true">
       {ROWS.map((row) => (
-        <div key={row} className="spd-skel-row">
+        <div key={row} className="ifd-skel-row">
           {BARS.map((bar) => (
-            <div key={bar} className="spd-skel-bar" />
+            <div key={bar} className="ifd-skel-bar" />
           ))}
         </div>
       ))}

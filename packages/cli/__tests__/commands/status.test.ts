@@ -9,7 +9,7 @@ import { statusCommand } from "../../src/commands/status.js";
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** A valid Prisma schema with both Siteping models — complete and up-to-date. */
+/** A valid Prisma schema with both InstaFix models — complete and up-to-date. */
 const FULL_SCHEMA = `
 datasource db {
   provider = "postgresql"
@@ -20,7 +20,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model InstaFixFeedback {
   id            String              @id @default(cuid())
   projectName   String
   type          String
@@ -39,17 +39,17 @@ model SitepingFeedback {
   resolvedAt    DateTime?
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
-  annotations   SitepingAnnotation[]
+  annotations   InstaFixAnnotation[]
 
   @@index([projectName])
   @@index([projectName, status, createdAt])
   @@index([projectName, url])
 }
 
-model SitepingAnnotation {
+model InstaFixAnnotation {
   id               String           @id @default(cuid())
   feedbackId       String
-  feedback         SitepingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  feedback         InstaFixFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
   cssSelector      String           @db.Text
   xpath            String           @db.Text
   textSnippet      String           @db.Text
@@ -76,7 +76,7 @@ model SitepingAnnotation {
 }
 `;
 
-/** Schema missing SitepingAnnotation entirely and SitepingFeedback is partial. */
+/** Schema missing InstaFixAnnotation entirely and InstaFixFeedback is partial. */
 const PARTIAL_SCHEMA = `
 datasource db {
   provider = "postgresql"
@@ -87,7 +87,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model InstaFixFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -97,9 +97,9 @@ model SitepingFeedback {
 `;
 
 /**
- * Schema where every Siteping model is present but a single field has the
+ * Schema where every InstaFix model is present but a single field has the
  * wrong type — exercises the `outdatedFields.push` branch in checkSchema.
- * `SitepingFeedback.id` is declared `Int` instead of the expected `String`.
+ * `InstaFixFeedback.id` is declared `Int` instead of the expected `String`.
  */
 const OUTDATED_SCHEMA = `
 datasource db {
@@ -111,7 +111,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model InstaFixFeedback {
   id           Int                 @id @default(autoincrement())
   projectName  String
   type         String
@@ -126,15 +126,15 @@ model SitepingFeedback {
   resolvedAt   DateTime?
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
-  annotations  SitepingAnnotation[]
+  annotations  InstaFixAnnotation[]
 
   @@index([projectName])
 }
 
-model SitepingAnnotation {
+model InstaFixAnnotation {
   id               String           @id @default(cuid())
   feedbackId       String
-  feedback         SitepingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  feedback         InstaFixFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
   cssSelector      String           @db.Text
   xpath            String           @db.Text
   textSnippet      String           @db.Text
@@ -174,7 +174,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model InstaFixFeedback {
   id            String              @id @default(cuid())
   projectName   String
   type          String
@@ -192,13 +192,13 @@ model SitepingFeedback {
   clientId      String              @unique
   resolvedAt    DateTime?
   createdAt     DateTime            @default(now())
-  annotations   SitepingAnnotation[]
+  annotations   InstaFixAnnotation[]
 }
 
-model SitepingAnnotation {
+model InstaFixAnnotation {
   id               String           @id @default(cuid())
   feedbackId       String
-  feedback         SitepingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  feedback         InstaFixFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
   cssSelector      String           @db.Text
   xpath            String           @db.Text
   textSnippet      String           @db.Text
@@ -235,7 +235,7 @@ function createPackageJson(dir: string, deps?: Record<string, string>, devDeps?:
 }
 
 function createApiRoute(dir: string): void {
-  const routeDir = join(dir, "app", "api", "siteping");
+  const routeDir = join(dir, "app", "api", "instafix");
   mkdirSync(routeDir, { recursive: true });
   writeFileSync(join(routeDir, "route.ts"), "export const GET = () => {};");
 }
@@ -245,7 +245,7 @@ function createWidgetUsage(dir: string): void {
   mkdirSync(srcDir, { recursive: true });
   writeFileSync(
     join(srcDir, "feedback.ts"),
-    'import { initSiteping } from "@siteping/widget";\ninitSiteping({ endpoint: "/api/siteping", projectName: "test" });',
+    'import { initInstaFix } from "@instafix/widget";\ninitInstaFix({ endpoint: "/api/instafix", projectName: "test" });',
   );
 }
 
@@ -279,7 +279,7 @@ describe("statusCommand", () => {
   let logInfoSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "siteping-status-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "instafix-status-test-"));
     originalCwd = process.cwd();
     process.chdir(tmpDir);
     exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
@@ -311,7 +311,7 @@ describe("statusCommand", () => {
 
     it("reports success when schema is found and up-to-date", () => {
       createPrismaSchema(tmpDir, FULL_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@instafix/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -322,7 +322,7 @@ describe("statusCommand", () => {
 
     it("reports warning when models are missing from schema", () => {
       createPrismaSchema(tmpDir, PARTIAL_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@instafix/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -336,7 +336,7 @@ describe("statusCommand", () => {
       mkdirSync(customDir, { recursive: true });
       const schemaPath = join(customDir, "schema.prisma");
       writeFileSync(schemaPath, FULL_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@instafix/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({ schema: schemaPath });
@@ -347,7 +347,7 @@ describe("statusCommand", () => {
   });
 
   describe("API route detection", () => {
-    it("reports success when API route exists at app/api/siteping/route.ts", () => {
+    it("reports success when API route exists at app/api/instafix/route.ts", () => {
       createPackageJson(tmpDir);
       createApiRoute(tmpDir);
 
@@ -357,9 +357,9 @@ describe("statusCommand", () => {
       expect(successes.some((m) => m.includes("API route"))).toBe(true);
     });
 
-    it("reports success when API route exists at src/app/api/siteping/route.ts", () => {
+    it("reports success when API route exists at src/app/api/instafix/route.ts", () => {
       createPackageJson(tmpDir);
-      const routeDir = join(tmpDir, "src", "app", "api", "siteping");
+      const routeDir = join(tmpDir, "src", "app", "api", "instafix");
       mkdirSync(routeDir, { recursive: true });
       writeFileSync(join(routeDir, "route.ts"), "export const GET = () => {};");
 
@@ -380,31 +380,31 @@ describe("statusCommand", () => {
   });
 
   describe("Package detection", () => {
-    it("reports success when @siteping/widget is in dependencies", () => {
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+    it("reports success when @instafix/widget is in dependencies", () => {
+      createPackageJson(tmpDir, { "@instafix/widget": "^1.0.0" });
 
       statusCommand({});
 
       const successes = allMessages(logSuccessSpy);
-      expect(successes.some((m) => m.includes("@siteping/widget"))).toBe(true);
+      expect(successes.some((m) => m.includes("@instafix/widget"))).toBe(true);
     });
 
-    it("reports success when @siteping/widget is in devDependencies", () => {
-      createPackageJson(tmpDir, {}, { "@siteping/widget": "^1.0.0" });
+    it("reports success when @instafix/widget is in devDependencies", () => {
+      createPackageJson(tmpDir, {}, { "@instafix/widget": "^1.0.0" });
 
       statusCommand({});
 
       const successes = allMessages(logSuccessSpy);
-      expect(successes.some((m) => m.includes("@siteping/widget"))).toBe(true);
+      expect(successes.some((m) => m.includes("@instafix/widget"))).toBe(true);
     });
 
-    it("reports error when @siteping/widget is not in any dependencies", () => {
+    it("reports error when @instafix/widget is not in any dependencies", () => {
       createPackageJson(tmpDir, { "some-other-package": "^1.0.0" });
 
       statusCommand({});
 
       const errors = allMessages(logErrorSpy);
-      expect(errors.some((m) => m.includes("@siteping/widget"))).toBe(true);
+      expect(errors.some((m) => m.includes("@instafix/widget"))).toBe(true);
     });
 
     it("reports error when package.json does not exist", () => {
@@ -418,8 +418,8 @@ describe("statusCommand", () => {
   });
 
   describe("Widget integration detection", () => {
-    it("reports success when initSiteping is found in source files", () => {
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+    it("reports success when initInstaFix is found in source files", () => {
+      createPackageJson(tmpDir, { "@instafix/widget": "^1.0.0" });
       createWidgetUsage(tmpDir);
 
       statusCommand({});
@@ -428,8 +428,8 @@ describe("statusCommand", () => {
       expect(successes.some((m) => m.includes("Widget"))).toBe(true);
     });
 
-    it("reports warning when initSiteping is not found in source files", () => {
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+    it("reports warning when initInstaFix is not found in source files", () => {
+      createPackageJson(tmpDir, { "@instafix/widget": "^1.0.0" });
 
       statusCommand({});
 
@@ -441,7 +441,7 @@ describe("statusCommand", () => {
   describe("Overall status", () => {
     it("does not exit(1) when everything is properly configured", () => {
       createPrismaSchema(tmpDir, FULL_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@instafix/widget": "^1.0.0" });
       createApiRoute(tmpDir);
       createWidgetUsage(tmpDir);
 
@@ -460,7 +460,7 @@ describe("statusCommand", () => {
 
     it("does not exit(1) when schema has warnings but no hard errors", () => {
       createPrismaSchema(tmpDir, PARTIAL_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@instafix/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -471,7 +471,7 @@ describe("statusCommand", () => {
 
     it("exits with code 1 when schema exists but no API route", () => {
       createPrismaSchema(tmpDir, FULL_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@instafix/widget": "^1.0.0" });
       // No API route
 
       statusCommand({});
@@ -509,17 +509,17 @@ describe("statusCommand", () => {
     });
 
     it("skips node_modules and .next directories during widget scan", () => {
-      // Place an initSiteping reference inside node_modules — the scan must
+      // Place an initInstaFix reference inside node_modules — the scan must
       // skip the directory entirely rather than report a false-positive match.
       // Same for .next, which Next.js generates during dev/build.
       const nodeModulesDir = join(tmpDir, "src", "node_modules");
       mkdirSync(nodeModulesDir, { recursive: true });
-      writeFileSync(join(nodeModulesDir, "trap.ts"), 'import { initSiteping } from "@siteping/widget";');
+      writeFileSync(join(nodeModulesDir, "trap.ts"), 'import { initInstaFix } from "@instafix/widget";');
       const nextDir = join(tmpDir, "src", ".next");
       mkdirSync(nextDir, { recursive: true });
-      writeFileSync(join(nextDir, "trap.ts"), 'import { initSiteping } from "@siteping/widget";');
+      writeFileSync(join(nextDir, "trap.ts"), 'import { initInstaFix } from "@instafix/widget";');
 
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@instafix/widget": "^1.0.0" });
 
       statusCommand({});
 
@@ -533,11 +533,11 @@ describe("statusCommand", () => {
       // exercising the "extension does not match" branch of searchInDir.
       const srcDir = join(tmpDir, "src");
       mkdirSync(srcDir, { recursive: true });
-      writeFileSync(join(srcDir, "README.md"), "# initSiteping reference");
-      writeFileSync(join(srcDir, "data.json"), '{"initSiteping": "fake"}');
-      writeFileSync(join(srcDir, "feedback.ts"), 'import { initSiteping } from "@siteping/widget";');
+      writeFileSync(join(srcDir, "README.md"), "# initInstaFix reference");
+      writeFileSync(join(srcDir, "data.json"), '{"initInstaFix": "fake"}');
+      writeFileSync(join(srcDir, "feedback.ts"), 'import { initInstaFix } from "@instafix/widget";');
 
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@instafix/widget": "^1.0.0" });
 
       statusCommand({});
 
@@ -550,9 +550,9 @@ describe("statusCommand", () => {
       // arbitrary depth (the `if (match) return match` branch on the recursion).
       const deepDir = join(tmpDir, "src", "components", "ui", "feedback");
       mkdirSync(deepDir, { recursive: true });
-      writeFileSync(join(deepDir, "widget.ts"), 'import { initSiteping } from "@siteping/widget";');
+      writeFileSync(join(deepDir, "widget.ts"), 'import { initInstaFix } from "@instafix/widget";');
 
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@instafix/widget": "^1.0.0" });
 
       statusCommand({});
 
@@ -569,7 +569,7 @@ describe("statusCommand", () => {
       // 0o000 → no read/write/execute permission for anyone.
       chmodSync(restrictedDir, 0o000);
 
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@instafix/widget": "^1.0.0" });
 
       try {
         // Should not throw — the catch swallows the EACCES.
@@ -584,11 +584,11 @@ describe("statusCommand", () => {
     });
 
     it("reports outdated fields when a Prisma field has the wrong type", () => {
-      // SitepingFeedback.id is declared `Int` instead of the expected `String`,
+      // InstaFixFeedback.id is declared `Int` instead of the expected `String`,
       // so checkSchema must record it as outdated and emit a warning that
       // mentions the outdated field count.
       createPrismaSchema(tmpDir, OUTDATED_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@instafix/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -600,7 +600,7 @@ describe("statusCommand", () => {
     });
 
     it("uses plural 'outdated fields' when more than one is outdated", () => {
-      // Two field-type mismatches in SitepingFeedback (`id` Int instead of
+      // Two field-type mismatches in InstaFixFeedback (`id` Int instead of
       // String, `projectName` Boolean instead of String) so the warning
       // message exercises the `outdatedCount > 1 ? "s" : ""` plural branch.
       const multiOutdated = `
@@ -613,7 +613,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model InstaFixFeedback {
   id           Int                 @id @default(autoincrement())
   projectName  Boolean
   type         String
@@ -628,13 +628,13 @@ model SitepingFeedback {
   resolvedAt   DateTime?
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
-  annotations  SitepingAnnotation[]
+  annotations  InstaFixAnnotation[]
 }
 
-model SitepingAnnotation {
+model InstaFixAnnotation {
   id               String           @id @default(cuid())
   feedbackId       String
-  feedback         SitepingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  feedback         InstaFixFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
   cssSelector      String           @db.Text
   xpath            String           @db.Text
   textSnippet      String           @db.Text
@@ -658,7 +658,7 @@ model SitepingAnnotation {
 }
 `;
       createPrismaSchema(tmpDir, multiOutdated);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@instafix/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -672,7 +672,7 @@ model SitepingAnnotation {
       // Only `updatedAt` is missing — exercises the singular branch of
       // `missingCount > 1 ? "s" : ""` ("missing field" without trailing "s").
       createPrismaSchema(tmpDir, SINGLE_MISSING_FIELD_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@instafix/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -691,7 +691,7 @@ model SitepingAnnotation {
       statusCommand({});
 
       const errors = allMessages(logErrorSpy);
-      expect(errors.some((m) => m.includes("@siteping/widget"))).toBe(true);
+      expect(errors.some((m) => m.includes("@instafix/widget"))).toBe(true);
       expect(exitSpy).toHaveBeenCalledWith(1);
     });
   });

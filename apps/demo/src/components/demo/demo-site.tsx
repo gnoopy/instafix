@@ -93,7 +93,7 @@ const projects = [
 const testimonials = [
   {
     quote:
-      "Horizon Studio transformed our digital presence. The attention to detail and strategic thinking behind every design decision was remarkable.",
+      "InstaFixStudio transformed our digital presence. The attention to detail and strategic thinking behind every design decision was remarkable.",
     name: "Sarah Mitchell",
     title: "CEO, Luminary Technologies",
   },
@@ -166,7 +166,7 @@ export function DemoSite() {
             <span className="text-accent">that matter.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-gray-600">
-            Horizon Studio is a design and development agency helping startups and established brands ship polished
+            InstaFixStudio is a design and development agency helping startups and established brands ship polished
             digital products. From concept to launch, we handle every pixel.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
@@ -345,7 +345,7 @@ export function DemoSite() {
               <span className="text-accent">Studio</span>
             </span>
             <p className="mt-1 text-sm text-gray-500">
-              &copy; {new Date().getFullYear()} Horizon Studio. All rights reserved.
+              &copy; {new Date().getFullYear()} InstaFixStudio. All rights reserved.
             </p>
           </div>
           <div className="flex items-center gap-5">

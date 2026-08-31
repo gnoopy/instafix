@@ -1,33 +1,33 @@
 // @vitest-environment jsdom
 
-import type { SitepingConfig, SitepingInstance } from "@siteping/core";
+import type { InstaFixConfig, InstaFixInstance } from "@instafix/core";
 import { act, render } from "@testing-library/react";
 import { StrictMode, useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
-// Mock `initSiteping` so we can observe call count, capture listeners, and
+// Mock `initInstaFix` so we can observe call count, capture listeners, and
 // drive them directly without needing the full widget DOM.
 // ---------------------------------------------------------------------------
 
 type Listener = (...args: unknown[]) => void;
 
-interface MockedInstance extends SitepingInstance {
+interface MockedInstance extends InstaFixInstance {
   __emit: (event: string, ...args: unknown[]) => void;
   __destroyed: boolean;
 }
 
 let mockInstances: MockedInstance[] = [];
-let initSpy: Mock<(config: SitepingConfig) => MockedInstance>;
+let initSpy: Mock<(config: InstaFixConfig) => MockedInstance>;
 
 vi.mock(new URL("../../src/index.js", import.meta.url).pathname, () => ({
-  initSiteping: (config: SitepingConfig) => initSpy(config),
+  initInstaFix: (config: InstaFixConfig) => initSpy(config),
   __esModule: true,
 }));
 
 beforeEach(() => {
   mockInstances = [];
-  initSpy = vi.fn((_config: SitepingConfig) => {
+  initSpy = vi.fn((_config: InstaFixConfig) => {
     const listeners = new Map<string, Set<Listener>>();
     const instance: MockedInstance = {
       destroy: vi.fn(() => {
@@ -64,29 +64,29 @@ afterEach(() => {
 });
 
 // Import after mock setup so the alias resolves to our spy.
-import { useSiteping } from "../../src/react.js";
+import { useInstaFix } from "../../src/react.js";
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
-function Probe({ config, onInstance }: { config: SitepingConfig; onInstance?: (i: SitepingInstance | null) => void }) {
-  const instance = useSiteping(config);
+function Probe({ config, onInstance }: { config: InstaFixConfig; onInstance?: (i: InstaFixInstance | null) => void }) {
+  const instance = useInstaFix(config);
   useEffect(() => {
     onInstance?.(instance);
   }, [instance, onInstance]);
   return null;
 }
 
-describe("useSiteping", () => {
+describe("useInstaFix", () => {
   it("initialises the widget once on mount and destroys on unmount", () => {
-    const config: SitepingConfig = { endpoint: "/api/siteping", projectName: "test" };
+    const config: InstaFixConfig = { endpoint: "/api/instafix", projectName: "test" };
     const { unmount } = render(<Probe config={config} />);
 
     expect(initSpy).toHaveBeenCalledTimes(1);
     // The hook overrides the callback props with stable ref-reading
     // wrappers — the transport/config fields must pass through untouched.
-    expect(initSpy).toHaveBeenCalledWith(expect.objectContaining({ endpoint: "/api/siteping", projectName: "test" }));
+    expect(initSpy).toHaveBeenCalledWith(expect.objectContaining({ endpoint: "/api/instafix", projectName: "test" }));
     expect(mockInstances).toHaveLength(1);
     expect(mockInstances[0]?.__destroyed).toBe(false);
 
@@ -95,7 +95,7 @@ describe("useSiteping", () => {
   });
 
   it("returns the live instance so consumers can drive it programmatically", () => {
-    const captured: Array<SitepingInstance | null> = [];
+    const captured: Array<InstaFixInstance | null> = [];
     render(<Probe config={{ endpoint: "/api/x", projectName: "p" }} onInstance={(i) => captured.push(i)} />);
     const finalInstance = captured[captured.length - 1];
     expect(finalInstance).not.toBeNull();
@@ -103,7 +103,7 @@ describe("useSiteping", () => {
   });
 
   it("does NOT init twice under StrictMode (double-mount)", () => {
-    const config: SitepingConfig = { endpoint: "/api/siteping", projectName: "test" };
+    const config: InstaFixConfig = { endpoint: "/api/instafix", projectName: "test" };
     render(
       <StrictMode>
         <Probe config={config} />
@@ -118,11 +118,11 @@ describe("useSiteping", () => {
     expect(liveCount).toBe(1);
   });
 
-  /** The config the hook actually handed to initSiteping — wrapper callbacks included. */
-  function wiredConfig(): SitepingConfig {
+  /** The config the hook actually handed to initInstaFix — wrapper callbacks included. */
+  function wiredConfig(): InstaFixConfig {
     const call = initSpy.mock.calls[0];
     expect(call).toBeDefined();
-    return call![0] as SitepingConfig;
+    return call![0] as InstaFixConfig;
   }
 
   it("forwards feedback:sent to the latest onFeedbackSent callback without re-initing", () => {
@@ -130,7 +130,7 @@ describe("useSiteping", () => {
     const v2 = vi.fn();
 
     function Host({ cb }: { cb: (fb: unknown) => void }) {
-      useSiteping({ endpoint: "/api", projectName: "p", onFeedbackSent: cb });
+      useInstaFix({ endpoint: "/api", projectName: "p", onFeedbackSent: cb });
       return null;
     }
 
@@ -195,7 +195,7 @@ describe("useSiteping", () => {
     const e2 = vi.fn();
 
     function Host({ cb }: { cb: (error: Error) => void }) {
-      useSiteping({ endpoint: "/api", projectName: "p", onError: cb });
+      useInstaFix({ endpoint: "/api", projectName: "p", onError: cb });
       return null;
     }
 

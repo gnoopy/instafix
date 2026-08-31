@@ -8,7 +8,7 @@ L'inbox lit et écrit à travers une petite abstraction, que vous pouvez fournir
 ## Mode endpoint (le défaut en production)
 
 ```tsx
-<SitepingInbox projects="mon-projet" endpoint="/api/siteping" apiKey={KEY} />
+<InstaFixInbox projects="mon-projet" endpoint="/api/instafix" apiKey={KEY} />
 ```
 
 Parle à votre [endpoint d'adapter](/fr/docs/adapters/prisma) : `GET` pour les listes, `PATCH` pour les statuts, `DELETE` pour les suppressions, toujours avec `cache: "no-store"`. Les erreurs arrivent typées par `code` (`AUTH` pour 401/403, `VALIDATION` pour les autres 4xx, `SERVER` pour les 5xx, `NETWORK` pour les échecs de fetch). Il n'y a volontairement **aucun réessai** — une interface de tri doit vous dire les choses tout de suite.
@@ -16,30 +16,30 @@ Parle à votre [endpoint d'adapter](/fr/docs/adapters/prisma) : `GET` pour les l
 ## Mode store
 
 ```tsx
-<SitepingInbox projects="ma-demo" store={new LocalStorageStore()} />
+<InstaFixInbox projects="ma-demo" store={new LocalStorageStore()} />
 ```
 
-Fonctionne avec n'importe quel `SitepingStore` en mémoire du processus — les mêmes stores que le mode côté client du widget. Les démos et prototypes n'ont jamais besoin de serveur.
+Fonctionne avec n'importe quel `InstaFixStore` en mémoire du processus — les mêmes stores que le mode côté client du widget. Les démos et prototypes n'ont jamais besoin de serveur.
 
 ## Source personnalisée
 
 Pour tRPC, GraphQL ou les server actions, implémentez le contrat `InboxSource` à trois méthodes et passez-le en `source` :
 
 ```ts
-import type { InboxSource } from "@siteping/dashboard";
+import type { InboxSource } from "@instafix/dashboard";
 
 const source: InboxSource = {
   async list(query) {
     // query : projectName, page, limit, status?, type?, search?, url?, urlPattern?
-    const { feedbacks, total } = await trpc.siteping.list.query(query);
+    const { feedbacks, total } = await trpc.instafix.list.query(query);
     // Important : createdAt / updatedAt / resolvedAt doivent être de vrais objets Date
     return { feedbacks: feedbacks.map(reviveDates), total };
   },
   async setStatus(id, projectName, status) {
-    return reviveDates(await trpc.siteping.setStatus.mutate({ id, projectName, status }));
+    return reviveDates(await trpc.instafix.setStatus.mutate({ id, projectName, status }));
   },
   async remove(id, projectName) {
-    await trpc.siteping.remove.mutate({ id, projectName });
+    await trpc.instafix.remove.mutate({ id, projectName });
   },
 };
 ```
@@ -48,13 +48,13 @@ Les deux briques qui sous-tendent les modes intégrés sont également exportée
 
 ## Des types sans dépendance supplémentaire
 
-`@siteping/dashboard` réexporte tout ce qu'il faut pour typer un composant qui l'enrobe — vous n'installez jamais rien d'autre :
+`@instafix/dashboard` réexporte tout ce qu'il faut pour typer un composant qui l'enrobe — vous n'installez jamais rien d'autre :
 
 | Ce que vous typez | Exports |
 |---|---|
-| Les données de feedback | `FeedbackRecord`, `FeedbackStatus`, `FeedbackType`, `SitepingStore`, ainsi que les constantes `FEEDBACK_STATUSES` / `FEEDBACK_TYPES` et `isClosedStatus()` |
-| Les options du hook | `UseSitepingInboxOptions` et ses trois membres — `InboxEndpointOptions`, `InboxStoreOptions`, `InboxCustomSourceOptions` — plus le socle commun `InboxSharedOptions` |
+| Les données de feedback | `FeedbackRecord`, `FeedbackStatus`, `FeedbackType`, `InstaFixStore`, ainsi que les constantes `FEEDBACK_STATUSES` / `FEEDBACK_TYPES` et `isClosedStatus()` |
+| Les options du hook | `UseInstaFixInboxOptions` et ses trois membres — `InboxEndpointOptions`, `InboxStoreOptions`, `InboxCustomSourceOptions` — plus le socle commun `InboxSharedOptions` |
 | Le retour du hook | `InboxState`, `InboxStatusFilter`, `InboxTypeFilter` |
 | Les sources | `InboxSource`, `EndpointSourceOptions` (l'argument de `createEndpointSource`) |
-| Les props du composant | `SitepingInboxProps`, ou `SitepingInboxPresentationProps` pour la seule moitié présentation |
+| Les props du composant | `InstaFixInboxProps`, ou `InstaFixInboxPresentationProps` pour la seule moitié présentation |
 | Le thème | `InboxTheme` (`"light"` \| `"dark"` \| `"auto"`) et `ResolvedTheme` (`"light"` \| `"dark"` — ce que `auto` résout) |

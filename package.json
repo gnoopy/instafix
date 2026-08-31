@@ -1,14 +1,14 @@
 {
-  "name": "siteping",
+  "name": "instafix",
   "private": true,
   "description": "Client feedback widget \u2014 self-hosted, DOM-anchored annotations for websites",
-  "homepage": "https://siteping.dev",
+  "homepage": "https://instafix.realstory.blog",
   "type": "module",
-  "author": "neosianexus",
+  "author": "gnoopy",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeosiaNexus/SitePing.git"
+    "url": "git+https://github.com/gnoopy/InstaFix.git"
   },
   "packageManager": "bun@1.3.11",
   "workspaces": [

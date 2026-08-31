@@ -3,17 +3,17 @@ import "../utils/object-group-by-polyfill.js";
 import { type Dirent, existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import * as p from "@clack/prompts";
+import { hasOwn, INSTAFIX_MODELS } from "@instafix/core";
 import type { Field, Model } from "@mrleebo/prisma-ast";
 import { getSchema } from "@mrleebo/prisma-ast";
-import { hasOwn, SITEPING_MODELS } from "@siteping/core";
 import { findPrismaSchema } from "../utils/find-schema.js";
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
 function findApiRoute(cwd: string): string | null {
   const candidates = [
-    join(cwd, "app", "api", "siteping", "route.ts"),
-    join(cwd, "src", "app", "api", "siteping", "route.ts"),
+    join(cwd, "app", "api", "instafix", "route.ts"),
+    join(cwd, "src", "app", "api", "instafix", "route.ts"),
   ];
   return candidates.find((c) => existsSync(c)) ?? null;
 }
@@ -49,7 +49,7 @@ function dependencyVersion(pkg: PackageJsonSnapshot, name: string): string | und
 function findWidgetUsage(cwd: string): string | null {
   const searchDirs = [join(cwd, "src"), join(cwd, "app"), join(cwd, "pages")];
   const extensions = [".ts", ".tsx", ".js", ".jsx"] as const;
-  const patterns = ["initSiteping", "@siteping/widget"] as const;
+  const patterns = ["initInstaFix", "@instafix/widget"] as const;
 
   for (const dir of searchDirs) {
     if (!existsSync(dir)) continue;
@@ -116,7 +116,7 @@ function checkSchema(schemaPath: string | null): SchemaCheckResult {
   const missingFields: string[] = [];
   const outdatedFields: string[] = [];
 
-  for (const [modelName, modelDef] of Object.entries(SITEPING_MODELS)) {
+  for (const [modelName, modelDef] of Object.entries(INSTAFIX_MODELS)) {
     const model = existingModels.get(modelName);
 
     if (!model) {
@@ -165,7 +165,7 @@ function pad(label: string, width: number): string {
 
 // ── Command ────────────────────────────────────────────────────────────
 
-/** Options accepted by the `siteping status` subcommand. */
+/** Options accepted by the `instafix status` subcommand. */
 export interface StatusCommandOptions {
   /** Optional explicit path to the host project's `schema.prisma`. */
   schema?: string;
@@ -174,7 +174,7 @@ export interface StatusCommandOptions {
 export function statusCommand(options: StatusCommandOptions): void {
   const cwd = process.cwd();
 
-  p.intro("siteping — Status");
+  p.intro("instafix — Status");
 
   // 1. Prisma schema
   const schemaPath = options.schema ?? findPrismaSchema(cwd);
@@ -212,14 +212,14 @@ export function statusCommand(options: StatusCommandOptions): void {
 
   // 3. Package in dependencies
   const pkg = readPackageJson(cwd);
-  const widgetVersion = pkg ? dependencyVersion(pkg, "@siteping/widget") : undefined;
+  const widgetVersion = pkg ? dependencyVersion(pkg, "@instafix/widget") : undefined;
 
   if (!pkg) {
     p.log.error(`${pad("Package", 25)}package.json not found`);
   } else if (widgetVersion) {
-    p.log.success(`${pad("Package", 25)}@siteping/widget@${widgetVersion}`);
+    p.log.success(`${pad("Package", 25)}@instafix/widget@${widgetVersion}`);
   } else {
-    p.log.error(`${pad("Package", 25)}@siteping/widget not found in package.json`);
+    p.log.error(`${pad("Package", 25)}@instafix/widget not found in package.json`);
   }
 
   // 4. Widget integration
@@ -228,7 +228,7 @@ export function statusCommand(options: StatusCommandOptions): void {
   if (widgetFile) {
     p.log.success(`${pad("Widget integration", 25)}found in ${relative(cwd, widgetFile)}`);
   } else {
-    p.log.warn(`${pad("Widget integration", 25)}initSiteping not found in source files`);
+    p.log.warn(`${pad("Widget integration", 25)}initInstaFix not found in source files`);
   }
 
   // Outro
@@ -240,10 +240,10 @@ export function statusCommand(options: StatusCommandOptions): void {
     !widgetFile;
 
   if (hasError) {
-    p.outro("Some items are missing — run `siteping init` to set up.");
+    p.outro("Some items are missing — run `instafix init` to set up.");
     process.exit(1);
   } else if (hasWarning) {
-    p.outro("Some adjustments needed — run `siteping sync` to update.");
+    p.outro("Some adjustments needed — run `instafix sync` to update.");
   } else {
     p.outro("Everything is set up!");
   }

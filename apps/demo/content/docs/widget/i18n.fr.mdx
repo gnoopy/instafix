@@ -6,8 +6,8 @@ description: Sept locales intégrées, chargées à la demande, avec des replis 
 Le widget est livré avec **7 locales intégrées** : anglais (`en`), français (`fr`), allemand (`de`), espagnol (`es`), italien (`it`), portugais brésilien (`pt`) et russe (`ru`).
 
 ```ts
-initSiteping({
-  endpoint: "/api/siteping",
+initInstaFix({
+  endpoint: "/api/instafix",
   projectName: "mon-projet",
   locale: "fr",
 });
@@ -22,21 +22,21 @@ initSiteping({
 
 ## Locales personnalisées
 
-`registerLocale(code, translations)` ajoute une langue que le widget ne fournit pas, et `loadLocale(code)` charge un dictionnaire intégré à l'avance. Les deux sont des exports runtime de `@siteping/widget` :
+`registerLocale(code, translations)` ajoute une langue que le widget ne fournit pas, et `loadLocale(code)` charge un dictionnaire intégré à l'avance. Les deux sont des exports runtime de `@instafix/widget` :
 
 ```ts
-import { initSiteping, registerLocale, type Translations } from "@siteping/widget";
+import { initInstaFix, registerLocale, type Translations } from "@instafix/widget";
 
 registerLocale("nl", { "panel.title": "Feedbacks", "fab.annotate": "Nieuwe annotatie maken" });
-initSiteping({ endpoint: "/api/siteping", projectName: "mon-projet", locale: "nl" });
+initInstaFix({ endpoint: "/api/instafix", projectName: "mon-projet", locale: "nl" });
 ```
 
-**Les dictionnaires partiels sont acceptés.** Les clés manquantes retombent sur l'anglais clé par clé : redéfinir une seule chaîne n'oblige jamais à recopier tout le catalogue — passez le type `Translations` uniquement si vous voulez que l'ensemble complet soit vérifié. Deux règles que l'implémentation impose : enregistrez sous le **code de langue de base** (`"nl"`, pas `"nl-BE"` — les recherches se normalisent vers la base), et appelez `registerLocale` **avant** `initSiteping`.
+**Les dictionnaires partiels sont acceptés.** Les clés manquantes retombent sur l'anglais clé par clé : redéfinir une seule chaîne n'oblige jamais à recopier tout le catalogue — passez le type `Translations` uniquement si vous voulez que l'ensemble complet soit vérifié. Deux règles que l'implémentation impose : enregistrez sous le **code de langue de base** (`"nl"`, pas `"nl-BE"` — les recherches se normalisent vers la base), et appelez `registerLocale` **avant** `initInstaFix`.
 
 Faites `await loadLocale("fr")` avant l'init si vous voulez une locale intégrée à l'écran dès le premier rendu, sans bref passage par l'anglais.
 
 ## Le dashboard suit le même jeu
 
-`@siteping/dashboard` embarque les mêmes sept locales avec les mêmes règles de résolution, et expose son propre `registerLocale` avec le même comportement de dictionnaire partiel — voir [la documentation du dashboard](/fr/docs/dashboard#langues).
+`@instafix/dashboard` embarque les mêmes sept locales avec les mêmes règles de résolution, et expose son propre `registerLocale` avec le même comportement de dictionnaire partiel — voir [la documentation du dashboard](/fr/docs/dashboard#langues).
 
-Vous voulez votre langue en natif ? Les contributions de locales sont la porte d'entrée la plus accessible de ce projet — voir [CONTRIBUTING](https://github.com/NeosiaNexus/SitePing/blob/main/CONTRIBUTING.md) (« Adding a Locale »).
+Vous voulez votre langue en natif ? Les contributions de locales sont la porte d'entrée la plus accessible de ce projet — voir [CONTRIBUTING](https://github.com/gnoopy/InstaFix/blob/main/CONTRIBUTING.md) (« Adding a Locale »).

@@ -1,4 +1,4 @@
-import type { FeedbackRecord } from "@siteping/core";
+import type { FeedbackRecord } from "@instafix/core";
 import { type TFunction, tWithParams } from "./i18n/index.js";
 
 const MINUTE = 60;

@@ -1,4 +1,4 @@
-import type { AnnotationPayload, FeedbackType, ScreenshotRegion } from "@siteping/core";
+import type { AnnotationPayload, FeedbackType, ScreenshotRegion } from "@instafix/core";
 import { CLICK_THRESHOLD_PX, INSTANT_ANNOTATION_SIZE, Z_INDEX_MAX } from "./constants.js";
 import { findAnchorElement, findLargestAncestor, generateAnchor, rectToPercentages } from "./dom/anchor.js";
 import { computeAutoScrollDelta } from "./dom/auto-scroll.js";
@@ -156,7 +156,7 @@ export class Annotator {
     // Overlay — subtle blue tint for depth.
     //
     // Overlay, toolbar and the drawn rectangle live on document.body, outside
-    // the siteping-widget shadow host. Without the `data-siteping-ignore`
+    // the instafix-widget shadow host. Without the `data-instafix-ignore`
     // marker the screenshot predicate in screenshot.ts cannot reach them —
     // and the accent-colored selection border plus the page tint end up
     // baked into the captured JPEG. See issue #124.
@@ -178,7 +178,7 @@ export class Annotator {
       "aria-label",
       drawMode ? this.t("annotator.instruction") : this.t("annotator.instantInstruction"),
     );
-    this.overlay.setAttribute("data-siteping-ignore", "true");
+    this.overlay.setAttribute("data-instafix-ignore", "true");
 
     // Toolbar — glassmorphism bar (suppressed in instant mode: the
     // "Draw a rectangle" copy is wrong when the composer is already open)
@@ -199,7 +199,7 @@ export class Annotator {
           -webkit-font-smoothing:antialiased;
         `,
       });
-      this.toolbar.setAttribute("data-siteping-ignore", "true");
+      this.toolbar.setAttribute("data-instafix-ignore", "true");
 
       const dot = el("span", {
         style: `
@@ -463,7 +463,7 @@ export class Annotator {
         transition:box-shadow 0.15s ease;
       `,
     });
-    rect.setAttribute("data-siteping-ignore", "true");
+    rect.setAttribute("data-instafix-ignore", "true");
     return rect;
   }
 
@@ -804,7 +804,7 @@ export class Annotator {
         box-shadow:0 0 16px ${this.colors.accentGlow};
       `,
     });
-    this.drawingRect.setAttribute("data-siteping-ignore", "true");
+    this.drawingRect.setAttribute("data-instafix-ignore", "true");
     this.overlay?.appendChild(this.drawingRect);
 
     const screenshotCache: { value?: AnnotatedScreenshot | null } = {};

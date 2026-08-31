@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 
-import type { FeedbackPage, FeedbackRecord, SitepingStore } from "@siteping/core";
+import type { FeedbackPage, FeedbackRecord, InstaFixStore } from "@instafix/core";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { InboxSource } from "../../src/types.js";
-import { useSitepingInbox } from "../../src/use-inbox.js";
+import { useInstaFixInbox } from "../../src/use-inbox.js";
 import { makeRecord, makeSource } from "../helpers.js";
 
 // Six-record demo project: three open (mixed types), one of each other status.
@@ -66,10 +66,10 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("useSitepingInbox — initial fetch & counts", () => {
+describe("useInstaFixInbox — initial fetch & counts", () => {
   it("loads page 1 for the default open filter and populates counts", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
 
     expect(result.current.loading).toBe(true);
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -83,7 +83,7 @@ describe("useSitepingInbox — initial fetch & counts", () => {
 
   it("normalizes a single project string into an array", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.project).toBe("demo");
   });
@@ -91,7 +91,7 @@ describe("useSitepingInbox — initial fetch & counts", () => {
   it("throws when projects is empty", () => {
     const source = makeSource();
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-    expect(() => renderHook(() => useSitepingInbox({ projects: [], source }))).toThrow(/at least one project/);
+    expect(() => renderHook(() => useInstaFixInbox({ projects: [], source }))).toThrow(/at least one project/);
     spy.mockRestore();
   });
 
@@ -100,15 +100,15 @@ describe("useSitepingInbox — initial fetch & counts", () => {
     // The union rejects this at compile time — the runtime guard exists for
     // JS consumers, and this test is what keeps it alive.
     // @ts-expect-error - no source, store or endpoint supplied
-    expect(() => renderHook(() => useSitepingInbox({ projects: "demo" }))).toThrow(/requires one of/);
+    expect(() => renderHook(() => useInstaFixInbox({ projects: "demo" }))).toThrow(/requires one of/);
     spy.mockRestore();
   });
 });
 
-describe("useSitepingInbox — filters refetch", () => {
+describe("useInstaFixInbox — filters refetch", () => {
   it("setStatus refetches with the new status", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => result.current.setStatus("resolved"));
@@ -118,7 +118,7 @@ describe("useSitepingInbox — filters refetch", () => {
 
   it("setType refetches within the current status", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => result.current.setType("question"));
@@ -130,7 +130,7 @@ describe("useSitepingInbox — filters refetch", () => {
       ...demoRecords(),
       makeRecord({ id: "L1", projectName: "landing", status: "open", createdAt: new Date("2026-07-20T09:00:00Z") }),
     ]);
-    const { result } = renderHook(() => useSitepingInbox({ projects: ["demo", "landing"], source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: ["demo", "landing"], source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => result.current.focus("r1"));
@@ -146,7 +146,7 @@ describe("useSitepingInbox — filters refetch", () => {
 
   it("debounces search — no refetch until the delay elapses, then refetches", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => result.current.setSearch("gamma"));
@@ -162,7 +162,7 @@ describe("useSitepingInbox — filters refetch", () => {
   });
 });
 
-describe("useSitepingInbox — pagination", () => {
+describe("useInstaFixInbox — pagination", () => {
   it("clamps pageSize into 1..100 (default 50)", async () => {
     const cases: Array<[number | undefined, number]> = [
       [200, 100],
@@ -173,7 +173,7 @@ describe("useSitepingInbox — pagination", () => {
     ];
     for (const [input, expected] of cases) {
       const source = makeSource(demoRecords());
-      const { result, unmount } = renderHook(() => useSitepingInbox({ projects: "demo", source, pageSize: input }));
+      const { result, unmount } = renderHook(() => useInstaFixInbox({ projects: "demo", source, pageSize: input }));
       await waitFor(() => expect(result.current.loading).toBe(false));
       // The first list() call is always the main page-1 query.
       const mainQuery = source.list.mock.calls[0]?.[0] as { limit: number } | undefined;
@@ -193,7 +193,7 @@ describe("useSitepingInbox — pagination", () => {
     });
     const source: InboxSource = { list, setStatus: vi.fn(), remove: vi.fn() };
 
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source, pageSize: 2 }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source, pageSize: 2 }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(ids(result.current.items)).toEqual(["r1", "r2"]);
     expect(result.current.hasMore).toBe(true);
@@ -207,7 +207,7 @@ describe("useSitepingInbox — pagination", () => {
 
   it("loadMore is a no-op when everything is already loaded", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     const callsBefore = source.list.mock.calls.length;
     await act(async () => {
@@ -217,10 +217,10 @@ describe("useSitepingInbox — pagination", () => {
   });
 });
 
-describe("useSitepingInbox — focus", () => {
+describe("useInstaFixInbox — focus", () => {
   it("focusNext/focusPrev walk the loaded rows and clamp at the ends", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => result.current.focusNext()); // from null → first
@@ -234,11 +234,11 @@ describe("useSitepingInbox — focus", () => {
   });
 });
 
-describe("useSitepingInbox — changeStatus / undo", () => {
+describe("useInstaFixInbox — changeStatus / undo", () => {
   it("optimistically removes a row that leaves the filter, advances focus, and undo reinserts it", async () => {
     const source = makeSource(demoRecords());
     const onStatusChange = vi.fn();
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source, onStatusChange }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source, onStatusChange }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => result.current.focus("r2"));
@@ -264,7 +264,7 @@ describe("useSitepingInbox — changeStatus / undo", () => {
 
   it("keeps the row in place and updates it when the filter still includes the new status", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => result.current.setStatus("all"));
@@ -281,7 +281,7 @@ describe("useSitepingInbox — changeStatus / undo", () => {
     const source = makeSource(demoRecords());
     source.control.failNextSetStatus = new Error("patch failed");
     const onError = vi.fn();
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source, onError }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source, onError }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     await act(async () => {
@@ -297,7 +297,7 @@ describe("useSitepingInbox — changeStatus / undo", () => {
 
   it("changeStatus to the same status is a no-op", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     await act(async () => {
       await result.current.changeStatus("r1", "open");
@@ -306,11 +306,11 @@ describe("useSitepingInbox — changeStatus / undo", () => {
   });
 });
 
-describe("useSitepingInbox — deleteFeedback", () => {
+describe("useInstaFixInbox — deleteFeedback", () => {
   it("optimistically removes and calls onDelete", async () => {
     const source = makeSource(demoRecords());
     const onDelete = vi.fn();
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source, onDelete }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source, onDelete }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => result.current.focus("r2"));
@@ -328,7 +328,7 @@ describe("useSitepingInbox — deleteFeedback", () => {
     const source = makeSource(demoRecords());
     source.control.failNextRemove = new Error("delete failed");
     const onError = vi.fn();
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source, onError }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source, onError }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     await act(async () => {
@@ -341,7 +341,7 @@ describe("useSitepingInbox — deleteFeedback", () => {
   });
 });
 
-describe("useSitepingInbox — latest-wins", () => {
+describe("useInstaFixInbox — latest-wins", () => {
   it("discards a slow stale response when a newer fetch has superseded it", async () => {
     const resolvers: Array<(page: FeedbackPage) => void> = [];
     const list = vi.fn(() => new Promise<FeedbackPage>((res) => resolvers.push(res)));
@@ -350,7 +350,7 @@ describe("useSitepingInbox — latest-wins", () => {
     const recA = makeRecord({ id: "A" });
     const recB = makeRecord({ id: "B" });
 
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(list).toHaveBeenCalledTimes(1)); // main A pending
 
     act(() => result.current.setStatus("all"));
@@ -375,10 +375,10 @@ describe("useSitepingInbox — latest-wins", () => {
   });
 });
 
-describe("useSitepingInbox — refresh & project prop changes", () => {
+describe("useInstaFixInbox — refresh & project prop changes", () => {
   it("refresh re-runs the current query", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     const before = source.list.mock.calls.length;
     await act(async () => {
@@ -393,7 +393,7 @@ describe("useSitepingInbox — refresh & project prop changes", () => {
       makeRecord({ id: "L1", projectName: "landing", createdAt: new Date("2026-07-20T09:00:00Z") }),
     ]);
     const { result, rerender } = renderHook(
-      ({ projects }: { projects: readonly string[] }) => useSitepingInbox({ projects, source }),
+      ({ projects }: { projects: readonly string[] }) => useInstaFixInbox({ projects, source }),
       { initialProps: { projects: ["demo", "landing"] as readonly string[] } },
     );
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -405,7 +405,7 @@ describe("useSitepingInbox — refresh & project prop changes", () => {
   });
 });
 
-describe("useSitepingInbox — source selection", () => {
+describe("useInstaFixInbox — source selection", () => {
   it("builds a store source when `store` is provided", async () => {
     const getFeedbacks = vi.fn(async () => ({ feedbacks: [makeRecord({ id: "s1" })], total: 1 }));
     const store = {
@@ -415,9 +415,9 @@ describe("useSitepingInbox — source selection", () => {
       createFeedback: vi.fn(),
       findByClientId: vi.fn(),
       deleteAllFeedbacks: vi.fn(),
-    } as unknown as SitepingStore;
+    } as unknown as InstaFixStore;
 
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", store }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", store }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(ids(result.current.items)).toEqual(["s1"]);
     expect(getFeedbacks).toHaveBeenCalled();
@@ -430,7 +430,7 @@ describe("useSitepingInbox — source selection", () => {
     const headers = vi.fn(() => ({ "X-From": "fn" }));
 
     const { result } = renderHook(() =>
-      useSitepingInbox({ projects: "demo", endpoint: "https://api.example/siteping", apiKey: "k", headers }),
+      useInstaFixInbox({ projects: "demo", endpoint: "https://api.example/instafix", apiKey: "k", headers }),
     );
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -449,7 +449,7 @@ describe("useSitepingInbox — source selection", () => {
       .mockResolvedValue(new Response(JSON.stringify({ feedbacks: [], total: 0 }), { status: 200 }));
 
     const { result } = renderHook(() =>
-      useSitepingInbox({ projects: "demo", endpoint: "https://api.example/siteping", headers: { "X-Team": "acme" } }),
+      useInstaFixInbox({ projects: "demo", endpoint: "https://api.example/instafix", headers: { "X-Team": "acme" } }),
     );
     await waitFor(() => expect(result.current.loading).toBe(false));
     const init = fetchSpy.mock.calls[0]?.[1] as RequestInit;
@@ -458,7 +458,7 @@ describe("useSitepingInbox — source selection", () => {
   });
 });
 
-describe("useSitepingInbox — resilience & drawer survival", () => {
+describe("useInstaFixInbox — resilience & drawer survival", () => {
   it("keeps the list when the background count queries fail", async () => {
     const list = vi.fn(async (q): Promise<FeedbackPage> => {
       if (q.limit === 1) throw new Error("count failed"); // best-effort counts blow up
@@ -467,7 +467,7 @@ describe("useSitepingInbox — resilience & drawer survival", () => {
     const source: InboxSource = { list, setStatus: vi.fn(), remove: vi.fn() };
     const onError = vi.fn();
 
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source, onError }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source, onError }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(ids(result.current.items)).toEqual(["x"]);
@@ -487,7 +487,7 @@ describe("useSitepingInbox — resilience & drawer survival", () => {
     const source: InboxSource = { list, setStatus: vi.fn(), remove: vi.fn() };
     const onError = vi.fn();
 
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source, pageSize: 2, onError }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source, pageSize: 2, onError }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     await act(async () => {
@@ -499,7 +499,7 @@ describe("useSitepingInbox — resilience & drawer survival", () => {
 
   it("keeps the opened record available after its row leaves the filtered list", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => result.current.openFeedback("r2"));
@@ -516,7 +516,7 @@ describe("useSitepingInbox — resilience & drawer survival", () => {
 
   it("clears a pending undo when the same feedback is deleted", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => result.current.setStatus("all"));
@@ -535,11 +535,11 @@ describe("useSitepingInbox — resilience & drawer survival", () => {
   });
 });
 
-describe("useSitepingInbox — edge branches", () => {
+describe("useInstaFixInbox — edge branches", () => {
   it("wraps a non-Error rejection from setStatus", async () => {
     const source = makeSource(demoRecords());
     source.setStatus.mockRejectedValueOnce("string failure");
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     await act(async () => {
       await expect(result.current.changeStatus("r2", "resolved")).rejects.toThrow("string failure");
@@ -548,7 +548,7 @@ describe("useSitepingInbox — edge branches", () => {
 
   it("reinserts an undone row at the tail when it is the oldest", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     await act(async () => {
@@ -565,7 +565,7 @@ describe("useSitepingInbox — edge branches", () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValue(new Response(JSON.stringify({ feedbacks: [], total: 0 }), { status: 200 }));
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", endpoint: "https://api.example/x" }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", endpoint: "https://api.example/x" }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(fetchSpy).toHaveBeenCalled();
     fetchSpy.mockRestore();
@@ -573,7 +573,7 @@ describe("useSitepingInbox — edge branches", () => {
 
   it("loadMore paginates while on the 'all' filter", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source, pageSize: 2 }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source, pageSize: 2 }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     act(() => result.current.setStatus("all"));
     // Gate on total===6 (unique to the "all" filter) so we don't race the
@@ -588,7 +588,7 @@ describe("useSitepingInbox — edge branches", () => {
 
   it("focusNext/focusPrev are no-ops on an empty list", async () => {
     const source = makeSource([]);
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     act(() => result.current.focusNext());
     expect(result.current.focusedId).toBeNull();
@@ -598,7 +598,7 @@ describe("useSitepingInbox — edge branches", () => {
 
   it("focusNext clamps at the last row", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     act(() => result.current.focus("r3"));
     act(() => result.current.focusNext());
@@ -607,7 +607,7 @@ describe("useSitepingInbox — edge branches", () => {
 
   it("changeStatus is a no-op for an unknown id", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     await act(async () => {
       await result.current.changeStatus("nope", "resolved");
@@ -617,7 +617,7 @@ describe("useSitepingInbox — edge branches", () => {
 
   it("undo is a no-op when there is nothing pending", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     await act(async () => {
       await result.current.undo();
@@ -628,7 +628,7 @@ describe("useSitepingInbox — edge branches", () => {
 
   it("deleteFeedback is a no-op for an unknown id", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     await act(async () => {
       await result.current.deleteFeedback("nope");
@@ -638,7 +638,7 @@ describe("useSitepingInbox — edge branches", () => {
 
   it("keeps focus when a non-focused row leaves the filter", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     act(() => result.current.focus("r1"));
     await act(async () => {
@@ -650,7 +650,7 @@ describe("useSitepingInbox — edge branches", () => {
 
   it("clears focus when the last visible row is deleted", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     act(() => result.current.setStatus("resolved"));
     await waitFor(() => expect(ids(result.current.items)).toEqual(["r5"]));
@@ -671,7 +671,7 @@ describe("useSitepingInbox — edge branches", () => {
     const setStatus = vi.fn(async (_id: string, _p: string, status): Promise<FeedbackRecord> => ({ ...rec, status }));
     const source: InboxSource = { list, setStatus, remove: vi.fn() };
 
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.counts).toEqual({});
 
@@ -683,7 +683,7 @@ describe("useSitepingInbox — edge branches", () => {
 
   it("focusPrev from an unknown focused id selects the first row", async () => {
     const source = makeSource(demoRecords());
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     act(() => result.current.focus("ghost"));
     act(() => result.current.focusPrev());
@@ -693,7 +693,7 @@ describe("useSitepingInbox — edge branches", () => {
   it("deletes an opened record that already left the list via the drawer cache", async () => {
     const source = makeSource(demoRecords());
     const onDelete = vi.fn();
-    const { result } = renderHook(() => useSitepingInbox({ projects: "demo", source, onDelete }));
+    const { result } = renderHook(() => useInstaFixInbox({ projects: "demo", source, onDelete }));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => result.current.openFeedback("r2"));

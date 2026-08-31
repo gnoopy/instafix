@@ -1,6 +1,6 @@
 {
-  "projectName": "SitePing",
-  "projectOwner": "NeosiaNexus",
+  "projectName": "InstaFix",
+  "projectOwner": "gnoopy",
   "repoType": "github",
   "repoHost": "https://github.com",
   "files": [
@@ -14,10 +14,10 @@
   "skipCi": true,
   "contributors": [
     {
-      "login": "NeosiaNexus",
+      "login": "gnoopy",
       "name": "Olsen Matheo",
       "avatar_url": "https://avatars.githubusercontent.com/u/63867369?v=4",
-      "profile": "https://github.com/NeosiaNexus",
+      "profile": "https://github.com/gnoopy",
       "contributions": [
         "code",
         "maintenance",

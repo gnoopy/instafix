@@ -6,26 +6,26 @@ description: Install the feedback widget, understand when it shows, and control 
 The widget is the part your clients see: a floating button that lets them draw a rectangle on the page, type a comment, and send it — pinned to the exact element.
 
 ```bash
-npm i @siteping/widget
+npm i @instafix/widget
 ```
 
 ```ts
-import { initSiteping } from "@siteping/widget";
+import { initInstaFix } from "@instafix/widget";
 
-const siteping = initSiteping({
-  endpoint: "/api/siteping",
+const instafix = initInstaFix({
+  endpoint: "/api/instafix",
   projectName: "my-project",
 });
 ```
 
-`initSiteping` is the package's main runtime export, alongside the two i18n helpers (`registerLocale`, `loadLocale`) and the TypeScript types. It weighs about **30 KB gzipped** (ESM), lazy-loads its heavier parts (panel, locales, screenshot engine), and renders inside a closed Shadow DOM so your page styles and the widget's never collide.
+`initInstaFix` is the package's main runtime export, alongside the two i18n helpers (`registerLocale`, `loadLocale`) and the TypeScript types. It weighs about **30 KB gzipped** (ESM), lazy-loads its heavier parts (panel, locales, screenshot engine), and renders inside a closed Shadow DOM so your page styles and the widget's never collide.
 
 ## When the widget shows — and when it doesn't
 
-`initSiteping` runs a series of guards, in this order. When one skips, you get a no-op instance back (every method exists, nothing renders):
+`initInstaFix` runs a series of guards, in this order. When one skips, you get a no-op instance back (every method exists, nothing renders):
 
 1. **Server-side rendering** — no `window`? The widget skips with `onSkip("ssr")`. Never bypassed.
-2. **Already initialized** — a second `initSiteping()` call returns the *existing* instance (one widget per page). `destroy()` resets this.
+2. **Already initialized** — a second `initInstaFix()` call returns the *existing* instance (one widget per page). `destroy()` resets this.
 3. **Production** — when `process.env.NODE_ENV === "production"`, the widget skips with `onSkip("production")`. This is the "clients see it during review, visitors never do" default. Bypass with `forceShow: true` for staging/preview environments. Note: only `process.env.NODE_ENV` is read — no `import.meta.env`.
 4. **Small viewports** — below `minViewportWidth` (default **768 px**) it skips with `onSkip("mobile")`. Also bypassed by `forceShow`.
 5. **Config validation** — no `endpoint`/`store`, or no `projectName`? The widget logs a `console.error` and no-ops. This one does **not** call `onSkip` — check the console, not the callback.
@@ -33,14 +33,14 @@ const siteping = initSiteping({
 ## The instance
 
 ```ts
-const siteping = initSiteping({ ... });
+const instafix = initInstaFix({ ... });
 
-siteping.open();                  // open the feedback panel
-siteping.close();                 // close it
-siteping.refresh();               // re-fetch feedbacks for the current page (never throws)
-siteping.focusFeedback(id);       // scroll to + highlight a marker; false if unknown
-const off = siteping.on("feedback:sent", (feedback) => { ... });
-siteping.destroy();               // full teardown, restores all patched globals
+instafix.open();                  // open the feedback panel
+instafix.close();                 // close it
+instafix.refresh();               // re-fetch feedbacks for the current page (never throws)
+instafix.focusFeedback(id);       // scroll to + highlight a marker; false if unknown
+const off = instafix.on("feedback:sent", (feedback) => { ... });
+instafix.destroy();               // full teardown, restores all patched globals
 ```
 
 `on()` returns an unsubscribe function. Seven public events are available:
@@ -59,11 +59,11 @@ Use the dedicated hook — it survives StrictMode double-mounts and lets callbac
 
 ```tsx
 "use client";
-import { useSiteping } from "@siteping/widget/react";
+import { useInstaFix } from "@instafix/widget/react";
 
 export function Feedback() {
-  const siteping = useSiteping({
-    endpoint: "/api/siteping",
+  const instafix = useInstaFix({
+    endpoint: "/api/instafix",
     projectName: "my-project",
     onFeedbackSent: (f) => console.log("new feedback", f.id),
   });
@@ -78,8 +78,8 @@ The hook returns `null` until it mounts, then the instance. Changing `endpoint` 
 `onError` receives errors with two useful fields — `code` (`"NETWORK" | "VALIDATION" | "AUTH" | "SERVER"`) and `retryable` (boolean):
 
 ```ts
-initSiteping({
-  endpoint: "/api/siteping",
+initInstaFix({
+  endpoint: "/api/instafix",
   projectName: "my-project",
   onError: (error) => {
     const code = (error as { code?: string }).code;

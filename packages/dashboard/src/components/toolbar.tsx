@@ -16,17 +16,17 @@ interface ToolbarProps {
 export function Toolbar({ state, searchRef }: ToolbarProps): ReactElement {
   const { t } = useInboxUi();
   return (
-    <div className="spd-toolbar">
+    <div className="ifd-toolbar">
       {state.projects.length > 1 ? (
         <ProjectSwitcher projects={state.projects} project={state.project} onChange={state.setProject} />
       ) : null}
       <StatusTabs status={state.status} counts={state.counts} onChange={state.setStatus} />
-      <div className="spd-toolbar-spacer" />
+      <div className="ifd-toolbar-spacer" />
       <TypeFilter type={state.type} onChange={state.setType} />
       <SearchInput value={state.search} onChange={state.setSearch} inputRef={searchRef} />
       <button
         type="button"
-        className={`spd-icon-btn spd-refresh${state.loading ? " spd-spin" : ""}`}
+        className={`ifd-icon-btn ifd-refresh${state.loading ? " ifd-spin" : ""}`}
         aria-label={t("inbox.refresh")}
         onClick={() => {
           void state.refresh();

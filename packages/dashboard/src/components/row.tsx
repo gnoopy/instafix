@@ -1,4 +1,4 @@
-import type { FeedbackRecord } from "@siteping/core";
+import type { FeedbackRecord } from "@instafix/core";
 import type { ReactElement } from "react";
 import { formatAbsolute, formatRelativeTime, pathFromUrl } from "../format.js";
 import { getStatusLabel, getTypeLabel } from "../i18n/index.js";
@@ -25,7 +25,7 @@ export function Row({ record, domId, focused, selected, leaving, onSelect, refCa
   const StatusIcon = STATUS_ICONS[record.status];
   const typeLabel = getTypeLabel(record.type, t);
   const path = pathFromUrl(record.url);
-  const className = `spd-row${focused ? " spd-row-focused" : ""}${leaving ? " spd-row-leaving" : ""}`;
+  const className = `ifd-row${focused ? " ifd-row-focused" : ""}${leaving ? " ifd-row-leaving" : ""}`;
 
   const handleClick = (): void => {
     // Dragging to select message text must not open the drawer.
@@ -45,33 +45,33 @@ export function Row({ record, domId, focused, selected, leaving, onSelect, refCa
       className={className}
       onClick={leaving ? undefined : handleClick}
     >
-      <span className="spd-row-status" role="img" aria-label={getStatusLabel(record.status, t)}>
+      <span className="ifd-row-status" role="img" aria-label={getStatusLabel(record.status, t)}>
         <StatusIcon />
       </span>
-      <span className="spd-row-type" title={typeLabel}>
-        <i className="spd-type-square" data-type={record.type} aria-hidden="true" />
+      <span className="ifd-row-type" title={typeLabel}>
+        <i className="ifd-type-square" data-type={record.type} aria-hidden="true" />
         {/* Type label is display:none below 720cq; keep it in the a11y tree always. */}
-        <span className="spd-sr-only">{typeLabel}</span>
-        <span className="spd-type-label" aria-hidden="true">
+        <span className="ifd-sr-only">{typeLabel}</span>
+        <span className="ifd-type-label" aria-hidden="true">
           {typeLabel}
         </span>
       </span>
-      <span className="spd-row-message" title={record.message}>
+      <span className="ifd-row-message" title={record.message}>
         {record.message}
       </span>
-      <span className="spd-row-path" title={path}>
+      <span className="ifd-row-path" title={path}>
         {path}
       </span>
-      <span className="spd-row-author" title={record.authorName}>
+      <span className="ifd-row-author" title={record.authorName}>
         {record.authorName}
       </span>
       {record.screenshotUrl ? (
-        <span className="spd-row-camera" role="img" aria-label={t("drawer.screenshotAlt")}>
+        <span className="ifd-row-camera" role="img" aria-label={t("drawer.screenshotAlt")}>
           <CameraIcon />
         </span>
       ) : null}
       <time
-        className="spd-row-time"
+        className="ifd-row-time"
         dateTime={record.createdAt.toISOString()}
         title={formatAbsolute(record.createdAt, locale)}
       >

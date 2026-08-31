@@ -6,26 +6,26 @@ description: Installer le widget de feedback, comprendre quand il s'affiche, et 
 Le widget, c'est la partie que vos clients voient : un bouton flottant qui leur permet de dessiner un rectangle sur la page, de taper un commentaire et de l'envoyer — épinglé à l'élément exact.
 
 ```bash
-npm i @siteping/widget
+npm i @instafix/widget
 ```
 
 ```ts
-import { initSiteping } from "@siteping/widget";
+import { initInstaFix } from "@instafix/widget";
 
-const siteping = initSiteping({
-  endpoint: "/api/siteping",
+const instafix = initInstaFix({
+  endpoint: "/api/instafix",
   projectName: "mon-projet",
 });
 ```
 
-`initSiteping` est l'export runtime principal du package, aux côtés des deux helpers i18n (`registerLocale`, `loadLocale`) et des types TypeScript. Il pèse environ **30 KB gzip** (ESM), charge ses parties lourdes à la demande (panneau, locales, moteur de capture) et s'affiche dans un Shadow DOM fermé — les styles de votre page et ceux du widget ne peuvent jamais se marcher dessus.
+`initInstaFix` est l'export runtime principal du package, aux côtés des deux helpers i18n (`registerLocale`, `loadLocale`) et des types TypeScript. Il pèse environ **30 KB gzip** (ESM), charge ses parties lourdes à la demande (panneau, locales, moteur de capture) et s'affiche dans un Shadow DOM fermé — les styles de votre page et ceux du widget ne peuvent jamais se marcher dessus.
 
 ## Quand le widget s'affiche — et quand il ne s'affiche pas
 
-`initSiteping` exécute une série de garde-fous, dans cet ordre. Quand l'un d'eux s'active, vous récupérez une instance no-op (toutes les méthodes existent, rien ne s'affiche) :
+`initInstaFix` exécute une série de garde-fous, dans cet ordre. Quand l'un d'eux s'active, vous récupérez une instance no-op (toutes les méthodes existent, rien ne s'affiche) :
 
 1. **Rendu côté serveur** — pas de `window` ? Le widget passe son tour avec `onSkip("ssr")`. Jamais contournable.
-2. **Déjà initialisé** — un second appel à `initSiteping()` renvoie l'instance *existante* (un seul widget par page). `destroy()` remet le compteur à zéro.
+2. **Déjà initialisé** — un second appel à `initInstaFix()` renvoie l'instance *existante* (un seul widget par page). `destroy()` remet le compteur à zéro.
 3. **Production** — quand `process.env.NODE_ENV === "production"`, le widget passe son tour avec `onSkip("production")`. C'est le comportement « les clients le voient pendant la relecture, les visiteurs jamais ». Contournez-le avec `forceShow: true` pour les environnements de staging ou de preview. À noter : seul `process.env.NODE_ENV` est lu — pas `import.meta.env`.
 4. **Petits écrans** — en dessous de `minViewportWidth` (par défaut **768 px**), il passe son tour avec `onSkip("mobile")`. Également contourné par `forceShow`.
 5. **Validation de la config** — pas d'`endpoint`/`store`, ou pas de `projectName` ? Le widget affiche un `console.error` et ne fait rien. Ce cas-là n'appelle **pas** `onSkip` — regardez la console, pas le callback.
@@ -33,14 +33,14 @@ const siteping = initSiteping({
 ## L'instance
 
 ```ts
-const siteping = initSiteping({ ... });
+const instafix = initInstaFix({ ... });
 
-siteping.open();                  // ouvrir le panneau de feedback
-siteping.close();                 // le fermer
-siteping.refresh();               // recharger les feedbacks de la page courante (ne lève jamais)
-siteping.focusFeedback(id);       // faire défiler jusqu'à un marqueur et le mettre en évidence ; false si inconnu
-const off = siteping.on("feedback:sent", (feedback) => { ... });
-siteping.destroy();               // démontage complet, restaure tous les globals patchés
+instafix.open();                  // ouvrir le panneau de feedback
+instafix.close();                 // le fermer
+instafix.refresh();               // recharger les feedbacks de la page courante (ne lève jamais)
+instafix.focusFeedback(id);       // faire défiler jusqu'à un marqueur et le mettre en évidence ; false si inconnu
+const off = instafix.on("feedback:sent", (feedback) => { ... });
+instafix.destroy();               // démontage complet, restaure tous les globals patchés
 ```
 
 `on()` renvoie une fonction de désabonnement. Sept événements publics sont disponibles :
@@ -59,11 +59,11 @@ Utilisez le hook dédié — il survit aux doubles montages du StrictMode et lai
 
 ```tsx
 "use client";
-import { useSiteping } from "@siteping/widget/react";
+import { useInstaFix } from "@instafix/widget/react";
 
 export function Feedback() {
-  const siteping = useSiteping({
-    endpoint: "/api/siteping",
+  const instafix = useInstaFix({
+    endpoint: "/api/instafix",
     projectName: "mon-projet",
     onFeedbackSent: (f) => console.log("nouveau feedback", f.id),
   });
@@ -78,8 +78,8 @@ Le hook renvoie `null` jusqu'à son montage, puis l'instance. Changer `endpoint`
 `onError` reçoit des erreurs avec deux champs utiles — `code` (`"NETWORK" | "VALIDATION" | "AUTH" | "SERVER"`) et `retryable` (booléen) :
 
 ```ts
-initSiteping({
-  endpoint: "/api/siteping",
+initInstaFix({
+  endpoint: "/api/instafix",
   projectName: "mon-projet",
   onError: (error) => {
     const code = (error as { code?: string }).code;

@@ -1,8 +1,8 @@
 import { defineConfig } from "tsup";
-import { sitepingLibrary } from "../../tsup.preset.js";
+import { instafixLibrary } from "../../tsup.preset.js";
 
 export default defineConfig(
-  sitepingLibrary({
+  instafixLibrary({
     platform: "node",
     target: "node18",
     external: ["@prisma/client"],

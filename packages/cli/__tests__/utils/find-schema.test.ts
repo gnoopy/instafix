@@ -9,7 +9,7 @@ describe("findPrismaSchema", () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "siteping-schema-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "instafix-schema-test-"));
   });
 
   afterEach(() => {

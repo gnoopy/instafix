@@ -3,7 +3,7 @@ import type { Translations } from "./types.js";
 export const en: Translations = {
   // Panel
   "panel.title": "Feedbacks",
-  "panel.ariaLabel": "Siteping feedback panel",
+  "panel.ariaLabel": "InstaFix feedback panel",
   "panel.feedbackList": "Feedback list",
   "panel.loading": "Loading feedbacks",
   "panel.close": "Close panel",
@@ -205,7 +205,7 @@ export const en: Translations = {
 
   // Onboarding tour
   "onboarding.step1Title": "Your tools are ready",
-  "onboarding.step1Body": "The icons next to the Siteping button are always there — no need to click it first.",
+  "onboarding.step1Body": "The icons next to the InstaFix button are always there — no need to click it first.",
   "onboarding.step2Title": "Select anything",
   "onboarding.step2Body": "Choose Annotate, then click or drag on the page to mark what you want to talk about.",
   "onboarding.step3Title": "Copy for your AI",

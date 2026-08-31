@@ -1,16 +1,16 @@
 // @vitest-environment node
 
 import { describe, expect, it, vi } from "vitest";
-import { initSiteping } from "../../src/index.js";
+import { initInstaFix } from "../../src/index.js";
 
-// SSR guard (#104) — Next.js/Remix hosts may run initSiteping() on the
+// SSR guard (#104) — Next.js/Remix hosts may run initInstaFix() on the
 // server, where `window` and `document` do not exist. The widget must
 // return a no-op instance instead of throwing on DOM access.
 
 describe("SSR guard (node environment, no window/document)", () => {
   it("returns a no-op instance and calls onSkip with 'ssr'", () => {
     const onSkip = vi.fn();
-    const instance = initSiteping({ endpoint: "/api/siteping", projectName: "ssr-test", onSkip });
+    const instance = initInstaFix({ endpoint: "/api/instafix", projectName: "ssr-test", onSkip });
 
     expect(onSkip).toHaveBeenCalledWith("ssr");
 
@@ -35,8 +35,8 @@ describe("SSR guard (node environment, no window/document)", () => {
 
   it("forceShow does NOT bypass the SSR guard", () => {
     const onSkip = vi.fn();
-    const instance = initSiteping({
-      endpoint: "/api/siteping",
+    const instance = initInstaFix({
+      endpoint: "/api/instafix",
       projectName: "ssr-test",
       forceShow: true,
       onSkip,

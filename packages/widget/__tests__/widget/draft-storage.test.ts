@@ -76,7 +76,7 @@ describe("draft-storage", () => {
 
   it("loadDraft returns null instead of throwing on corrupt JSON", () => {
     const storage = makeStorage();
-    storage.setItem("siteping_draft_v1", "{not json");
+    storage.setItem("instafix_draft_v1", "{not json");
     expect(loadDraft("/settings", storage)).toBeNull();
   });
 

@@ -224,7 +224,7 @@ export function HeroMockup() {
             <div className="h-[4px] w-[45%] rounded bg-gray-100" />
           </div>
 
-          {/* ── FAB button (SitePing widget button) ── */}
+          {/* ── FAB button (InstaFix widget button) ── */}
           <div
             ref={fabRef}
             className="absolute flex items-center justify-center rounded-full bg-accent shadow-lg"

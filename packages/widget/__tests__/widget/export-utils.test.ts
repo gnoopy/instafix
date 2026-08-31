@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { FeedbackResponse } from "@siteping/core";
+import type { FeedbackResponse } from "@instafix/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { downloadFile, ExportButton, feedbacksToCsv, feedbacksToJson } from "../../src/export-utils.js";
 import { createT } from "../../src/i18n/index.js";
@@ -9,7 +9,7 @@ import { buildThemeColors } from "../../src/styles/theme.js";
 function installObjectUrlMocks(): void {
   Object.defineProperty(URL, "createObjectURL", {
     configurable: true,
-    value: vi.fn(() => "blob:siteping-export"),
+    value: vi.fn(() => "blob:instafix-export"),
   });
   Object.defineProperty(URL, "revokeObjectURL", {
     configurable: true,
@@ -164,7 +164,7 @@ describe("downloadFile", () => {
     await expect(blob.text()).resolves.toBe("id,message\n1,Hello");
     expect(blob.type).toBe("text/csv;charset=utf-8");
     expect(click).toHaveBeenCalledTimes(1);
-    expect(revokeObjectURL).toHaveBeenCalledWith("blob:siteping-export");
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:instafix-export");
     expect(document.querySelector("a[download='feedbacks.csv']")).toBeNull();
   });
 });
@@ -252,7 +252,7 @@ describe("ExportButton", () => {
     expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(2);
     const downloads = Array.from(document.querySelectorAll("a")).map((anchor) => anchor.getAttribute("download"));
     expect(downloads).toEqual([]);
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:siteping-export");
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:instafix-export");
   });
 
   it("does not download when there are no feedbacks", () => {

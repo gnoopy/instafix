@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { FeedbackResponse, SitepingConfig, SitepingHttpConfig } from "@siteping/core";
+import type { FeedbackResponse, InstaFixConfig, InstaFixHttpConfig } from "@instafix/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockMatchMedia } from "../helpers.js";
 
@@ -76,9 +76,9 @@ import { MarkerManager } from "../../src/markers.js";
 // Helpers
 // ---------------------------------------------------------------------------
 
-function defaultConfig(overrides: Partial<Omit<SitepingHttpConfig, "store">> = {}): SitepingConfig {
+function defaultConfig(overrides: Partial<Omit<InstaFixHttpConfig, "store">> = {}): InstaFixConfig {
   return {
-    endpoint: "/api/siteping",
+    endpoint: "/api/instafix",
     projectName: "test-project",
     forceShow: true,
     // Project-wide scope keeps the badge count equal to MarkerManager.openCount
@@ -143,14 +143,14 @@ function makeAnnotationCompleteData() {
 
 describe("launcher — FAB unread badge (real MarkerManager)", () => {
   afterEach(() => {
-    for (const el of document.querySelectorAll("siteping-widget")) {
+    for (const el of document.querySelectorAll("instafix-widget")) {
       el.remove();
     }
     for (const el of document.querySelectorAll('[role="status"]')) {
       el.remove();
     }
     // MarkerManager appends its marker container directly to <body>.
-    for (const el of document.querySelectorAll("#siteping-markers")) {
+    for (const el of document.querySelectorAll("#instafix-markers")) {
       el.remove();
     }
     capturedBus = null;
@@ -160,7 +160,7 @@ describe("launcher — FAB unread badge (real MarkerManager)", () => {
   });
 
   function getBadge(): HTMLElement | null {
-    const widget = document.querySelector("siteping-widget");
+    const widget = document.querySelector("instafix-widget");
     return widget!.shadowRoot!.querySelector<HTMLElement>(".sp-fab-badge");
   }
 

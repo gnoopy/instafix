@@ -1,4 +1,4 @@
-import type { SitepingConfig, SitepingInstance } from "@siteping/core";
+import type { InstaFixConfig, InstaFixInstance } from "@instafix/core";
 import { launch } from "./launcher.js";
 
 export type {
@@ -9,33 +9,33 @@ export type {
   FeedbackResponse,
   FeedbackStatus,
   FeedbackType,
+  InstaFixConfig,
+  InstaFixHeadersOption,
+  InstaFixHttpConfig,
+  InstaFixInstance,
+  InstaFixLocale,
+  InstaFixPublicEvents,
+  InstaFixStore,
+  InstaFixStoreConfig,
   RectData,
-  SitepingConfig,
-  SitepingHeadersOption,
-  SitepingHttpConfig,
-  SitepingInstance,
-  SitepingLocale,
-  SitepingPublicEvents,
-  SitepingStore,
-  SitepingStoreConfig,
-} from "@siteping/core";
+} from "@instafix/core";
 export type { TFunction, TranslationKey, Translations } from "./i18n/index.js";
 export { loadLocale, registerLocale } from "./i18n/index.js";
 export type { Identity } from "./identity.js";
 
 /**
- * Initialize the Siteping feedback widget.
+ * Initialize the InstaFix feedback widget.
  *
  * @example
  * ```ts
- * import { initSiteping } from '@siteping/widget'
+ * import { initInstaFix } from '@instafix/widget'
  *
- * const { destroy } = initSiteping({
- *   endpoint: '/api/siteping',
+ * const { destroy } = initInstaFix({
+ *   endpoint: '/api/instafix',
  *   projectName: 'my-project',
  * })
  * ```
  */
-export function initSiteping(config: SitepingConfig): SitepingInstance {
+export function initInstaFix(config: InstaFixConfig): InstaFixInstance {
   return launch(config);
 }

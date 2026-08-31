@@ -9,12 +9,12 @@ COPY . .
 RUN bun install --frozen-lockfile
 
 # Build workspace packages then demo
-RUN bun run --filter='@siteping/core' build && \
-    bun run --filter='@siteping/widget' build && \
-    bun run --filter='@siteping/dashboard' build && \
-    bun run --filter='@siteping/adapter-memory' build && \
-    bun run --filter='@siteping/adapter-localstorage' build && \
-    bun run --filter='@siteping/adapter-prisma' build
+RUN bun run --filter='@instafix/core' build && \
+    bun run --filter='@instafix/widget' build && \
+    bun run --filter='@instafix/dashboard' build && \
+    bun run --filter='@instafix/adapter-memory' build && \
+    bun run --filter='@instafix/adapter-localstorage' build && \
+    bun run --filter='@instafix/adapter-prisma' build
 RUN cd apps/demo && bun run build
 
 # --- Runner ---

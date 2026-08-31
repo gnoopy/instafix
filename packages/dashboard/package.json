@@ -1,7 +1,7 @@
 {
-  "name": "@siteping/dashboard",
+  "name": "@instafix/dashboard",
   "version": "0.2.5",
-  "description": "Linear-style triage inbox React component for SitePing feedback",
+  "description": "Linear-style triage inbox React component for InstaFix feedback",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -29,7 +29,7 @@
     "size": "NODE_PATH=./node_modules size-limit"
   },
   "keywords": [
-    "siteping",
+    "instafix",
     "feedback",
     "dashboard",
     "inbox",
@@ -39,16 +39,16 @@
     "client-review",
     "typescript"
   ],
-  "author": "neosianexus",
+  "author": "gnoopy",
   "license": "MIT",
-  "homepage": "https://siteping.dev",
+  "homepage": "https://instafix.realstory.blog",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "url": "git+https://github.com/gnoopy/InstaFix.git",
     "directory": "packages/dashboard"
   },
   "bugs": {
-    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+    "url": "https://github.com/gnoopy/InstaFix/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -57,7 +57,7 @@
     "node": ">=20"
   },
   "devDependencies": {
-    "@siteping/core": "workspace:*",
+    "@instafix/core": "workspace:*",
     "@size-limit/preset-small-lib": "^12.1.0",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.18",

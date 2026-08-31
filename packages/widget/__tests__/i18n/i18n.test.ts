@@ -1,4 +1,4 @@
-import { BUILTIN_LOCALES } from "@siteping/core";
+import { BUILTIN_LOCALES } from "@instafix/core";
 import { describe, expect, it, vi } from "vitest";
 import { en } from "../../src/i18n/en.js";
 import {

@@ -30,7 +30,7 @@ export function normalizeAccent(raw: string): string {
   if (HEX8_RE.test(raw)) return raw.slice(0, 7);
 
   console.warn(
-    `[siteping] Invalid accentColor "${raw}" — only hex colors (#RGB, #RRGGBB, #RRGGBBAA) are supported. Using default.`,
+    `[instafix] Invalid accentColor "${raw}" — only hex colors (#RGB, #RRGGBB, #RRGGBBAA) are supported. Using default.`,
   );
   return DEFAULT_ACCENT;
 }

@@ -27,7 +27,7 @@ function renderRow(recordOverrides = {}, props: Partial<Parameters<typeof Row>[0
       {...props}
     />,
   );
-  return { record, onSelect, refCallback, row: container.querySelector<HTMLElement>(".spd-row") as HTMLElement };
+  return { record, onSelect, refCallback, row: container.querySelector<HTMLElement>(".ifd-row") as HTMLElement };
 }
 
 describe("Row", () => {
@@ -41,30 +41,30 @@ describe("Row", () => {
     });
     expect(row.dataset.status).toBe("in_progress");
     expect(row.getAttribute("role")).toBe("option");
-    expect(row.querySelector(".spd-row-status")?.getAttribute("aria-label")).toBe("In progress");
-    expect(row.querySelector<HTMLElement>(".spd-type-square")?.dataset.type).toBe("question");
-    expect(row.querySelector(".spd-row-message")?.textContent).toBe("The CTA is misaligned");
-    expect(row.querySelector(".spd-row-path")?.textContent).toBe("/pricing#plans");
-    expect(row.querySelector(".spd-row-author")?.textContent).toBe("Sam");
+    expect(row.querySelector(".ifd-row-status")?.getAttribute("aria-label")).toBe("In progress");
+    expect(row.querySelector<HTMLElement>(".ifd-type-square")?.dataset.type).toBe("question");
+    expect(row.querySelector(".ifd-row-message")?.textContent).toBe("The CTA is misaligned");
+    expect(row.querySelector(".ifd-row-path")?.textContent).toBe("/pricing#plans");
+    expect(row.querySelector(".ifd-row-author")?.textContent).toBe("Sam");
   });
 
   it("adds the focused class (keyboard focus) but does not set aria-selected", () => {
     const { row } = renderRow({}, { focused: true, selected: false });
-    expect(row.className).toContain("spd-row-focused");
+    expect(row.className).toContain("ifd-row-focused");
     expect(row.getAttribute("aria-selected")).toBe("false");
   });
 
   it("sets aria-selected only when it is the opened (selected) row", () => {
     const { row } = renderRow({}, { focused: false, selected: true });
     expect(row.getAttribute("aria-selected")).toBe("true");
-    expect(row.className).not.toContain("spd-row-focused");
+    expect(row.className).not.toContain("ifd-row-focused");
   });
 
   it("exposes the type label to assistive tech and hides the visual duplicate", () => {
     const { row } = renderRow({ type: "question" });
-    const type = row.querySelector(".spd-row-type") as HTMLElement;
-    expect(type.querySelector(".spd-sr-only")?.textContent).toBe("Question");
-    expect(type.querySelector(".spd-type-label")?.getAttribute("aria-hidden")).toBe("true");
+    const type = row.querySelector(".ifd-row-type") as HTMLElement;
+    expect(type.querySelector(".ifd-sr-only")?.textContent).toBe("Question");
+    expect(type.querySelector(".ifd-type-label")?.getAttribute("aria-hidden")).toBe("true");
   });
 
   it("carries title tooltips on the truncated fields", () => {
@@ -73,9 +73,9 @@ describe("Row", () => {
       url: "https://demo.dev/pricing#plans",
       authorName: "Sam",
     });
-    expect(row.querySelector(".spd-row-message")?.getAttribute("title")).toBe("The header overlaps the logo on mobile");
-    expect(row.querySelector(".spd-row-path")?.getAttribute("title")).toBe("/pricing#plans");
-    expect(row.querySelector(".spd-row-author")?.getAttribute("title")).toBe("Sam");
+    expect(row.querySelector(".ifd-row-message")?.getAttribute("title")).toBe("The header overlaps the logo on mobile");
+    expect(row.querySelector(".ifd-row-path")?.getAttribute("title")).toBe("/pricing#plans");
+    expect(row.querySelector(".ifd-row-author")?.getAttribute("title")).toBe("Sam");
   });
 
   it("does not open when the click follows a text selection", () => {
@@ -87,9 +87,9 @@ describe("Row", () => {
 
   it("shows the camera glyph only when a screenshot exists", () => {
     const withShot = renderRow({ screenshotUrl: "data:image/jpeg;base64,AA" });
-    expect(withShot.row.querySelector(".spd-row-camera")).not.toBeNull();
+    expect(withShot.row.querySelector(".ifd-row-camera")).not.toBeNull();
     const without = renderRow({ screenshotUrl: null });
-    expect(without.row.querySelector(".spd-row-camera")).toBeNull();
+    expect(without.row.querySelector(".ifd-row-camera")).toBeNull();
   });
 
   it("renders the timestamp with an absolute title and machine-readable dateTime", () => {
@@ -108,7 +108,7 @@ describe("Row", () => {
   it("is inert while leaving — aria-hidden and no click handler", () => {
     const { row, onSelect } = renderRow({}, { leaving: true });
     expect(row.getAttribute("aria-hidden")).toBe("true");
-    expect(row.className).toContain("spd-row-leaving");
+    expect(row.className).toContain("ifd-row-leaving");
     fireEvent.click(row);
     expect(onSelect).not.toHaveBeenCalled();
   });

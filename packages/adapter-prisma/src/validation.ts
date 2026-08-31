@@ -1,5 +1,5 @@
-import type { AssertEqual, FeedbackPayload, FeedbackStatus, FeedbackType, Prettify } from "@siteping/core";
-import { CONSOLE_DIAGNOSTIC_LEVELS, FEEDBACK_STATUSES, FEEDBACK_TYPES } from "@siteping/core";
+import type { AssertEqual, FeedbackPayload, FeedbackStatus, FeedbackType, Prettify } from "@instafix/core";
+import { CONSOLE_DIAGNOSTIC_LEVELS, FEEDBACK_STATUSES, FEEDBACK_TYPES } from "@instafix/core";
 import * as zod from "zod";
 
 // Namespace import required: Zod publishes dual CJS/ESM, and bundlers (tsup, vitest) may

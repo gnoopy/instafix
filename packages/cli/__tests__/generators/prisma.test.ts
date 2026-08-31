@@ -44,7 +44,7 @@ generator client {
 }
 `;
 
-/** A schema that already has the SitepingFeedback model (but incomplete). */
+/** A schema that already has the InstaFixFeedback model (but incomplete). */
 const SCHEMA_WITH_PARTIAL_MODEL = `
 datasource db {
   provider = "postgresql"
@@ -55,7 +55,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model InstaFixFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -91,7 +91,7 @@ describe("syncPrismaModels", () => {
   let schemaPath: string;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "siteping-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "instafix-test-"));
     schemaPath = join(tmpDir, "schema.prisma");
   });
 
@@ -111,19 +111,19 @@ describe("syncPrismaModels", () => {
   // Adding models to an empty schema
   // -----------------------------------------------------------------------
 
-  it("adds both SitepingFeedback and SitepingAnnotation to an empty schema", () => {
+  it("adds both InstaFixFeedback and InstaFixAnnotation to an empty schema", () => {
     writeFileSync(schemaPath, MINIMAL_SCHEMA);
 
     const result = syncPrismaModels(schemaPath);
 
-    expect(result.addedModels).toContain("SitepingFeedback");
-    expect(result.addedModels).toContain("SitepingAnnotation");
+    expect(result.addedModels).toContain("InstaFixFeedback");
+    expect(result.addedModels).toContain("InstaFixAnnotation");
     expect(result.changes).toHaveLength(0); // No field-level changes, models were created fresh
 
     // Verify the output file contains the models
     const output = readFileSync(schemaPath, "utf-8");
-    expect(output).toContain("model SitepingFeedback");
-    expect(output).toContain("model SitepingAnnotation");
+    expect(output).toContain("model InstaFixFeedback");
+    expect(output).toContain("model InstaFixAnnotation");
     expect(output).toContain("projectName");
     expect(output).toContain("cssSelector");
   });
@@ -152,19 +152,19 @@ describe("syncPrismaModels", () => {
   // Adding models alongside existing models
   // -----------------------------------------------------------------------
 
-  it("adds Siteping models alongside an existing User model", () => {
+  it("adds InstaFix models alongside an existing User model", () => {
     writeFileSync(schemaPath, SCHEMA_WITH_USER_MODEL);
 
     const result = syncPrismaModels(schemaPath);
 
-    expect(result.addedModels).toContain("SitepingFeedback");
-    expect(result.addedModels).toContain("SitepingAnnotation");
+    expect(result.addedModels).toContain("InstaFixFeedback");
+    expect(result.addedModels).toContain("InstaFixAnnotation");
 
     const output = readFileSync(schemaPath, "utf-8");
     // User model should still be there
     expect(output).toContain("model User");
-    expect(output).toContain("model SitepingFeedback");
-    expect(output).toContain("model SitepingAnnotation");
+    expect(output).toContain("model InstaFixFeedback");
+    expect(output).toContain("model InstaFixAnnotation");
   });
 
   // -----------------------------------------------------------------------
@@ -176,18 +176,18 @@ describe("syncPrismaModels", () => {
 
     const result = syncPrismaModels(schemaPath);
 
-    // SitepingFeedback already existed, so it shouldn't be in addedModels
-    expect(result.addedModels).not.toContain("SitepingFeedback");
-    // But SitepingAnnotation is new
-    expect(result.addedModels).toContain("SitepingAnnotation");
+    // InstaFixFeedback already existed, so it shouldn't be in addedModels
+    expect(result.addedModels).not.toContain("InstaFixFeedback");
+    // But InstaFixAnnotation is new
+    expect(result.addedModels).toContain("InstaFixAnnotation");
 
     // Should have field-level changes for the missing fields
     expect(result.changes.length).toBeGreaterThan(0);
     const addedFieldNames = result.changes
-      .filter((c) => c.action === "added" && c.model === "SitepingFeedback")
+      .filter((c) => c.action === "added" && c.model === "InstaFixFeedback")
       .map((c) => c.field);
 
-    // These fields exist in SITEPING_MODELS but not in the partial schema
+    // These fields exist in INSTAFIX_MODELS but not in the partial schema
     expect(addedFieldNames).toContain("status");
     expect(addedFieldNames).toContain("url");
     expect(addedFieldNames).toContain("viewport");
@@ -206,7 +206,7 @@ describe("syncPrismaModels", () => {
   });
 
   it("adds only screenshotRegion to a schema from the previous release", () => {
-    // A schema generated before screenshotRegion existed — `siteping sync` is
+    // A schema generated before screenshotRegion existed — `instafix sync` is
     // how existing users pick the new column up, so it must be the single
     // change reported.
     writeFileSync(schemaPath, MINIMAL_SCHEMA);
@@ -219,7 +219,7 @@ describe("syncPrismaModels", () => {
 
     expect(result.addedModels).toHaveLength(0);
     expect(result.changes).toHaveLength(1);
-    expect(result.changes[0]).toMatchObject({ model: "SitepingFeedback", field: "screenshotRegion", action: "added" });
+    expect(result.changes[0]).toMatchObject({ model: "InstaFixFeedback", field: "screenshotRegion", action: "added" });
     expect(readFileSync(schemaPath, "utf-8")).toMatch(/screenshotRegion\s+Json\?/);
   });
 
@@ -295,9 +295,9 @@ describe("syncPrismaModels", () => {
 
     const output = readFileSync(schemaPath, "utf-8");
 
-    // SitepingFeedback.message should have @db.Text
+    // InstaFixFeedback.message should have @db.Text
     expect(output).toMatch(/message\s+String\s+@db\.Text/);
-    // SitepingAnnotation fields with nativeType: "Text"
+    // InstaFixAnnotation fields with nativeType: "Text"
     expect(output).toMatch(/cssSelector\s+String\s+@db\.Text/);
     expect(output).toMatch(/xpath\s+String\s+@db\.Text/);
     expect(output).toMatch(/textSnippet\s+String\s+@db\.Text/);
@@ -317,7 +317,7 @@ describe("syncPrismaModels", () => {
     const output = readFileSync(schemaPath, "utf-8");
 
     // message existed but without @db.Text — should be updated
-    const messageChange = result.changes.find((c) => c.model === "SitepingFeedback" && c.field === "message");
+    const messageChange = result.changes.find((c) => c.model === "InstaFixFeedback" && c.field === "message");
     expect(messageChange).toBeDefined();
     expect(messageChange!.action).toBe("updated");
     expect(messageChange!.detail).toContain("+@db.Text");
@@ -333,10 +333,10 @@ describe("syncPrismaModels", () => {
 
     const output = readFileSync(schemaPath, "utf-8");
 
-    // SitepingFeedback has a 1-to-many relation to annotations
-    expect(output).toMatch(/annotations\s+SitepingAnnotation\[\]/);
+    // InstaFixFeedback has a 1-to-many relation to annotations
+    expect(output).toMatch(/annotations\s+InstaFixAnnotation\[\]/);
 
-    // SitepingAnnotation has feedback relation with references
+    // InstaFixAnnotation has feedback relation with references
     expect(output).toContain("@relation");
     expect(output).toContain("onDelete: Cascade");
   });
@@ -381,7 +381,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model InstaFixFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -396,14 +396,14 @@ model SitepingFeedback {
   resolvedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  annotations SitepingAnnotation[]
+  annotations InstaFixAnnotation[]
 }
 `;
     writeFileSync(schemaPath, schemaWithWrongType);
 
     const result = syncPrismaModels(schemaPath);
 
-    const statusChange = result.changes.find((c) => c.model === "SitepingFeedback" && c.field === "status");
+    const statusChange = result.changes.find((c) => c.model === "InstaFixFeedback" && c.field === "status");
     expect(statusChange).toBeDefined();
     expect(statusChange!.action).toBe("updated");
     // Detail should contain the type change arrow
@@ -412,7 +412,7 @@ model SitepingFeedback {
   });
 
   it("updates a field whose optional state differs (required to optional)", () => {
-    // resolvedAt is optional in SITEPING_MODELS — make it required in schema
+    // resolvedAt is optional in INSTAFIX_MODELS — make it required in schema
     const schemaWithReqResolvedAt = `
 datasource db {
   provider = "postgresql"
@@ -423,7 +423,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model InstaFixFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -438,14 +438,14 @@ model SitepingFeedback {
   resolvedAt  DateTime
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  annotations SitepingAnnotation[]
+  annotations InstaFixAnnotation[]
 }
 `;
     writeFileSync(schemaPath, schemaWithReqResolvedAt);
 
     const result = syncPrismaModels(schemaPath);
 
-    const resolvedChange = result.changes.find((c) => c.model === "SitepingFeedback" && c.field === "resolvedAt");
+    const resolvedChange = result.changes.find((c) => c.model === "InstaFixFeedback" && c.field === "resolvedAt");
     expect(resolvedChange).toBeDefined();
     expect(resolvedChange!.action).toBe("updated");
     // The change detail mentions optional/required transition
@@ -453,7 +453,7 @@ model SitepingFeedback {
   });
 
   it("updates a field whose optional state differs (optional to required)", () => {
-    // projectName is required in SITEPING_MODELS — make it optional in schema
+    // projectName is required in INSTAFIX_MODELS — make it optional in schema
     const schemaWithOptProjectName = `
 datasource db {
   provider = "postgresql"
@@ -464,7 +464,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model InstaFixFeedback {
   id          String   @id @default(cuid())
   projectName String?
   type        String
@@ -479,14 +479,14 @@ model SitepingFeedback {
   resolvedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  annotations SitepingAnnotation[]
+  annotations InstaFixAnnotation[]
 }
 `;
     writeFileSync(schemaPath, schemaWithOptProjectName);
 
     const result = syncPrismaModels(schemaPath);
 
-    const projectChange = result.changes.find((c) => c.model === "SitepingFeedback" && c.field === "projectName");
+    const projectChange = result.changes.find((c) => c.model === "InstaFixFeedback" && c.field === "projectName");
     expect(projectChange).toBeDefined();
     expect(projectChange!.action).toBe("updated");
     expect(projectChange!.detail).toMatch(/optional|required/);
@@ -504,7 +504,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model InstaFixFeedback {
   id          String   @id @default(cuid())
   projectName String   @unique
   type        String
@@ -519,14 +519,14 @@ model SitepingFeedback {
   resolvedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  annotations SitepingAnnotation[]
+  annotations InstaFixAnnotation[]
 }
 `;
     writeFileSync(schemaPath, schemaWithExtraAttr);
 
     const result = syncPrismaModels(schemaPath);
 
-    const projectChange = result.changes.find((c) => c.model === "SitepingFeedback" && c.field === "projectName");
+    const projectChange = result.changes.find((c) => c.model === "InstaFixFeedback" && c.field === "projectName");
     expect(projectChange).toBeDefined();
     expect(projectChange!.action).toBe("updated");
     // Attribute should be removed: detail contains -@unique
@@ -534,7 +534,7 @@ model SitepingFeedback {
   });
 
   it("updates a field whose array state differs", () => {
-    // annotations should be SitepingAnnotation[] but defined as SitepingAnnotation
+    // annotations should be InstaFixAnnotation[] but defined as InstaFixAnnotation
     const schemaWithWrongArray = `
 datasource db {
   provider = "postgresql"
@@ -545,7 +545,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model InstaFixFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -560,14 +560,14 @@ model SitepingFeedback {
   resolvedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  annotations SitepingAnnotation
+  annotations InstaFixAnnotation
 }
 `;
     writeFileSync(schemaPath, schemaWithWrongArray);
 
     const result = syncPrismaModels(schemaPath);
 
-    const annotChange = result.changes.find((c) => c.model === "SitepingFeedback" && c.field === "annotations");
+    const annotChange = result.changes.find((c) => c.model === "InstaFixFeedback" && c.field === "annotations");
     expect(annotChange).toBeDefined();
     expect(annotChange!.action).toBe("updated");
   });
@@ -577,7 +577,7 @@ model SitepingFeedback {
   // -----------------------------------------------------------------------
 
   it("appends new fields when existing model lacks createdAt", () => {
-    // SitepingFeedback exists but has no createdAt — fields should be appended at end
+    // InstaFixFeedback exists but has no createdAt — fields should be appended at end
     const schemaWithoutCreatedAt = `
 datasource db {
   provider = "postgresql"
@@ -588,7 +588,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model InstaFixFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -600,12 +600,12 @@ model SitepingFeedback {
 
     // Many fields should be added
     expect(result.changes.length).toBeGreaterThan(0);
-    const addedFields = result.changes.filter((c) => c.action === "added" && c.model === "SitepingFeedback");
+    const addedFields = result.changes.filter((c) => c.action === "added" && c.model === "InstaFixFeedback");
     expect(addedFields.length).toBeGreaterThan(0);
 
     // Output should still be valid and contain all the missing fields
     const output = readFileSync(schemaPath, "utf-8");
-    expect(output).toContain("model SitepingFeedback");
+    expect(output).toContain("model InstaFixFeedback");
     expect(output).toContain("createdAt");
     expect(output).toContain("clientId");
   });
@@ -615,7 +615,7 @@ model SitepingFeedback {
   // -----------------------------------------------------------------------
 
   it("treats @@index with non-array argument as missing and adds correct index", () => {
-    // SitepingFeedback exists with an unusual @@index(projectName) (non-array form)
+    // InstaFixFeedback exists with an unusual @@index(projectName) (non-array form)
     // hasBlockIndex should return false for this, and a new array-form index should be added
     const schemaWithNonArrayIndex = `
 datasource db {
@@ -627,7 +627,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model InstaFixFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -642,7 +642,7 @@ model SitepingFeedback {
   resolvedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  annotations SitepingAnnotation[]
+  annotations InstaFixAnnotation[]
 
   @@index(projectName)
 }
@@ -658,7 +658,7 @@ model SitepingFeedback {
   });
 
   it("treats empty @@index() block as missing (no firstArg)", () => {
-    // SitepingFeedback exists with @@index() (no arguments) — hasBlockIndex's firstArg is undefined.
+    // InstaFixFeedback exists with @@index() (no arguments) — hasBlockIndex's firstArg is undefined.
     // The array-form indexes should be added.
     const schemaWithEmptyIndex = `
 datasource db {
@@ -670,7 +670,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model InstaFixFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -685,7 +685,7 @@ model SitepingFeedback {
   resolvedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  annotations SitepingAnnotation[]
+  annotations InstaFixAnnotation[]
 
   @@index()
 }

@@ -46,7 +46,7 @@ export function StatusInProgressIcon({ className }: IconProps): ReactElement {
 export function StatusResolvedIcon({ className }: IconProps): ReactElement {
   // Sanitized per-instance mask id — React's useId wrappers (`:` / `«»`) are
   // unsafe inside `url(#…)` references in some engines.
-  const maskId = `spd-resolved-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  const maskId = `ifd-resolved-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   return (
     <svg {...SVG} aria-hidden="true" className={className}>
       <mask id={maskId}>

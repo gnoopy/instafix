@@ -3,21 +3,21 @@ title: Dashboard
 description: A Linear-style triage inbox for your feedback — one React component, keyboard-first.
 ---
 
-`@siteping/dashboard` gives you a complete triage UI: filter, search, change statuses, delete, undo — designed for the keyboard, styled to blend into your app.
+`@instafix/dashboard` gives you a complete triage UI: filter, search, change statuses, delete, undo — designed for the keyboard, styled to blend into your app.
 
 ```bash
-npm i @siteping/dashboard
+npm i @instafix/dashboard
 ```
 
 ```tsx
-import { SitepingInbox } from "@siteping/dashboard";
+import { InstaFixInbox } from "@instafix/dashboard";
 
 export function Triage() {
   return (
-    <SitepingInbox
+    <InstaFixInbox
       projects="my-project"
-      endpoint="https://my-site.com/api/siteping"
-      apiKey={process.env.NEXT_PUBLIC_SITEPING_KEY}
+      endpoint="https://my-site.com/api/instafix"
+      apiKey={process.env.NEXT_PUBLIC_INSTAFIX_KEY}
       theme="auto"
     />
   );
@@ -28,7 +28,7 @@ It works with React 18 and 19, ships ESM and CJS, and has zero dependencies besi
 
 ## Props
 
-`SitepingInbox` accepts every [`useSitepingInbox` option](/docs/dashboard/headless) plus these presentation props:
+`InstaFixInbox` accepts every [`useInstaFixInbox` option](/docs/dashboard/headless) plus these presentation props:
 
 | Prop | Type | Default | What it does |
 |---|---|---|---|
@@ -36,7 +36,7 @@ It works with React 18 and 19, ships ESM and CJS, and has zero dependencies besi
 | `accentColor` | `string` | `"#0066ff"` | Hex only; every accent shade derives from this one value. See [Theming](/docs/dashboard/theming) |
 | `density` | `"comfortable"` \| `"compact"` | `"comfortable"` | Row height 44 px vs 36 px |
 | `locale` | `string` | `"en"` | Any BCP-47 tag — see [Languages](#languages) |
-| `deepLinkParam` | `string` | `"siteping"` | Query param used by "Open on page" links; must match the widget's `deepLink` param |
+| `deepLinkParam` | `string` | `"instafix"` | Query param used by "Open on page" links; must match the widget's `deepLink` param |
 | `emptyState` | `ReactNode` | — | Custom node for the "no feedback in this project yet" state only — the inbox-zero and no-filter-match states keep their defaults |
 | `className` | `string` | — | Appended to the root element's classes |
 
@@ -69,10 +69,10 @@ Same seven built-in locales as the widget (`en`, `fr`, `de`, `es`, `it`, `pt`, `
 The dashboard also accepts custom locales at runtime:
 
 ```ts
-import { registerLocale } from "@siteping/dashboard";
+import { registerLocale } from "@instafix/dashboard";
 
 registerLocale("nl", { "status.open": "Open", "status.resolved": "Opgelost" });
-// later: <SitepingInbox locale="nl" ... />
+// later: <InstaFixInbox locale="nl" ... />
 ```
 
 **Partial dictionaries are accepted** — any key you leave out falls back to English on its own, so correcting a single label doesn't mean maintaining the whole catalog. Two rules the implementation enforces: register under the **base language code** (`"nl"`, not `"nl-BE"` — lookups normalize to the base), and call `registerLocale` **before the inbox mounts**. The widget's `registerLocale` works the same way against [its own key set](/docs/widget/i18n).

@@ -1,12 +1,12 @@
-# @siteping/adapter-kit
+# @instafix/adapter-kit
 
-Everything needed to build — and conformance-test — a custom [Siteping](https://siteping.dev) store adapter.
+Everything needed to build — and conformance-test — a custom [InstaFix](https://instafix.realstory.blog) store adapter.
 
 ```ts
-import { createCollectionStore, type SitepingStore } from "@siteping/adapter-kit";
+import { createCollectionStore, type InstaFixStore } from "@instafix/adapter-kit";
 
 // A complete adapter over any snapshot backend, in ~15 lines:
-export function createMyStore(): SitepingStore {
+export function createMyStore(): InstaFixStore {
   let records = load();
   return createCollectionStore({
     load: () => records,
@@ -19,13 +19,13 @@ export function createMyStore(): SitepingStore {
 Verify it with the shared conformance suite (vitest):
 
 ```ts
-import { testSitepingStore } from "@siteping/adapter-kit/testing";
+import { testInstaFixStore } from "@instafix/adapter-kit/testing";
 import { createMyStore } from "../src/index.js";
 
-testSitepingStore(() => createMyStore());
+testInstaFixStore(() => createMyStore());
 ```
 
-**[Full guide → siteping.dev/docs/adapters/writing-an-adapter](https://siteping.dev/docs/adapters/writing-an-adapter)**
+**[Full guide → instafix.realstory.blog/docs/adapters/writing-an-adapter](https://instafix.realstory.blog/docs/adapters/writing-an-adapter)**
 
 ## License
 

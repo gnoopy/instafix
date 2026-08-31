@@ -6,8 +6,8 @@ description: Laisser vos clients commenter n'importe où d'un clic droit — san
 Avec `enableRightClickComment: true`, un clic droit n'importe où sur la page ouvre le composeur de commentaire au niveau du curseur — le feedback « ce truc-là, ici » le plus rapide possible.
 
 ```ts
-initSiteping({
-  endpoint: "/api/siteping",
+initInstaFix({
+  endpoint: "/api/instafix",
   projectName: "mon-projet",
   enableRightClickComment: true,
 });
@@ -22,7 +22,7 @@ Le widget laisse la main au menu contextuel du navigateur dans tous ces cas, vé
 1. **Votre app l'a déjà géré** — si un gestionnaire au niveau d'un élément a appelé `preventDefault()` avant (une grille de données, un éditeur de code), le widget se retire. C'est aussi comme ça que vous réservez des zones à votre propre menu contextuel.
 2. **Menus déclenchés au clavier** — la touche ≣ Menu et Maj+F10 obtiennent toujours le menu natif. (Selon la spécification Pointer Events, les activations clavier portent `pointerType: ""` — c'est exactement ce que le widget teste.)
 3. **Touches de modification** — Maj, Ctrl, Alt ou Meta + clic droit passent toujours au travers. L'échappatoire universelle, pour vos utilisateurs comme pour vos devtools.
-4. **L'interface de SitePing** — un clic droit sur le bouton, le panneau, les marqueurs ou tout élément marqué `data-siteping-ignore` est ignoré.
+4. **L'interface de InstaFix** — un clic droit sur le bouton, le panneau, les marqueurs ou tout élément marqué `data-instafix-ignore` est ignoré.
 5. **Pendant une annotation** — tant qu'une bulle de commentaire est déjà ouverte, le clic droit fonctionne normalement (pour pouvoir coller du texte dans la zone de saisie).
 
 Le clic droit à la souris, l'appui long tactile et l'appui long au stylet ouvrent tous le composeur ; sur tablette, cela s'accorde naturellement avec la règle des ≥ 768 px du widget.

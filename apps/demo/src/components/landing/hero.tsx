@@ -43,8 +43,8 @@ export function Hero() {
         <div data-gsap="hero-cta" className="mt-10 flex flex-wrap items-center justify-center gap-4">
           {/* Primary: npm install code pill */}
           <div className="flex items-center overflow-hidden rounded-lg border border-gray-700 bg-gray-900">
-            <code className="px-4 py-2.5 font-mono text-sm text-gray-300">npm i @siteping/widget</code>
-            <CopyButton text="npm i @siteping/widget" />
+            <code className="px-4 py-2.5 font-mono text-sm text-gray-300">npm i @instafix/widget</code>
+            <CopyButton text="npm i @instafix/widget" />
           </div>
 
           {/* Secondary: Try the Demo */}
@@ -103,7 +103,7 @@ export function Hero() {
       {/* Widget dogfood callout */}
       <p className="mt-4 text-center text-xs text-gray-500">
         <span className="mr-1.5 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-        See the blue button in the corner? That&apos;s SitePing running on this page. Try it.
+        See the blue button in the corner? That&apos;s InstaFix running on this page. Try it.
       </p>
 
       {/* Bottom fade transition to next section */}

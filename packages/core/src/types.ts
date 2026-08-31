@@ -5,10 +5,10 @@ import { type AssertEqual, hasOwn, type Prettify, type Serialized } from "./type
 // ---------------------------------------------------------------------------
 
 /** FAB anchor — bottom-corner placement supported by the widget. */
-export type SitepingPosition = "bottom-right" | "bottom-left";
+export type InstaFixPosition = "bottom-right" | "bottom-left";
 
 /** Visual theme — `auto` resolves to `light` or `dark` via system preference. */
-export type SitepingTheme = "light" | "dark" | "auto";
+export type InstaFixTheme = "light" | "dark" | "auto";
 
 /** Built-in UI locales shipped with the widget. */
 export const BUILTIN_LOCALES = ["en", "fr", "de", "es", "it", "pt", "ru"] as const;
@@ -19,13 +19,13 @@ export type BuiltinLocale = (typeof BUILTIN_LOCALES)[number];
  * literal strings so editors auto-complete them, but arbitrary BCP-47 tags
  * are also accepted (custom dictionaries registered via `registerLocale`).
  */
-export type SitepingLocale = BuiltinLocale | (string & {});
+export type InstaFixLocale = BuiltinLocale | (string & {});
 
 /**
- * Reasons reported through `SitepingConfig.onSkip` — production environment,
+ * Reasons reported through `InstaFixConfig.onSkip` — production environment,
  * mobile viewport, or server-side rendering (no `window`/`document`).
  */
-export type SitepingSkipReason = "production" | "mobile" | "ssr";
+export type InstaFixSkipReason = "production" | "mobile" | "ssr";
 
 /** Per-channel + per-buffer-size diagnostics configuration. */
 export interface DiagnosticsCaptureOptions {
@@ -36,14 +36,14 @@ export interface DiagnosticsCaptureOptions {
 }
 
 /** Identity payload supplied by the host application — bypasses the modal. */
-export interface SitepingIdentity {
+export interface InstaFixIdentity {
   name: string;
   email: string;
 }
 
 /** Deep-link configuration — controls how a feedback id is read from the URL. */
-export interface SitepingDeepLinkOptions {
-  /** Query parameter name carrying the feedback id. Defaults to `"siteping"`. */
+export interface InstaFixDeepLinkOptions {
+  /** Query parameter name carrying the feedback id. Defaults to `"instafix"`. */
   param?: string | undefined;
 }
 
@@ -52,21 +52,21 @@ export interface SitepingDeepLinkOptions {
  * async) invoked once per request to produce fresh values (e.g. a short-lived
  * session token).
  */
-export type SitepingHeadersOption =
+export type InstaFixHeadersOption =
   | Record<string, string>
   | (() => Record<string, string> | Promise<Record<string, string>>);
 
 /**
  * Options shared by both widget modes (HTTP and direct store).
  *
- * Do not use this type directly — use {@link SitepingConfig}, the
+ * Do not use this type directly — use {@link InstaFixConfig}, the
  * discriminated union that adds the mode-specific fields.
  */
-export interface SitepingBaseConfig {
+export interface InstaFixBaseConfig {
   /** Required — project identifier used to scope feedbacks */
   projectName: string;
   /** FAB position — defaults to 'bottom-right' */
-  position?: SitepingPosition | undefined;
+  position?: InstaFixPosition | undefined;
   /**
    * Show the "toggle markers visibility" item in the FAB radial menu.
    * Defaults to `true` (current behavior). Set to `false` to hide that
@@ -103,9 +103,9 @@ export interface SitepingBaseConfig {
   /** Enable debug logging of lifecycle events — defaults to false */
   debug?: boolean | undefined;
   /** Color theme — defaults to 'light' */
-  theme?: SitepingTheme | undefined;
+  theme?: InstaFixTheme | undefined;
   /** UI locale — defaults to 'en'. Built-in: en, fr, de, es, it, pt (Brazilian), ru. Any other string falls back to English. */
-  locale?: SitepingLocale | undefined;
+  locale?: InstaFixLocale | undefined;
   /**
    * Returns the current page scope for annotations and panel filtering.
    * Called on initial markers load and on `instance.refresh()`.
@@ -134,10 +134,10 @@ export interface SitepingBaseConfig {
    * - it embeds page content in the feedback (privacy/GDPR consideration —
    *   inform end users in your widget host UI when enabling).
    *
-   * `html2canvas` ships as a regular dependency of `@siteping/widget` so the
+   * `html2canvas` ships as a regular dependency of `@instafix/widget` so the
    * dynamic import always resolves; you don't need to install anything extra.
    *
-   * **Masking sensitive elements:** add `data-siteping-ignore="true"` to any
+   * **Masking sensitive elements:** add `data-instafix-ignore="true"` to any
    * element you do NOT want captured (password fields, credit-card forms,
    * API tokens shown in the UI, etc.). The capture predicate skips matching
    * elements *and their descendants*. Do this BEFORE turning on screenshots
@@ -161,7 +161,7 @@ export interface SitepingBaseConfig {
    * right-clicking always falls through to the native context menu, giving
    * users (and devtools) an escape hatch regardless of this setting.
    *
-   * Right-clicks on SitePing's own UI (FAB, panel, markers, popup) are
+   * Right-clicks on InstaFix's own UI (FAB, panel, markers, popup) are
    * ignored — the native menu is shown as expected.
    *
    * Note: on Android, `contextmenu` fires on long-press. The widget already
@@ -188,7 +188,7 @@ export interface SitepingBaseConfig {
    */
   captureDiagnostics?: boolean | DiagnosticsCaptureOptions | undefined;
   /** Called when the widget is skipped (production mode, mobile viewport, SSR — no DOM) */
-  onSkip?: (reason: SitepingSkipReason) => void;
+  onSkip?: (reason: InstaFixSkipReason) => void;
   /**
    * Auto-focus a specific annotation when its ID appears in the URL query
    * string. Lets hosts deeplink directly into a feedback from external
@@ -202,7 +202,7 @@ export interface SitepingBaseConfig {
    *
    * - `false` / `undefined` (default): no URL parsing. Existing behavior
    *   unchanged, no host URL inspection.
-   * - `true`: enabled with default query parameter name `siteping`.
+   * - `true`: enabled with default query parameter name `instafix`.
    * - object: enabled with a custom parameter name. Use this to avoid
    *   clashes with host-app query keys.
    *
@@ -212,7 +212,7 @@ export interface SitepingBaseConfig {
    * Hosts that need re-focus on route change can call
    * `instance.focusFeedback(id)` explicitly.
    */
-  deepLink?: boolean | SitepingDeepLinkOptions | undefined;
+  deepLink?: boolean | InstaFixDeepLinkOptions | undefined;
   /**
    * Automatically re-fetch feedbacks when the page changes during client-side
    * (SPA) navigation. Enabled by default.
@@ -251,10 +251,10 @@ export interface SitepingBaseConfig {
    * read at widget init time, not on every render. Hosts that need live
    * identity updates after sign-in/sign-out should currently remount the
    * widget (e.g. via a React `key` on the wrapping component). See
-   * https://github.com/NeosiaNexus/SitePing/issues/85 for tracking a
+   * https://github.com/gnoopy/InstaFix/issues/85 for tracking a
    * future enhancement that propagates identity updates without a remount.
    */
-  identity?: SitepingIdentity | undefined;
+  identity?: InstaFixIdentity | undefined;
 
   // Events
   /** Called when the feedback panel is opened. */
@@ -266,8 +266,8 @@ export interface SitepingBaseConfig {
   /**
    * Called when a feedback API call fails.
    *
-   * The widget always emits a `SitepingError` (or a subclass:
-   * `SitepingNetworkError`, `SitepingValidationError`, `SitepingAuthError`)
+   * The widget always emits a `InstaFixError` (or a subclass:
+   * `InstaFixNetworkError`, `InstaFixValidationError`, `InstaFixAuthError`)
    * for HTTP-mode failures — host apps can `instanceof` to drive retry
    * logic, or read `error.code` (`"NETWORK" | "VALIDATION" | "AUTH" |
    * "SERVER"`) and `error.retryable`. The type is widened to `Error` so
@@ -283,10 +283,10 @@ export interface SitepingBaseConfig {
 
 /**
  * HTTP mode — the widget talks to a server endpoint backed by a store
- * adapter (e.g. `@siteping/adapter-prisma` request handlers).
+ * adapter (e.g. `@instafix/adapter-prisma` request handlers).
  */
-export interface SitepingHttpConfig extends SitepingBaseConfig {
-  /** HTTP endpoint that receives feedbacks (e.g. '/api/siteping'). */
+export interface InstaFixHttpConfig extends InstaFixBaseConfig {
+  /** HTTP endpoint that receives feedbacks (e.g. '/api/instafix'). */
   endpoint: string;
   /**
    * Convenience auth for HTTP mode — sent as `Authorization: Bearer <apiKey>`
@@ -306,18 +306,18 @@ export interface SitepingHttpConfig extends SitepingBaseConfig {
    * `Authorization` entry overrides `apiKey`. A throwing/rejecting factory
    * fails the request like a network error.
    */
-  headers?: SitepingHeadersOption | undefined;
+  headers?: InstaFixHeadersOption | undefined;
   /** Not available in HTTP mode — use either `endpoint` or `store`, never both. */
   store?: never;
 }
 
 /**
- * Store mode — the widget talks to a `SitepingStore` directly in the
+ * Store mode — the widget talks to a `InstaFixStore` directly in the
  * browser, no server needed (demos, prototypes, localStorage persistence).
  */
-export interface SitepingStoreConfig extends SitepingBaseConfig {
+export interface InstaFixStoreConfig extends InstaFixBaseConfig {
   /** Direct store for client-side mode. Bypasses HTTP entirely. */
-  store: SitepingStore;
+  store: InstaFixStore;
   /** Not available in store mode — use either `endpoint` or `store`, never both. */
   endpoint?: never;
   /** HTTP-mode only — meaningless without an `endpoint`. */
@@ -327,17 +327,17 @@ export interface SitepingStoreConfig extends SitepingBaseConfig {
 }
 
 /**
- * Configuration options for the Siteping widget.
+ * Configuration options for the InstaFix widget.
  *
  * A discriminated union over the two transport modes: pass `endpoint`
  * (HTTP mode, optionally with `apiKey`/`headers`) **or** `store` (direct
  * client-side mode) — never both, never neither. Invalid combinations are
  * compile errors instead of runtime warnings.
  */
-export type SitepingConfig = SitepingHttpConfig | SitepingStoreConfig;
+export type InstaFixConfig = InstaFixHttpConfig | InstaFixStoreConfig;
 
-/** Instance returned by initSiteping() with lifecycle methods. */
-export interface SitepingInstance {
+/** Instance returned by initInstaFix() with lifecycle methods. */
+export interface InstaFixInstance {
   /** Remove the widget from the DOM and clean up all listeners. */
   destroy: () => void;
   /** Open the panel programmatically */
@@ -358,26 +358,26 @@ export interface SitepingInstance {
    */
   focusFeedback: (feedbackId: string) => boolean;
   /** Subscribe to a public widget event */
-  on: <K extends keyof SitepingPublicEvents>(event: K, listener: SitepingPublicEventListener<K>) => SitepingUnsubscribe;
+  on: <K extends keyof InstaFixPublicEvents>(event: K, listener: InstaFixPublicEventListener<K>) => InstaFixUnsubscribe;
   /** Unsubscribe from a public widget event */
-  off: <K extends keyof SitepingPublicEvents>(event: K, listener: SitepingPublicEventListener<K>) => void;
+  off: <K extends keyof InstaFixPublicEvents>(event: K, listener: InstaFixPublicEventListener<K>) => void;
 }
 
-/** Listener signature for a single `SitepingPublicEvents` key. */
-export type SitepingPublicEventListener<K extends keyof SitepingPublicEvents> = (
-  ...args: SitepingPublicEvents[K]
+/** Listener signature for a single `InstaFixPublicEvents` key. */
+export type InstaFixPublicEventListener<K extends keyof InstaFixPublicEvents> = (
+  ...args: InstaFixPublicEvents[K]
 ) => void;
 
-/** Disposer returned by `SitepingInstance.on` — call once to detach the listener. */
-export type SitepingUnsubscribe = () => void;
+/** Disposer returned by `InstaFixInstance.on` — call once to detach the listener. */
+export type InstaFixUnsubscribe = () => void;
 
-/** Events exposed to consumers via SitepingInstance.on / .off */
-export interface SitepingPublicEvents {
+/** Events exposed to consumers via InstaFixInstance.on / .off */
+export interface InstaFixPublicEvents {
   "feedback:sent": [FeedbackResponse];
   "feedback:deleted": [FeedbackResponse["id"]];
   /**
    * A feedback API call failed. Same payload contract as
-   * `SitepingConfig.onError` — a `SitepingError` subclass in HTTP mode,
+   * `InstaFixConfig.onError` — a `InstaFixError` subclass in HTTP mode,
    * possibly a raw `Error` in store mode.
    */
   "feedback:error": [Error];
@@ -427,7 +427,7 @@ export function isClosedStatus(status: FeedbackStatus): status is ClosedFeedback
 }
 
 /**
- * Page scope returned by `SitepingConfig.getPageScope()`.
+ * Page scope returned by `InstaFixConfig.getPageScope()`.
  *
  * - `url`: concrete page identifier — usually `window.location.pathname`,
  *   used as the strict scope for marker rendering.
@@ -483,7 +483,7 @@ export interface FeedbackCreateInput {
   screenshotRegion?: ScreenshotRegion | null | undefined;
   /**
    * Optional console + failed-network snapshot captured by the widget when
-   * `SitepingConfig.captureDiagnostics` is enabled. Stored as JSON on
+   * `InstaFixConfig.captureDiagnostics` is enabled. Stored as JSON on
    * `FeedbackRecord.diagnostics` so reviewers can replay the context.
    */
   diagnostics?: DiagnosticsSnapshot | null | undefined;
@@ -777,18 +777,18 @@ export function flattenAnnotation(ann: AnnotationPayload): AnnotationCreateInput
 // Abstract Store — adapter pattern
 // ---------------------------------------------------------------------------
 
-/** Paginated result returned by `SitepingStore.getFeedbacks`. */
+/** Paginated result returned by `InstaFixStore.getFeedbacks`. */
 export interface FeedbackPage {
   feedbacks: FeedbackRecord[];
   total: number;
 }
 
 /**
- * Abstract storage interface for Siteping.
+ * Abstract storage interface for InstaFix.
  *
  * Any adapter (Prisma, Drizzle, raw SQL, localStorage, etc.) implements this
  * interface. The HTTP handler and widget `StoreClient` operate against
- * `SitepingStore`, decoupled from the storage backend.
+ * `InstaFixStore`, decoupled from the storage backend.
  *
  * ## Error contract
  *
@@ -802,7 +802,7 @@ export interface FeedbackPage {
  *   a phantom success. Detect it with `isStorePersistence`.
  * - Other methods should not throw on empty results — return empty arrays or `null`.
  */
-export interface SitepingStore {
+export interface InstaFixStore {
   /** Create a feedback with its annotations. Idempotent on `clientId` — return existing record on duplicate, or throw `StoreDuplicateError`. Throws `StorePersistenceError` when the write cannot be persisted. */
   createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord>;
   /** Paginated query with optional filters. Returns empty array (not error) when no results. */
@@ -834,7 +834,7 @@ export interface FeedbackPayload {
   url: string;
   /**
    * Parameterized URL template (e.g. `/orders/:orderId`) supplied by
-   * `SitepingConfig.getPageScope()`. Null when the host did not provide one.
+   * `InstaFixConfig.getPageScope()`. Null when the host did not provide one.
    */
   urlPattern?: string | null | undefined;
   viewport: string;
@@ -846,7 +846,7 @@ export interface FeedbackPayload {
   clientId: string;
   /**
    * Base64 JPEG `data:` URL of the annotated area. Captured by the widget
-   * when `enableScreenshot: true` is set in `SitepingConfig`. Null when
+   * when `enableScreenshot: true` is set in `InstaFixConfig`. Null when
    * disabled or when capture failed silently.
    */
   screenshotDataUrl?: string | null | undefined;
@@ -1011,7 +1011,7 @@ export interface AreaTargetData {
  * lets a coding agent tell an element pick apart from a text quote or a bare
  * screen region. Optional/nullable on the wire for backward compatibility:
  * absent means legacy `element`-kind data (single anchor + rect, the
- * original SitePing shape). Normalize with {@link resolveAnnotationTarget}
+ * original InstaFix shape). Normalize with {@link resolveAnnotationTarget}
  * rather than reading `.target` directly.
  */
 export type AnnotationTarget = ElementTargetData | TextTargetData | AreaTargetData;

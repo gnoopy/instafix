@@ -1,12 +1,12 @@
 import type {
   DiagnosticsSnapshot,
   FeedbackPayload,
+  InstaFixConfig,
+  InstaFixInstance,
+  InstaFixPublicEventListener,
+  InstaFixPublicEvents,
   PageScope,
-  SitepingConfig,
-  SitepingInstance,
-  SitepingPublicEventListener,
-  SitepingPublicEvents,
-} from "@siteping/core";
+} from "@instafix/core";
 import { Annotator } from "./annotator.js";
 import { ApiClient, flushRetryQueue, type WidgetClient } from "./api-client.js";
 import { MOBILE_BREAKPOINT, PAGE_SIZE, Z_INDEX_MAX } from "./constants.js";
@@ -26,7 +26,7 @@ import { buildThemeColors } from "./styles/theme.js";
 import { Tooltip } from "./tooltip.js";
 
 /** Singleton guard — prevents duplicate widgets from overlapping */
-let instance: SitepingInstance | null = null;
+let instance: InstaFixInstance | null = null;
 
 interface NormalisedDiagnostics {
   console: boolean;
@@ -36,7 +36,7 @@ interface NormalisedDiagnostics {
 }
 
 /**
- * Resolve `SitepingConfig.captureDiagnostics` into a normalised shape.
+ * Resolve `InstaFixConfig.captureDiagnostics` into a normalised shape.
  *
  * - `undefined` / `false` → everything off (no monkey-patching).
  * - `true` → console + network on with the defaults (50 / 20).
@@ -44,7 +44,7 @@ interface NormalisedDiagnostics {
  *   default to `true` so users can pass `{ maxConsoleEntries: 200 }` and
  *   still get both channels.
  */
-function normaliseDiagnosticsOptions(value: SitepingConfig["captureDiagnostics"]): NormalisedDiagnostics {
+function normaliseDiagnosticsOptions(value: InstaFixConfig["captureDiagnostics"]): NormalisedDiagnostics {
   if (value === undefined || value === false) {
     return { console: false, network: false, maxConsoleEntries: 50, maxNetworkEntries: 20 };
   }
@@ -59,8 +59,8 @@ function normaliseDiagnosticsOptions(value: SitepingConfig["captureDiagnostics"]
   };
 }
 
-/** Build a no-op SitepingInstance for when the widget is skipped */
-function skippedInstance(): SitepingInstance {
+/** Build a no-op InstaFixInstance for when the widget is skipped */
+function skippedInstance(): InstaFixInstance {
   const noop = () => {};
   return {
     destroy: noop,
@@ -109,29 +109,29 @@ interface NormalisedDeepLink {
 }
 
 /**
- * Resolve `SitepingConfig.deepLink` into a normalised shape.
+ * Resolve `InstaFixConfig.deepLink` into a normalised shape.
  *
  * - `undefined` / `false` → disabled, no URL parsing.
- * - `true` → enabled with default param name `siteping`.
+ * - `true` → enabled with default param name `instafix`.
  * - object → enabled with optional custom param name. A bare empty object
  *   `{}` falls back to the default param so callers never need to repeat it.
  */
-function normaliseDeepLinkOptions(value: SitepingConfig["deepLink"]): NormalisedDeepLink {
-  if (value === undefined || value === false) return { enabled: false, param: "siteping" };
-  if (value === true) return { enabled: true, param: "siteping" };
-  return { enabled: true, param: value.param ?? "siteping" };
+function normaliseDeepLinkOptions(value: InstaFixConfig["deepLink"]): NormalisedDeepLink {
+  if (value === undefined || value === false) return { enabled: false, param: "instafix" };
+  if (value === true) return { enabled: true, param: "instafix" };
+  return { enabled: true, param: value.param ?? "instafix" };
 }
 
 /**
  * Main widget launcher — orchestrates all UI components.
  *
  * Architecture:
- * - Creates a <siteping-widget> custom element in the document
+ * - Creates a <instafix-widget> custom element in the document
  * - Attaches a closed Shadow DOM for CSS isolation
  * - FAB + Panel live inside the Shadow DOM
  * - Overlay, markers, tooltips live outside (appended to document.body)
  */
-export function launch(config: SitepingConfig): SitepingInstance {
+export function launch(config: InstaFixConfig): InstaFixInstance {
   // Guard: no DOM, no widget — SSR frameworks (Next.js, Remix) may run the
   // init on the server. Deliberately NOT bypassed by forceShow: the widget
   // cannot render without a document.
@@ -142,12 +142,12 @@ export function launch(config: SitepingConfig): SitepingInstance {
 
   // Debug helper — only logs when config.debug is true
   const log: (...args: unknown[]) => void = config.debug
-    ? (...args: unknown[]) => console.debug("[siteping]", ...args)
+    ? (...args: unknown[]) => console.debug("[instafix]", ...args)
     : () => {};
 
-  // Guard: prevent duplicate initSiteping() calls
+  // Guard: prevent duplicate initInstaFix() calls
   if (instance) {
-    log("initSiteping() called more than once — returning existing instance");
+    log("initInstaFix() called more than once — returning existing instance");
     return instance;
   }
 
@@ -157,7 +157,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
   // in Next.js webpack builds.
   if (!config.forceShow && readNodeEnv() === "production") {
     const reason = "production";
-    console.info("[siteping] Widget not loaded: production mode detected. Use forceShow: true to override.");
+    console.info("[instafix] Widget not loaded: production mode detected. Use forceShow: true to override.");
     config.onSkip?.(reason);
     return skippedInstance();
   }
@@ -174,7 +174,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
   if (!config.forceShow && window.innerWidth < minViewportWidth) {
     const reason = "mobile";
     console.info(
-      `[siteping] Widget not loaded: viewport width < ${minViewportWidth}px (mobile not supported). Use forceShow: true or lower minViewportWidth to override.`,
+      `[instafix] Widget not loaded: viewport width < ${minViewportWidth}px (mobile not supported). Use forceShow: true or lower minViewportWidth to override.`,
     );
     config.onSkip?.(reason);
     return skippedInstance();
@@ -183,12 +183,12 @@ export function launch(config: SitepingConfig): SitepingInstance {
   // Guard: validate required config fields
   if (!config.store && (!config.endpoint || typeof config.endpoint !== "string")) {
     console.error(
-      "[siteping] Missing 'endpoint' or 'store' in config. Provide an endpoint like '/api/siteping' or a SitepingStore instance.",
+      "[instafix] Missing 'endpoint' or 'store' in config. Provide an endpoint like '/api/instafix' or a InstaFixStore instance.",
     );
     return skippedInstance();
   }
   if (!config.projectName || typeof config.projectName !== "string") {
-    console.error("[siteping] Missing or invalid 'projectName' in config. Expected a non-empty string.");
+    console.error("[instafix] Missing or invalid 'projectName' in config. Expected a non-empty string.");
     return skippedInstance();
   }
 
@@ -240,7 +240,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
 
   const colors = buildThemeColors(config.accentColor, config.theme);
   const bus = new EventBus<WidgetEvents>();
-  const publicBus = new EventBus<SitepingPublicEvents>();
+  const publicBus = new EventBus<InstaFixPublicEvents>();
 
   // Client-side mode (store) vs HTTP mode (endpoint).
   // The earlier guard guarantees one of `store` / `endpoint` is set; we
@@ -250,7 +250,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
     if (config.store) return new StoreClient(config.store, config.projectName);
     const endpoint = config.endpoint;
     if (typeof endpoint !== "string" || endpoint.length === 0) {
-      throw new Error("[siteping] internal invariant: endpoint must be a non-empty string in HTTP mode");
+      throw new Error("[instafix] internal invariant: endpoint must be a non-empty string in HTTP mode");
     }
     return new ApiClient(endpoint, config.projectName, { apiKey: config.apiKey, headers: config.headers });
   })();
@@ -264,10 +264,10 @@ export function launch(config: SitepingConfig): SitepingInstance {
   if (config.onAnnotationEnd) bus.on("annotation:end", config.onAnnotationEnd);
 
   // Bridge internal events to the public bus. The mapped-object type forces
-  // one entry per public event — adding a key to SitepingPublicEvents
+  // one entry per public event — adding a key to InstaFixPublicEvents
   // without bridging it here is a compile error, so `instance.on` can never
   // silently miss an event.
-  const publicBridges: { [K in keyof SitepingPublicEvents]: () => void } = {
+  const publicBridges: { [K in keyof InstaFixPublicEvents]: () => void } = {
     "feedback:sent": () => bus.on("feedback:sent", (fb) => publicBus.emit("feedback:sent", fb)),
     "feedback:deleted": () => bus.on("feedback:deleted", (id) => publicBus.emit("feedback:deleted", id)),
     "feedback:error": () => bus.on("feedback:error", (err) => publicBus.emit("feedback:error", err)),
@@ -287,7 +287,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
   bus.on("annotation:end", () => log("Annotation ended"));
 
   // Create host element + Shadow DOM
-  const host = document.createElement("siteping-widget");
+  const host = document.createElement("instafix-widget");
   host.style.cssText = `position:fixed;z-index:${Z_INDEX_MAX};`;
   // Use open mode only for testing — closed in production for CSS isolation.
   // Shadow DOM mode is determined by environment, never by public config.
@@ -436,7 +436,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
       if (pointerType === undefined && e.button !== 2) return;
       // Modifier-key escape hatch: Shift/Ctrl/Alt/Meta → native menu.
       if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
-      // Exclude SitePing's own UI — right-clicking the FAB, panel, markers,
+      // Exclude InstaFix's own UI — right-clicking the FAB, panel, markers,
       // popup, or overlay must not hijack the event. composedPath() reaches
       // into the closed shadow root so all retargeted events are caught.
       const path = e.composedPath();
@@ -444,7 +444,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
         path.some(
           (n) =>
             n === host ||
-            (n instanceof Element && (n.hasAttribute("data-siteping-ignore") || n.id === "siteping-markers")),
+            (n instanceof Element && (n.hasAttribute("data-instafix-ignore") || n.id === "instafix-markers")),
         )
       )
         return;
@@ -771,9 +771,9 @@ export function launch(config: SitepingConfig): SitepingInstance {
     refresh: () => {
       void doRefresh().catch(() => {});
     },
-    on: <K extends keyof SitepingPublicEvents>(event: K, listener: SitepingPublicEventListener<K>) =>
+    on: <K extends keyof InstaFixPublicEvents>(event: K, listener: InstaFixPublicEventListener<K>) =>
       publicBus.on(event, listener),
-    off: <K extends keyof SitepingPublicEvents>(event: K, listener: SitepingPublicEventListener<K>) => {
+    off: <K extends keyof InstaFixPublicEvents>(event: K, listener: InstaFixPublicEventListener<K>) => {
       publicBus.off(event, listener);
     },
   };

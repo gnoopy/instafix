@@ -1,4 +1,4 @@
-import { BUILTIN_LOCALES } from "@siteping/core";
+import { BUILTIN_LOCALES } from "@instafix/core";
 import { loadLocale } from "../src/i18n/index.js";
 
 // Every built-in locale is lazy-loaded in production. Tests call `t(key)`

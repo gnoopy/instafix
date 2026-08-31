@@ -1,32 +1,32 @@
 # Changelog
 
-## [0.5.3](https://github.com/NeosiaNexus/SitePing/compare/adapter-localstorage-v0.5.2...adapter-localstorage-v0.5.3) (2026-07-28)
+## [0.5.3](https://github.com/gnoopy/InstaFix/compare/adapter-localstorage-v0.5.2...adapter-localstorage-v0.5.3) (2026-07-28)
 
 
 ### Features
 
-* type-safe contracts + mechanical extension paths (adapters, locales, packages) ([#247](https://github.com/NeosiaNexus/SitePing/issues/247)) ([75cd2f5](https://github.com/NeosiaNexus/SitePing/commit/75cd2f5024509e5552bfbcf7587a0d67819909a6))
+* type-safe contracts + mechanical extension paths (adapters, locales, packages) ([#247](https://github.com/gnoopy/InstaFix/issues/247)) ([75cd2f5](https://github.com/gnoopy/InstaFix/commit/75cd2f5024509e5552bfbcf7587a0d67819909a6))
 
-## [0.5.2](https://github.com/NeosiaNexus/SitePing/compare/adapter-localstorage-v0.5.1...adapter-localstorage-v0.5.2) (2026-07-26)
+## [0.5.2](https://github.com/gnoopy/InstaFix/compare/adapter-localstorage-v0.5.1...adapter-localstorage-v0.5.2) (2026-07-26)
 
 
 ### Bug Fixes
 
-* **core:** clamp non-positive page and limit instead of slicing from the tail ([#242](https://github.com/NeosiaNexus/SitePing/issues/242)) ([8d989a3](https://github.com/NeosiaNexus/SitePing/commit/8d989a3bfb4a80c107a968fc66379e76ff830ea8))
+* **core:** clamp non-positive page and limit instead of slicing from the tail ([#242](https://github.com/gnoopy/InstaFix/issues/242)) ([8d989a3](https://github.com/gnoopy/InstaFix/commit/8d989a3bfb4a80c107a968fc66379e76ff830ea8))
 
 
 ### Documentation
 
-* **site:** ship siteping.dev/docs — verified bilingual documentation + slimmed READMEs ([#241](https://github.com/NeosiaNexus/SitePing/issues/241)) ([252073f](https://github.com/NeosiaNexus/SitePing/commit/252073f2eb11a99980d81eecb5ed37b23c3894f8))
+* **site:** ship instafix.realstory.blog/docs — verified bilingual documentation + slimmed READMEs ([#241](https://github.com/gnoopy/InstaFix/issues/241)) ([252073f](https://github.com/gnoopy/InstaFix/commit/252073f2eb11a99980d81eecb5ed37b23c3894f8))
 
-## [0.5.1](https://github.com/NeosiaNexus/SitePing/compare/adapter-localstorage-v0.5.0...adapter-localstorage-v0.5.1) (2026-07-25)
+## [0.5.1](https://github.com/gnoopy/InstaFix/compare/adapter-localstorage-v0.5.0...adapter-localstorage-v0.5.1) (2026-07-25)
 
 
 ### Bug Fixes
 
-* ship fully resolvable type declarations for every published package ([#232](https://github.com/NeosiaNexus/SitePing/issues/232)) ([01a8085](https://github.com/NeosiaNexus/SitePing/commit/01a8085c90fab4e721eaede8def9a4d9f5eefcc0))
+* ship fully resolvable type declarations for every published package ([#232](https://github.com/gnoopy/InstaFix/issues/232)) ([01a8085](https://github.com/gnoopy/InstaFix/commit/01a8085c90fab4e721eaede8def9a4d9f5eefcc0))
 
-## [0.5.0](https://github.com/NeosiaNexus/SitePing/compare/adapter-localstorage-v0.4.6...adapter-localstorage-v0.5.0) (2026-07-24)
+## [0.5.0](https://github.com/gnoopy/InstaFix/compare/adapter-localstorage-v0.4.6...adapter-localstorage-v0.5.0) (2026-07-24)
 
 
 ### ⚠ BREAKING CHANGES
@@ -36,61 +36,61 @@
 
 ### Features
 
-* **adapter-localstorage:** persist screenshotRegion and support multi-status queries ([07e4c29](https://github.com/NeosiaNexus/SitePing/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
-* **adapter-memory:** persist screenshotRegion and support multi-status queries ([07e4c29](https://github.com/NeosiaNexus/SitePing/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
-* **adapter-prisma:** 4-state validation, statuses bucket filter, screenshotRegion persistence ([07e4c29](https://github.com/NeosiaNexus/SitePing/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
-* **cli:** generate the screenshotRegion Json? column via siteping init/sync ([07e4c29](https://github.com/NeosiaNexus/SitePing/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
-* **core:** 4-state feedback model, screenshotRegion metadata and multi-status queries ([07e4c29](https://github.com/NeosiaNexus/SitePing/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
-* **dashboard:** @siteping/dashboard — Linear-style triage inbox with keyboard-first triage, annotated-screenshot evidence card, store/endpoint modes, theming and 7 locales; WCAG 2.1 AA verified (axe: zero violations) ([07e4c29](https://github.com/NeosiaNexus/SitePing/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
-* **demo:** freelancer inbox at /demo/inbox with a seeded triage backlog and real annotated screenshots ([07e4c29](https://github.com/NeosiaNexus/SitePing/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
-* triage inbox (@siteping/dashboard), 4-state statuses and annotated screenshots ([#201](https://github.com/NeosiaNexus/SitePing/issues/201)) ([07e4c29](https://github.com/NeosiaNexus/SitePing/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
-* **widget:** render the 4-state model and capture screenshots with context ([07e4c29](https://github.com/NeosiaNexus/SitePing/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
+* **adapter-localstorage:** persist screenshotRegion and support multi-status queries ([07e4c29](https://github.com/gnoopy/InstaFix/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
+* **adapter-memory:** persist screenshotRegion and support multi-status queries ([07e4c29](https://github.com/gnoopy/InstaFix/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
+* **adapter-prisma:** 4-state validation, statuses bucket filter, screenshotRegion persistence ([07e4c29](https://github.com/gnoopy/InstaFix/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
+* **cli:** generate the screenshotRegion Json? column via instafix init/sync ([07e4c29](https://github.com/gnoopy/InstaFix/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
+* **core:** 4-state feedback model, screenshotRegion metadata and multi-status queries ([07e4c29](https://github.com/gnoopy/InstaFix/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
+* **dashboard:** @instafix/dashboard — Linear-style triage inbox with keyboard-first triage, annotated-screenshot evidence card, store/endpoint modes, theming and 7 locales; WCAG 2.1 AA verified (axe: zero violations) ([07e4c29](https://github.com/gnoopy/InstaFix/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
+* **demo:** freelancer inbox at /demo/inbox with a seeded triage backlog and real annotated screenshots ([07e4c29](https://github.com/gnoopy/InstaFix/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
+* triage inbox (@instafix/dashboard), 4-state statuses and annotated screenshots ([#201](https://github.com/gnoopy/InstaFix/issues/201)) ([07e4c29](https://github.com/gnoopy/InstaFix/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
+* **widget:** render the 4-state model and capture screenshots with context ([07e4c29](https://github.com/gnoopy/InstaFix/commit/07e4c29af5d522fd1a8ea124d6365b4e3463c96b))
 
-## [0.4.6](https://github.com/NeosiaNexus/SitePing/compare/adapter-localstorage-v0.4.5...adapter-localstorage-v0.4.6) (2026-06-10)
-
-
-### Features
-
-* tech-lead review quick wins — a11y keyboard flow, store persistence contract, CSV formula guard ([#165](https://github.com/NeosiaNexus/SitePing/issues/165)) ([56f17a9](https://github.com/NeosiaNexus/SitePing/commit/56f17a99f159dc12707bcc0ec2f7c906bddf2a3f))
-
-## [0.4.5](https://github.com/NeosiaNexus/SitePing/compare/adapter-localstorage-v0.4.4...adapter-localstorage-v0.4.5) (2026-05-18)
+## [0.4.6](https://github.com/gnoopy/InstaFix/compare/adapter-localstorage-v0.4.5...adapter-localstorage-v0.4.6) (2026-06-10)
 
 
 ### Features
 
-* **widget:** capture last 50 console messages + failed network requests with each feedback ([#71](https://github.com/NeosiaNexus/SitePing/issues/71)) ([726e1b8](https://github.com/NeosiaNexus/SitePing/commit/726e1b8a0d4dcef726ec6dc468c168fb73396dbc))
+* tech-lead review quick wins — a11y keyboard flow, store persistence contract, CSV formula guard ([#165](https://github.com/gnoopy/InstaFix/issues/165)) ([56f17a9](https://github.com/gnoopy/InstaFix/commit/56f17a99f159dc12707bcc0ec2f7c906bddf2a3f))
+
+## [0.4.5](https://github.com/gnoopy/InstaFix/compare/adapter-localstorage-v0.4.4...adapter-localstorage-v0.4.5) (2026-05-18)
+
+
+### Features
+
+* **widget:** capture last 50 console messages + failed network requests with each feedback ([#71](https://github.com/gnoopy/InstaFix/issues/71)) ([726e1b8](https://github.com/gnoopy/InstaFix/commit/726e1b8a0d4dcef726ec6dc468c168fb73396dbc))
 
 
 ### Refactoring
 
-* **widget,core:** share SegmentedControl, setButtonLoading, filter logic ([#75](https://github.com/NeosiaNexus/SitePing/issues/75)) ([8cb536b](https://github.com/NeosiaNexus/SitePing/commit/8cb536bca303b82e76a00e461d939da210054714))
+* **widget,core:** share SegmentedControl, setButtonLoading, filter logic ([#75](https://github.com/gnoopy/InstaFix/issues/75)) ([8cb536b](https://github.com/gnoopy/InstaFix/commit/8cb536bca303b82e76a00e461d939da210054714))
 
 
 ### Miscellaneous
 
-* **deps:** reclassify @medv/finder, widen prisma peer range, harmonize engines ([#74](https://github.com/NeosiaNexus/SitePing/issues/74)) ([b28465d](https://github.com/NeosiaNexus/SitePing/commit/b28465dc762077a535b79dbaffb51faa73f68538))
+* **deps:** reclassify @medv/finder, widen prisma peer range, harmonize engines ([#74](https://github.com/gnoopy/InstaFix/issues/74)) ([b28465d](https://github.com/gnoopy/InstaFix/commit/b28465dc762077a535b79dbaffb51faa73f68538))
 
-## [0.4.4](https://github.com/NeosiaNexus/SitePing/compare/adapter-localstorage-v0.4.3...adapter-localstorage-v0.4.4) (2026-05-06)
-
-
-### Features
-
-* page-scoped annotations + semantic anchors (data-feedback-anchor) ([#55](https://github.com/NeosiaNexus/SitePing/issues/55)) ([db722de](https://github.com/NeosiaNexus/SitePing/commit/db722deab9f69cfdeb6fbe6f7f0bea57e2995e5c))
-* screenshot capture with pluggable storage ([#58](https://github.com/NeosiaNexus/SitePing/issues/58)) ([f14ecd2](https://github.com/NeosiaNexus/SitePing/commit/f14ecd2f2f05a547a4a52e5a6ad4d794d438008c))
-
-## [0.4.3](https://github.com/NeosiaNexus/SitePing/compare/adapter-localstorage-v0.4.2...adapter-localstorage-v0.4.3) (2026-04-04)
+## [0.4.4](https://github.com/gnoopy/InstaFix/compare/adapter-localstorage-v0.4.3...adapter-localstorage-v0.4.4) (2026-05-06)
 
 
 ### Features
 
-* add adapter-memory, adapter-localstorage, and widget store mode ([efa8b64](https://github.com/NeosiaNexus/SitePing/commit/efa8b64197d1a612146b0c988f1b708cd594b373))
+* page-scoped annotations + semantic anchors (data-feedback-anchor) ([#55](https://github.com/gnoopy/InstaFix/issues/55)) ([db722de](https://github.com/gnoopy/InstaFix/commit/db722deab9f69cfdeb6fbe6f7f0bea57e2995e5c))
+* screenshot capture with pluggable storage ([#58](https://github.com/gnoopy/InstaFix/issues/58)) ([f14ecd2](https://github.com/gnoopy/InstaFix/commit/f14ecd2f2f05a547a4a52e5a6ad4d794d438008c))
+
+## [0.4.3](https://github.com/gnoopy/InstaFix/compare/adapter-localstorage-v0.4.2...adapter-localstorage-v0.4.3) (2026-04-04)
+
+
+### Features
+
+* add adapter-memory, adapter-localstorage, and widget store mode ([efa8b64](https://github.com/gnoopy/InstaFix/commit/efa8b64197d1a612146b0c988f1b708cd594b373))
 
 ## 0.4.2 (2026-04-04)
 
 ### Features
 
 - Initial release
-- `LocalStorageStore` implementing `SitepingStore` interface
+- `LocalStorageStore` implementing `InstaFixStore` interface
 - Data persists across page reloads via `localStorage`
 - JSON date serialization/deserialization
 - Graceful handling of corrupted data and storage limits

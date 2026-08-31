@@ -8,13 +8,13 @@ import {
   type FeedbackResponseList,
   type FeedbackStatus,
   flattenAnnotation,
-  type SitepingStore,
+  type InstaFixStore,
   toFeedbackUpdate,
-} from "@siteping/core";
+} from "@instafix/core";
 import type { GetFeedbacksOptions, WidgetClient } from "./api-client.js";
 
 /**
- * `WidgetClient` implementation that delegates directly to a `SitepingStore`.
+ * `WidgetClient` implementation that delegates directly to a `InstaFixStore`.
  *
  * Used in client-side mode — the widget calls the store in-process instead of
  * making HTTP requests. Handles the same conversions the HTTP handler normally
@@ -22,7 +22,7 @@ import type { GetFeedbacksOptions, WidgetClient } from "./api-client.js";
  */
 export class StoreClient implements WidgetClient {
   constructor(
-    private readonly store: SitepingStore,
+    private readonly store: InstaFixStore,
     private readonly projectName: string,
   ) {}
 

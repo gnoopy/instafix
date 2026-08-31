@@ -1,7 +1,7 @@
 {
-  "name": "@siteping/adapter-memory",
+  "name": "@instafix/adapter-memory",
   "version": "0.5.3",
-  "description": "In-memory adapter for Siteping — zero dependencies, works everywhere",
+  "description": "In-memory adapter for InstaFix — zero dependencies, works everywhere",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -28,7 +28,7 @@
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "siteping",
+    "instafix",
     "memory",
     "adapter",
     "feedback",
@@ -36,16 +36,16 @@
     "demo",
     "typescript"
   ],
-  "author": "neosianexus",
+  "author": "gnoopy",
   "license": "MIT",
-  "homepage": "https://siteping.dev",
+  "homepage": "https://instafix.realstory.blog",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "url": "git+https://github.com/gnoopy/InstaFix.git",
     "directory": "packages/adapter-memory"
   },
   "bugs": {
-    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+    "url": "https://github.com/gnoopy/InstaFix/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -54,6 +54,6 @@
     "node": ">=20"
   },
   "devDependencies": {
-    "@siteping/core": "workspace:*"
+    "@instafix/core": "workspace:*"
   }
 }

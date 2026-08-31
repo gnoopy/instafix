@@ -69,7 +69,7 @@ export function ShortcutsOverlay({ onClose }: ShortcutsOverlayProps): ReactEleme
   return (
     <div
       ref={overlayRef}
-      className="spd-shortcuts"
+      className="ifd-shortcuts"
       role="dialog"
       aria-modal="true"
       aria-label={t("shortcuts.title")}
@@ -80,19 +80,19 @@ export function ShortcutsOverlay({ onClose }: ShortcutsOverlayProps): ReactEleme
       }}
       onKeyDown={handleKeyDown}
     >
-      <div className="spd-shortcuts-card">
-        <div className="spd-meta-label">{t("shortcuts.title")}</div>
-        <div className="spd-shortcuts-grid">
+      <div className="ifd-shortcuts-card">
+        <div className="ifd-meta-label">{t("shortcuts.title")}</div>
+        <div className="ifd-shortcuts-grid">
           {rows.map((row) => (
             <Fragment key={row.label + row.keys.join()}>
-              <span className="spd-shortcut-keys">
+              <span className="ifd-shortcut-keys">
                 {row.keys.map((key) => (
-                  <kbd key={key} className="spd-kbd">
+                  <kbd key={key} className="ifd-kbd">
                     {key}
                   </kbd>
                 ))}
               </span>
-              <span className="spd-shortcut-label">{row.label}</span>
+              <span className="ifd-shortcut-label">{row.label}</span>
             </Fragment>
           ))}
         </div>

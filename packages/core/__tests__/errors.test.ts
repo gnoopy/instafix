@@ -1,78 +1,78 @@
 import { describe, expect, it } from "vitest";
-import { SitepingAuthError, SitepingError, SitepingNetworkError, SitepingValidationError } from "../src/errors.js";
+import { InstaFixAuthError, InstaFixError, InstaFixNetworkError, InstaFixValidationError } from "../src/errors.js";
 
-describe("SitepingError (base)", () => {
+describe("InstaFixError (base)", () => {
   it("constructs with explicit code and retryable flag", () => {
-    const err = new SitepingError("boom", "CUSTOM", true);
+    const err = new InstaFixError("boom", "CUSTOM", true);
     expect(err.message).toBe("boom");
     expect(err.code).toBe("CUSTOM");
     expect(err.retryable).toBe(true);
-    expect(err.name).toBe("SitepingError");
+    expect(err.name).toBe("InstaFixError");
   });
 
   it("is an Error subclass — instanceof Error", () => {
-    const err = new SitepingError("x", "X", false);
+    const err = new InstaFixError("x", "X", false);
     expect(err).toBeInstanceOf(Error);
   });
 
   it("retryable can be explicitly false", () => {
-    const err = new SitepingError("nope", "NOPE", false);
+    const err = new InstaFixError("nope", "NOPE", false);
     expect(err.retryable).toBe(false);
   });
 });
 
-describe("SitepingNetworkError", () => {
+describe("InstaFixNetworkError", () => {
   it("has code NETWORK and is retryable", () => {
-    const err = new SitepingNetworkError("connection refused");
+    const err = new InstaFixNetworkError("connection refused");
     expect(err.code).toBe("NETWORK");
     expect(err.retryable).toBe(true);
-    expect(err.name).toBe("SitepingNetworkError");
+    expect(err.name).toBe("InstaFixNetworkError");
   });
 
-  it("is instanceof SitepingError", () => {
-    const err = new SitepingNetworkError("x");
-    expect(err).toBeInstanceOf(SitepingError);
+  it("is instanceof InstaFixError", () => {
+    const err = new InstaFixNetworkError("x");
+    expect(err).toBeInstanceOf(InstaFixError);
   });
 
   it("preserves the message", () => {
-    const err = new SitepingNetworkError("timed out after 10s");
+    const err = new InstaFixNetworkError("timed out after 10s");
     expect(err.message).toBe("timed out after 10s");
   });
 });
 
-describe("SitepingValidationError", () => {
+describe("InstaFixValidationError", () => {
   it("has code VALIDATION and is not retryable", () => {
-    const err = new SitepingValidationError("bad shape");
+    const err = new InstaFixValidationError("bad shape");
     expect(err.code).toBe("VALIDATION");
     expect(err.retryable).toBe(false);
-    expect(err.name).toBe("SitepingValidationError");
+    expect(err.name).toBe("InstaFixValidationError");
   });
 
-  it("is instanceof SitepingError", () => {
-    const err = new SitepingValidationError("x");
-    expect(err).toBeInstanceOf(SitepingError);
+  it("is instanceof InstaFixError", () => {
+    const err = new InstaFixValidationError("x");
+    expect(err).toBeInstanceOf(InstaFixError);
   });
 });
 
-describe("SitepingAuthError", () => {
+describe("InstaFixAuthError", () => {
   it("has code AUTH and is not retryable", () => {
-    const err = new SitepingAuthError("401");
+    const err = new InstaFixAuthError("401");
     expect(err.code).toBe("AUTH");
     expect(err.retryable).toBe(false);
-    expect(err.name).toBe("SitepingAuthError");
+    expect(err.name).toBe("InstaFixAuthError");
   });
 
-  it("is instanceof SitepingError", () => {
-    const err = new SitepingAuthError("x");
-    expect(err).toBeInstanceOf(SitepingError);
+  it("is instanceof InstaFixError", () => {
+    const err = new InstaFixAuthError("x");
+    expect(err).toBeInstanceOf(InstaFixError);
   });
 
-  it("is distinguishable from SitepingValidationError despite both not retryable", () => {
-    const auth = new SitepingAuthError("401");
-    const validation = new SitepingValidationError("400");
-    expect(auth).toBeInstanceOf(SitepingAuthError);
-    expect(auth).not.toBeInstanceOf(SitepingValidationError);
-    expect(validation).toBeInstanceOf(SitepingValidationError);
-    expect(validation).not.toBeInstanceOf(SitepingAuthError);
+  it("is distinguishable from InstaFixValidationError despite both not retryable", () => {
+    const auth = new InstaFixAuthError("401");
+    const validation = new InstaFixValidationError("400");
+    expect(auth).toBeInstanceOf(InstaFixAuthError);
+    expect(auth).not.toBeInstanceOf(InstaFixValidationError);
+    expect(validation).toBeInstanceOf(InstaFixValidationError);
+    expect(validation).not.toBeInstanceOf(InstaFixAuthError);
   });
 });

@@ -3,7 +3,7 @@ import * as p from "@clack/prompts";
 import { syncPrismaModels } from "../generators/prisma.js";
 import { findPrismaSchema } from "../utils/find-schema.js";
 
-/** Options accepted by the `siteping sync` subcommand. */
+/** Options accepted by the `instafix sync` subcommand. */
 export interface SyncCommandOptions {
   /** Optional explicit path to the host project's `schema.prisma`. */
   schema?: string;

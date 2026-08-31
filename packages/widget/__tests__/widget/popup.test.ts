@@ -1220,7 +1220,7 @@ describe("Popup platform detection", () => {
 // ---------------------------------------------------------------------------
 
 describe("Popup draft recovery", () => {
-  const DRAFT_KEY = "siteping_draft_v1";
+  const DRAFT_KEY = "instafix_draft_v1";
 
   afterEach(() => {
     sessionStorage.removeItem(DRAFT_KEY);

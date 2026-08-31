@@ -33,27 +33,27 @@ function withScreenshot(overrides = {}) {
 describe("EvidenceCard — screenshot with region", () => {
   it("renders the annotation rect at the region percentages with four dim panels", () => {
     const { container } = renderWithUi(<EvidenceCard record={withScreenshot()} />);
-    const rect = container.querySelector<HTMLElement>(".spd-evidence-rect") as HTMLElement;
+    const rect = container.querySelector<HTMLElement>(".ifd-evidence-rect") as HTMLElement;
     expect(rect).not.toBeNull();
     // jsdom normalizes "25.000%" → "25%", so compare numerically.
     expect(Number.parseFloat(rect.style.left)).toBe(25);
     expect(Number.parseFloat(rect.style.top)).toBe(10);
     expect(Number.parseFloat(rect.style.width)).toBe(50);
     expect(Number.parseFloat(rect.style.height)).toBe(30);
-    expect(container.querySelectorAll(".spd-evidence-dim")).toHaveLength(4);
-    expect(container.querySelector(".spd-evidence-corners")).not.toBeNull();
+    expect(container.querySelectorAll(".ifd-evidence-dim")).toHaveLength(4);
+    expect(container.querySelector(".ifd-evidence-corners")).not.toBeNull();
   });
 
   it("adds the region pixel dimensions to the caption once the image reports its natural size", async () => {
     const { container } = renderWithUi(<EvidenceCard record={withScreenshot()} />);
-    const img = container.querySelector<HTMLImageElement>(".spd-evidence-img");
+    const img = container.querySelector<HTMLImageElement>(".ifd-evidence-img");
     expect(img).not.toBeNull();
     Object.defineProperty(img, "naturalWidth", { value: 200, configurable: true });
     Object.defineProperty(img, "naturalHeight", { value: 100, configurable: true });
     fireEvent.load(img as HTMLImageElement);
 
     await waitFor(() => {
-      const caption = container.querySelector(".spd-evidence-caption")?.textContent ?? "";
+      const caption = container.querySelector(".ifd-evidence-caption")?.textContent ?? "";
       // wPct 0.5 × 200 = 100, hPct 0.3 × 100 = 30
       expect(caption).toContain("100×30px");
       expect(caption).toContain("@2x");
@@ -62,20 +62,20 @@ describe("EvidenceCard — screenshot with region", () => {
 
   it("toggles the annotation overlay via the caption button", () => {
     const { container } = renderWithUi(<EvidenceCard record={withScreenshot()} />);
-    expect(container.querySelector(".spd-evidence-rect")).not.toBeNull();
+    expect(container.querySelector(".ifd-evidence-rect")).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Hide annotation" }));
-    expect(container.querySelector(".spd-evidence-rect")).toBeNull();
+    expect(container.querySelector(".ifd-evidence-rect")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Show annotation" }));
-    expect(container.querySelector(".spd-evidence-rect")).not.toBeNull();
+    expect(container.querySelector(".ifd-evidence-rect")).not.toBeNull();
   });
 
   it("toggles the zoom class when the image is clicked", () => {
     const { container } = renderWithUi(<EvidenceCard record={withScreenshot()} />);
-    const stage = container.querySelector(".spd-evidence-stage");
-    const img = container.querySelector<HTMLImageElement>(".spd-evidence-img");
-    expect(stage?.className).not.toContain("spd-evidence-zoomed");
+    const stage = container.querySelector(".ifd-evidence-stage");
+    const img = container.querySelector<HTMLImageElement>(".ifd-evidence-img");
+    expect(stage?.className).not.toContain("ifd-evidence-zoomed");
     fireEvent.click(img as HTMLImageElement);
-    expect(container.querySelector(".spd-evidence-stage")?.className).toContain("spd-evidence-zoomed");
+    expect(container.querySelector(".ifd-evidence-stage")?.className).toContain("ifd-evidence-zoomed");
   });
 
   it("exposes the zoom as a keyboard-operable toggle button", () => {
@@ -84,7 +84,7 @@ describe("EvidenceCard — screenshot with region", () => {
     expect(button.getAttribute("aria-pressed")).toBe("false");
     fireEvent.click(button);
     expect(button.getAttribute("aria-pressed")).toBe("true");
-    expect(container.querySelector(".spd-evidence-stage")?.className).toContain("spd-evidence-zoomed");
+    expect(container.querySelector(".ifd-evidence-stage")?.className).toContain("ifd-evidence-zoomed");
   });
 
   it("Esc while zoomed un-zooms without bubbling to close the drawer", () => {
@@ -110,8 +110,8 @@ describe("EvidenceCard — screenshot without region (legacy)", () => {
   it("renders the image but no rect or toggle", () => {
     const record = makeRecord({ screenshotUrl: "data:image/jpeg;base64,AAAA", screenshotRegion: null });
     const { container } = renderWithUi(<EvidenceCard record={record} />);
-    expect(container.querySelector(".spd-evidence-img")).not.toBeNull();
-    expect(container.querySelector(".spd-evidence-rect")).toBeNull();
+    expect(container.querySelector(".ifd-evidence-img")).not.toBeNull();
+    expect(container.querySelector(".ifd-evidence-rect")).toBeNull();
     expect(screen.queryByRole("button", { name: /annotation/i })).toBeNull();
   });
 });
@@ -163,7 +163,7 @@ describe("EvidenceCard — no screenshot", () => {
     });
     const { container } = renderWithUi(<EvidenceCard record={record} />);
     expect(screen.queryByRole("button", { name: "main h1" })).toBeNull();
-    const selector = container.querySelector<HTMLElement>(".spd-anchor-selector");
+    const selector = container.querySelector<HTMLElement>(".ifd-anchor-selector");
     expect(selector?.tagName).toBe("DIV");
     expect(selector?.textContent).toBe("main h1");
   });
@@ -187,7 +187,7 @@ describe("EvidenceCard — extra annotations", () => {
     });
     const { container } = renderWithUi(<EvidenceCard record={record} />);
     // Primary renders the rect; the extra annotation renders a fallback selector.
-    expect(container.querySelector(".spd-evidence-rect")).not.toBeNull();
+    expect(container.querySelector(".ifd-evidence-rect")).not.toBeNull();
     expect(screen.getByRole("button", { name: ".secondary" })).toBeTruthy();
   });
 });

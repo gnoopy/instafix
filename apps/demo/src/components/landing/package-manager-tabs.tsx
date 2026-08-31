@@ -6,17 +6,17 @@ const packageManagers = ["npm", "bun", "yarn", "pnpm"] as const;
 type PackageManager = (typeof packageManagers)[number];
 
 const installCommands: Record<PackageManager, string> = {
-  npm: "npm install @siteping/widget @siteping/adapter-prisma",
-  bun: "bun add @siteping/widget @siteping/adapter-prisma",
-  yarn: "yarn add @siteping/widget @siteping/adapter-prisma",
-  pnpm: "pnpm add @siteping/widget @siteping/adapter-prisma",
+  npm: "npm install @instafix/widget @instafix/adapter-prisma",
+  bun: "bun add @instafix/widget @instafix/adapter-prisma",
+  yarn: "yarn add @instafix/widget @instafix/adapter-prisma",
+  pnpm: "pnpm add @instafix/widget @instafix/adapter-prisma",
 };
 
 const setupCommands: Record<PackageManager, string> = {
-  npm: "npx @siteping/cli init",
-  bun: "bunx @siteping/cli init",
-  yarn: "yarn dlx @siteping/cli init",
-  pnpm: "pnpm dlx @siteping/cli init",
+  npm: "npx @instafix/cli init",
+  bun: "bunx @instafix/cli init",
+  yarn: "yarn dlx @instafix/cli init",
+  pnpm: "pnpm dlx @instafix/cli init",
 };
 
 function TabBar({ selected, onChange }: { selected: PackageManager; onChange: (pm: PackageManager) => void }) {
@@ -130,18 +130,18 @@ function AnnotateCode() {
     <code>
       <span className="text-purple-400">import</span>
       <span className="text-gray-300"> {"{"} </span>
-      <span className="text-yellow-300">initSiteping</span>
+      <span className="text-yellow-300">initInstaFix</span>
       <span className="text-gray-300"> {"}"} </span>
-      <span className="text-purple-400">from</span> <span className="text-green-400">&apos;@siteping/widget&apos;</span>
+      <span className="text-purple-400">from</span> <span className="text-green-400">&apos;@instafix/widget&apos;</span>
       {"\n"}
       {"\n"}
-      <span className="text-yellow-300">initSiteping</span>
+      <span className="text-yellow-300">initInstaFix</span>
       <span className="text-gray-500">({"{"}</span>
       {"\n"}
       {"  "}
       <span className="text-blue-300">endpoint</span>
       <span className="text-gray-500">: </span>
-      <span className="text-green-400">&apos;/api/siteping&apos;</span>
+      <span className="text-green-400">&apos;/api/instafix&apos;</span>
       <span className="text-gray-500">,</span>
       {"\n"}
       {"  "}

@@ -1,9 +1,9 @@
-import { testSitepingStore } from "@siteping/core/testing";
+import { testInstaFixStore } from "@instafix/core/testing";
 import { describe, expect, it } from "vitest";
 import { MemoryStore } from "../src/index.js";
 
-// Run the full SitepingStore conformance suite
-testSitepingStore(() => new MemoryStore());
+// Run the full InstaFixStore conformance suite
+testInstaFixStore(() => new MemoryStore());
 
 // ---------------------------------------------------------------------------
 // MemoryStore-specific tests

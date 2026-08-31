@@ -1,14 +1,14 @@
 /**
- * React helper for `@siteping/widget`.
+ * React helper for `@instafix/widget`.
  *
- * `useSiteping` initialises the widget once for the lifetime of the component
+ * `useInstaFix` initialises the widget once for the lifetime of the component
  * tree, even under React.StrictMode's double-invoke effect dance. Returns the
- * `SitepingInstance` so consumers can drive `open()` / `close()` / `refresh()`
+ * `InstaFixInstance` so consumers can drive `open()` / `close()` / `refresh()`
  * programmatically from anywhere in their tree.
  *
  * Why a dedicated entry instead of a snippet in the README:
  * - StrictMode mounts every effect twice in dev, which the obvious
- *   `useEffect(() => { const i = initSiteping(...); return i.destroy }, [])`
+ *   `useEffect(() => { const i = initInstaFix(...); return i.destroy }, [])`
  *   handles fine for *re-mount*, but not for the brief window where the
  *   second mount sees a still-alive widget (the widget's own singleton guard
  *   logs an info message and returns the existing instance — surprising
@@ -17,15 +17,15 @@
  *   `onFeedbackSent`) read closure values without re-initialising the widget.
  *
  * Peer dep on react ≥ 18 (declared as optional in package.json), so projects
- * that never import `@siteping/widget/react` don't need React installed.
+ * that never import `@instafix/widget/react` don't need React installed.
  */
 
-import type { SitepingConfig, SitepingInstance } from "@siteping/core";
+import type { InstaFixConfig, InstaFixInstance } from "@instafix/core";
 import { useEffect, useRef, useState } from "react";
-import { initSiteping } from "./index.js";
+import { initInstaFix } from "./index.js";
 
 /**
- * Initialise the SitePing widget for the lifetime of the calling component.
+ * Initialise the InstaFix widget for the lifetime of the calling component.
  *
  * Safe to call from a Server Component file as long as the component itself
  * is marked `"use client"` — the hook bails out cleanly on the server because
@@ -34,11 +34,11 @@ import { initSiteping } from "./index.js";
  * @example Next.js App Router
  * ```tsx
  * "use client"
- * import { useSiteping } from "@siteping/widget/react"
+ * import { useInstaFix } from "@instafix/widget/react"
  *
  * export function FeedbackProvider({ children }: { children: React.ReactNode }) {
- *   useSiteping({
- *     endpoint: "/api/siteping",
+ *   useInstaFix({
+ *     endpoint: "/api/instafix",
  *     projectName: "my-app",
  *   })
  *   return <>{children}</>
@@ -48,15 +48,15 @@ import { initSiteping } from "./index.js";
  * @example Driving the panel programmatically
  * ```tsx
  * "use client"
- * import { useSiteping } from "@siteping/widget/react"
+ * import { useInstaFix } from "@instafix/widget/react"
  *
  * export function HelpButton() {
- *   const widget = useSiteping({ endpoint: "/api/siteping", projectName: "my-app" })
+ *   const widget = useInstaFix({ endpoint: "/api/instafix", projectName: "my-app" })
  *   return <button onClick={() => widget?.open()}>Need help?</button>
  * }
  * ```
  */
-export function useSiteping(config: SitepingConfig): SitepingInstance | null {
+export function useInstaFix(config: InstaFixConfig): InstaFixInstance | null {
   // Keep callbacks fresh without retriggering the init effect. The widget
   // captures the *initial* config; we mirror updated handlers via the bridge
   // below so consumers can change `onFeedbackSent` between renders without
@@ -64,7 +64,7 @@ export function useSiteping(config: SitepingConfig): SitepingInstance | null {
   const configRef = useRef(config);
   configRef.current = config;
 
-  const [instance, setInstance] = useState<SitepingInstance | null>(null);
+  const [instance, setInstance] = useState<InstaFixInstance | null>(null);
 
   useEffect(() => {
     // `mounted` flag deals with the StrictMode double-effect: the cleanup of
@@ -82,7 +82,7 @@ export function useSiteping(config: SitepingConfig): SitepingInstance | null {
     // `instance.on` on top of the config wiring would call them twice per
     // event — the config wrappers are the single delivery path.)
     // The `mounted` guard keeps callbacks silent after unmount.
-    const created = initSiteping({
+    const created = initInstaFix({
       ...configRef.current,
       onSkip: (reason) => {
         if (mounted) configRef.current.onSkip?.(reason);

@@ -18,7 +18,7 @@ const faqs: { q: string; a: ReactNode }[] = [
     q: "Is there a dashboard to view feedback?",
     a: (
       <>
-        Yes — install @siteping/dashboard and drop the {"<SitepingInbox />"} React component into your admin page. It is
+        Yes — install @instafix/dashboard and drop the {"<InstaFixInbox />"} React component into your admin page. It is
         a Linear-style triage inbox with j/k keyboard shortcuts, four statuses, and the client&apos;s annotation
         re-drawn on the screenshot.{" "}
         <Link
@@ -37,7 +37,7 @@ const faqs: { q: string; a: ReactNode }[] = [
   },
   {
     q: "Is it GDPR compliant?",
-    a: "Fully. Since SitePing is self-hosted, all data stays on your infrastructure. No data is ever sent to third-party servers. You control storage, retention, and deletion.",
+    a: "Fully. Since InstaFix is self-hosted, all data stays on your infrastructure. No data is ever sent to third-party servers. You control storage, retention, and deletion.",
   },
   {
     q: "Can I customize the widget appearance?",
@@ -49,11 +49,11 @@ const faqs: { q: string; a: ReactNode }[] = [
   },
   {
     q: "How is reviewers' data handled?",
-    a: 'Feedback lives in your own database — SitePing is self-hosted. The API blanks reviewer emails on unauthenticated reads by default, and elements marked data-siteping-ignore="true" are masked out of screenshots.',
+    a: 'Feedback lives in your own database — InstaFix is self-hosted. The API blanks reviewer emails on unauthenticated reads by default, and elements marked data-instafix-ignore="true" are masked out of screenshots.',
   },
   {
     q: "Do I need to create an account?",
-    a: "No. SitePing is an npm package you install and configure. No account, no API key, no signup. It runs entirely on your infrastructure.",
+    a: "No. InstaFix is an npm package you install and configure. No account, no API key, no signup. It runs entirely on your infrastructure.",
   },
 ];
 

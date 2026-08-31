@@ -6,7 +6,7 @@ import {
   type FeedbackType,
   isClosedStatus,
   type PageScope,
-} from "@siteping/core";
+} from "@instafix/core";
 import { AgentCopyButton } from "./agent-copy.js";
 import type { GetFeedbacksOptions, WidgetClient } from "./api-client.js";
 import { SegmentedControl } from "./components/segmented-control.js";
@@ -502,7 +502,7 @@ export class Panel {
     // anything within the panel's own subtree (cards, the confirm dialog,
     // which shares this root) — checked directly rather than through
     // `isWidgetChrome` so this doesn't depend on the shadow host actually
-    // being a `<siteping-widget>` element; then `isWidgetChrome` for our
+    // being a `<instafix-widget>` element; then `isWidgetChrome` for our
     // OTHER UI that lives elsewhere (the popup composer, tooltip, FAB).
     this.onDocumentClick = (e: MouseEvent) => {
       if (!this.isOpen) return;

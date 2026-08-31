@@ -1,4 +1,4 @@
-import type { ScreenshotStorage } from "@siteping/core";
+import type { ScreenshotStorage } from "@instafix/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PrismaStore } from "../src/index.js";
 
@@ -6,7 +6,7 @@ const SAMPLE_DATA_URL = "data:image/jpeg;base64,/9j/4AAQ";
 
 function mockPrisma() {
   return {
-    sitepingFeedback: {
+    instafixFeedback: {
       // create echoes back the data so we can assert what was written.
       create: vi.fn().mockImplementation((args: { data: Record<string, unknown> }) => ({
         id: "fb-1",
@@ -56,7 +56,7 @@ describe("PrismaStore — screenshot storage", () => {
     it("persists null when no data URL is sent", async () => {
       const store = new PrismaStore(prisma);
       await store.createFeedback(createInput());
-      const created = prisma.sitepingFeedback.create.mock.calls[0]?.[0] as { data: { screenshotUrl: unknown } };
+      const created = prisma.instafixFeedback.create.mock.calls[0]?.[0] as { data: { screenshotUrl: unknown } };
       expect(created.data.screenshotUrl).toBeNull();
     });
 
@@ -65,7 +65,7 @@ describe("PrismaStore — screenshot storage", () => {
       await store.createFeedback(createInput({ screenshotDataUrl: SAMPLE_DATA_URL, clientId: "c1" }));
       await store.createFeedback(createInput({ screenshotDataUrl: SAMPLE_DATA_URL, clientId: "c2" }));
 
-      const calls = prisma.sitepingFeedback.create.mock.calls as Array<[{ data: { screenshotUrl: string } }]>;
+      const calls = prisma.instafixFeedback.create.mock.calls as Array<[{ data: { screenshotUrl: string } }]>;
       expect(calls[0]?.[0].data.screenshotUrl).toBe(SAMPLE_DATA_URL);
       expect(calls[1]?.[0].data.screenshotUrl).toBe(SAMPLE_DATA_URL);
 
@@ -90,7 +90,7 @@ describe("PrismaStore — screenshot storage", () => {
         feedbackId: "c1",
         mimeType: "image/jpeg",
       });
-      const created = prisma.sitepingFeedback.create.mock.calls[0]?.[0] as { data: { screenshotUrl: string } };
+      const created = prisma.instafixFeedback.create.mock.calls[0]?.[0] as { data: { screenshotUrl: string } };
       expect(created.data.screenshotUrl).toBe("https://cdn.example.com/fb-c1.jpg");
     });
 
@@ -101,7 +101,7 @@ describe("PrismaStore — screenshot storage", () => {
       await store.createFeedback(createInput());
 
       expect(storage.upload).not.toHaveBeenCalled();
-      const created = prisma.sitepingFeedback.create.mock.calls[0]?.[0] as { data: { screenshotUrl: unknown } };
+      const created = prisma.instafixFeedback.create.mock.calls[0]?.[0] as { data: { screenshotUrl: unknown } };
       expect(created.data.screenshotUrl).toBeNull();
     });
 
@@ -113,7 +113,7 @@ describe("PrismaStore — screenshot storage", () => {
 
       const result = await store.createFeedback(createInput({ screenshotDataUrl: SAMPLE_DATA_URL, clientId: "c1" }));
 
-      const created = prisma.sitepingFeedback.create.mock.calls[0]?.[0] as { data: { screenshotUrl: string | null } };
+      const created = prisma.instafixFeedback.create.mock.calls[0]?.[0] as { data: { screenshotUrl: string | null } };
       // The feedback message is preserved; only the screenshot is dropped.
       // An inline fallback would silently grow Postgres during a storage
       // outage — operators discover it only when DB-size alarms fire.

@@ -7,16 +7,16 @@ export function WidgetDogfood() {
     let destroyed = false;
     let instance: { destroy: () => void } | null = null;
 
-    import("@siteping/widget").then(({ initSiteping }) => {
+    import("@instafix/widget").then(({ initInstaFix }) => {
       if (destroyed) return;
-      instance = initSiteping({
-        endpoint: "/api/siteping",
+      instance = initInstaFix({
+        endpoint: "/api/instafix",
         projectName: "landing",
         forceShow: true,
         accentColor: "#173CFF",
         locale: "en",
         position: "bottom-right",
-        // "Open on page" links from /demo/inbox (?siteping=<id>) focus the annotation.
+        // "Open on page" links from /demo/inbox (?instafix=<id>) focus the annotation.
         deepLink: true,
       });
     });

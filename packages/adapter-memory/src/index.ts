@@ -5,14 +5,14 @@ import {
   type FeedbackQuery,
   type FeedbackRecord,
   type FeedbackUpdateInput,
-  type SitepingStore,
-} from "@siteping/core";
+  type InstaFixStore,
+} from "@instafix/core";
 
-export type { SitepingStore } from "@siteping/core";
-export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@siteping/core";
+export type { InstaFixStore } from "@instafix/core";
+export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@instafix/core";
 
 /**
- * In-memory `SitepingStore` implementation.
+ * In-memory `InstaFixStore` implementation.
  *
  * Zero dependencies, works in any JS environment (Node, Bun, Deno, browser,
  * Cloudflare Workers). Data lives in a plain array — lost on process restart.
@@ -28,13 +28,13 @@ export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersi
  *
  * @example
  * ```ts
- * import { MemoryStore } from '@siteping/adapter-memory'
+ * import { MemoryStore } from '@instafix/adapter-memory'
  *
  * const store = new MemoryStore()
- * // Pass to createSitepingHandler({ store }) or initSiteping({ store })
+ * // Pass to createInstaFixHandler({ store }) or initInstaFix({ store })
  * ```
  */
-export class MemoryStore implements SitepingStore {
+export class MemoryStore implements InstaFixStore {
   private feedbacks: FeedbackRecord[] = [];
   private idCounter = 1;
 

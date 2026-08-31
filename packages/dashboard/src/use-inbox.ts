@@ -4,10 +4,10 @@ import {
   type FeedbackRecord,
   type FeedbackStatus,
   isClosedStatus,
-} from "@siteping/core";
+} from "@instafix/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createEndpointSource, createStoreSource } from "./source.js";
-import type { InboxSource, InboxState, InboxStatusFilter, InboxTypeFilter, UseSitepingInboxOptions } from "./types.js";
+import type { InboxSource, InboxState, InboxStatusFilter, InboxTypeFilter, UseInstaFixInboxOptions } from "./types.js";
 
 const DEFAULT_PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 250;
@@ -45,7 +45,7 @@ function insertByCreatedAtDesc(list: FeedbackRecord[], record: FeedbackRecord): 
 }
 
 /**
- * Headless triage-inbox hook — full state + actions behind `<SitepingInbox />`.
+ * Headless triage-inbox hook — full state + actions behind `<InstaFixInbox />`.
  *
  * - Fetches on mount and whenever project / status / type / debounced search
  *   change; stale responses are discarded via a request token (latest wins).
@@ -55,7 +55,7 @@ function insertByCreatedAtDesc(list: FeedbackRecord[], record: FeedbackRecord): 
  *   the rejected promise carries the error so UIs can toast on top of the
  *   `onError` callback.
  */
-export function useSitepingInbox(options: UseSitepingInboxOptions): InboxState {
+export function useInstaFixInbox(options: UseInstaFixInboxOptions): InboxState {
   const { source, store, endpoint, apiKey, onStatusChange, onDelete, onError } = options;
 
   const projects = useMemo<readonly string[]>(
@@ -64,7 +64,7 @@ export function useSitepingInbox(options: UseSitepingInboxOptions): InboxState {
   );
   const firstProject = projects[0];
   if (firstProject === undefined) {
-    throw new Error("[siteping] useSitepingInbox: `projects` must contain at least one project name.");
+    throw new Error("[instafix] useInstaFixInbox: `projects` must contain at least one project name.");
   }
 
   const pageSize = clampPageSize(options.pageSize);
@@ -88,7 +88,7 @@ export function useSitepingInbox(options: UseSitepingInboxOptions): InboxState {
         },
       });
     }
-    throw new Error("[siteping] useSitepingInbox requires one of `source`, `store` or `endpoint`.");
+    throw new Error("[instafix] useInstaFixInbox requires one of `source`, `store` or `endpoint`.");
   }, [source, store, endpoint, apiKey]);
 
   // -------------------------------------------------------------------------

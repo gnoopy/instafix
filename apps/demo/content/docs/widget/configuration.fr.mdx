@@ -1,34 +1,34 @@
 ---
 title: Configuration
-description: Chaque option d'initSiteping, avec sa vraie valeur par défaut et son comportement réel.
+description: Chaque option d'initInstaFix, avec sa vraie valeur par défaut et son comportement réel.
 ---
 
-Toutes les options d'`initSiteping(config)`. Seuls `projectName` et l'un de `endpoint` / `store` sont obligatoires.
+Toutes les options d'`initInstaFix(config)`. Seuls `projectName` et l'un de `endpoint` / `store` sont obligatoires.
 
 ## Connexion
 
-`SitepingConfig` est une union discriminée sur les deux modes de transport — `endpoint` **ou** `store`, jamais les deux, jamais aucun. TypeScript rejette les combinaisons invalides à la compilation au lieu de vous les laisser découvrir à l'exécution :
+`InstaFixConfig` est une union discriminée sur les deux modes de transport — `endpoint` **ou** `store`, jamais les deux, jamais aucun. TypeScript rejette les combinaisons invalides à la compilation au lieu de vous les laisser découvrir à l'exécution :
 
 ```ts
-initSiteping({ endpoint: "/api/siteping", store, projectName: "x" }); // ✗ les deux modes
-initSiteping({ store, apiKey: "sk-…", projectName: "x" });           // ✗ option HTTP en mode store
-initSiteping({ projectName: "x" });                                   // ✗ aucun transport
+initInstaFix({ endpoint: "/api/instafix", store, projectName: "x" }); // ✗ les deux modes
+initInstaFix({ store, apiKey: "sk-…", projectName: "x" });           // ✗ option HTTP en mode store
+initInstaFix({ projectName: "x" });                                   // ✗ aucun transport
 ```
 
 | Option | Type | Défaut | Ce que ça fait |
 |---|---|---|---|
-| `endpoint` | `string` | — | **Mode HTTP.** URL de votre API SitePing (ex. `/api/siteping`) |
-| `store` | `SitepingStore` | — | **Mode store.** Écrit dans un store du navigateur au lieu de faire du HTTP — exclut `endpoint`, `apiKey` et `headers` |
+| `endpoint` | `string` | — | **Mode HTTP.** URL de votre API InstaFix (ex. `/api/instafix`) |
+| `store` | `InstaFixStore` | — | **Mode store.** Écrit dans un store du navigateur au lieu de faire du HTTP — exclut `endpoint`, `apiKey` et `headers` |
 | `projectName` | `string` | — | Obligatoire dans les deux modes. Cadre tout ce que le widget lit et écrit |
 | `apiKey` | `string` | — | Mode HTTP uniquement. Envoyé en `Authorization: Bearer <clé>` sur chaque requête |
 | `headers` | objet ou fonction | — | Mode HTTP uniquement. En-têtes supplémentaires, statiques ou calculés par requête (sync ou async). Fusionnés en dernier : un `Authorization` explicite ici l'emporte sur `apiKey` |
 
-Les deux moitiés sont exportées sous les noms `SitepingHttpConfig` et `SitepingStoreConfig` — exactement ce qu'il vous faut quand un composant d'enrobage reçoit la config en prop et ne gère qu'un seul mode :
+Les deux moitiés sont exportées sous les noms `InstaFixHttpConfig` et `InstaFixStoreConfig` — exactement ce qu'il vous faut quand un composant d'enrobage reçoit la config en prop et ne gère qu'un seul mode :
 
 ```ts
-import type { SitepingHttpConfig } from "@siteping/widget";
+import type { InstaFixHttpConfig } from "@instafix/widget";
 
-function mountFeedback(config: SitepingHttpConfig) { /* endpoint garanti */ }
+function mountFeedback(config: InstaFixHttpConfig) { /* endpoint garanti */ }
 ```
 
 > `apiKey` part dans votre bundle client — chaque visiteur peut le lire. Réservez-le aux outils internes déjà protégés par une authentification ; sur un site public, préférez `headers` avec une fonction qui renvoie un jeton à durée de vie courte.
@@ -57,7 +57,7 @@ function mountFeedback(config: SitepingHttpConfig) { /* endpoint garanti */ }
 | `enableScreenshot` | `boolean` | `false` | Capture un JPEG de la zone annotée à l'envoi — voir [Captures d'écran](/fr/docs/widget/screenshots) |
 | `enableRightClickComment` | `boolean` | `false` | Clic droit n'importe où pour commenter instantanément — voir [Commentaires au clic droit](/fr/docs/widget/right-click) |
 | `captureDiagnostics` | `boolean` ou objet | `false` | Joint les entrées console récentes (max 50) et les requêtes réseau (max 20) à chaque feedback. `true` active les deux ; un objet choisit les canaux et les limites |
-| `deepLink` | `boolean` ou `{ param?: string }` | `false` | Au premier chargement, met en avant le feedback référencé par `?siteping=<id>` (ou votre paramètre personnalisé). Chargement initial uniquement — pour les changements de route, appelez `focusFeedback()` |
+| `deepLink` | `boolean` ou `{ param?: string }` | `false` | Au premier chargement, met en avant le feedback référencé par `?instafix=<id>` (ou votre paramètre personnalisé). Chargement initial uniquement — pour les changements de route, appelez `focusFeedback()` |
 | `identity` | `{ name, email }` | — | Pré-remplit l'auteur (applis avec SSO) : évite complètement la modale d'identité, jamais persisté dans le localStorage |
 
 ## Cadrage par page
@@ -84,4 +84,4 @@ function mountFeedback(config: SitepingHttpConfig) { /* endpoint garanti */ }
 
 | Option | Type | Défaut | Ce que ça fait |
 |---|---|---|---|
-| `debug` | `boolean` | `false` | Journalisation `[siteping]` verbeuse du cycle de vie via `console.debug` |
+| `debug` | `boolean` | `false` | Journalisation `[instafix]` verbeuse du cycle de vie via `console.debug` |

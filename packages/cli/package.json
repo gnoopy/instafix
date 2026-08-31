@@ -1,10 +1,10 @@
 {
-  "name": "@siteping/cli",
+  "name": "@instafix/cli",
   "version": "0.5.4",
-  "description": "CLI tool to set up Siteping in your project",
+  "description": "CLI tool to set up InstaFix in your project",
   "type": "module",
   "bin": {
-    "siteping": "./dist/index.js"
+    "instafix": "./dist/index.js"
   },
   "files": [
     "dist"
@@ -15,7 +15,7 @@
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "siteping",
+    "instafix",
     "cli",
     "prisma",
     "setup",
@@ -25,16 +25,16 @@
     "prisma-generator",
     "typescript"
   ],
-  "author": "neosianexus",
+  "author": "gnoopy",
   "license": "MIT",
-  "homepage": "https://siteping.dev",
+  "homepage": "https://instafix.realstory.blog",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "url": "git+https://github.com/gnoopy/InstaFix.git",
     "directory": "packages/cli"
   },
   "bugs": {
-    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+    "url": "https://github.com/gnoopy/InstaFix/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -43,7 +43,7 @@
     "node": ">=20"
   },
   "devDependencies": {
-    "@siteping/core": "workspace:*",
+    "@instafix/core": "workspace:*",
     "commander": "^15.0.0",
     "@clack/prompts": "^1.7.0",
     "@mrleebo/prisma-ast": "^0.16.0"

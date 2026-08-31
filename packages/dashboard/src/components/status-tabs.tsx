@@ -38,7 +38,7 @@ export function StatusTabs({ status, counts, onChange }: StatusTabsProps): React
   };
 
   return (
-    <div className="spd-tabs" role="radiogroup" aria-label={t("inbox.statusFilter")} onKeyDown={handleKeyDown}>
+    <div className="ifd-tabs" role="radiogroup" aria-label={t("inbox.statusFilter")} onKeyDown={handleKeyDown}>
       {TABS.map((tab, index) => {
         const selected = tab === status;
         const count = counts[tab];
@@ -53,7 +53,7 @@ export function StatusTabs({ status, counts, onChange }: StatusTabsProps): React
             }}
             type="button"
             role="radio"
-            className="spd-tab"
+            className="ifd-tab"
             data-status={tab}
             aria-checked={selected}
             // The label collapses to display:none in narrow containers, so an
@@ -63,12 +63,12 @@ export function StatusTabs({ status, counts, onChange }: StatusTabsProps): React
             onClick={() => onChange(tab)}
           >
             {Glyph ? (
-              <span className="spd-tab-glyph">
+              <span className="ifd-tab-glyph">
                 <Glyph />
               </span>
             ) : null}
-            <span className="spd-tab-label">{label}</span>
-            <span className="spd-tab-count">{count ?? "—"}</span>
+            <span className="ifd-tab-label">{label}</span>
+            <span className="ifd-tab-count">{count ?? "—"}</span>
           </button>
         );
       })}
