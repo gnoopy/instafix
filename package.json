@@ -1,0 +1,56 @@
+{
+  "name": "@instafix/dashboard",
+  "version": "0.2.5",
+  "description": "Linear-style triage inbox React component for InstaFix feedback",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "instafix",
+    "feedback",
+    "dashboard",
+    "inbox",
+    "triage",
+    "react",
+    "component",
+    "client-review",
+    "typescript"
+  ],
+  "author": "gnoopy",
+  "license": "MIT",
+  "homepage": "https://instafix.realstory.blog",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gnoopy/instafix.git",
+    "directory": "packages/dashboard"
+  },
+  "bugs": {
+    "url": "https://github.com/gnoopy/instafix/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}

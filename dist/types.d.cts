@@ -1,0 +1,906 @@
+import { type Prettify, type Serialized } from "./type-utils.cjs";
+/** FAB anchor — bottom-corner placement supported by the widget. */
+export type InstaFixPosition = "bottom-right" | "bottom-left";
+/** Visual theme — `auto` resolves to `light` or `dark` via system preference. */
+export type InstaFixTheme = "light" | "dark" | "auto";
+/** Built-in UI locales shipped with the widget. */
+export declare const BUILTIN_LOCALES: readonly ["en", "ko", "fr", "de", "es", "it", "pt", "ru"];
+export type BuiltinLocale = (typeof BUILTIN_LOCALES)[number];
+/**
+ * Locale identifier accepted by the widget. Built-in locales are kept as
+ * literal strings so editors auto-complete them, but arbitrary BCP-47 tags
+ * are also accepted (custom dictionaries registered via `registerLocale`).
+ */
+export type InstaFixLocale = BuiltinLocale | (string & {});
+/**
+ * Reasons reported through `InstaFixConfig.onSkip` — production environment,
+ * mobile viewport, or server-side rendering (no `window`/`document`).
+ */
+export type InstaFixSkipReason = "production" | "mobile" | "ssr";
+/** Per-channel + per-buffer-size diagnostics configuration. */
+export interface DiagnosticsCaptureOptions {
+    console?: boolean | undefined;
+    network?: boolean | undefined;
+    maxConsoleEntries?: number | undefined;
+    maxNetworkEntries?: number | undefined;
+}
+/** Identity payload supplied by the host application — bypasses the modal. */
+export interface InstaFixIdentity {
+    name: string;
+    email: string;
+}
+/** Deep-link configuration — controls how a feedback id is read from the URL. */
+export interface InstaFixDeepLinkOptions {
+    /** Query parameter name carrying the feedback id. Defaults to `"instafix"`. */
+    param?: string | undefined;
+}
+/**
+ * Extra request headers for HTTP mode — a static map, or a factory (sync or
+ * async) invoked once per request to produce fresh values (e.g. a short-lived
+ * session token).
+ */
+export type InstaFixHeadersOption = Record<string, string> | (() => Record<string, string> | Promise<Record<string, string>>);
+/**
+ * Options shared by both widget modes (HTTP and direct store).
+ *
+ * Do not use this type directly — use {@link InstaFixConfig}, the
+ * discriminated union that adds the mode-specific fields.
+ */
+export interface InstaFixBaseConfig {
+    /** Required — project identifier used to scope feedbacks */
+    projectName: string;
+    /** FAB position — defaults to 'bottom-right' */
+    position?: InstaFixPosition | undefined;
+    /**
+     * Show the "toggle markers visibility" item in the FAB radial menu.
+     * Defaults to `true` (current behavior). Set to `false` to hide that
+     * item entirely — useful for hosts that always want markers visible
+     * (e.g. dedicated review tools) or that find the eye icon redundant
+     * when no marker is on screen.
+     *
+     * Hiding the item also removes its keyboard navigation slot — the
+     * remaining two items still respond to ArrowUp/ArrowDown/Home/End.
+     * The marker-visibility state itself is unaffected; markers stay
+     * visible (the previous default state) and `annotations:toggle` is
+     * simply never emitted from the FAB.
+     */
+    showAnnotationsToggle?: boolean | undefined;
+    /** Accent color for the widget UI — defaults to '#0066ff' */
+    accentColor?: string | undefined;
+    /**
+     * Render the widget even when it would normally be skipped — this bypasses
+     * BOTH the production-environment guard AND the mobile-viewport guard.
+     * It does NOT bypass the SSR guard: without `window`/`document` the widget
+     * never renders and `onSkip("ssr")` fires instead.
+     * Defaults to false. Use it for dedicated review tools, staging environments,
+     * or responsive testing where you always want the widget present.
+     */
+    forceShow?: boolean | undefined;
+    /**
+     * Minimum viewport width (px) at or above which the widget renders. Below it,
+     * the widget is skipped and `onSkip("mobile")` fires. Defaults to `768`.
+     *
+     * Set lower (e.g. `0`) to allow narrow/mobile viewports, or use `forceShow`
+     * to bypass the viewport check entirely.
+     */
+    minViewportWidth?: number | undefined;
+    /** Enable debug logging of lifecycle events — defaults to false */
+    debug?: boolean | undefined;
+    /** Color theme — defaults to 'light' */
+    theme?: InstaFixTheme | undefined;
+    /** UI locale — defaults to 'en'. Built-in: en, fr, de, es, it, pt (Brazilian), ru. Any other string falls back to English. */
+    locale?: InstaFixLocale | undefined;
+    /**
+     * Returns the current page scope for annotations and panel filtering.
+     * Called on initial markers load and on `instance.refresh()`.
+     *
+     * Default: `{ url: window.location.pathname, urlPattern: null }` — annotations
+     * are scoped strictly to the current pathname.
+     *
+     * Apps with parameterized routes (e.g. React Router) should return both the
+     * concrete URL and the route template (e.g. `/orders/:orderId`) so the panel
+     * can offer a "this type of page" filter that groups feedbacks by template.
+     */
+    getPageScope?: (() => PageScope) | undefined;
+    /**
+     * When true (default), the widget filters initial markers and panel results
+     * by `feedback.url === scope.url`, so annotations created on one page never
+     * leak to other pages — even if their CSS selector accidentally matches.
+     * Set to `false` to revert to the legacy project-wide behavior.
+     */
+    scopeAnnotationsByUrl?: boolean | undefined;
+    /**
+     * Capture a JPEG screenshot of the annotated area on submit. Defaults to
+     * `false` — opt-in because:
+     *
+     * - it adds runtime weight (~40 KB gzip dynamic chunk for html2canvas,
+     *   loaded only on first capture),
+     * - it embeds page content in the feedback (privacy/GDPR consideration —
+     *   inform end users in your widget host UI when enabling).
+     *
+     * `html2canvas` ships as a regular dependency of `@instafix/widget` so the
+     * dynamic import always resolves; you don't need to install anything extra.
+     *
+     * **Masking sensitive elements:** add `data-instafix-ignore="true"` to any
+     * element you do NOT want captured (password fields, credit-card forms,
+     * API tokens shown in the UI, etc.). The capture predicate skips matching
+     * elements *and their descendants*. Do this BEFORE turning on screenshots
+     * in production — once a feedback is saved, the screenshot is in your DB
+     * (or object storage) regardless of what was on the page.
+     */
+    enableScreenshot?: boolean | undefined;
+    /**
+     * Enable right-click (`contextmenu`) to instantly open the comment composer
+     * at the cursor location. When enabled, a document-level listener intercepts
+     * right-clicks, prevents the browser's native context menu, and enters the
+     * annotation flow anchored to the element under the cursor. Defaults to
+     * `false` — the browser's native context menu is never hijacked unless the
+     * host explicitly opts in.
+     *
+     * Keyboard-triggered context menus (≣ Menu key, Shift+F10) always get the
+     * native menu; only mouse right-click and touch/pen long-press open the
+     * composer.
+     *
+     * **Modifier-key escape hatch:** holding Shift, Ctrl, Alt, or Meta while
+     * right-clicking always falls through to the native context menu, giving
+     * users (and devtools) an escape hatch regardless of this setting.
+     *
+     * Right-clicks on InstaFix's own UI (FAB, panel, markers, popup) are
+     * ignored — the native menu is shown as expected.
+     *
+     * Note: on Android, `contextmenu` fires on long-press. The widget already
+     * hides below `minViewportWidth` (default 768 px), but tablets above that
+     * threshold will trigger this flow on long-press.
+     */
+    enableRightClickComment?: boolean | undefined;
+    /**
+     * Capture the last few `console.*` calls and failed network requests
+     * (HTTP >= 400 or network error) at the moment a feedback is submitted.
+     *
+     * Lets reviewers replay the technical context that led to the report —
+     * stack traces, 500 responses, dead third-party scripts. Great for the
+     * "the page just doesn't work" feedback that contains zero detail.
+     *
+     * - `true` — capture with defaults (50 console / 20 network entries).
+     * - `false` (default) — no capture, no monkey-patching.
+     * - object — per-channel toggles + custom buffer sizes.
+     *
+     * **Privacy considerations:** console messages may contain anything the
+     * host page logs, including user data. Failed network requests record the
+     * URL (with query string) but never the response body. Inform end users
+     * before enabling in environments where they might log sensitive values.
+     */
+    captureDiagnostics?: boolean | DiagnosticsCaptureOptions | undefined;
+    /** Called when the widget is skipped (production mode, mobile viewport, SSR — no DOM) */
+    onSkip?: (reason: InstaFixSkipReason) => void;
+    /**
+     * Auto-focus a specific annotation when its ID appears in the URL query
+     * string. Lets hosts deeplink directly into a feedback from external
+     * systems (Zammad tickets, Slack notifications, dashboard rows).
+     *
+     * When enabled, the widget reads the configured query parameter from
+     * `window.location.search` right after the initial markers load. If the
+     * value matches a visible feedback ID, the widget scrolls the annotation
+     * into view, pins its highlight, and pulses the marker — the same visual
+     * affordance a marker click produces.
+     *
+     * - `false` / `undefined` (default): no URL parsing. Existing behavior
+     *   unchanged, no host URL inspection.
+     * - `true`: enabled with default query parameter name `instafix`.
+     * - object: enabled with a custom parameter name. Use this to avoid
+     *   clashes with host-app query keys.
+     *
+     * Only the initial load triggers focus. Subsequent URL changes (SPA
+     * navigation, `history.pushState`, hash updates) are ignored —
+     * deliberate, to avoid surprising re-scrolls during normal browsing.
+     * Hosts that need re-focus on route change can call
+     * `instance.focusFeedback(id)` explicitly.
+     */
+    deepLink?: boolean | InstaFixDeepLinkOptions | undefined;
+    /**
+     * Automatically re-fetch feedbacks when the page changes during client-side
+     * (SPA) navigation. Enabled by default.
+     *
+     * The widget is normally mounted once (singleton) inside a persistent layout
+     * — e.g. a Next.js App Router `layout.tsx`, which does NOT remount on
+     * client-side navigation. Without this, init runs a single time and both the
+     * panel list and the page markers stay frozen on the page where the widget
+     * first mounted. With it on, the widget patches the History API
+     * (`pushState`/`replaceState`, which SPA routers call instead of triggering
+     * `popstate`) and listens for `popstate`/`hashchange`, then re-fetches when
+     * the scope key (`getPageScope().url` + template) actually changes.
+     *
+     * This re-fetches data only — it deliberately does NOT re-focus or re-scroll
+     * to an annotation (deep-link focus stays initial-load only; see `deepLink`),
+     * so normal browsing is never interrupted by a surprise scroll.
+     *
+     * - `true` (default) — watch navigation and re-fetch on route change.
+     * - `false` — never touch the History API; hosts drive updates manually via
+     *   `instance.refresh()`.
+     */
+    watchNavigation?: boolean | undefined;
+    /**
+     * Pre-fill author identity from the host application — typically the
+     * currently signed-in user. When set, the widget uses these values
+     * directly and never shows the identity modal, even on first feedback.
+     *
+     * Use case: SSO-integrated apps where the end user is already
+     * authenticated by the host. Avoids the awkward "enter your name and
+     * email" prompt for users the host already knows.
+     *
+     * When unset (default), the widget falls back to localStorage and shows
+     * the modal on first feedback as before — existing behavior unchanged.
+     *
+     * Note: `config.identity` is **not** persisted to localStorage. It is
+     * read at widget init time, not on every render. Hosts that need live
+     * identity updates after sign-in/sign-out should currently remount the
+     * widget (e.g. via a React `key` on the wrapping component). See
+     * https://github.com/gnoopy/instafix/issues/85 for tracking a
+     * future enhancement that propagates identity updates without a remount.
+     */
+    identity?: InstaFixIdentity | undefined;
+    /** Called when the feedback panel is opened. */
+    onOpen?: (() => void) | undefined;
+    /** Called when the feedback panel is closed. */
+    onClose?: (() => void) | undefined;
+    /** Called after a feedback is successfully submitted. */
+    onFeedbackSent?: ((feedback: FeedbackResponse) => void) | undefined;
+    /**
+     * Called when a feedback API call fails.
+     *
+     * The widget always emits a `InstaFixError` (or a subclass:
+     * `InstaFixNetworkError`, `InstaFixValidationError`, `InstaFixAuthError`)
+     * for HTTP-mode failures — host apps can `instanceof` to drive retry
+     * logic, or read `error.code` (`"NETWORK" | "VALIDATION" | "AUTH" |
+     * "SERVER"`) and `error.retryable`. The type is widened to `Error` so
+     * direct-store callers can still surface raw errors without breaking the
+     * contract.
+     */
+    onError?: ((error: Error) => void) | undefined;
+    /** Called when the user starts drawing an annotation. */
+    onAnnotationStart?: (() => void) | undefined;
+    /** Called when the user finishes drawing an annotation. */
+    onAnnotationEnd?: (() => void) | undefined;
+}
+/**
+ * HTTP mode — the widget talks to a server endpoint backed by a store
+ * adapter (e.g. `@instafix/adapter-prisma` request handlers).
+ */
+export interface InstaFixHttpConfig extends InstaFixBaseConfig {
+    /** HTTP endpoint that receives feedbacks (e.g. '/api/instafix'). */
+    endpoint: string;
+    /**
+     * Convenience auth for HTTP mode — sent as `Authorization: Bearer <apiKey>`
+     * on every request to `endpoint`.
+     *
+     * **WARNING: the widget runs in every visitor's browser, so a static key
+     * configured here is public** — anyone can read it from your page source
+     * and replay it against your API. Only use `apiKey` for internal tools
+     * already behind your own login. On public sites, prefer `headers` with a
+     * per-request factory returning a short-lived session token.
+     */
+    apiKey?: string | undefined;
+    /**
+     * Extra headers for every HTTP-mode request — a static map, or a factory
+     * (sync or async) called once per request (e.g. to fetch a fresh session
+     * token). Merged over the widget's generated headers, so an explicit
+     * `Authorization` entry overrides `apiKey`. A throwing/rejecting factory
+     * fails the request like a network error.
+     */
+    headers?: InstaFixHeadersOption | undefined;
+    /** Not available in HTTP mode — use either `endpoint` or `store`, never both. */
+    store?: never;
+}
+/**
+ * Store mode — the widget talks to a `InstaFixStore` directly in the
+ * browser, no server needed (demos, prototypes, localStorage persistence).
+ */
+export interface InstaFixStoreConfig extends InstaFixBaseConfig {
+    /** Direct store for client-side mode. Bypasses HTTP entirely. */
+    store: InstaFixStore;
+    /** Not available in store mode — use either `endpoint` or `store`, never both. */
+    endpoint?: never;
+    /** HTTP-mode only — meaningless without an `endpoint`. */
+    apiKey?: never;
+    /** HTTP-mode only — meaningless without an `endpoint`. */
+    headers?: never;
+}
+/**
+ * Configuration options for the InstaFix widget.
+ *
+ * A discriminated union over the two transport modes: pass `endpoint`
+ * (HTTP mode, optionally with `apiKey`/`headers`) **or** `store` (direct
+ * client-side mode) — never both, never neither. Invalid combinations are
+ * compile errors instead of runtime warnings.
+ */
+export type InstaFixConfig = InstaFixHttpConfig | InstaFixStoreConfig;
+/** Instance returned by initInstaFix() with lifecycle methods. */
+export interface InstaFixInstance {
+    /** Remove the widget from the DOM and clean up all listeners. */
+    destroy: () => void;
+    /** Open the panel programmatically */
+    open: () => void;
+    /** Close the panel */
+    close: () => void;
+    /** Reload feedbacks from server */
+    refresh: () => void;
+    /**
+     * Scroll the matching annotation into view, pin its highlight, and
+     * pulse its marker. Returns `true` when a visible feedback matched the
+     * given ID, `false` otherwise (unknown ID, feedback on another URL when
+     * `scopeAnnotationsByUrl` filtered it out, or markers not yet loaded).
+     *
+     * Counterpart to the `deepLink` config option for hosts that prefer to
+     * drive focus from JS (e.g., a notification click handler) instead of a
+     * URL query parameter.
+     */
+    focusFeedback: (feedbackId: string) => boolean;
+    /** Subscribe to a public widget event */
+    on: <K extends keyof InstaFixPublicEvents>(event: K, listener: InstaFixPublicEventListener<K>) => InstaFixUnsubscribe;
+    /** Unsubscribe from a public widget event */
+    off: <K extends keyof InstaFixPublicEvents>(event: K, listener: InstaFixPublicEventListener<K>) => void;
+}
+/** Listener signature for a single `InstaFixPublicEvents` key. */
+export type InstaFixPublicEventListener<K extends keyof InstaFixPublicEvents> = (...args: InstaFixPublicEvents[K]) => void;
+/** Disposer returned by `InstaFixInstance.on` — call once to detach the listener. */
+export type InstaFixUnsubscribe = () => void;
+/** Events exposed to consumers via InstaFixInstance.on / .off */
+export interface InstaFixPublicEvents {
+    "feedback:sent": [FeedbackResponse];
+    "feedback:deleted": [FeedbackResponse["id"]];
+    /**
+     * A feedback API call failed. Same payload contract as
+     * `InstaFixConfig.onError` — a `InstaFixError` subclass in HTTP mode,
+     * possibly a raw `Error` in store mode.
+     */
+    "feedback:error": [Error];
+    "panel:open": [];
+    "panel:close": [];
+    /** The user started drawing an annotation. */
+    "annotation:start": [];
+    /** The user finished drawing an annotation. */
+    "annotation:end": [];
+}
+/** Single source of truth for feedback types — used by both TS types and Zod schemas. */
+export declare const FEEDBACK_TYPES: readonly ["question", "change", "bug", "other"];
+export type FeedbackType = (typeof FEEDBACK_TYPES)[number];
+/** Single source of truth for feedback statuses. */
+export declare const FEEDBACK_STATUSES: readonly ["open", "in_progress", "resolved", "wont_fix"];
+export type FeedbackStatus = (typeof FEEDBACK_STATUSES)[number];
+/**
+ * Terminal statuses — the feedback needs no further action. `resolvedAt` is
+ * the closure timestamp: set when a feedback enters a closed status, null
+ * while it is open or in progress. The derivation happens at the edge (HTTP
+ * handler, dashboard) — store adapters persist whatever they are given.
+ */
+export declare const CLOSED_FEEDBACK_STATUSES: readonly ["resolved", "wont_fix"];
+/** A terminal status — `resolved` or `wont_fix`. */
+export type ClosedFeedbackStatus = (typeof CLOSED_FEEDBACK_STATUSES)[number];
+/** Non-terminal statuses — the feedback still needs attention. */
+export declare const OPEN_FEEDBACK_STATUSES: readonly ["open", "in_progress"];
+/** A non-terminal status — `open` or `in_progress`. */
+export type OpenFeedbackStatus = (typeof OPEN_FEEDBACK_STATUSES)[number];
+/** Whether a status is terminal (`resolved` or `wont_fix`). Narrows the status type. */
+export declare function isClosedStatus(status: FeedbackStatus): status is ClosedFeedbackStatus;
+/**
+ * Page scope returned by `InstaFixConfig.getPageScope()`.
+ *
+ * - `url`: concrete page identifier — usually `window.location.pathname`,
+ *   used as the strict scope for marker rendering.
+ * - `urlPattern`: optional parameterized template (e.g. `/orders/:orderId`)
+ *   used by the panel's "this type of page" filter to group feedbacks across
+ *   instances of the same page kind.
+ */
+export interface PageScope {
+    url: string;
+    urlPattern: string | null;
+}
+/** Input for creating a feedback record in the store. */
+export interface FeedbackCreateInput {
+    projectName: string;
+    type: FeedbackType;
+    message: string;
+    status: FeedbackStatus;
+    url: string;
+    /**
+     * Optional parameterized URL template (e.g. `/orders/:orderId`) for the page
+     * where the feedback was created. Allows the panel to filter feedbacks by
+     * "this type of page" across different instances. Null when the host did not
+     * provide a `getPageScope` callback or the route has no template.
+     */
+    urlPattern?: string | null | undefined;
+    viewport: string;
+    userAgent: string;
+    authorName: string;
+    authorEmail: string;
+    clientId: string;
+    annotations: AnnotationCreateInput[];
+    /**
+     * Base64 JPEG `data:` URL captured by the widget at submit time.
+     *
+     * Adapters with a configured `ScreenshotStorage` are expected to upload
+     * this and persist the returned URL on `FeedbackRecord.screenshotUrl`.
+     * Adapters without storage may persist the data URL inline (memory /
+     * localStorage / dev) — the widget then renders it directly.
+     */
+    screenshotDataUrl?: string | null | undefined;
+    /**
+     * Where the client's annotation rect sits within the screenshot image,
+     * as fractions [0, 1] of the image dimensions. Present when the widget
+     * captured context around the drawn rect; null for legacy captures that
+     * were cropped exactly to the rect (dashboards then render the image
+     * without an overlay).
+     */
+    screenshotRegion?: ScreenshotRegion | null | undefined;
+    /**
+     * Optional console + failed-network snapshot captured by the widget when
+     * `InstaFixConfig.captureDiagnostics` is enabled. Stored as JSON on
+     * `FeedbackRecord.diagnostics` so reviewers can replay the context.
+     */
+    diagnostics?: DiagnosticsSnapshot | null | undefined;
+}
+/** Input for a single annotation when creating a feedback. */
+export interface AnnotationCreateInput {
+    cssSelector: string;
+    xpath: string;
+    textSnippet: string;
+    elementTag: string;
+    elementId?: string | undefined;
+    textPrefix: string;
+    textSuffix: string;
+    fingerprint: string;
+    neighborText: string;
+    /**
+     * Semantic anchor identifier from the closest ancestor's `data-feedback-anchor`
+     * attribute. When set, this is the most stable re-anchoring signal because
+     * hosts deliberately place these on layout/section roots that survive DOM
+     * refactors and viewport changes. Null when no semantic ancestor exists.
+     */
+    anchorKey?: string | null | undefined;
+    xPct: number;
+    yPct: number;
+    wPct: number;
+    hPct: number;
+    scrollX: number;
+    scrollY: number;
+    viewportW: number;
+    viewportH: number;
+    devicePixelRatio: number;
+    /** Discriminated target kind — see {@link AnnotationTarget}. Null/omitted means legacy `element`-kind. */
+    target?: AnnotationTarget | null | undefined;
+}
+/** Query parameters for fetching feedbacks. */
+export interface FeedbackQuery {
+    projectName: string;
+    type?: FeedbackType | undefined;
+    /** Exact single-status filter. For "any of a set" (bucket) semantics, use `statuses`. */
+    status?: FeedbackStatus | undefined;
+    /**
+     * Filter to feedbacks whose status is any of the listed values — bucket
+     * semantics used by the panel's binary tabs (e.g. "Open" passes
+     * `["open", "in_progress"]`). When both `status` and `statuses` are set,
+     * `statuses` wins. An empty array is treated as absent (no status filter).
+     */
+    statuses?: readonly FeedbackStatus[] | undefined;
+    search?: string | undefined;
+    page?: number | undefined;
+    limit?: number | undefined;
+    /**
+     * Filter to feedbacks created on this exact URL (path). Used by the panel's
+     * "this page" filter and by the markers loader to keep page scopes isolated.
+     */
+    url?: string | undefined;
+    /**
+     * Filter to feedbacks created on this URL pattern (e.g. `/orders/:orderId`).
+     * Used by the panel's "this type of page" filter to group feedbacks across
+     * different concrete instances of the same template.
+     */
+    urlPattern?: string | undefined;
+}
+/**
+ * Update payload for patching a feedback.
+ *
+ * A discriminated union encoding the closure invariant: a feedback entering
+ * a closed status carries its closure timestamp, an open one carries `null`.
+ * `{ status: "resolved", resolvedAt: null }` is a compile error instead of a
+ * silent data bug. Build it from a plain `FeedbackStatus` with
+ * {@link toFeedbackUpdate}.
+ */
+export type FeedbackUpdateInput = {
+    status: OpenFeedbackStatus;
+    resolvedAt: null;
+    message?: string | undefined;
+    annotations?: AnnotationCreateInput[] | undefined;
+} | {
+    status: ClosedFeedbackStatus;
+    resolvedAt: Date;
+    message?: string | undefined;
+    annotations?: AnnotationCreateInput[] | undefined;
+};
+/**
+ * Derive the {@link FeedbackUpdateInput} for a status change — the closure
+ * timestamp is stamped for closed statuses and cleared otherwise. This is
+ * the edge derivation described on {@link CLOSED_FEEDBACK_STATUSES}; store
+ * adapters persist the result verbatim. Pass `message` to edit the note text
+ * in the same update (G7 "편집" — status changes and message edits share one
+ * PATCH so a client never needs two round trips), and `annotations` to
+ * REPLACE the feedback's target set wholesale (G7 "재연결" — reconnecting an
+ * unresolved/ambiguous anchor re-points it at a freshly captured one).
+ */
+export declare function toFeedbackUpdate(status: FeedbackStatus, closedAt?: Date, message?: string, annotations?: AnnotationCreateInput[]): FeedbackUpdateInput;
+/** A persisted feedback record returned by the store. */
+export interface FeedbackRecord {
+    id: string;
+    type: FeedbackType;
+    message: string;
+    status: FeedbackStatus;
+    projectName: string;
+    url: string;
+    /**
+     * Parameterized URL template the feedback was created on.
+     * Null for legacy records or hosts without `getPageScope`.
+     */
+    urlPattern: string | null;
+    authorName: string;
+    authorEmail: string;
+    viewport: string;
+    userAgent: string;
+    clientId: string;
+    resolvedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    annotations: AnnotationRecord[];
+    /**
+     * URL the widget renders as `<img src>`. Either an `https://...` from a
+     * configured `ScreenshotStorage`, or a `data:image/jpeg;base64,...` URL
+     * inline-persisted by adapters without storage. Null when no screenshot
+     * was captured (legacy records, capture failed, or host disabled it).
+     */
+    screenshotUrl: string | null;
+    /**
+     * Annotation rect position within the screenshot image, as fractions of
+     * its dimensions. Null for legacy captures cropped exactly to the rect.
+     */
+    screenshotRegion: ScreenshotRegion | null;
+    /**
+     * Console + failed-network snapshot captured at submit time. Null when
+     * diagnostics weren't enabled on the widget side.
+     */
+    diagnostics: DiagnosticsSnapshot | null;
+}
+/** A persisted annotation record returned by the store. */
+export interface AnnotationRecord {
+    id: string;
+    feedbackId: string;
+    cssSelector: string;
+    xpath: string;
+    textSnippet: string;
+    elementTag: string;
+    elementId: string | null;
+    textPrefix: string;
+    textSuffix: string;
+    fingerprint: string;
+    neighborText: string;
+    /**
+     * Semantic anchor identifier from `data-feedback-anchor`. Null for legacy
+     * annotations or those drawn outside any anchored region.
+     */
+    anchorKey: string | null;
+    xPct: number;
+    yPct: number;
+    wPct: number;
+    hPct: number;
+    scrollX: number;
+    scrollY: number;
+    viewportW: number;
+    viewportH: number;
+    devicePixelRatio: number;
+    createdAt: Date;
+    /** Discriminated target kind — see {@link AnnotationTarget}. Null means legacy `element`-kind. */
+    target: AnnotationTarget | null;
+}
+/**
+ * Thrown when a record is not found during update or delete.
+ *
+ * Handlers translate this to HTTP 404. Adapters MUST throw this (not
+ * ORM-specific errors) so the handler layer remains ORM-agnostic.
+ */
+export declare class StoreNotFoundError extends Error {
+    readonly code: "STORE_NOT_FOUND";
+    constructor(message?: string);
+}
+/**
+ * Thrown when a unique constraint is violated (e.g. duplicate `clientId`).
+ *
+ * Handlers use this to return the existing record instead of failing.
+ */
+export declare class StoreDuplicateError extends Error {
+    readonly code: "STORE_DUPLICATE";
+    constructor(message?: string);
+}
+/**
+ * Thrown when a store accepts a mutation but cannot persist it — e.g.
+ * `localStorage` is full (QuotaExceededError). Adapters MUST throw this rather
+ * than swallow the failure, so callers learn the write was lost instead of
+ * seeing a phantom success.
+ */
+export declare class StorePersistenceError extends Error {
+    readonly code: "STORE_PERSISTENCE";
+    constructor(message?: string, options?: ErrorOptions);
+}
+/** Shape of any ORM error that carries a Prisma-style `code` field. */
+type CodedError<C extends string = string> = {
+    code: C;
+};
+/** Type guard — works for `StoreNotFoundError` and ORM-specific equivalents (e.g. Prisma P2025). */
+export declare function isStoreNotFound(error: unknown): error is StoreNotFoundError | CodedError<"P2025">;
+/** Type guard — works for `StoreDuplicateError` and ORM-specific equivalents (e.g. Prisma P2002). */
+export declare function isStoreDuplicate(error: unknown): error is StoreDuplicateError | CodedError<"P2002">;
+/**
+ * Type guard for `StorePersistenceError`. Matches on the stable `code` field
+ * in addition to `instanceof`: every consumer package bundles its own copy of
+ * core (tsup `noExternal`), so an instance thrown by one package fails an
+ * `instanceof` check against another package's class identity.
+ */
+export declare function isStorePersistence(error: unknown): error is StorePersistenceError | CodedError<"STORE_PERSISTENCE">;
+/** Flatten a widget `AnnotationPayload` (nested anchor + rect) into a flat `AnnotationCreateInput`. */
+export declare function flattenAnnotation(ann: AnnotationPayload): AnnotationCreateInput;
+/** Paginated result returned by `InstaFixStore.getFeedbacks`. */
+export interface FeedbackPage {
+    feedbacks: FeedbackRecord[];
+    total: number;
+}
+/**
+ * Abstract storage interface for InstaFix.
+ *
+ * Any adapter (Prisma, Drizzle, raw SQL, localStorage, etc.) implements this
+ * interface. The HTTP handler and widget `StoreClient` operate against
+ * `InstaFixStore`, decoupled from the storage backend.
+ *
+ * ## Error contract
+ *
+ * - **`updateFeedback` / `deleteFeedback`**: throw `StoreNotFoundError` when
+ *   the record does not exist.
+ * - **`createFeedback`**: either return the existing record on duplicate
+ *   `clientId` (idempotent) or throw `StoreDuplicateError`. The handler
+ *   handles both patterns.
+ * - **All mutations**: when a write is accepted but cannot be persisted
+ *   (e.g. storage quota), throw `StorePersistenceError` instead of reporting
+ *   a phantom success. Detect it with `isStorePersistence`.
+ * - Other methods should not throw on empty results — return empty arrays or `null`.
+ */
+export interface InstaFixStore {
+    /** Create a feedback with its annotations. Idempotent on `clientId` — return existing record on duplicate, or throw `StoreDuplicateError`. Throws `StorePersistenceError` when the write cannot be persisted. */
+    createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord>;
+    /** Paginated query with optional filters. Returns empty array (not error) when no results. */
+    getFeedbacks(query: FeedbackQuery): Promise<FeedbackPage>;
+    /** Lookup by client-generated UUID. Returns `null` (not error) when not found. */
+    findByClientId(clientId: string): Promise<FeedbackRecord | null>;
+    /** Update status/resolvedAt. Throws `StoreNotFoundError` if `id` does not exist, `StorePersistenceError` when the write cannot be persisted. */
+    updateFeedback(id: string, data: FeedbackUpdateInput): Promise<FeedbackRecord>;
+    /** Delete a single record. Throws `StoreNotFoundError` if `id` does not exist, `StorePersistenceError` when the write cannot be persisted. */
+    deleteFeedback(id: string): Promise<void>;
+    /** Bulk delete all feedbacks for a project. No-op (not error) if none exist. Throws `StorePersistenceError` when the write cannot be persisted. */
+    deleteAllFeedbacks(projectName: string): Promise<void>;
+    /**
+     * Optional — return `true` when the record with `id` belongs to
+     * `projectName`, `false` otherwise (including when it does not exist).
+     *
+     * HTTP handlers use this to reject cross-project PATCH/DELETE requests.
+     * Implement it whenever your store serves multiple projects; when absent,
+     * handlers skip the ownership check and rely on `id` alone.
+     */
+    verifyProjectOwnership?(id: string, projectName: string): Promise<boolean>;
+}
+/** Payload sent from the widget to the server when submitting feedback. */
+export interface FeedbackPayload {
+    projectName: string;
+    type: FeedbackType;
+    message: string;
+    url: string;
+    /**
+     * Parameterized URL template (e.g. `/orders/:orderId`) supplied by
+     * `InstaFixConfig.getPageScope()`. Null when the host did not provide one.
+     */
+    urlPattern?: string | null | undefined;
+    viewport: string;
+    userAgent: string;
+    authorName: string;
+    authorEmail: string;
+    annotations: AnnotationPayload[];
+    /** Client-generated UUID for deduplication */
+    clientId: string;
+    /**
+     * Base64 JPEG `data:` URL of the annotated area. Captured by the widget
+     * when `enableScreenshot: true` is set in `InstaFixConfig`. Null when
+     * disabled or when capture failed silently.
+     */
+    screenshotDataUrl?: string | null | undefined;
+    /**
+     * Annotation rect position within the screenshot image — see
+     * `ScreenshotRegion`. Null/absent when no screenshot was captured or the
+     * capture predates contextual framing.
+     */
+    screenshotRegion?: ScreenshotRegion | null | undefined;
+    /**
+     * Snapshot of the last few console messages and failed network requests
+     * captured at submit time when `captureDiagnostics` is enabled.
+     */
+    diagnostics?: DiagnosticsSnapshot | null | undefined;
+}
+/** Single source of truth for console diagnostic severity levels. */
+export declare const CONSOLE_DIAGNOSTIC_LEVELS: readonly ["log", "info", "warn", "error"];
+/** Severity levels persisted in `ConsoleDiagnosticEntry`. */
+export type ConsoleDiagnosticLevel = (typeof CONSOLE_DIAGNOSTIC_LEVELS)[number];
+/** A single console entry captured by `ConsoleBuffer`. */
+export interface ConsoleDiagnosticEntry {
+    level: ConsoleDiagnosticLevel;
+    /** ISO 8601 timestamp captured at log time. */
+    timestamp: string;
+    /** Best-effort string representation of the original console args. */
+    message: string;
+}
+/** A single failed network request captured by `NetworkBuffer`. */
+export interface NetworkDiagnosticEntry {
+    url: string;
+    method: string;
+    /** HTTP status; 0 when the request never reached the server. */
+    status: number;
+    /** End-to-end duration in ms. */
+    durationMs: number;
+    /** ISO 8601 timestamp at the moment the request was initiated. */
+    timestamp: string;
+}
+/**
+ * Diagnostics captured by the widget when `captureDiagnostics` is enabled.
+ *
+ * Both arrays are bounded (default: 50 console / 20 network). Adapters that
+ * support diagnostics should persist this as a JSON blob alongside the
+ * feedback so reviewers can replay the context that led to the report.
+ */
+export interface DiagnosticsSnapshot {
+    console: ConsoleDiagnosticEntry[];
+    network: NetworkDiagnosticEntry[];
+}
+/** DOM anchoring data for re-attaching annotations to page elements. */
+export interface AnchorData {
+    /** CSS selector generated by @medv/finder — primary anchor */
+    cssSelector: string;
+    /** XPath — fallback 1 */
+    xpath: string;
+    /** First ~120 chars of element innerText — empty string if none */
+    textSnippet: string;
+    /** Tag name for validation (e.g. "DIV", "SECTION") */
+    elementTag: string;
+    /** Element id attribute if available — most stable */
+    elementId?: string | undefined;
+    /** ~32 chars of text before this element in document flow (disambiguation) */
+    textPrefix: string;
+    /** ~32 chars of text after this element in document flow (disambiguation) */
+    textSuffix: string;
+    /** Structural fingerprint: "childCount:siblingIdx:attrHash" */
+    fingerprint: string;
+    /** Text content of adjacent sibling elements (context) */
+    neighborText: string;
+    /**
+     * Semantic anchor identifier from the closest ancestor's `data-feedback-anchor`
+     * attribute. When set, this is the highest-priority re-anchoring signal —
+     * hosts deliberately place these on layout/section roots that survive
+     * viewport changes and DOM refactors.
+     */
+    anchorKey?: string | null | undefined;
+}
+/**
+ * Where the client's annotation rect sits within the captured screenshot,
+ * as fractions [0, 1] of the image dimensions. The widget captures context
+ * around the drawn rect and records the rect's position here so dashboards
+ * can re-render the annotation on top of the image. Survives downscaling
+ * (fractions are resolution-independent).
+ */
+export interface ScreenshotRegion {
+    /** X offset of the rect as fraction of image width — [0, 1] */
+    xPct: number;
+    /** Y offset of the rect as fraction of image height — [0, 1] */
+    yPct: number;
+    /** Rect width as fraction of image width — [0, 1] */
+    wPct: number;
+    /** Rect height as fraction of image height — [0, 1] */
+    hPct: number;
+}
+/** Drawn rectangle coordinates as percentages relative to the anchor element. */
+export interface RectData {
+    /** X offset as fraction of anchor element width — must be in range [0, 1] */
+    xPct: number;
+    /** Y offset as fraction of anchor element height — must be in range [0, 1] */
+    yPct: number;
+    /** Width as fraction of anchor element width — must be in range [0, 1] */
+    wPct: number;
+    /** Height as fraction of anchor element height — must be in range [0, 1] */
+    hPct: number;
+}
+/** Single source of truth for annotation target kinds. */
+export declare const ANNOTATION_TARGET_KINDS: readonly ["element", "text", "area"];
+export type AnnotationTargetKind = (typeof ANNOTATION_TARGET_KINDS)[number];
+/** A single DOM element was selected (click, or one member of a marquee). */
+export interface ElementTargetData {
+    kind: "element";
+}
+/**
+ * A text `Range` was selected (dragging across text, not empty space or a
+ * whole element). `anchor`/`rect` on the enclosing {@link AnnotationPayload}
+ * describe the Range's container element and bounding box; the fields here
+ * are the Hypothesis-style quote anchor that survives DOM reflow even when
+ * the container itself changes shape.
+ */
+export interface TextTargetData {
+    kind: "text";
+    /** The exact selected text — `Range.toString()`, capped. */
+    quote: string;
+    /** ~32 chars of text immediately before the quote, for disambiguation. */
+    quotePrefix: string;
+    /** ~32 chars of text immediately after the quote. */
+    quoteSuffix: string;
+}
+/**
+ * No DOM element under the drawn rect — an empty-region / background
+ * selection (marquee modifier over blank space). `anchor` on the enclosing
+ * {@link AnnotationPayload} carries a synthetic document-root anchor so
+ * legacy `element`-only consumers keep working; `rect` is relative to
+ * `viewportW`/`viewportH` + `scrollX`/`scrollY` instead of an element's
+ * bounding box.
+ */
+export interface AreaTargetData {
+    kind: "area";
+}
+/**
+ * Discriminated target kind for an annotation — the G4 "context model" that
+ * lets a coding agent tell an element pick apart from a text quote or a bare
+ * screen region. Optional/nullable on the wire for backward compatibility:
+ * absent means legacy `element`-kind data (single anchor + rect, the
+ * original InstaFix shape). Normalize with {@link resolveAnnotationTarget}
+ * rather than reading `.target` directly.
+ */
+export type AnnotationTarget = ElementTargetData | TextTargetData | AreaTargetData;
+/**
+ * Normalize a possibly-legacy annotation to its effective target kind.
+ * Records written before this field existed (or by a host that hasn't
+ * upgraded) have `target: null` — they're always `element`-kind, matching
+ * the shape their `anchor`/`rect` already carry.
+ */
+export declare function resolveAnnotationTarget(annotation: {
+    target?: AnnotationTarget | null | undefined;
+}): AnnotationTarget;
+/** Annotation data sent as part of a feedback submission. */
+export interface AnnotationPayload {
+    anchor: AnchorData;
+    rect: RectData;
+    scrollX: number;
+    scrollY: number;
+    viewportW: number;
+    viewportH: number;
+    devicePixelRatio: number;
+    /** Discriminated target kind — see {@link AnnotationTarget}. */
+    target?: AnnotationTarget | null | undefined;
+}
+/**
+ * Feedback record as returned by the API — derived from
+ * {@link FeedbackRecord}: dates are serialized to ISO strings and `clientId`
+ * is omitted (server-side dedup concern, never exposed on the wire). Adding
+ * a field to `FeedbackRecord` updates this type automatically.
+ *
+ * Note: `authorEmail` may be an empty string — HTTP adapters redact it for
+ * unauthenticated requests; the full value requires a Bearer-authenticated
+ * request.
+ */
+export type FeedbackResponse = Prettify<Serialized<Omit<FeedbackRecord, "clientId">>>;
+/**
+ * Annotation record as returned by the API — {@link AnnotationRecord} with
+ * `createdAt` serialized to an ISO string.
+ */
+export type AnnotationResponse = Prettify<Serialized<AnnotationRecord>>;
+/** Paginated `FeedbackResponse` shape returned by the API. */
+export interface FeedbackResponseList {
+    feedbacks: FeedbackResponse[];
+    total: number;
+}
+export {};

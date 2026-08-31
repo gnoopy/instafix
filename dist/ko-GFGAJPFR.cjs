@@ -1,0 +1,2 @@
+'use strict';var chunk7KRKYHJS_cjs=require('./chunk-7KRKYHJS.cjs');Object.defineProperty(exports,"ko",{enumerable:true,get:function(){return chunk7KRKYHJS_cjs.a}});//# sourceMappingURL=ko-GFGAJPFR.cjs.map
+//# sourceMappingURL=ko-GFGAJPFR.cjs.map
