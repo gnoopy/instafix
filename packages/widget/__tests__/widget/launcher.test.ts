@@ -1104,5 +1104,36 @@ describe("launch", () => {
       instance.destroy();
       expect(() => instance.destroy()).not.toThrow();
     });
+
+    it("preserves panel-open and settings-expanded state across a settings-triggered remount", async () => {
+      const instance = launch(defaultConfig());
+      instance.open();
+
+      await vi.waitFor(() => {
+        expect(document.querySelector("instafix-widget")?.shadowRoot?.querySelector(".sp-panel--open")).not.toBeNull();
+      });
+
+      const shadow = document.querySelector("instafix-widget")!.shadowRoot!;
+      shadow.querySelector<HTMLButtonElement>(".sp-settings-toggle")!.click();
+      expect(shadow.querySelector(".sp-settings-region")?.classList.contains("sp-settings-region--open")).toBe(true);
+
+      // Changing the theme control fires onUpdateConfig, which is this same
+      // updateConfig() — the widget tears down and remounts with a fresh
+      // <instafix-widget> host, then the launcher should reopen the panel
+      // and re-expand the settings accordion on the new one.
+      shadow.querySelector<HTMLButtonElement>('[data-theme="dark"]')!.click();
+
+      await vi.waitFor(() => {
+        const freshShadow = document.querySelector("instafix-widget")?.shadowRoot;
+        expect(freshShadow?.querySelector(".sp-panel--open")).not.toBeNull();
+      });
+
+      const freshShadow = document.querySelector("instafix-widget")!.shadowRoot!;
+      expect(freshShadow.querySelector(".sp-settings-region")?.classList.contains("sp-settings-region--open")).toBe(
+        true,
+      );
+
+      instance.destroy();
+    });
   });
 });

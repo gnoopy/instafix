@@ -26,7 +26,17 @@ import { buildThemeColors } from "./styles/theme.js";
 import { Tooltip } from "./tooltip.js";
 
 /** Raw, single-mount instance shape — everything `InstaFixInstance` has except `updateConfig`, which is facade-level (see `launch`). */
-type RawInstance = Omit<InstaFixInstance, "updateConfig">;
+type RawInstance = Omit<InstaFixInstance, "updateConfig"> & {
+  /**
+   * Snapshot of UI state that `updateConfig` restores after tearing this
+   * instance down and remounting a fresh one — otherwise a single settings
+   * tweak would visibly close the panel (the whole widget is rebuilt).
+   * Internal to the launcher; never exposed on the public `InstaFixInstance`.
+   */
+  getUiState: () => { open: boolean; settingsExpanded: boolean };
+  /** Re-expand the settings accordion right after a remount. */
+  expandSettings: () => void;
+};
 
 /** Singleton guard — prevents duplicate widgets from overlapping. Set only on a real mount (never for a skipped one), matching the pre-`updateConfig` behavior of allowing repeated skipped calls to re-evaluate the guards fresh. */
 let activeInstance: { readonly facade: InstaFixInstance } | null = null;
@@ -96,6 +106,8 @@ function inertRaw(): RawInstance {
     focusFeedback: () => false,
     on: () => noop,
     off: noop,
+    getUiState: () => ({ open: false, settingsExpanded: false }),
+    expandSettings: noop,
   };
 }
 
@@ -185,12 +197,20 @@ export function launch(config: InstaFixConfig): InstaFixInstance {
   let currentConfig = config;
 
   function updateConfig(partial: Partial<InstaFixConfig>): void {
+    // A setting change (theme/locale/accentColor/...) always comes from the
+    // panel's own settings accordion, which means the panel is open and the
+    // accordion is expanded right up until the destroy below — capture that
+    // so the fresh mount can restore it, or the panel would visibly vanish
+    // on every single settings tweak.
+    const uiState = current.getUiState();
     current.destroy();
     currentConfig = { ...currentConfig, ...partial } as InstaFixConfig;
     current = mount(currentConfig, updateConfig) ?? inertRaw();
     for (const [event, fns] of listeners) {
       for (const fn of fns) current.on(event as never, fn as never);
     }
+    if (uiState.open) current.open();
+    if (uiState.settingsExpanded) current.expandSettings();
   }
 
   const firstMount = mount(currentConfig, updateConfig);
@@ -884,6 +904,13 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
       publicBus.on(event, listener),
     off: <K extends keyof InstaFixPublicEvents>(event: K, listener: InstaFixPublicEventListener<K>) => {
       publicBus.off(event, listener);
+    },
+    getUiState: () => ({
+      open: panelInstance?.isCurrentlyOpen ?? false,
+      settingsExpanded: panelInstance?.isSettingsExpanded ?? false,
+    }),
+    expandSettings: () => {
+      void loadPanel().then((p) => p?.expandSettings());
     },
   };
 

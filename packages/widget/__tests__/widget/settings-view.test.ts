@@ -13,46 +13,59 @@ function baseConfig(overrides: Partial<InstaFixConfig> = {}): InstaFixConfig {
 
 describe("SettingsView", () => {
   let onChange: ReturnType<typeof vi.fn<(patch: SettingsPatch) => void>>;
-  let onBack: ReturnType<typeof vi.fn<() => void>>;
 
   beforeEach(() => {
     onChange = vi.fn();
-    onBack = vi.fn();
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it("starts hidden", () => {
-    const view = new SettingsView(t, baseConfig(), onChange, onBack);
-    expect(view.isVisible).toBe(false);
-    expect(view.element.classList.contains("sp-settings--visible")).toBe(false);
+  it("starts collapsed", () => {
+    const view = new SettingsView(t, baseConfig(), onChange);
+    expect(view.isExpanded).toBe(false);
+    expect(view.element.querySelector(".sp-settings-region")?.classList.contains("sp-settings-region--open")).toBe(
+      false,
+    );
     view.destroy();
   });
 
-  it("show()/hide() toggle visibility and are each idempotent", () => {
-    const view = new SettingsView(t, baseConfig(), onChange, onBack);
-    view.show();
-    expect(view.isVisible).toBe(true);
-    view.show(); // no-op, no throw
-    expect(view.isVisible).toBe(true);
+  it("expand()/collapse() toggle state and are each idempotent", () => {
+    const view = new SettingsView(t, baseConfig(), onChange);
+    view.expand();
+    expect(view.isExpanded).toBe(true);
+    view.expand(); // no-op, no throw
+    expect(view.isExpanded).toBe(true);
 
-    view.hide();
-    expect(view.isVisible).toBe(false);
-    view.hide(); // no-op, no throw
-    expect(view.isVisible).toBe(false);
+    view.collapse();
+    expect(view.isExpanded).toBe(false);
+    view.collapse(); // no-op, no throw
+    expect(view.isExpanded).toBe(false);
     view.destroy();
   });
 
-  it("the back button hides the view and calls onBack", () => {
-    const view = new SettingsView(t, baseConfig(), onChange, onBack);
-    view.show();
+  it("toggle() flips between expanded and collapsed", () => {
+    const view = new SettingsView(t, baseConfig(), onChange);
+    view.toggle();
+    expect(view.isExpanded).toBe(true);
+    view.toggle();
+    expect(view.isExpanded).toBe(false);
+    view.destroy();
+  });
 
-    view.element.querySelector<HTMLButtonElement>(".sp-detail-back")!.click();
+  it("clicking the accordion header toggles expansion and aria-expanded", () => {
+    const view = new SettingsView(t, baseConfig(), onChange);
+    const header = view.element.querySelector<HTMLButtonElement>(".sp-settings-toggle")!;
+    expect(header.getAttribute("aria-expanded")).toBe("false");
 
-    expect(view.isVisible).toBe(false);
-    expect(onBack).toHaveBeenCalledOnce();
+    header.click();
+    expect(view.isExpanded).toBe(true);
+    expect(header.getAttribute("aria-expanded")).toBe("true");
+
+    header.click();
+    expect(view.isExpanded).toBe(false);
+    expect(header.getAttribute("aria-expanded")).toBe("false");
     view.destroy();
   });
 
@@ -69,7 +82,6 @@ describe("SettingsView", () => {
         enableRightClickComment: false,
       }),
       onChange,
-      onBack,
     );
 
     expect(view.element.querySelector('[data-theme="dark"]')?.getAttribute("aria-checked")).toBe("true");
@@ -77,31 +89,31 @@ describe("SettingsView", () => {
     expect(view.element.querySelector<HTMLSelectElement>(".sp-settings-select")!.value).toBe("fr");
     expect(view.element.querySelector<HTMLInputElement>(".sp-settings-color-input")!.value).toBe("#173cff");
 
-    const toggles = view.element.querySelectorAll<HTMLButtonElement>(".sp-settings-toggle");
+    const chips = view.element.querySelectorAll<HTMLButtonElement>(".sp-settings-chip");
     // Order: screenshots, diagnostics, right-click comments.
-    expect(toggles[0]?.getAttribute("aria-checked")).toBe("true");
-    expect(toggles[1]?.getAttribute("aria-checked")).toBe("true");
-    expect(toggles[2]?.getAttribute("aria-checked")).toBe("false");
+    expect(chips[0]?.getAttribute("aria-checked")).toBe("true");
+    expect(chips[1]?.getAttribute("aria-checked")).toBe("true");
+    expect(chips[2]?.getAttribute("aria-checked")).toBe("false");
 
     view.destroy();
   });
 
   it("clicking the theme segmented control calls onChange with { theme }", () => {
-    const view = new SettingsView(t, baseConfig({ theme: "light" }), onChange, onBack);
+    const view = new SettingsView(t, baseConfig({ theme: "light" }), onChange);
     view.element.querySelector<HTMLButtonElement>('[data-theme="auto"]')!.click();
     expect(onChange).toHaveBeenCalledWith({ theme: "auto" });
     view.destroy();
   });
 
   it("clicking the position segmented control calls onChange with { position }", () => {
-    const view = new SettingsView(t, baseConfig({ position: "bottom-right" }), onChange, onBack);
+    const view = new SettingsView(t, baseConfig({ position: "bottom-right" }), onChange);
     view.element.querySelector<HTMLButtonElement>('[data-position="bottom-left"]')!.click();
     expect(onChange).toHaveBeenCalledWith({ position: "bottom-left" });
     view.destroy();
   });
 
   it("changing the locale select calls onChange with { locale }", () => {
-    const view = new SettingsView(t, baseConfig({ locale: "en" }), onChange, onBack);
+    const view = new SettingsView(t, baseConfig({ locale: "en" }), onChange);
     const select = view.element.querySelector<HTMLSelectElement>(".sp-settings-select")!;
     select.value = "de";
     select.dispatchEvent(new Event("change"));
@@ -110,7 +122,7 @@ describe("SettingsView", () => {
   });
 
   it("clicking an accent swatch calls onChange with { accentColor } immediately (no debounce)", () => {
-    const view = new SettingsView(t, baseConfig(), onChange, onBack);
+    const view = new SettingsView(t, baseConfig(), onChange);
     const swatch = view.element.querySelector<HTMLButtonElement>(".sp-settings-swatch")!;
     swatch.click();
     expect(onChange).toHaveBeenCalledTimes(1);
@@ -120,7 +132,7 @@ describe("SettingsView", () => {
 
   it("dragging the native color input debounces onChange to a single call", () => {
     vi.useFakeTimers();
-    const view = new SettingsView(t, baseConfig(), onChange, onBack);
+    const view = new SettingsView(t, baseConfig(), onChange);
     const colorInput = view.element.querySelector<HTMLInputElement>(".sp-settings-color-input")!;
 
     for (const hex of ["#111111", "#222222", "#333333"]) {
@@ -138,7 +150,7 @@ describe("SettingsView", () => {
 
   it("destroy() cancels a pending debounced color change", () => {
     vi.useFakeTimers();
-    const view = new SettingsView(t, baseConfig(), onChange, onBack);
+    const view = new SettingsView(t, baseConfig(), onChange);
     const colorInput = view.element.querySelector<HTMLInputElement>(".sp-settings-color-input")!;
     colorInput.value = "#444444";
     colorInput.dispatchEvent(new Event("input"));
@@ -149,32 +161,31 @@ describe("SettingsView", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("each toggle flips its aria-checked state and calls onChange with the matching key", () => {
+  it("each toggle chip flips its aria-checked state and calls onChange with the matching key", () => {
     const view = new SettingsView(
       t,
       baseConfig({ enableScreenshot: false, captureDiagnostics: false, enableRightClickComment: false }),
       onChange,
-      onBack,
     );
-    const [screenshotToggle, diagnosticsToggle, rightClickToggle] = Array.from(
-      view.element.querySelectorAll<HTMLButtonElement>(".sp-settings-toggle"),
+    const [screenshotChip, diagnosticsChip, rightClickChip] = Array.from(
+      view.element.querySelectorAll<HTMLButtonElement>(".sp-settings-chip"),
     );
 
-    screenshotToggle!.click();
-    expect(screenshotToggle!.getAttribute("aria-checked")).toBe("true");
+    screenshotChip!.click();
+    expect(screenshotChip!.getAttribute("aria-checked")).toBe("true");
     expect(onChange).toHaveBeenLastCalledWith({ enableScreenshot: true });
 
-    diagnosticsToggle!.click();
-    expect(diagnosticsToggle!.getAttribute("aria-checked")).toBe("true");
+    diagnosticsChip!.click();
+    expect(diagnosticsChip!.getAttribute("aria-checked")).toBe("true");
     expect(onChange).toHaveBeenLastCalledWith({ captureDiagnostics: true });
 
-    rightClickToggle!.click();
-    expect(rightClickToggle!.getAttribute("aria-checked")).toBe("true");
+    rightClickChip!.click();
+    expect(rightClickChip!.getAttribute("aria-checked")).toBe("true");
     expect(onChange).toHaveBeenLastCalledWith({ enableRightClickComment: true });
 
     // Clicking again flips it back off.
-    screenshotToggle!.click();
-    expect(screenshotToggle!.getAttribute("aria-checked")).toBe("false");
+    screenshotChip!.click();
+    expect(screenshotChip!.getAttribute("aria-checked")).toBe("false");
     expect(onChange).toHaveBeenLastCalledWith({ enableScreenshot: false });
     view.destroy();
   });

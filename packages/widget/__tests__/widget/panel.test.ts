@@ -3803,18 +3803,17 @@ describe("Panel", () => {
   });
 
   // -------------------------------------------------------------------------
-  // Settings — gear icon in the header, wired only when the launcher
-  // supplies settingsOptions
+  // Settings — inline accordion pinned to the top of the panel body, wired
+  // only when the launcher supplies settingsOptions
   // -------------------------------------------------------------------------
 
   describe("settings", () => {
-    it("does not render a settings button when settingsOptions is omitted", () => {
+    it("does not render a settings accordion when settingsOptions is omitted", () => {
       // The shared `panel` from beforeEach is constructed without settingsOptions.
-      expect(shadow.querySelector(".sp-settings-btn")).toBeNull();
       expect(shadow.querySelector(".sp-settings")).toBeNull();
     });
 
-    it("renders a settings button and opens the settings view when clicked", () => {
+    it("renders a settings accordion and expands it when the toggle is clicked", () => {
       const onUpdateConfig = vi.fn();
       const settingsShadow = createShadowRoot();
       const settingsPanel = new Panel(
@@ -3830,14 +3829,14 @@ describe("Panel", () => {
         { config: { projectName: "test-project", endpoint: "/api/instafix" }, onUpdateConfig },
       );
 
-      const btn = settingsShadow.querySelector<HTMLButtonElement>(".sp-settings-btn");
-      expect(btn).not.toBeNull();
+      const toggleBtn = settingsShadow.querySelector<HTMLButtonElement>(".sp-settings-toggle");
+      expect(toggleBtn).not.toBeNull();
+      expect(toggleBtn?.getAttribute("aria-expanded")).toBe("false");
+      expect(settingsPanel.isSettingsExpanded).toBe(false);
 
-      const settingsEl = settingsShadow.querySelector<HTMLElement>(".sp-settings");
-      expect(settingsEl?.classList.contains("sp-settings--visible")).toBe(false);
-
-      btn?.click();
-      expect(settingsEl?.classList.contains("sp-settings--visible")).toBe(true);
+      toggleBtn?.click();
+      expect(toggleBtn?.getAttribute("aria-expanded")).toBe("true");
+      expect(settingsPanel.isSettingsExpanded).toBe(true);
 
       settingsPanel.destroy();
     });
@@ -3858,7 +3857,7 @@ describe("Panel", () => {
         { config: { projectName: "test-project", endpoint: "/api/instafix", theme: "light" }, onUpdateConfig },
       );
 
-      settingsShadow.querySelector<HTMLButtonElement>(".sp-settings-btn")!.click();
+      settingsShadow.querySelector<HTMLButtonElement>(".sp-settings-toggle")!.click();
       const darkBtn = settingsShadow.querySelector<HTMLButtonElement>('[data-theme="dark"]')!;
       darkBtn.click();
 
@@ -3867,7 +3866,7 @@ describe("Panel", () => {
       settingsPanel.destroy();
     });
 
-    it("Escape closes the settings view before closing the whole panel", async () => {
+    it("Escape collapses the settings accordion before closing the whole panel", async () => {
       const onUpdateConfig = vi.fn();
       const settingsShadow = createShadowRoot();
       const settingsPanel = new Panel(
@@ -3884,19 +3883,42 @@ describe("Panel", () => {
       );
 
       await settingsPanel.open();
-      settingsShadow.querySelector<HTMLButtonElement>(".sp-settings-btn")!.click();
-      const settingsEl = settingsShadow.querySelector<HTMLElement>(".sp-settings")!;
-      expect(settingsEl.classList.contains("sp-settings--visible")).toBe(true);
+      settingsShadow.querySelector<HTMLButtonElement>(".sp-settings-toggle")!.click();
+      expect(settingsPanel.isSettingsExpanded).toBe(true);
 
-      settingsEl.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-      expect(settingsEl.classList.contains("sp-settings--visible")).toBe(false);
-      // The panel itself stays open — only the settings sub-view closed.
-      expect(settingsShadow.querySelector(".sp-panel")?.classList.contains("sp-panel--open")).toBe(true);
+      const panelRoot = settingsShadow.querySelector<HTMLElement>(".sp-panel")!;
+      panelRoot.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      expect(settingsPanel.isSettingsExpanded).toBe(false);
+      // The panel itself stays open — only the settings accordion collapsed.
+      expect(panelRoot.classList.contains("sp-panel--open")).toBe(true);
 
       settingsPanel.destroy();
     });
 
-    it("destroy() cleans up the settings view without throwing", () => {
+    it("expandSettings() re-expands the accordion (used by the launcher after an updateConfig remount)", () => {
+      const onUpdateConfig = vi.fn();
+      const settingsShadow = createShadowRoot();
+      const settingsPanel = new Panel(
+        settingsShadow,
+        colors,
+        new EventBus<WidgetEvents>(),
+        apiClient as never,
+        "test-project",
+        markers as never,
+        t,
+        "fr",
+        undefined,
+        { config: { projectName: "test-project", endpoint: "/api/instafix" }, onUpdateConfig },
+      );
+
+      expect(settingsPanel.isSettingsExpanded).toBe(false);
+      settingsPanel.expandSettings();
+      expect(settingsPanel.isSettingsExpanded).toBe(true);
+
+      settingsPanel.destroy();
+    });
+
+    it("destroy() cleans up the settings accordion without throwing", () => {
       const onUpdateConfig = vi.fn();
       const settingsShadow = createShadowRoot();
       const settingsPanel = new Panel(

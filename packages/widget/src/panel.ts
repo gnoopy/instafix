@@ -28,7 +28,6 @@ import {
   ICON_OTHER,
   ICON_QUESTION,
   ICON_SEARCH,
-  ICON_SETTINGS,
   ICON_TRASH,
   ICON_UNDO,
 } from "./icons.js";
@@ -37,7 +36,7 @@ import { BulkActions } from "./panel-bulk.js";
 import { DetailView } from "./panel-detail.js";
 import { createPageGroupHeader, groupFeedbacksByPage, PanelSortControls, sortFeedbacks } from "./panel-sort.js";
 import { PanelStats } from "./panel-stats.js";
-import { type SettingsPatch, SettingsView } from "./settings-view.js";
+import { SettingsView } from "./settings-view.js";
 import { focusCardByIndex, getFocusedCardIndex, KeyboardShortcuts } from "./shortcuts.js";
 import { getStatusBgColor, getStatusColor, getTypeBgColor, getTypeColor, type ThemeColors } from "./styles/theme.js";
 
@@ -167,35 +166,21 @@ export class Panel {
     headerTop.appendChild(title);
     headerTop.appendChild(this.closeBtn);
 
-    // Settings — gear icon opens a compact panel-in-panel (same slide-in as
-    // DetailView) so visitors can adjust theme/locale/position/accent/feature
-    // toggles live, no host code required. Only wired when the launcher
-    // supplies settingsOptions (always true via initInstaFix() — omitted only
-    // by tests constructing Panel directly, in which case the gear is simply
-    // not rendered).
+    // Settings — an inline accordion pinned to the top of the panel body
+    // (below the header, above the stats/list) so visitors can adjust
+    // theme/locale/position/accent/feature toggles without a second sidebar
+    // competing for space. Only wired when the launcher supplies
+    // settingsOptions (always true via initInstaFix() — omitted only by
+    // tests constructing Panel directly, in which case the "설정" row is
+    // simply not rendered).
     this.settings = this.settingsOptions
-      ? new SettingsView(
-          this.t,
-          this.settingsOptions.config,
-          (patch) => this.settingsOptions?.onUpdateConfig(patch),
-          () => {},
-        )
+      ? new SettingsView(this.t, this.settingsOptions.config, (patch) => this.settingsOptions?.onUpdateConfig(patch))
       : null;
-    let settingsBtn: HTMLButtonElement | null = null;
-    if (this.settings) {
-      settingsBtn = document.createElement("button");
-      settingsBtn.type = "button";
-      settingsBtn.className = "sp-settings-btn";
-      settingsBtn.setAttribute("aria-label", this.t("settings.title"));
-      settingsBtn.appendChild(parseSvg(ICON_SETTINGS));
-      settingsBtn.addEventListener("click", () => this.settings?.show());
-    }
 
     // Secondary actions get their own row and wrap freely — safe to keep
     // growing (a future action button) without ever endangering the close
     // button above.
     const headerActions = el("div", { class: "sp-panel-header-actions" });
-    if (settingsBtn) headerActions.appendChild(settingsBtn);
     headerActions.appendChild(this.agentCopyBtn.element);
     headerActions.appendChild(this.exportBtn.element);
     headerActions.appendChild(this.deleteAllBtn);
@@ -375,12 +360,12 @@ export class Panel {
 
     // --- Assemble DOM ---
     this.root.appendChild(header);
+    if (this.settings) this.root.appendChild(this.settings.element);
     this.root.appendChild(this.stats.element);
     this.root.appendChild(filters);
     this.root.appendChild(this.listContainer);
     this.root.appendChild(this.bulk.barElement);
     this.root.appendChild(this.detail.element);
-    if (this.settings) this.root.appendChild(this.settings.element);
     this.root.appendChild(this.shortcuts.helpOverlay);
     this.root.appendChild(this.shortcuts.hintButton);
     shadowRoot.appendChild(this.root);
@@ -479,9 +464,9 @@ export class Panel {
     shadowRoot.addEventListener("keydown", (e) => {
       const ke = e as KeyboardEvent;
       if (ke.key === "Escape" && this.isOpen) {
-        // If the settings or detail view is open, close it instead
-        if (this.settings?.isVisible) {
-          this.settings.hide();
+        // If the settings accordion or detail view is open, close it instead
+        if (this.settings?.isExpanded) {
+          this.settings.collapse();
           return;
         }
         if (this.detail.isVisible) {
@@ -591,7 +576,7 @@ export class Panel {
     this.bus.emit("close");
     this.shortcuts.disable();
     this.detail.hide();
-    this.settings?.hide();
+    this.settings?.collapse();
     // Restore focus to the FAB
     const fab = (this.root.getRootNode() as ShadowRoot).querySelector<HTMLButtonElement>(".sp-fab");
     fab?.focus();
@@ -1411,6 +1396,16 @@ export class Panel {
   /** Whether the panel is currently open — used by the launcher to coordinate marker refreshes. */
   get isCurrentlyOpen(): boolean {
     return this.isOpen;
+  }
+
+  /** Whether the settings accordion is expanded — the launcher restores this across an `updateConfig()` remount. */
+  get isSettingsExpanded(): boolean {
+    return this.settings?.isExpanded ?? false;
+  }
+
+  /** Re-expand the settings accordion — used by the launcher right after an `updateConfig()` remount. */
+  expandSettings(): void {
+    this.settings?.expand();
   }
 
   destroy(): void {
