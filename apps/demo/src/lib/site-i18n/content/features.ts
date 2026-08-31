@@ -126,7 +126,7 @@ export const featuresContent: Record<SiteLocale, FeaturesContent> = {
         "API 키를 설정하면 관리자 라우트에 Bearer 토큰이 필요해집니다. 키 없이 조회할 경우 기본적으로 리뷰어의 이메일은 가려집니다.",
     },
     npmInstall: {
-      title: "npm 설치만 하면 끝",
+      title: "설치 한 줄이면 끝",
       description: "코드 세 줄이면 충분합니다. Next.js, 어떤 프레임워크든, 순수 자바스크립트든 모두 지원합니다.",
     },
     openSource: {
@@ -135,7 +135,7 @@ export const featuresContent: Record<SiteLocale, FeaturesContent> = {
     },
     cliScaffold: {
       title: "CLI 스캐폴드",
-      description: "Prisma 스키마와 API 라우트를 몇 초 만에 구성합니다.",
+      description: "Prisma 또는 SQLite 저장소와 API 라우트를 몇 초 만에 구성합니다.",
     },
 
     shadowDom: {
@@ -213,7 +213,7 @@ export const featuresContent: Record<SiteLocale, FeaturesContent> = {
         "Set an API key and admin routes require a Bearer token. Reads without one get reviewer emails blanked by default.",
     },
     npmInstall: {
-      title: "npm Install & Go",
+      title: "One-Command Install",
       description: "Three lines of code. Works with Next.js, any framework, or vanilla JavaScript.",
     },
     openSource: {
@@ -222,7 +222,7 @@ export const featuresContent: Record<SiteLocale, FeaturesContent> = {
     },
     cliScaffold: {
       title: "CLI Scaffold",
-      description: "Prisma schema and API route set up in seconds.",
+      description: "Prisma or SQLite storage and the API route, set up in seconds.",
     },
 
     shadowDom: {
@@ -312,7 +312,7 @@ export const featuresContent: Record<SiteLocale, FeaturesContent> = {
     },
     cliScaffold: {
       title: "Génération CLI",
-      description: "Schéma Prisma et route API prêts en quelques secondes.",
+      description: "Stockage Prisma ou SQLite et route API prêts en quelques secondes.",
     },
 
     shadowDom: {

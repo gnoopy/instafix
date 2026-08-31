@@ -477,7 +477,7 @@ export async function Features() {
             <h3 className="mt-4 text-lg font-semibold text-white">{t.npmInstall.title}</h3>
             <p className="mt-2 text-sm leading-relaxed text-gray-400">{t.npmInstall.description}</p>
             <div className="mt-4 rounded-lg border border-gray-800/60 bg-gray-950/80 px-3 py-2">
-              <code className="font-mono text-xs text-accent-light">npm i @instafix/widget</code>
+              <code className="font-mono text-xs text-accent-light">npm i github:gnoopy/instafix#widget-dist</code>
             </div>
           </article>
 
@@ -538,7 +538,7 @@ export async function Features() {
             <div className="mt-4 rounded-lg border border-gray-800/60 bg-gray-950/80 px-3 py-2">
               <code className="font-mono text-xs">
                 <span className="text-gray-500">$</span>{" "}
-                <span className="text-accent-light">npx @instafix/cli init</span>
+                <span className="text-accent-light">npx github:gnoopy/instafix#cli-dist init</span>
               </code>
             </div>
           </article>

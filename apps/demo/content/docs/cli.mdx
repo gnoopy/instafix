@@ -5,16 +5,18 @@ description: Set up and check InstaFix from the command line — init, sync, sta
 
 The InstaFix CLI automates project setup and health checks. It ships as a single self-contained binary with **zero runtime dependencies** and requires **Node 20 or newer**.
 
+InstaFix isn't published to the npm registry — that's a deliberate choice, so `npx @instafix/cli` won't resolve. Run it straight from this repo's `cli-dist` branch instead:
+
 ```bash
-npx @instafix/cli --help
+npx github:gnoopy/instafix#cli-dist --help
 ```
 
-> **The package name matters.** Always run `npx @instafix/cli <command>`. There is no `instafix` package on npm, so `npx instafix` only works if `@instafix/cli` is already installed in your project.
+> **The command matters.** Always run `npx github:gnoopy/instafix#cli-dist <command>` — spelled out in full, every time. There is no `instafix` package on npm to shorten it to.
 
 ## `init` — interactive setup
 
 ```bash
-npx @instafix/cli init
+npx github:gnoopy/instafix#cli-dist init
 ```
 
 `init` walks you through up to four confirmations:
@@ -28,10 +30,10 @@ npx @instafix/cli init
 
 The Prisma-flavored route imports two things you need to provide yourself — the CLI installs nothing:
 
-- the `@instafix/adapter-prisma` package (`npm i @instafix/adapter-prisma`)
+- the `@instafix/adapter-prisma` package (`npm install github:gnoopy/instafix#adapter-prisma-dist`)
 - a Prisma client exported from `@/lib/prisma`
 
-The SQLite-flavored route only needs `@instafix/adapter-sqlite` installed — no client to wire up, no schema to push; see the [SQLite adapter](/docs/adapters/sqlite).
+The SQLite-flavored route only needs `@instafix/adapter-sqlite` installed (`npm install github:gnoopy/instafix#adapter-sqlite-dist`) — no client to wire up, no schema to push; see the [SQLite adapter](/docs/adapters/sqlite).
 
 If your project has no `app/` (or `src/app/`) directory, `init` exits with an error: it only scaffolds Next.js App Router routes. Other frameworks wire the adapter manually — see [Adapters](/docs/adapters).
 
@@ -42,8 +44,8 @@ Whatever wasn't done automatically — declined, or no schema/route detected —
 ## `sync` — non-interactive schema merge
 
 ```bash
-npx @instafix/cli sync
-npx @instafix/cli sync --schema prisma/schema.prisma
+npx github:gnoopy/instafix#cli-dist sync
+npx github:gnoopy/instafix#cli-dist sync --schema prisma/schema.prisma
 ```
 
 `sync` merges the InstaFix models into your Prisma schema without prompts, which makes it safe for CI and update scripts. It works at the AST level:
@@ -60,8 +62,8 @@ When something changed, it reminds you to run `npx prisma db push`. Running it t
 ## `status` — project health report
 
 ```bash
-npx @instafix/cli status
-npx @instafix/cli status --schema prisma/schema.prisma
+npx github:gnoopy/instafix#cli-dist status
+npx github:gnoopy/instafix#cli-dist status --schema prisma/schema.prisma
 ```
 
 `status` runs four checks and prints a report:
@@ -78,7 +80,7 @@ The API route check only knows about the Next.js App Router. If you serve the ad
 ## `doctor` — live endpoint check
 
 ```bash
-npx @instafix/cli doctor --url http://localhost:3000 --endpoint /api/instafix
+npx github:gnoopy/instafix#cli-dist doctor --url http://localhost:3000 --endpoint /api/instafix
 ```
 
 `doctor` sends one GET request to your running server and tells you whether a InstaFix handler answered (10-second timeout). Pass **both** flags to run it non-interactively — any flag you omit becomes a prompt.

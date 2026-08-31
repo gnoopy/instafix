@@ -286,7 +286,7 @@ function buildSeeds(): Seed[] {
         elementTag: "SECTION",
         textPrefix: "Features",
         textSuffix: "Comparison",
-        neighborText: "npm install @instafix/widget @instafix/adapter-prisma",
+        neighborText: "npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-prisma-dist",
         xPct: 0.3,
         yPct: 0.4,
         wPct: 0.4,

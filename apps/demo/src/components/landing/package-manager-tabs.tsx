@@ -5,18 +5,22 @@ import { useState } from "react";
 const packageManagers = ["npm", "bun", "yarn", "pnpm"] as const;
 type PackageManager = (typeof packageManagers)[number];
 
+const WIDGET_SPEC = "github:gnoopy/instafix#widget-dist";
+const ADAPTER_PRISMA_SPEC = "github:gnoopy/instafix#adapter-prisma-dist";
+const CLI_SPEC = "github:gnoopy/instafix#cli-dist";
+
 const installCommands: Record<PackageManager, string> = {
-  npm: "npm install @instafix/widget @instafix/adapter-prisma",
-  bun: "bun add @instafix/widget @instafix/adapter-prisma",
-  yarn: "yarn add @instafix/widget @instafix/adapter-prisma",
-  pnpm: "pnpm add @instafix/widget @instafix/adapter-prisma",
+  npm: `npm install ${WIDGET_SPEC} ${ADAPTER_PRISMA_SPEC}`,
+  bun: `bun add ${WIDGET_SPEC} ${ADAPTER_PRISMA_SPEC}`,
+  yarn: `yarn add ${WIDGET_SPEC} ${ADAPTER_PRISMA_SPEC}`,
+  pnpm: `pnpm add ${WIDGET_SPEC} ${ADAPTER_PRISMA_SPEC}`,
 };
 
 const setupCommands: Record<PackageManager, string> = {
-  npm: "npx @instafix/cli init",
-  bun: "bunx @instafix/cli init",
-  yarn: "yarn dlx @instafix/cli init",
-  pnpm: "pnpm dlx @instafix/cli init",
+  npm: `npx ${CLI_SPEC} init`,
+  bun: `bunx ${CLI_SPEC} init`,
+  yarn: `yarn dlx ${CLI_SPEC} init`,
+  pnpm: `pnpm dlx ${CLI_SPEC} init`,
 };
 
 function TabBar({ selected, onChange }: { selected: PackageManager; onChange: (pm: PackageManager) => void }) {

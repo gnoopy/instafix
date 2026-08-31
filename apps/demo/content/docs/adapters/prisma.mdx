@@ -6,7 +6,7 @@ description: The production adapter — HTTP handlers backed by your database, w
 `@instafix/adapter-prisma` turns one URL of your app into a complete feedback API. It supports Prisma Client v5, v6, and v7, and requires Node 20+.
 
 ```bash
-npm i @instafix/adapter-prisma
+npm install github:gnoopy/instafix#adapter-prisma-dist
 ```
 
 ## Mounting
@@ -75,7 +75,7 @@ One endpoint, five methods. All bodies are JSON.
 
 ## Database schema
 
-This is the exact schema the adapter needs — it's what `npx @instafix/cli sync` generates. Prefer the CLI; if you write it by hand, don't drop columns: the adapter writes `urlPattern`, `screenshotUrl`, and `anchorKey` on every insert, so a partial schema fails on the first submission.
+This is the exact schema the adapter needs — it's what `npx github:gnoopy/instafix#cli-dist sync` generates. Prefer the CLI; if you write it by hand, don't drop columns: the adapter writes `urlPattern`, `screenshotUrl`, and `anchorKey` on every insert, so a partial schema fails on the first submission.
 
 ```prisma
 model InstaFixFeedback {

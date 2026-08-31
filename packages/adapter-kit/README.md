@@ -2,6 +2,12 @@
 
 Everything needed to build — and conformance-test — a custom [InstaFix](https://instafix.realstory.blog) store adapter.
 
+Not on the npm registry — installs straight from this repo's build output:
+
+```bash
+npm install github:gnoopy/instafix#adapter-kit-dist
+```
+
 ```ts
 import { createCollectionStore, type InstaFixStore } from "@instafix/adapter-kit";
 

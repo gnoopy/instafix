@@ -1,4 +1,3 @@
-[![npm version](https://img.shields.io/npm/v/@instafix/adapter-prisma)](https://www.npmjs.com/package/@instafix/adapter-prisma)
 [![Docs](https://img.shields.io/badge/docs-instafix.realstory.blog-0066ff)](https://instafix.realstory.blog/docs/adapters/prisma)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
@@ -10,8 +9,10 @@ The production server adapter for [InstaFix](https://github.com/gnoopy/instafix)
 
 ## Install
 
+Not on the npm registry — installs straight from this repo's build output:
+
 ```bash
-npm install @instafix/adapter-prisma
+npm install github:gnoopy/instafix#adapter-prisma-dist
 ```
 
 **Peer dependency:** `@prisma/client` ^5 || ^6 || ^7 · Node ≥ 20.
@@ -30,7 +31,7 @@ export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({
 });
 ```
 
-The handlers are Web-standard `Request` → `Response` — mount them from any framework (Remix, SvelteKit, Hono, …). Generate the required Prisma models with `npx @instafix/cli sync`.
+The handlers are Web-standard `Request` → `Response` — mount them from any framework (Remix, SvelteKit, Hono, …). Generate the required Prisma models with `npx github:gnoopy/instafix#cli-dist sync`.
 
 ## Highlights
 

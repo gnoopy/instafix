@@ -12,9 +12,7 @@ Draw rectangles, leave comments, track bugs — directly on the live site.
 [![Website](https://img.shields.io/badge/website-instafix.realstory.blog-000000?style=flat&colorA=000000&colorB=000000)](https://instafix.realstory.blog)
 [![Live Demo](https://img.shields.io/badge/demo-try%20it%20live-22c55e?style=flat&colorA=000000)](https://instafix.realstory.blog/demo)
 [![Docs](https://img.shields.io/badge/docs-instafix.realstory.blog%2Fdocs-0066ff?style=flat&colorA=000000)](https://instafix.realstory.blog/docs)
-[![npm version](https://img.shields.io/npm/v/@instafix/widget?style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@instafix/widget)
-[![npm downloads](https://img.shields.io/npm/dm/@instafix/widget?style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@instafix/widget)
-[![license](https://img.shields.io/npm/l/@instafix/widget?style=flat&colorA=000000&colorB=000000)](./LICENSE)
+[![license](https://img.shields.io/github/license/gnoopy/instafix?style=flat&colorA=000000&colorB=000000)](./LICENSE)
 [![build](https://img.shields.io/github/actions/workflow/status/gnoopy/instafix/ci.yml?style=flat&colorA=000000&colorB=000000)](https://github.com/gnoopy/instafix/actions)
 [![CodeQL](https://img.shields.io/github/actions/workflow/status/gnoopy/instafix/codeql.yml?label=CodeQL&style=flat&colorA=000000&colorB=000000)](https://github.com/gnoopy/instafix/security/code-scanning)
 [![coverage](https://img.shields.io/codecov/c/github/gnoopy/instafix?style=flat&colorA=000000&colorB=000000)](https://app.codecov.io/gh/gnoopy/instafix)
@@ -28,6 +26,9 @@ Draw rectangles, leave comments, track bugs — directly on the live site.
 
 > **[See InstaFix in action →](https://instafix.realstory.blog/demo)** — Draw annotations, leave feedback, track bugs directly on the live site.
 
+> [!NOTE]
+> InstaFix is a fork of **[SitePing](https://github.com/NeosiaNexus/SitePing)** by [NeosiaNexus](https://github.com/NeosiaNexus), continued here under a new name. See [Provenance](#provenance) for what changed and how attribution/licensing works.
+
 ---
 
 ## Why InstaFix?
@@ -37,7 +38,7 @@ Stop chasing client feedback across Slack threads, email chains, and Notion docs
 | | InstaFix | Marker.io | BugHerd |
 |---|---|---|---|
 | **Self-hosted** | Yes — your DB, your data | No (SaaS) | No (SaaS) |
-| **npm package** | `npm install` and go | npm + script tag | Script tag only |
+| **Package install** | `npm install` from GitHub — no registry gatekeeping | npm + script tag | Script tag only |
 | **Framework-native** | First-class Next.js support | Framework-agnostic | Framework-agnostic |
 | **Pricing** | Free & open source | From $39/mo | From $42/mo |
 | **DOM-anchored annotations** | Multi-selector (CSS + XPath + text) | Screenshot-based | Pin-based |
@@ -112,6 +113,8 @@ Maintaining a fork with extra features (semantic anchors, screenshot storage bac
 
 Every line of code, locale, doc fix, and bug report makes InstaFix better. Huge thanks to everyone who has shown up — first-time contributors especially.
 
+_This list credits contributions to the InstaFix repository specifically — see [Provenance](#provenance) for how this project relates to SitePing, the project it was forked from._
+
 This project follows the [all-contributors](https://allcontributors.org) specification — every kind of contribution counts ([emoji key](https://allcontributors.org/docs/en/emoji-key)).
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
@@ -159,7 +162,12 @@ This project follows the [all-contributors](https://allcontributors.org) specifi
 
 ## Provenance
 
-InstaFix began as a rebrand of **SitePing**, originally created and maintained by [NeosiaNexus](https://github.com/NeosiaNexus) ([NeosiaNexus/SitePing](https://github.com/NeosiaNexus/SitePing), MIT licensed). Development continues here under the new name and repository — see [LICENSE](./LICENSE) for the original and current copyright notices.
+InstaFix began as a fork of **SitePing**, originally created and maintained by [NeosiaNexus](https://github.com/NeosiaNexus) ([NeosiaNexus/SitePing](https://github.com/NeosiaNexus/SitePing), MIT licensed). It was rebranded (new name, npm scope, and repository) and has continued to diverge since — new locales, a SQLite adapter, a CLI, and other features not present upstream.
+
+- **License**: MIT, unchanged. [LICENSE](./LICENSE) carries both the original NeosiaNexus/SitePing copyright notice and the current one, per the license's own terms.
+- **History**: this repository started from a clean checkout rather than a GitHub-native fork, so it doesn't carry SitePing's original commit history or issue/PR links — that history lives at [NeosiaNexus/SitePing](https://github.com/NeosiaNexus/SitePing).
+- **Contributors**: the [list above](#contributors) credits people who contributed to *this* repository. It doesn't include SitePing's own contributors, since they didn't contribute to this codebase directly — see [SitePing's contributors](https://github.com/NeosiaNexus/SitePing/graphs/contributors) for that project's history.
+- If you're evaluating InstaFix vs. SitePing: this project isn't affiliated with or endorsed by NeosiaNexus. Check both and use whichever fits.
 
 ## License
 

@@ -6,7 +6,7 @@ description: 외부 서비스 없이 — 로컬 .db 파일 하나만으로, ORM�
 `@instafix/adapter-sqlite`는 마찰이 가장 적은 영구 저장 백엔드입니다: 설치할 ORM도, 실행할 데이터베이스 서버도, 실행할 마이그레이션 명령도 없습니다. 두 테이블(`instafix_feedback`, `instafix_annotation`)은 `better-sqlite3`를 통해 특정 파일에 대해 `SqliteStore`가 처음 생성될 때 자동으로 만들어집니다. Node 20 이상이 필요합니다.
 
 ```bash
-npm i @instafix/adapter-sqlite
+npm install github:gnoopy/instafix#adapter-sqlite-dist
 ```
 
 ## 연결하기

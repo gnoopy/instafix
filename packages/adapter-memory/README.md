@@ -1,4 +1,3 @@
-[![npm version](https://img.shields.io/npm/v/@instafix/adapter-memory)](https://www.npmjs.com/package/@instafix/adapter-memory)
 [![Docs](https://img.shields.io/badge/docs-instafix.realstory.blog-0066ff)](https://instafix.realstory.blog/docs/adapters/memory)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
@@ -10,8 +9,10 @@ In-memory store for [InstaFix](https://github.com/gnoopy/instafix) — zero depe
 
 ## Install
 
+Not on the npm registry — installs straight from this repo's build output:
+
 ```bash
-npm install @instafix/adapter-memory
+npm install github:gnoopy/instafix#adapter-memory-dist
 ```
 
 ## Usage

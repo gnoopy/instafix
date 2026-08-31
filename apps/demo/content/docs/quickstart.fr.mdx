@@ -1,19 +1,34 @@
 ---
 title: Démarrage rapide
-description: Du npm install au premier feedback épinglé en trois minutes environ.
+description: De l'installation GitHub au premier feedback épinglé en trois minutes environ.
 ---
 
-Deux chemins : l'**installation complète** (Next.js + Prisma — la forme de production) ou la version **sans serveur** (60 secondes, tout dans le navigateur).
+InstaFix n'est pas publié sur le registre npm — un choix délibéré, pas un « pas encore ». Chaque package s'installe directement depuis les résultats de build de ce dépôt, via une branche `<package>-dist` jetable : même expérience d'installation, juste une URL GitHub à la place d'un nom de package.
 
-## Installation complète — Next.js + Prisma
+Deux chemins : l'**installation complète** (Next.js + une vraie base de données — la forme de production) ou la version **sans serveur** (60 secondes, tout dans le navigateur).
 
-### 1. Installer
+## Installation complète — Next.js + Prisma ou SQLite
+
+### 1. Générer
 
 ```bash
-npm i @instafix/widget @instafix/adapter-prisma
+npx github:gnoopy/instafix#cli-dist init
 ```
 
-Il vous faut Prisma déjà en place, plus un singleton client dans `@/lib/prisma`. Si vous n'en avez pas :
+Si un schéma Prisma est trouvé, `init` propose d'ajouter les modèles InstaFix et de générer une route API adossée à Prisma. **Pas de schéma Prisma ?** Il propose **SQLite** à la place (`better-sqlite3`, zéro service externe — aucun serveur de base de données, aucune étape de migration séparée) plutôt que de supposer Prisma. Dans les deux cas, il génère aussi un `components/instafix-widget.tsx` prêt à l'emploi.
+
+### 2. Installer ce que `init` a référencé
+
+```bash
+# Chemin Prisma
+npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-prisma-dist
+npx prisma db push
+
+# Chemin SQLite
+npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-sqlite-dist
+```
+
+Chemin Prisma uniquement : il vous faut un singleton client dans `@/lib/prisma`. Si vous n'en avez pas :
 
 ```ts
 // src/lib/prisma.ts
@@ -24,30 +39,19 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 ```
 
-### 2. Générer
-
-```bash
-npx @instafix/cli init
-```
-
-Confirmez les deux questions : le CLI ajoute les deux modèles InstaFix à votre schéma Prisma et génère la route API (`app/api/instafix/route.ts`, ou sous `src/app/` selon votre projet). Poussez ensuite le schéma vers votre base :
-
-```bash
-npx prisma db push
-```
-
 ### 3. Monter le widget
 
-```tsx
-// N'importe où côté client — par exemple votre layout racine
-"use client";
-import { useInstaFix } from "@instafix/widget/react";
+`init` a déjà généré le composant — il ne reste qu'à le poser dans votre layout racine :
 
-export function Feedback() {
-  useInstaFix({ endpoint: "/api/instafix", projectName: "mon-projet" });
-  return null;
-}
+```tsx
+// app/layout.tsx
+import { InstaFixWidget } from "@/components/instafix-widget";
+
+// ...dans <body>, à côté de vos autres providers :
+<InstaFixWidget />
 ```
+
+(Vous n'utilisez pas le composant généré ? La même chose, à la main : `useInstaFix({ endpoint: "/api/instafix", projectName: "mon-projet" })` depuis `@instafix/widget/react`, dans n'importe quel composant client.)
 
 Lancez votre serveur de dev et regardez en bas à droite : le bouton InstaFix est là. Dessinez un rectangle sur n'importe quoi, tapez un commentaire, envoyez.
 
@@ -68,7 +72,7 @@ La boucle est complète. Pour aller plus loin : [options du widget](/fr/docs/wid
 Pas de backend, pas de base — le feedback vit dans le navigateur du visiteur. Parfait pour les prototypes et démos :
 
 ```bash
-npm i @instafix/widget @instafix/adapter-localstorage
+npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-localstorage-dist
 ```
 
 ```ts

@@ -8,8 +8,8 @@ const links = [
     href: "https://github.com/gnoopy/instafix",
   },
   {
-    label: "npm",
-    href: "https://www.npmjs.com/package/@instafix/widget",
+    label: "Install",
+    href: "https://github.com/gnoopy/instafix#quickstart",
   },
   {
     label: "Documentation",

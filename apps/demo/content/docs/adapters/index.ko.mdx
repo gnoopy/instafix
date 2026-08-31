@@ -12,7 +12,7 @@ description: 피드백이 저장되는 위치 — 프로덕션에는 Prisma나 S
 | [`@instafix/adapter-memory`](/ko/docs/adapters/memory) | 프로세스 내 배열 | 테스트, 프리뷰, 일회성 데모 |
 | [`@instafix/adapter-localstorage`](/ko/docs/adapters/localstorage) | 방문자의 브라우저 | 서버가 전혀 없는 클라이언트 사이드 데모와 프로토타입 |
 
-어느 쪽을 골라야 할지 모르겠다면 — 프로젝트에 이미 Prisma가 세팅되어 있다면 그대로 쓰고, 아니면 SQLite가 별도 설치나 실행 없이 실질적인 영구 저장소를 제공합니다. `npx @instafix/cli init`을 실행하면 물어보고 선택한 대로 연결해 줍니다.
+어느 쪽을 골라야 할지 모르겠다면 — 프로젝트에 이미 Prisma가 세팅되어 있다면 그대로 쓰고, 아니면 SQLite가 별도 설치나 실행 없이 실질적인 영구 저장소를 제공합니다. `npx github:gnoopy/instafix#cli-dist init`을 실행하면 물어보고 선택한 대로 연결해 줍니다.
 
 완전히 다른 백엔드가 필요하신가요(Prisma 없는 Postgres, MongoDB, DynamoDB 등)? `@instafix/adapter-kit`으로 [직접 작성하세요](/ko/docs/adapters/writing-an-adapter).
 

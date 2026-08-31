@@ -1,4 +1,3 @@
-[![npm version](https://img.shields.io/npm/v/@instafix/widget)](https://www.npmjs.com/package/@instafix/widget)
 [![Live Demo](https://img.shields.io/badge/demo-try%20it%20live-22c55e)](https://instafix.realstory.blog/demo)
 [![Docs](https://img.shields.io/badge/docs-instafix.realstory.blog-0066ff)](https://instafix.realstory.blog/docs/widget)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
@@ -13,8 +12,10 @@ Part of [InstaFix](https://github.com/gnoopy/instafix) — **[live demo](https:/
 
 ## Install
 
+Not on the npm registry — installs straight from this repo's build output:
+
 ```bash
-npm install @instafix/widget
+npm install github:gnoopy/instafix#widget-dist
 ```
 
 ## Quick start

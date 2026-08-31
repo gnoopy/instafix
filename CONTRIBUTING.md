@@ -46,16 +46,19 @@ Run `bun run verify` before submitting a PR — it is exactly what CI enforces.
 
 Monorepo with bun workspaces + Turborepo. Libraries live in `packages/`, the website in `apps/`:
 
-| Package | npm | Target | Description |
-|---------|-----|--------|-------------|
-| `@instafix/core` | private | — | Shared types, schema, store errors, helpers, conformance tests |
-| `@instafix/widget` | published | Browser | Feedback widget (Shadow DOM, closed). Accepts `store` for client-side mode |
-| `@instafix/dashboard` | published | Browser (React) | Linear-style triage inbox (`<InstaFixInbox />` + headless `useInstaFixInbox()`) |
-| `@instafix/adapter-prisma` | published | Node | Prisma database adapter |
-| `@instafix/adapter-memory` | published | Any | In-memory adapter (testing, demos, serverless) |
-| `@instafix/adapter-localstorage` | published | Browser | localStorage adapter (demos, prototyping) |
-| `@instafix/adapter-kit` | published | Any | Everything third-party adapter authors need: store contract, helpers, `createCollectionStore`, and the conformance suite (`/testing`) |
-| `@instafix/cli` | published | Node | CLI tool (`npx @instafix/cli init/sync/status/doctor`) |
+Not published to the npm registry (deliberate — see the README's [Quickstart](./README.md#quickstart)): every package below installs from this repo's `<package>-dist` branches instead, e.g. `npm install github:gnoopy/instafix#widget-dist`.
+
+| Package | Distribution | Target | Description |
+|---------|--------------|--------|-------------|
+| `@instafix/core` | internal (bundled into consumers) | — | Shared types, schema, store errors, helpers, conformance tests |
+| `@instafix/widget` | `widget-dist` | Browser | Feedback widget (Shadow DOM, closed). Accepts `store` for client-side mode |
+| `@instafix/dashboard` | `dashboard-dist` | Browser (React) | Linear-style triage inbox (`<InstaFixInbox />` + headless `useInstaFixInbox()`) |
+| `@instafix/adapter-prisma` | `adapter-prisma-dist` | Node | Prisma database adapter |
+| `@instafix/adapter-sqlite` | `adapter-sqlite-dist` | Node | SQLite (better-sqlite3) adapter — zero external services |
+| `@instafix/adapter-memory` | `adapter-memory-dist` | Any | In-memory adapter (testing, demos, serverless) |
+| `@instafix/adapter-localstorage` | `adapter-localstorage-dist` | Browser | localStorage adapter (demos, prototyping) |
+| `@instafix/adapter-kit` | `adapter-kit-dist` | Any | Everything third-party adapter authors need: store contract, helpers, `createCollectionStore`, and the conformance suite (`/testing`) |
+| `@instafix/cli` | `cli-dist` | Node | CLI tool (`npx github:gnoopy/instafix#cli-dist init/sync/status/doctor`) |
 | `@instafix/demo` (`apps/demo`) | private | Next.js | [instafix.realstory.blog](https://instafix.realstory.blog) — landing, live demo, **and the documentation site** ([editing it](#editing-the-documentation)) |
 
 - **Core** is an Internal Package — it exports raw TypeScript (no build step). Consumers bundle it via `noExternal: ["@instafix/core"]` in their tsup config.

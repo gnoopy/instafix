@@ -1,4 +1,3 @@
-[![npm version](https://img.shields.io/npm/v/@instafix/adapter-localstorage)](https://www.npmjs.com/package/@instafix/adapter-localstorage)
 [![Docs](https://img.shields.io/badge/docs-instafix.realstory.blog-0066ff)](https://instafix.realstory.blog/docs/adapters/localstorage)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
@@ -10,8 +9,10 @@ Client-side store for [InstaFix](https://github.com/gnoopy/instafix) — the who
 
 ## Install
 
+Not on the npm registry — installs straight from this repo's build output:
+
 ```bash
-npm install @instafix/adapter-localstorage
+npm install github:gnoopy/instafix#adapter-localstorage-dist
 ```
 
 ## Usage

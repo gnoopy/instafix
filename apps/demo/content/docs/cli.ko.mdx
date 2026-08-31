@@ -5,16 +5,18 @@ description: 명령줄에서 InstaFix를 설치하고 점검하세요 — init, 
 
 InstaFix CLI는 프로젝트 설정과 상태 점검을 자동화합니다. **런타임 의존성이 전혀 없는** 단일 실행 파일로 배포되며, **Node 20 이상**이 필요합니다.
 
+InstaFix는 npm 레지스트리에 배포하지 않기로 했습니다 — 의도적인 결정이라 `npx @instafix/cli`는 동작하지 않습니다. 대신 이 저장소의 `cli-dist` 브랜치에서 바로 실행하세요:
+
 ```bash
-npx @instafix/cli --help
+npx github:gnoopy/instafix#cli-dist --help
 ```
 
-> **패키지 이름이 중요합니다.** 항상 `npx @instafix/cli <command>` 형태로 실행하세요. npm에는 `instafix`라는 패키지가 존재하지 않으므로, `npx instafix`는 프로젝트에 `@instafix/cli`가 이미 설치되어 있을 때만 동작합니다.
+> **명령어 전체가 중요합니다.** 매번 `npx github:gnoopy/instafix#cli-dist <command>` 형태로 빠짐없이 실행하세요. npm에 `instafix` 패키지가 없어서 줄여 쓸 방법이 없습니다.
 
 ## `init` — 대화형 설정
 
 ```bash
-npx @instafix/cli init
+npx github:gnoopy/instafix#cli-dist init
 ```
 
 `init`은 최대 네 가지 확인 절차를 안내합니다:
@@ -28,10 +30,10 @@ npx @instafix/cli init
 
 Prisma 방식 라우트는 여러분이 직접 준비해야 하는 두 가지를 import합니다 — CLI는 아무것도 설치하지 않습니다:
 
-- `@instafix/adapter-prisma` 패키지 (`npm i @instafix/adapter-prisma`)
+- `@instafix/adapter-prisma` 패키지 (`npm install github:gnoopy/instafix#adapter-prisma-dist`)
 - `@/lib/prisma`에서 export된 Prisma 클라이언트
 
-SQLite 방식 라우트는 `@instafix/adapter-sqlite`만 설치되어 있으면 됩니다 — 별도로 연결할 클라이언트도, 반영할 스키마도 없습니다. [SQLite 어댑터](/ko/docs/adapters/sqlite) 참고.
+SQLite 방식 라우트는 `@instafix/adapter-sqlite`만 설치되어 있으면 됩니다(`npm install github:gnoopy/instafix#adapter-sqlite-dist`) — 별도로 연결할 클라이언트도, 반영할 스키마도 없습니다. [SQLite 어댑터](/ko/docs/adapters/sqlite) 참고.
 
 프로젝트에 `app/`(또는 `src/app/`) 디렉터리가 없다면 `init`은 오류와 함께 종료됩니다: Next.js App Router 라우트만 스캐폴딩하기 때문입니다. 다른 프레임워크에서는 어댑터를 수동으로 연결해야 합니다 — [어댑터](/ko/docs/adapters) 참고.
 
@@ -42,8 +44,8 @@ SQLite 방식 라우트는 `@instafix/adapter-sqlite`만 설치되어 있으면 
 ## `sync` — 비대화형 스키마 병합
 
 ```bash
-npx @instafix/cli sync
-npx @instafix/cli sync --schema prisma/schema.prisma
+npx github:gnoopy/instafix#cli-dist sync
+npx github:gnoopy/instafix#cli-dist sync --schema prisma/schema.prisma
 ```
 
 `sync`는 확인 질문 없이 InstaFix 모델을 Prisma 스키마에 병합하므로, CI나 업데이트 스크립트에서 안전하게 사용할 수 있습니다. AST 레벨에서 동작합니다:
@@ -60,8 +62,8 @@ npx @instafix/cli sync --schema prisma/schema.prisma
 ## `status` — 프로젝트 상태 리포트
 
 ```bash
-npx @instafix/cli status
-npx @instafix/cli status --schema prisma/schema.prisma
+npx github:gnoopy/instafix#cli-dist status
+npx github:gnoopy/instafix#cli-dist status --schema prisma/schema.prisma
 ```
 
 `status`는 네 가지 점검을 수행하고 리포트를 출력합니다:
@@ -78,7 +80,7 @@ API 라우트 점검은 Next.js App Router만 인식합니다. Express, Hono, �
 ## `doctor` — 실시간 엔드포인트 점검
 
 ```bash
-npx @instafix/cli doctor --url http://localhost:3000 --endpoint /api/instafix
+npx github:gnoopy/instafix#cli-dist doctor --url http://localhost:3000 --endpoint /api/instafix
 ```
 
 `doctor`는 실행 중인 서버에 GET 요청을 한 번 보내서 InstaFix 핸들러가 응답했는지 알려줍니다(타임아웃 10초). 두 플래그를 **모두** 전달하면 비대화형으로 실행됩니다 — 생략한 플래그는 질문으로 대체됩니다.
