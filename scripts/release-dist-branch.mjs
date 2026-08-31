@@ -57,7 +57,7 @@ try {
   console.error(
     'No "origin" remote configured.\n\n' +
       "  git remote add origin git@github.com:gnoopy/instafix.git\n" +
-      "  git push -u origin master\n",
+      "  git push -u origin main\n",
   );
   process.exit(1);
 }
