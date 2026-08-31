@@ -211,7 +211,7 @@ jobs:
       - name: Build
         run: bun run build
 
-      # Guards the `npx @instafix/cli` startup path: the ESM bundle once
+      # Guards the CLI's `npx github:gnoopy/instafix#cli-dist` startup path: the ESM bundle once
       # shipped without a require shim and crashed instantly under Node
       # (fixed in #221). A --help run catches any bundle-init regression.
       - name: CLI binary smoke test
