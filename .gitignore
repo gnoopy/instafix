@@ -9,10 +9,17 @@ playwright-report/
 coverage/
 .env
 .env.local
+.claude/settings.local.json
 .claude/worktrees/
 coverage-report/
 .source/
 apps/demo/data/
+
+# UI/UX v5.1 E2E fixture harness (scripts/e2e/) — persistent browser profiles carry
+# session cookies/local-storage, screenshots are regenerated per finish-pass round.
+.e2e/
+docs/ux-log/e2e-latest/
+docs/previews/
 
 # Internal AI-agent planning/process docs — not part of the public project.
 /CLAUDE.md

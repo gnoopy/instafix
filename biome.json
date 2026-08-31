@@ -51,7 +51,7 @@
     }
   },
   "files": {
-    "includes": ["**", "!**/dist/", "!**/node_modules/", "!**/bun.lock", "!**/e2e/server.mjs"]
+    "includes": ["**", "!**/dist/", "!**/node_modules/", "!**/bun.lock", "!**/e2e/server.mjs", "!.claude/skills"]
   },
   "overrides": [
     {

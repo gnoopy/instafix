@@ -1,6 +1,7 @@
 {
   "$schema": "https://turborepo.dev/schema.v2.json",
   "globalDependencies": ["tsconfig.base.json", "biome.json", "scripts/fix-dts.mjs"],
+  "globalPassThroughEnv": ["E2E_BASE", "E2E_TARGET", "E2E_HEADLESS"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
