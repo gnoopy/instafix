@@ -4,6 +4,8 @@ export type { InstaFixErrorCode } from "./errors.js";
 export { InstaFixAuthError, InstaFixError, InstaFixNetworkError, InstaFixValidationError } from "./errors.js";
 export type { FilterResult } from "./filters.js";
 export { applyFeedbackFilters } from "./filters.js";
+export type { InstaFixHandler, InstaFixHttpMethod, StoreHandlerOptions } from "./handler.js";
+export { createStoreHandler } from "./handler.js";
 export type { I18n, LocaleLoaders, TranslateFunction } from "./i18n.js";
 export { createI18n, interpolate, tWithParams } from "./i18n.js";
 export type {
@@ -92,4 +94,14 @@ export {
   StorePersistenceError,
   toFeedbackUpdate,
 } from "./types.js";
+export type { FeedbackDeleteInput, FeedbackPatchInput, GetQueryInput, ValidationIssue } from "./validation.js";
+export { formatValidationErrors } from "./validation.js";
+export type {
+  DiscordWebhookPayload,
+  SlackWebhookPayload,
+  WebhookConfig,
+  WebhookPayloadMap,
+  WebhookType,
+} from "./webhooks.js";
+export { dispatchWebhook, dispatchWebhooks } from "./webhooks.js";
 export { errorFromResponse, feedbackQueryToSearchParams, networkErrorFromException } from "./wire.js";

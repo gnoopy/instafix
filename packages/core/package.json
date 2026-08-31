@@ -24,6 +24,9 @@
   "engines": {
     "node": ">=20"
   },
+  "devDependencies": {
+    "zod": "^4.4.3"
+  },
   "homepage": "https://instafix.realstory.blog",
   "bugs": {
     "url": "https://github.com/gnoopy/instafix/issues"

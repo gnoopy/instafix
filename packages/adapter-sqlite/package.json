@@ -57,8 +57,8 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@instafix/adapter-prisma": "workspace:*",
-    "better-sqlite3": "^11.10.0"
+    "better-sqlite3": "^11.10.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@instafix/core": "workspace:*",

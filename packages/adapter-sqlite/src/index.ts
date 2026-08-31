@@ -21,24 +21,22 @@ import {
 } from "@instafix/core";
 import Database from "better-sqlite3";
 
-// The HTTP handler (auth, CORS, validation, webhooks, routing) has nothing
-// Prisma-specific about it once a `store` is supplied — it already accepts
-// any `InstaFixStore`. Re-exporting it here means consumers only ever
-// import from `@instafix/adapter-sqlite`; `@instafix/adapter-prisma` stays
-// an internal implementation detail (its `@prisma/client` peer dependency
-// is marked optional and is never touched by this code path).
+export type { InstaFixStore, ScreenshotStorage } from "@instafix/core";
+// The HTTP handler (auth, CORS, validation, webhooks, routing) lives in
+// @instafix/core and has nothing to do with any particular store — every
+// InstaFix adapter (Prisma, SQLite, memory, a third-party one) gets the same
+// request handling. Re-exported under this package's own name (rather than
+// `HandlerOptions`/`createStoreHandler`) so this stays a drop-in match for
+// every other adapter's `createInstaFixHandler({ ... })` shape.
 export {
-  createInstaFixHandler,
-  type HandlerOptions,
+  createStoreHandler as createInstaFixHandler,
   type InstaFixHandler,
   type InstaFixHttpMethod,
-} from "@instafix/adapter-prisma";
-export type { InstaFixStore, ScreenshotStorage } from "@instafix/core";
-export {
   isStoreDuplicate,
   isStoreNotFound,
   isStorePersistence,
   StoreDuplicateError,
+  type StoreHandlerOptions as HandlerOptions,
   StoreNotFoundError,
   StorePersistenceError,
 } from "@instafix/core";

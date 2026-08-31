@@ -93,8 +93,8 @@
       "name": "@instafix/adapter-sqlite",
       "version": "0.0.0",
       "dependencies": {
-        "@instafix/adapter-prisma": "workspace:*",
         "better-sqlite3": "^11.10.0",
+        "zod": "^4.4.3",
       },
       "devDependencies": {
         "@instafix/core": "workspace:*",
@@ -117,6 +117,9 @@
     "packages/core": {
       "name": "@instafix/core",
       "version": "0.7.2",
+      "devDependencies": {
+        "zod": "^4.4.3",
+      },
     },
     "packages/dashboard": {
       "name": "@instafix/dashboard",

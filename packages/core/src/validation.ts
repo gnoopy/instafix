@@ -1,6 +1,7 @@
-import type { AssertEqual, FeedbackPayload, FeedbackStatus, FeedbackType, Prettify } from "@instafix/core";
-import { CONSOLE_DIAGNOSTIC_LEVELS, FEEDBACK_STATUSES, FEEDBACK_TYPES } from "@instafix/core";
 import * as zod from "zod";
+import type { AssertEqual, Prettify } from "./type-utils.js";
+import type { FeedbackPayload, FeedbackStatus, FeedbackType } from "./types.js";
+import { CONSOLE_DIAGNOSTIC_LEVELS, FEEDBACK_STATUSES, FEEDBACK_TYPES } from "./types.js";
 
 // Namespace import required: Zod publishes dual CJS/ESM, and bundlers (tsup, vitest) may
 // resolve the CJS entry where `import { z } from "zod"` fails because CJS wraps
