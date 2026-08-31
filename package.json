@@ -1,0 +1,40 @@
+{
+  "name": "@instafix/cli",
+  "version": "0.5.4",
+  "description": "CLI tool to set up InstaFix in your project",
+  "type": "module",
+  "bin": {
+    "instafix": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "instafix",
+    "cli",
+    "prisma",
+    "setup",
+    "developer-tools",
+    "feedback",
+    "nextjs",
+    "prisma-generator",
+    "typescript"
+  ],
+  "author": "gnoopy",
+  "license": "MIT",
+  "homepage": "https://instafix.realstory.blog",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gnoopy/instafix.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/gnoopy/instafix/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
