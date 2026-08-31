@@ -7,8 +7,9 @@
 //   2. a doc/README states a "N built-in locales" count that no longer
 //      matches BUILTIN_LOCALES.length;
 //   3. a non-private packages/* package is missing from the release-please
-//      config/manifest, or a manifest package is missing its release.yml
-//      wiring (output + publish job);
+//      config/manifest (version bumps + CHANGELOG — release.yml doesn't
+//      publish anywhere; see the README's Quickstart for how packages are
+//      actually distributed);
 //   4. a published package's build script forgot the fix-dts chain its
 //      declarations need (cli is exempt: it ships no .d.ts).
 
@@ -62,7 +63,6 @@ for (const file of localeCountFiles) {
 
 const manifest = JSON.parse(read(".release-please-manifest.json"));
 const releaseConfig = JSON.parse(read("release-please-config.json"));
-const releaseYml = read(".github/workflows/release.yml");
 
 for (const dir of readdirSync(join(root, "packages"))) {
   const pkgJsonPath = join(root, "packages", dir, "package.json");
@@ -75,18 +75,6 @@ for (const dir of readdirSync(join(root, "packages"))) {
   }
   if (!(pkgPath in releaseConfig.packages)) {
     errors.push(`${pkgPath} is public but missing from release-please-config.json`);
-  }
-}
-
-for (const pkgPath of Object.keys(manifest)) {
-  if (!releaseYml.includes(`${pkgPath}--release_created`)) {
-    errors.push(`${pkgPath} has no release_created output in release.yml`);
-  }
-  if (!releaseYml.includes(`working-directory: ${pkgPath}`)) {
-    errors.push(`${pkgPath} has no publish job (working-directory) in release.yml`);
-  }
-  if (!releaseYml.includes(`${pkgPath}/dist/`)) {
-    errors.push(`${pkgPath}/dist/ is missing from the release.yml build artifact paths`);
   }
 }
 

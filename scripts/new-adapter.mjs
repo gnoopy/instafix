@@ -5,8 +5,8 @@
 // expect (dual-exports package.json with the fix-dts build chain, shared
 // tsup preset, tsconfig, a InstaFixStore skeleton, a test file pre-wired to
 // the conformance suite) and registers it in the release-please config +
-// manifest. The remaining manual step — release.yml wiring — is printed at
-// the end and enforced by scripts/check-consistency.mjs until done.
+// manifest (version bumps + CHANGELOG only — release.yml doesn't publish
+// anywhere; see the README's Quickstart for how packages are distributed).
 //
 // Third-party adapters (outside this repo) should depend on
 // @instafix/adapter-kit instead — see docs/adapters/writing-an-adapter.
@@ -218,9 +218,7 @@ Next steps:
   2. Implement the store in ${pkgDir}/src/index.ts
      until the conformance suite passes:
        ./node_modules/.bin/vitest run ${pkgDir}
-  3. Wire .github/workflows/release.yml (4 spots — copy an existing
-     publish job): release_created output, artifact path, publish job,
-     verify-publish needs. \`bun run check:consistency\` fails until done.
-  4. Docs page: apps/demo/content/docs/adapters/ (EN + FR).
-  5. bun run verify && bun run pkg-checks
+  3. Docs page: apps/demo/content/docs/adapters/ (EN + FR).
+  4. bun run verify && bun run pkg-checks
+  5. Once it's ready to ship: bun run release:dist ${name}
 `);

@@ -318,14 +318,15 @@ inaccurately for the same reason. Trust the published report for those.)
 
 ## Releases & Versioning
 
-Releases are **fully automated** via [Release Please](https://github.com/googleapis/release-please) + Turborepo.
+Version bumps, CHANGELOGs, and GitHub Releases are **fully automated** via [Release Please](https://github.com/googleapis/release-please) + Turborepo. **Publishing is not** — InstaFix isn't on the npm registry (deliberate; see the README's [Quickstart](./README.md#quickstart)). The actual distribution mechanism is `bun run release:dist [package...]`, which builds and force-pushes each package's output to a disposable `<package>-dist` branch — a separate, manually-run step, not triggered by merging a release PR.
 
 **How it works:**
 
 1. Write code using [Conventional Commits](https://www.conventionalcommits.org/)
 2. Push to `main` (via squash-merged PR)
 3. Release Please detects which packages changed (by file paths) and opens a release PR
-4. Merge the release PR → GitHub Release + npm publish happen automatically
+4. Merge the release PR → GitHub Release happens automatically (version bump, tag, CHANGELOG)
+5. When you want that release reflected in the `-dist` branches, run `bun run release:dist` (or name specific packages)
 
 **Version bumps are determined by your commit messages:**
 
@@ -344,7 +345,7 @@ Releases are **fully automated** via [Release Please](https://github.com/googlea
 - Edit `package.json` version — Release Please does it
 - Write `CHANGELOG.md` — auto-generated from commits
 - Create git tags — auto-created on release
-- Run `npm publish` — CI handles it
+- Publish to npm — InstaFix doesn't; see [Architecture](#architecture) above for how packages are actually distributed
 
 ## Pull Request Guidelines
 
