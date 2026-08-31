@@ -17,10 +17,12 @@ npx @instafix/cli --help
 npx @instafix/cli init
 ```
 
-`init`은 두 가지 확인 절차를 안내합니다:
+`init`은 최대 네 가지 확인 절차를 안내합니다:
 
 1. **Prisma 모델 동기화** — 스키마가 발견되면([스키마 탐지](#스키마-탐지) 참고), `InstaFixFeedback`과 `InstaFixAnnotation` 모델을 추가할지 제안합니다.
-2. **API 라우트 생성** — 위젯을 서비스하는 Next.js App Router 라우트 생성을 제안합니다. 파일은 `app/api/instafix/route.ts`에, 프로젝트가 `src/` 구조를 사용한다면 `src/app/api/instafix/route.ts`에 생성됩니다. 기존 라우트는 절대 덮어쓰지 않습니다.
+2. **스키마 반영** — 스키마가 발견되었다면 `npx prisma db push`를 바로 실행할지 제안합니다. Prisma의 출력(그리고 Prisma가 요구하는 확인 절차까지)이 그대로 터미널에 표시됩니다.
+3. **API 라우트 생성** — 위젯을 서비스하는 Next.js App Router 라우트 생성을 제안합니다. 파일은 `app/api/instafix/route.ts`에, 프로젝트가 `src/` 구조를 사용한다면 `src/app/api/instafix/route.ts`에 생성됩니다. 기존 라우트는 절대 덮어쓰지 않습니다.
+4. **위젯 컴포넌트 생성** — `initInstaFix()`를 호출하는 `"use client"` 컴포넌트를 `components/instafix-widget.tsx`(또는 `src/` 구조라면 `src/components/...`)에 생성할지 제안합니다. `package.json`의 이름을 `projectName`으로 사용합니다. 기존 컴포넌트는 절대 덮어쓰지 않습니다.
 
 생성된 라우트는 여러분이 직접 준비해야 하는 두 가지를 import합니다 — CLI는 아무것도 설치하지 않습니다:
 
@@ -28,6 +30,8 @@ npx @instafix/cli init
 - `@/lib/prisma`에서 export된 Prisma 클라이언트
 
 프로젝트에 `app/`(또는 `src/app/`) 디렉터리가 없다면 `init`은 오류와 함께 종료됩니다: Next.js App Router 라우트만 스캐폴딩하기 때문입니다. 다른 프레임워크에서는 어댑터를 수동으로 연결해야 합니다 — [어댑터](/ko/docs/adapters) 참고.
+
+자동으로 처리되지 않은 항목 — 거절했거나 스키마/라우트를 찾지 못한 경우 — 은 마지막에 **다음 단계(Next steps)** 노트로 안내되므로, 아무것도 조용히 누락되지 않습니다.
 
 `init`은 설계상 대화형이며 CI 환경에서는 아무 동작도 하지 않습니다(터미널이 없으면 조용히 종료됩니다). 자동화가 필요하다면 `sync`를 사용하세요.
 
@@ -83,7 +87,7 @@ HTTP 응답만 확인할 뿐, 스키마는 전혀 읽지 않습니다. 스키마
 
 | 명령 | 1로 종료되는 경우 |
 |---|---|
-| `init` | 라우트 생성 또는 스키마 동기화 실패 시 |
+| `init` | 스키마 동기화, 라우트 생성, 또는 위젯 컴포넌트 생성 실패 시 |
 | `sync` | 스키마를 찾지 못했거나, `--schema` 파일이 없거나, 파싱/쓰기 오류가 발생한 경우 |
 | `status` | 스키마, API 라우트, `package.json`, 또는 위젯 의존성이 누락된 경우 |
 | `doctor` | 200이 아닌 응답, 서버에 연결할 수 없음, 또는 타임아웃인 경우 |

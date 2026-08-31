@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { initCommand } from "../../src/commands/init.js";
 import { p } from "../../src/prompts.js";
+import * as runPrismaDbPushModule from "../../src/utils/run-prisma-db-push.js";
 
 // ---------------------------------------------------------------------------
 // ExitError — thrown by mocked process.exit to halt execution cleanly
@@ -53,6 +54,14 @@ function allMessages(spy: { mock: { calls: unknown[][] } }): string[] {
   return spy.mock.calls.map((call) => String(call[0]));
 }
 
+/** Queue confirm() answers for schema found: sync, push, route, widget. */
+function queueConfirms(answers: [sync: boolean, push: boolean, route: boolean, widget: boolean] | boolean[]): void {
+  const mock = vi.mocked(p.confirm);
+  for (const answer of answers) {
+    mock.mockResolvedValueOnce(answer as never);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Tests — integration style: real file system, spied clack output
 // ---------------------------------------------------------------------------
@@ -79,6 +88,7 @@ describe("initCommand", () => {
     vi.spyOn(p.log, "success").mockImplementation(() => {});
     vi.spyOn(p.log, "warn").mockImplementation(() => {});
     vi.spyOn(p.log, "info").mockImplementation(() => {});
+    vi.spyOn(runPrismaDbPushModule, "runPrismaDbPush").mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -94,10 +104,7 @@ describe("initCommand", () => {
   describe("schema found + sync", () => {
     it("syncs new models when confirmed", async () => {
       createPrismaSchema(tmpDir);
-
-      vi.mocked(p.confirm)
-        .mockResolvedValueOnce(true) // sync schema
-        .mockResolvedValueOnce(false); // skip route
+      queueConfirms([true, false, false, false]); // sync, push, route, widget
 
       await initCommand();
 
@@ -128,10 +135,7 @@ model InstaFixFeedback {
 }
 `,
       );
-
-      vi.mocked(p.confirm)
-        .mockResolvedValueOnce(true) // sync schema
-        .mockResolvedValueOnce(false); // skip route
+      queueConfirms([true, false, false, false]); // sync, push, route, widget
 
       await initCommand();
 
@@ -146,10 +150,7 @@ model InstaFixFeedback {
       createPrismaSchema(tmpDir);
 
       // First run: sync models
-      vi.mocked(p.confirm)
-        .mockResolvedValueOnce(true) // sync schema
-        .mockResolvedValueOnce(false); // skip route
-
+      queueConfirms([true, false, false, false]);
       await initCommand();
 
       // Clear spies for second run
@@ -157,10 +158,7 @@ model InstaFixFeedback {
       vi.mocked(p.log.info).mockClear();
 
       // Second run: already up to date
-      vi.mocked(p.confirm)
-        .mockResolvedValueOnce(true) // sync schema
-        .mockResolvedValueOnce(false); // skip route
-
+      queueConfirms([true, false, false, false]);
       await initCommand();
 
       expect(p.log.info).toHaveBeenCalledWith("Schema is already up to date.");
@@ -200,10 +198,7 @@ model InstaFixFeedback {
 
     it("does not sync when user declines", async () => {
       createPrismaSchema(tmpDir);
-
-      vi.mocked(p.confirm)
-        .mockResolvedValueOnce(false) // decline sync
-        .mockResolvedValueOnce(false); // skip route
+      queueConfirms([false, false, false, false]); // decline sync, push, route, widget
 
       await initCommand();
 
@@ -211,24 +206,75 @@ model InstaFixFeedback {
       const successes = allMessages(vi.mocked(p.log.success));
       expect(successes.some((m) => m.includes("Models synced"))).toBe(false);
     });
+
+    it("exits(0) when the db push confirm is cancelled", async () => {
+      createPrismaSchema(tmpDir);
+
+      vi.mocked(p.confirm)
+        .mockResolvedValueOnce(false) // decline sync
+        .mockResolvedValueOnce(Symbol("cancel") as any); // cancel push prompt
+
+      const err = await initCommand().catch((e) => e);
+
+      expect(err).toBeInstanceOf(ExitError);
+      expect((err as ExitError).code).toBe(0);
+      expect(p.cancel).toHaveBeenCalledWith("Cancelled.");
+    });
   });
 
   // -------------------------------------------------------------------------
-  // Schema not found
+  // Database push
   // -------------------------------------------------------------------------
 
-  describe("schema not found", () => {
-    it("shows warning and doc link when no schema exists", async () => {
-      // No prisma schema in tmpDir
-
-      vi.mocked(p.confirm).mockResolvedValueOnce(false); // skip route
+  describe("db push", () => {
+    it("runs prisma db push and reports success when confirmed", async () => {
+      createPrismaSchema(tmpDir);
+      queueConfirms([false, true, false, false]); // skip sync, run push, skip route, skip widget
 
       await initCommand();
 
-      expect(p.log.warn).toHaveBeenCalledWith(expect.stringContaining("No schema.prisma file found"));
-      expect(p.log.info).toHaveBeenCalledWith(
-        expect.stringContaining("https://github.com/gnoopy/instafix#prisma-schema-1"),
-      );
+      expect(runPrismaDbPushModule.runPrismaDbPush).toHaveBeenCalledWith(tmpDir);
+      expect(p.log.success).toHaveBeenCalledWith("Database schema pushed.");
+    });
+
+    it("reports failure and keeps the next-steps hint when db push exits non-zero", async () => {
+      createPrismaSchema(tmpDir);
+      vi.mocked(runPrismaDbPushModule.runPrismaDbPush).mockReturnValue(false);
+      queueConfirms([false, true, false, false]);
+
+      await initCommand();
+
+      expect(p.log.error).toHaveBeenCalledWith(expect.stringContaining("failed"));
+      expect(p.note).toHaveBeenCalledWith(expect.stringContaining("npx prisma db push"), "Next steps");
+    });
+
+    it("does not run db push when declined", async () => {
+      createPrismaSchema(tmpDir);
+      queueConfirms([false, false, false, false]);
+
+      await initCommand();
+
+      expect(runPrismaDbPushModule.runPrismaDbPush).not.toHaveBeenCalled();
+      expect(p.note).toHaveBeenCalledWith(expect.stringContaining("npx prisma db push"), "Next steps");
+    });
+
+    it("does not prompt for db push when no schema is found", async () => {
+      queueConfirms([false, false]); // route, widget only — no schema means no sync/push prompts
+
+      await initCommand();
+
+      expect(runPrismaDbPushModule.runPrismaDbPush).not.toHaveBeenCalled();
+      const confirmMessages = vi.mocked(p.confirm).mock.calls.map((c) => (c[0] as { message: string }).message);
+      expect(confirmMessages.some((m) => m.includes("db push"))).toBe(false);
+    });
+
+    it("omits the db push hint from next steps when no schema is found", async () => {
+      queueConfirms([false, false]);
+
+      await initCommand();
+
+      const noteText = vi.mocked(p.note).mock.calls.find((c) => c[1] === "Next steps")?.[0] as string;
+      expect(noteText).not.toContain("npx prisma db push");
     });
   });
 
@@ -239,8 +285,7 @@ model InstaFixFeedback {
   describe("route generation", () => {
     it("shows success when route is created", async () => {
       createAppDir(tmpDir);
-
-      vi.mocked(p.confirm).mockResolvedValueOnce(true); // generate route
+      queueConfirms([true, false]); // route, widget (no schema found)
 
       await initCommand();
 
@@ -251,8 +296,7 @@ model InstaFixFeedback {
 
     it("shows info when route already exists", async () => {
       createApiRoute(tmpDir);
-
-      vi.mocked(p.confirm).mockResolvedValueOnce(true); // generate route
+      queueConfirms([true, false]);
 
       await initCommand();
 
@@ -261,7 +305,6 @@ model InstaFixFeedback {
 
     it("exits(1) when no app directory exists", async () => {
       // No app/ dir in tmpDir
-
       vi.mocked(p.confirm).mockResolvedValueOnce(true); // generate route (will throw)
 
       const err = await initCommand().catch((e) => e);
@@ -285,8 +328,7 @@ model InstaFixFeedback {
 
     it("does not generate route when user declines", async () => {
       createAppDir(tmpDir);
-
-      vi.mocked(p.confirm).mockResolvedValueOnce(false); // decline route
+      queueConfirms([false, false]);
 
       await initCommand();
 
@@ -295,24 +337,103 @@ model InstaFixFeedback {
   });
 
   // -------------------------------------------------------------------------
+  // Widget component generation
+  // -------------------------------------------------------------------------
+
+  describe("widget component generation", () => {
+    it("generates the component and reports success when confirmed", async () => {
+      writeFileSync(join(tmpDir, "package.json"), JSON.stringify({ name: "acme" }));
+      queueConfirms([false, true]); // route, widget (no schema found)
+
+      await initCommand();
+
+      const componentPath = join(tmpDir, "components", "instafix-widget.tsx");
+      expect(existsSync(componentPath)).toBe(true);
+      expect(p.log.success).toHaveBeenCalledWith(expect.stringContaining("Widget component created:"));
+    });
+
+    it("shows info when the component already exists", async () => {
+      mkdirSync(join(tmpDir, "components"), { recursive: true });
+      writeFileSync(join(tmpDir, "components", "instafix-widget.tsx"), "// existing");
+      queueConfirms([false, true]);
+
+      await initCommand();
+
+      expect(p.log.info).toHaveBeenCalledWith(expect.stringContaining("Widget component already exists:"));
+    });
+
+    it("does not generate the component when declined", async () => {
+      queueConfirms([false, false]);
+
+      await initCommand();
+
+      expect(existsSync(join(tmpDir, "components", "instafix-widget.tsx"))).toBe(false);
+    });
+
+    it("exits(0) when the widget confirm is cancelled", async () => {
+      vi.mocked(p.confirm)
+        .mockResolvedValueOnce(false) // decline route
+        .mockResolvedValueOnce(Symbol("cancel") as any); // cancel widget prompt
+
+      const err = await initCommand().catch((e) => e);
+
+      expect(err).toBeInstanceOf(ExitError);
+      expect((err as ExitError).code).toBe(0);
+      expect(p.cancel).toHaveBeenCalledWith("Cancelled.");
+    });
+
+    it("formats generation failures via String() when a non-Error value is thrown", async () => {
+      const widgetModule = await import("../../src/generators/widget-component.js");
+      const stub = vi.spyOn(widgetModule, "generateWidgetComponent").mockImplementation(() => {
+        throw "plain-string widget failure"; // not an Error
+      });
+
+      queueConfirms([false, true]); // route, widget
+
+      const err = await initCommand().catch((e) => e);
+
+      expect(err).toBeInstanceOf(ExitError);
+      expect((err as ExitError).code).toBe(1);
+      expect(p.log.error).toHaveBeenCalledWith(expect.stringContaining("plain-string widget failure"));
+      expect(p.outro).toHaveBeenCalledWith(expect.stringContaining("Fix the errors"));
+
+      stub.mockRestore();
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // Full happy path
   // -------------------------------------------------------------------------
 
   describe("full flow", () => {
-    it("runs schema sync + route generation when both confirmed", async () => {
+    it("runs schema sync + db push + route + widget when all confirmed", async () => {
       createPrismaSchema(tmpDir);
       createAppDir(tmpDir);
-
-      vi.mocked(p.confirm)
-        .mockResolvedValueOnce(true) // sync schema
-        .mockResolvedValueOnce(true); // generate route
+      queueConfirms([true, true, true, true]);
 
       await initCommand();
 
       const successes = allMessages(vi.mocked(p.log.success));
       expect(successes.some((m) => m.includes("InstaFixFeedback"))).toBe(true);
+      expect(successes.some((m) => m.includes("Database schema pushed"))).toBe(true);
       expect(successes.some((m) => m.includes("Route created"))).toBe(true);
+      expect(successes.some((m) => m.includes("Widget component created"))).toBe(true);
       expect(existsSync(join(tmpDir, "app", "api", "instafix", "route.ts"))).toBe(true);
+      expect(existsSync(join(tmpDir, "components", "instafix-widget.tsx"))).toBe(true);
+    });
+
+    it("shows the short layout snippet referencing the generated component when everything ran", async () => {
+      createPrismaSchema(tmpDir);
+      createAppDir(tmpDir);
+      queueConfirms([true, true, true, true]);
+
+      await initCommand();
+
+      const noteText = vi.mocked(p.note).mock.calls.find((c) => c[1] === "Next steps")?.[0] as string;
+      expect(noteText).toContain('import { InstaFixWidget } from "@/components/instafix-widget"');
+      expect(noteText).toContain("<InstaFixWidget />");
+      expect(noteText).not.toContain("npx prisma db push");
+      expect(noteText).not.toContain("initInstaFix");
     });
   });
 
@@ -322,7 +443,7 @@ model InstaFixFeedback {
 
   describe("UI framing", () => {
     it("calls intro and outro", async () => {
-      vi.mocked(p.confirm).mockResolvedValueOnce(false);
+      queueConfirms([false, false]);
 
       await initCommand();
 
@@ -330,12 +451,17 @@ model InstaFixFeedback {
       expect(p.outro).toHaveBeenCalledWith("Setup complete!");
     });
 
-    it("shows next steps note", async () => {
-      vi.mocked(p.confirm).mockResolvedValueOnce(false);
+    it("shows the full initInstaFix snippet in next steps when the widget component was declined", async () => {
+      writeFileSync(join(tmpDir, "package.json"), JSON.stringify({ name: "acme" }));
+      queueConfirms([false, false]);
 
       await initCommand();
 
-      expect(p.note).toHaveBeenCalledWith(expect.stringContaining("prisma db push"), "Next steps");
+      expect(p.note).toHaveBeenCalledWith(
+        expect.stringContaining('import { initInstaFix } from "@instafix/widget"'),
+        "Next steps",
+      );
+      expect(p.note).toHaveBeenCalledWith(expect.stringContaining('projectName: "acme"'), "Next steps");
     });
   });
 

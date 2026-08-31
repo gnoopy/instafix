@@ -17,10 +17,12 @@ npx @instafix/cli --help
 npx @instafix/cli init
 ```
 
-`init` walks you through two confirmations:
+`init` walks you through up to four confirmations:
 
 1. **Sync Prisma models** — if a schema is found (see [schema detection](#schema-detection)), it offers to add the `InstaFixFeedback` and `InstaFixAnnotation` models.
-2. **Generate the API route** — offers to create a Next.js App Router route that serves the widget. The file goes to `app/api/instafix/route.ts`, or `src/app/api/instafix/route.ts` when your project uses a `src/` layout. An existing route is never overwritten.
+2. **Push the schema** — if a schema was found, it offers to run `npx prisma db push` for you right away, streaming Prisma's own output (and any confirmation it asks for) straight to your terminal.
+3. **Generate the API route** — offers to create a Next.js App Router route that serves the widget. The file goes to `app/api/instafix/route.ts`, or `src/app/api/instafix/route.ts` when your project uses a `src/` layout. An existing route is never overwritten.
+4. **Generate the widget component** — offers to create a `"use client"` component at `components/instafix-widget.tsx` (or `src/components/...` with a `src/` layout) that calls `initInstaFix()` for you, using your `package.json` name as the `projectName`. An existing component is never overwritten.
 
 The generated route imports two things you need to provide yourself — the CLI installs nothing:
 
@@ -28,6 +30,8 @@ The generated route imports two things you need to provide yourself — the CLI 
 - a Prisma client exported from `@/lib/prisma`
 
 If your project has no `app/` (or `src/app/`) directory, `init` exits with an error: it only scaffolds Next.js App Router routes. Other frameworks wire the adapter manually — see [Adapters](/docs/adapters).
+
+Whatever wasn't done automatically — declined, or no schema/route detected — is listed under a **Next steps** note at the end, so nothing is silently skipped.
 
 `init` is interactive by design and does nothing in CI (it exits silently without a terminal). For automation, use `sync`.
 
@@ -83,7 +87,7 @@ All commands are scriptable. `0` means success, `1` means something needs fixing
 
 | Command | Exits 1 when |
 |---|---|
-| `init` | Route generation or schema sync fails |
+| `init` | Schema sync, route generation, or widget component generation fails |
 | `sync` | No schema found, `--schema` file missing, or parse/write error |
 | `status` | Schema, API route, `package.json`, or the widget dependency is missing |
 | `doctor` | Non-200 response, unreachable server, or timeout |
