@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "0.18.5",
-    "@biomejs/biome": "2.5.9",
+    "@biomejs/biome": "2.5.10",
     "@playwright/test": "^1.62.1",
     "@types/node": "^26.2.0",
     "@vitest/coverage-istanbul": "^4.1.11",
