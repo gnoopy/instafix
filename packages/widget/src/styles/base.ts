@@ -222,6 +222,18 @@ export function buildStyles(colors: ThemeColors): string {
       fill: none;
     }
 
+    /* Persistent "mode is on" state for the auto-target picker button —
+       distinct from :hover/:focus-visible, which only apply while the
+       pointer/keyboard focus is actually on the button itself. */
+    .sp-toolbar-item--active {
+      background: var(--sp-accent);
+      border-color: var(--sp-accent);
+      color: #fff;
+      box-shadow:
+        var(--sp-shadow-md),
+        0 0 0 3px var(--sp-accent-light);
+    }
+
     /* ---- Auto-contrast against the host page's background (G8) ----
        Fab.updateContrast() samples the actual rendered background behind
        the FAB/toolbar and toggles one of these on the shared root wrapper —
@@ -237,7 +249,8 @@ export function buildStyles(colors: ThemeColors): string {
     }
 
     .sp-fab-root--on-light .sp-toolbar-item:hover,
-    .sp-fab-root--on-light .sp-toolbar-item:focus-visible {
+    .sp-fab-root--on-light .sp-toolbar-item:focus-visible,
+    .sp-fab-root--on-light .sp-toolbar-item--active {
       background: rgba(30, 41, 59, 0.97);
       border-color: var(--sp-accent);
       color: #fff;
@@ -254,7 +267,8 @@ export function buildStyles(colors: ThemeColors): string {
     }
 
     .sp-fab-root--on-dark .sp-toolbar-item:hover,
-    .sp-fab-root--on-dark .sp-toolbar-item:focus-visible {
+    .sp-fab-root--on-dark .sp-toolbar-item:focus-visible,
+    .sp-fab-root--on-dark .sp-toolbar-item--active {
       background: #ffffff;
       border-color: var(--sp-accent);
       color: var(--sp-accent);
@@ -277,7 +291,7 @@ export function buildStyles(colors: ThemeColors): string {
     /* ---- Discovery shine — a diagonal light sweep across the FAB + toolbar
        (G8) ---- a persistent-but-easy-to-miss toolbar needs some way to say
        "look here" the first time it appears. Plays once, right-to-left
-       (matching the FAB → eye → pencil → list reading order), sized and
+       (matching the FAB → eye → target → pencil → list reading order), sized and
        positioned in JS to exactly span whatever's currently rendered
        (Fab.playShine()) rather than a fixed guess at the toolbar's width. */
     .sp-toolbar-shine {
@@ -1282,6 +1296,11 @@ export function buildStyles(colors: ThemeColors): string {
       }
 
       .sp-segmented__btn--active {
+        background: Highlight !important;
+        color: HighlightText !important;
+      }
+
+      .sp-toolbar-item--active {
         background: Highlight !important;
         color: HighlightText !important;
       }

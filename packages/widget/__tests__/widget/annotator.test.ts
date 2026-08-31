@@ -1855,4 +1855,135 @@ describe("Annotator", () => {
       }
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Targeting mode — the "auto-target" hover-and-click picker (Mode 2).
+  // Deliberately independent of activate()/deactivate(): no page dim/lock,
+  // just a live highlight until a click hands off to startInstantAnnotation.
+  // -------------------------------------------------------------------------
+
+  describe("targeting mode", () => {
+    function findTargetingHighlight(): HTMLElement | null {
+      return document.body.querySelector<HTMLElement>("div[data-instafix-targeting-highlight]");
+    }
+
+    it("does not open the draw-mode overlay or lock page scroll", () => {
+      bus.emit("targeting:start");
+
+      expect(findOverlay()).toBeNull();
+      expect(document.body.style.overflow).not.toBe("hidden");
+    });
+
+    it("hovering an element positions the highlight over its bounding rect", async () => {
+      const elA = document.createElement("div");
+      elA.getBoundingClientRect = () => new DOMRect(50, 60, 70, 80);
+      document.body.appendChild(elA);
+      const originalEFP = document.elementFromPoint;
+      (document as any).elementFromPoint = () => elA;
+
+      try {
+        bus.emit("targeting:start");
+        document.dispatchEvent(new MouseEvent("mousemove", { clientX: 80, clientY: 90, bubbles: true }));
+        // The move handler is rAF-throttled, like the drag-drawing path.
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+        const highlight = findTargetingHighlight()!;
+        expect(highlight.style.left).toBe("50px");
+        expect(highlight.style.top).toBe("60px");
+        expect(highlight.style.width).toBe("70px");
+        expect(highlight.style.height).toBe("80px");
+      } finally {
+        document.elementFromPoint = originalEFP;
+        elA.remove();
+      }
+    });
+
+    it("hovering nothing selectable (widget chrome) zeroes the highlight", async () => {
+      const chrome = document.createElement("div");
+      chrome.setAttribute("data-instafix-ignore", "true");
+      document.body.appendChild(chrome);
+      const originalEFP = document.elementFromPoint;
+      (document as any).elementFromPoint = () => chrome;
+
+      try {
+        bus.emit("targeting:start");
+        document.dispatchEvent(new MouseEvent("mousemove", { clientX: 10, clientY: 10, bubbles: true }));
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+        const highlight = findTargetingHighlight()!;
+        expect(highlight.style.width).toBe("0px");
+        expect(highlight.style.height).toBe("0px");
+      } finally {
+        document.elementFromPoint = originalEFP;
+        chrome.remove();
+      }
+    });
+
+    it("clicking a target deactivates targeting, emits targeting:end, and opens the popup", async () => {
+      const endListener = vi.fn();
+      bus.on("targeting:end", endListener);
+
+      const elA = document.createElement("div");
+      elA.getBoundingClientRect = () => new DOMRect(50, 60, 70, 80);
+      document.body.appendChild(elA);
+
+      try {
+        bus.emit("targeting:start");
+        popupMocks.keepShowPending = true;
+        elA.dispatchEvent(new MouseEvent("click", { clientX: 80, clientY: 90, bubbles: true, cancelable: true }));
+        await Promise.resolve();
+
+        expect(endListener).toHaveBeenCalledOnce();
+        expect(findTargetingHighlight()).toBeNull();
+        expect(popupMocks.showCount).toBe(1);
+      } finally {
+        elA.remove();
+      }
+    });
+
+    it("clicking widget chrome does not open the popup and leaves targeting active", async () => {
+      const chrome = document.createElement("div");
+      chrome.setAttribute("data-instafix-ignore", "true");
+      document.body.appendChild(chrome);
+
+      try {
+        bus.emit("targeting:start");
+        chrome.dispatchEvent(new MouseEvent("click", { clientX: 10, clientY: 10, bubbles: true, cancelable: true }));
+        await Promise.resolve();
+
+        expect(popupMocks.showCount).toBe(0);
+        expect(findTargetingHighlight()).not.toBeNull();
+      } finally {
+        chrome.remove();
+        bus.emit("targeting:end");
+      }
+    });
+
+    it("Escape deactivates targeting without opening the popup", () => {
+      bus.emit("targeting:start");
+      expect(findTargetingHighlight()).not.toBeNull();
+
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+
+      expect(findTargetingHighlight()).toBeNull();
+      expect(popupMocks.showCount).toBe(0);
+    });
+
+    it("is a no-op while a draw/instant session is already active", () => {
+      bus.emit("annotation:start");
+      expect(findOverlay()).not.toBeNull();
+
+      bus.emit("targeting:start");
+
+      expect(findTargetingHighlight()).toBeNull();
+    });
+
+    it("destroy() while targeting is active removes the highlight and listeners without throwing", () => {
+      bus.emit("targeting:start");
+      expect(findTargetingHighlight()).not.toBeNull();
+
+      expect(() => annotator.destroy()).not.toThrow();
+      expect(findTargetingHighlight()).toBeNull();
+    });
+  });
 });

@@ -37,3 +37,6 @@ export const ICON_LIST = `<svg viewBox="0 0 24 24" fill="none" stroke="currentCo
 
 // Pencil / edit-3 (Feather "edit-3") — pure pencil with no document. Used for the FAB radial item that creates a new annotation.
 export const ICON_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>`;
+
+// Target / crosshair (Feather "target") — three concentric circles. Used for the FAB toolbar item that toggles the hover-and-click "auto-target" picker mode.
+export const ICON_TARGET = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`;

@@ -26,7 +26,6 @@ export interface PlaygroundContent {
   screenshotsLabel: string;
   diagnosticsLabel: string;
   diagnosticsCaption: string;
-  rightClickLabel: string;
   identityLabel: string;
   identityCaption: string;
   resetButtonLabel: string;
@@ -67,7 +66,6 @@ export const playgroundContent: Record<SiteLocale, PlaygroundContent> = {
     screenshotsLabel: "스크린샷",
     diagnosticsLabel: "진단 정보 캡처",
     diagnosticsCaption: "가짜 이벤트를 발생시킨 후 피드백을 제출하면 캡처된 내용을 확인할 수 있습니다.",
-    rightClickLabel: "우클릭으로 댓글 남기기",
     identityLabel: "신원 정보 미리 채우기",
     identityCaption: "SSO 연동처럼 이름/이메일 입력 과정을 건너뜁니다",
     resetButtonLabel: "기본값으로 재설정",
@@ -106,7 +104,6 @@ export const playgroundContent: Record<SiteLocale, PlaygroundContent> = {
     screenshotsLabel: "Screenshots",
     diagnosticsLabel: "Capture diagnostics",
     diagnosticsCaption: "Fire fake events, then submit a feedback to see them captured.",
-    rightClickLabel: "Right-click to comment",
     identityLabel: "Prefilled identity",
     identityCaption: "Skips the name/email prompt, like an SSO integration would",
     resetButtonLabel: "Reset to defaults",
@@ -145,7 +142,6 @@ export const playgroundContent: Record<SiteLocale, PlaygroundContent> = {
     screenshotsLabel: "Captures d'écran",
     diagnosticsLabel: "Capturer les diagnostics",
     diagnosticsCaption: "Déclenchez de faux événements, puis envoyez un retour pour voir ce qui a été capturé.",
-    rightClickLabel: "Clic droit pour commenter",
     identityLabel: "Identité prérenseignée",
     identityCaption: "Évite la saisie du nom/e-mail, comme le ferait une connexion SSO",
     resetButtonLabel: "Réinitialiser",

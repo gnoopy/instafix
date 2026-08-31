@@ -35,7 +35,6 @@ interface PlaygroundState {
   accent: string;
   screenshot: boolean;
   diagnostics: boolean;
-  rightClick: boolean;
   identity: boolean;
 }
 
@@ -47,21 +46,10 @@ const DEFAULTS: PlaygroundState = {
   accent: "#173CFF",
   screenshot: true,
   diagnostics: true,
-  rightClick: true,
   identity: true,
 };
 
-const OWN_PARAMS = [
-  "mode",
-  "theme",
-  "locale",
-  "position",
-  "accent",
-  "screenshot",
-  "diagnostics",
-  "rightclick",
-  "identity",
-] as const;
+const OWN_PARAMS = ["mode", "theme", "locale", "position", "accent", "screenshot", "diagnostics", "identity"] as const;
 
 /** Hex forms the widget accepts: #RGB, #RRGGBB, #RRGGBBAA (stored without the #). */
 const HEX_RE = /^([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
@@ -97,7 +85,6 @@ function parseState(params: ParamsLike): PlaygroundState {
     accent: accent && HEX_RE.test(accent) ? `#${accent}` : DEFAULTS.accent,
     screenshot: params.get("screenshot") !== "off",
     diagnostics: params.get("diagnostics") !== "off",
-    rightClick: params.get("rightclick") !== "off",
     identity: params.get("identity") !== "off",
   };
 }
@@ -113,7 +100,6 @@ function writeState(next: PlaygroundState): void {
   if (next.accent.toLowerCase() !== DEFAULTS.accent.toLowerCase()) sp.set("accent", next.accent.slice(1));
   if (!next.screenshot) sp.set("screenshot", "off");
   if (!next.diagnostics) sp.set("diagnostics", "off");
-  if (!next.rightClick) sp.set("rightclick", "off");
   if (!next.identity) sp.set("identity", "off");
   const qs = sp.toString();
   window.history.replaceState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
@@ -202,7 +188,6 @@ function buildOptionLines(state: PlaygroundState): { key: string; tokens: RawTok
   }
   if (state.screenshot) lines.push({ key: "enableScreenshot", tokens: [on()] });
   if (state.diagnostics) lines.push({ key: "captureDiagnostics", tokens: [on()] });
-  if (state.rightClick) lines.push({ key: "enableRightClickComment", tokens: [on()] });
   if (state.identity) {
     lines.push({
       key: "identity",
@@ -328,7 +313,7 @@ export function Playground({ siteLocale }: { siteLocale: SiteLocale }) {
   const t = playgroundContent[siteLocale];
   const params = useSearchParams();
   const state = useMemo(() => parseState(params), [params]);
-  const { mode, theme, locale, position, accent, screenshot, diagnostics, rightClick, identity } = state;
+  const { mode, theme, locale, position, accent, screenshot, diagnostics, identity } = state;
 
   const [open, setOpen] = useState(true);
   const [draftAccent, setDraftAccent] = useState<string | null>(null);
@@ -382,7 +367,6 @@ export function Playground({ siteLocale }: { siteLocale: SiteLocale }) {
         accentColor: accent,
         enableScreenshot: screenshot,
         captureDiagnostics: diagnostics,
-        enableRightClickComment: rightClick,
         ...(identity ? { identity: DEMO_IDENTITY } : {}),
         ...(storeModule
           ? { store: new storeModule.LocalStorageStore({ key: LOCAL_STORE_KEY }) }
@@ -395,7 +379,7 @@ export function Playground({ siteLocale }: { siteLocale: SiteLocale }) {
       cancelled = true;
       instance?.destroy();
     };
-  }, [mode, theme, locale, position, accent, screenshot, diagnostics, rightClick, identity]);
+  }, [mode, theme, locale, position, accent, screenshot, diagnostics, identity]);
 
   const patch = (partial: Partial<PlaygroundState>) => {
     // Fold in (and disarm) any pending debounced accent commit so it can't
@@ -589,11 +573,6 @@ export function Playground({ siteLocale }: { siteLocale: SiteLocale }) {
                   </div>
                 ) : null}
               </div>
-              <ToggleRow
-                label={t.rightClickLabel}
-                checked={rightClick}
-                onChange={(value) => patch({ rightClick: value })}
-              />
               <ToggleRow
                 label={t.identityLabel}
                 checked={identity}

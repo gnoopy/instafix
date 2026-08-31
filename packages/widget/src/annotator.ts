@@ -94,6 +94,16 @@ export class Annotator {
   /** Toolbar instruction span — updated live to show the accumulated count. */
   private instructionEl: HTMLElement | null = null;
 
+  // --- Targeting mode (Mode 2) — hover-and-click "auto-target" picker,
+  // deliberately independent of isActive/activate()/deactivate(): no page
+  // dim/lock, no scroll-lock, just a live-tracking highlight until the user
+  // clicks (which hands off to startInstantAnnotation, the SAME hit-testing
+  // and popup wiring right-click used to drive) or presses Escape. ---
+  private targetingModeActive = false;
+  private targetingHighlight: HTMLElement | null = null;
+  private targetingRafId: number | null = null;
+  private pendingTargetingMoveEvent: MouseEvent | null = null;
+
   constructor(
     private readonly colors: ThemeColors,
     private readonly bus: EventBus<WidgetEvents>,
@@ -104,6 +114,11 @@ export class Annotator {
     this.popup = new Popup(colors, t);
 
     this.bus.on("annotation:start", () => this.activate());
+    this.bus.on("targeting:start", () => this.activateTargeting());
+    // Also reached when the toolbar button itself is clicked to turn
+    // targeting off (fab.ts emits targeting:end directly on that click) —
+    // not just from this class's own click/Escape handlers below.
+    this.bus.on("targeting:end", () => this.deactivateTargeting());
   }
 
   /**
@@ -336,6 +351,111 @@ export class Annotator {
 
     this.bus.emit("annotation:end");
   }
+
+  /**
+   * Start the hover-and-click "auto-target" picker (Mode 2). No-ops while a
+   * draw/instant session is already active, or targeting is already on
+   * (idempotent — the constructor's bus subscription can fire redundantly).
+   */
+  private activateTargeting(): void {
+    if (this.isActive || this.targetingModeActive) return;
+    this.targetingModeActive = true;
+
+    // Reuses the exact same accent-colored outline used for drag-drawing and
+    // the keyboard highlight — one visual language, not a third style.
+    // Hidden (zero-size, off-screen) until the first hover actually lands on
+    // something, so it never flashes at (0,0) before the user moves the mouse.
+    this.targetingHighlight = this.createDrawingRect();
+    // Distinct marker (also useful for tests) — createDrawingRect()'s own
+    // data-instafix-ignore attribute is shared with the draw-mode overlay
+    // and drawing rect, not unique to this element.
+    this.targetingHighlight.setAttribute("data-instafix-targeting-highlight", "true");
+    this.targetingHighlight.style.left = "-9999px";
+    this.targetingHighlight.style.top = "-9999px";
+    this.targetingHighlight.style.width = "0px";
+    this.targetingHighlight.style.height = "0px";
+    document.body.appendChild(this.targetingHighlight);
+
+    document.addEventListener("mousemove", this.onTargetingMouseMove);
+    // Capture phase: must run (and be able to preventDefault/stopPropagation)
+    // before the click reaches its real target — a live link/button under
+    // the cursor must not navigate/submit before the popup opens, and a host
+    // page's own stopPropagation() on that element must not shadow us.
+    document.addEventListener("click", this.onTargetingClick, true);
+    document.addEventListener("keydown", this.onTargetingKeyDown);
+  }
+
+  /** Idempotent — safe to call from the click/Escape handlers below AND redundantly via the `targeting:end` bus subscription. */
+  private deactivateTargeting(): void {
+    if (!this.targetingModeActive) return;
+    this.targetingModeActive = false;
+
+    if (this.targetingRafId !== null) {
+      cancelAnimationFrame(this.targetingRafId);
+      this.targetingRafId = null;
+    }
+    this.pendingTargetingMoveEvent = null;
+
+    document.removeEventListener("mousemove", this.onTargetingMouseMove);
+    document.removeEventListener("click", this.onTargetingClick, true);
+    document.removeEventListener("keydown", this.onTargetingKeyDown);
+
+    this.targetingHighlight?.remove();
+    this.targetingHighlight = null;
+  }
+
+  private onTargetingMouseMove = (e: MouseEvent): void => {
+    this.pendingTargetingMoveEvent = e;
+    if (this.targetingRafId !== null) return;
+
+    this.targetingRafId = requestAnimationFrame(() => {
+      this.targetingRafId = null;
+      const evt = this.pendingTargetingMoveEvent;
+      if (!evt || !this.targetingHighlight) return;
+
+      const hovered = document.elementFromPoint(evt.clientX, evt.clientY);
+      if (!hovered || hovered === document.body || hovered === document.documentElement || isWidgetChrome(hovered)) {
+        // Nothing selectable under the cursor right now — tuck the
+        // highlight away rather than leaving it on the last real target.
+        this.targetingHighlight.style.width = "0px";
+        this.targetingHighlight.style.height = "0px";
+        return;
+      }
+
+      const rect = hovered.getBoundingClientRect();
+      this.targetingHighlight.style.left = `${rect.left}px`;
+      this.targetingHighlight.style.top = `${rect.top}px`;
+      this.targetingHighlight.style.width = `${rect.width}px`;
+      this.targetingHighlight.style.height = `${rect.height}px`;
+    });
+  };
+
+  private onTargetingClick = (e: MouseEvent): void => {
+    // Clicking the widget's own chrome (most importantly the toolbar button
+    // that turns targeting off) must behave exactly as it normally would —
+    // never suppressed or reinterpreted as picking a page element.
+    if (e.target instanceof Element && isWidgetChrome(e.target)) return;
+
+    // Suppress the real page click — a live link/button under the cursor
+    // must not navigate/submit before the popup opens. Same tradeoff
+    // DevTools' and visual-feedback tools' own element pickers accept.
+    e.preventDefault();
+    e.stopPropagation();
+
+    this.deactivateTargeting();
+    this.bus.emit("targeting:end");
+    // Fully unmodified reuse of the former right-click flow's hit-testing
+    // (smallest/largest candidates) and popup wiring (Element/Container
+    // refinement toggle) — targeting mode is functionally "continuous hover
+    // preview, then do exactly what right-click used to do at the click point."
+    void this.startInstantAnnotation(e.clientX, e.clientY).catch(() => {});
+  };
+
+  private onTargetingKeyDown = (e: KeyboardEvent): void => {
+    if (e.key !== "Escape") return;
+    this.deactivateTargeting();
+    this.bus.emit("targeting:end");
+  };
 
   private onKeyDown = (e: KeyboardEvent): void => {
     if (e.key === "Escape") this.deactivate();
@@ -796,7 +916,9 @@ export class Annotator {
 
   /**
    * Instantly triggers the annotation popup at a specific location without
-   * requiring the user to draw a rectangle. Used for right-click commenting.
+   * requiring the user to draw a rectangle. Used by the "auto-target"
+   * hover-and-click picker (Mode 2) once the user clicks to lock in whatever
+   * they were hovering.
    *
    * Entry is routed through the event bus (`annotation:start`) so the public
    * event contract (`onAnnotationStart` / `onAnnotationEnd`) is honoured —
@@ -804,11 +926,12 @@ export class Annotator {
    * symmetric start/end pair regardless of entry path.
    */
   public async startInstantAnnotation(clientX: number, clientY: number): Promise<void> {
-    // Guard: no-op while the annotator is active (overlay/popup session in
-    // progress). `isActive` covers the entire window: draw mode in progress,
-    // popup open for typing, and submission in flight. Without this a second
-    // right-click (e.g. to paste in the textarea) would reset the form,
-    // orphan the pending popup.show(), and leak the old drawing rect.
+    // Guard: no-op while the annotator is already active (overlay/popup
+    // session in progress). `isActive` covers the entire window: draw mode
+    // in progress, popup open for typing, and submission in flight —
+    // without this, a second click while a session is already open would
+    // reset the form, orphan the pending popup.show(), and leak the old
+    // drawing rect.
     if (this.isActive) return;
 
     // Set instant-mode flag BEFORE emitting annotation:start so activate()
@@ -1010,6 +1133,7 @@ export class Annotator {
   }
   destroy(): void {
     this.deactivate();
+    this.deactivateTargeting();
     // Settle an in-flight submission BEFORE tearing down the popup, so the
     // `runSubmission` promise cannot outlive teardown. The launcher's
     // `destroy()` also calls `bus.removeAll()`, which would otherwise strip

@@ -32,7 +32,7 @@ Add `data-instafix-ignore="true"` to any element that must never appear in a scr
 
 The value must be exactly `"true"` — the bare attribute or `"false"` does not mask. The widget's own UI opts out the same way, so screenshots never contain InstaFix chrome.
 
-> Masking an element also disables [right-click commenting](/docs/widget/right-click) on it — the widget treats `data-instafix-ignore` as "not mine to touch".
+> Masking an element also excludes it from the toolbar's auto-target picker — the widget treats `data-instafix-ignore` as "not mine to touch".
 
 ## Failure is always safe
 

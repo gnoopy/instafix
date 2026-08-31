@@ -51,7 +51,7 @@ instafix.destroy();               // full teardown, restores all patched globals
 | `feedback:deleted` | the feedback id | A feedback was deleted |
 | `feedback:error` | the `Error` | A feedback API call failed — same payload as the `onError` config callback |
 | `panel:open` / `panel:close` | — | The panel opened / closed |
-| `annotation:start` / `annotation:end` | — | An annotation session started / ended. `end` fires whether the user submitted or cancelled, and both entry paths — the FAB and [right-click comments](/docs/widget/right-click) — emit the symmetric pair, so you can pause chat bubbles or analytics overlays in between |
+| `annotation:start` / `annotation:end` | — | An annotation session started / ended. `end` fires whether the user submitted or cancelled, and both entry paths — the FAB's draw flow and the toolbar's auto-target picker — emit the symmetric pair, so you can pause chat bubbles or analytics overlays in between |
 
 ## React
 

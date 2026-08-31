@@ -51,7 +51,7 @@ instafix.destroy();               // 완전한 해제, 패치된 모든 전역 �
 | `feedback:deleted` | 피드백 id | 피드백이 삭제되었을 때 |
 | `feedback:error` | `Error` 객체 | 피드백 API 호출이 실패했을 때 — `onError` 설정 콜백과 동일한 페이로드 |
 | `panel:open` / `panel:close` | — | 패널이 열리거나 닫혔을 때 |
-| `annotation:start` / `annotation:end` | — | 주석 작성 세션이 시작되거나 끝났을 때. `end`는 사용자가 제출했든 취소했든 발생하며, 두 진입 경로 — FAB와 [우클릭 댓글](/ko/docs/widget/right-click) — 모두 대칭적인 이벤트 쌍을 발생시키므로, 그 사이에 채팅 버블이나 분석 오버레이를 일시 중지할 수 있습니다 |
+| `annotation:start` / `annotation:end` | — | 주석 작성 세션이 시작되거나 끝났을 때. `end`는 사용자가 제출했든 취소했든 발생하며, 두 진입 경로 — FAB의 드래그 흐름과 툴바의 자동 타게팅 피커 — 모두 대칭적인 이벤트 쌍을 발생시키므로, 그 사이에 채팅 버블이나 분석 오버레이를 일시 중지할 수 있습니다 |
 
 ## React
 

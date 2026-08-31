@@ -88,9 +88,9 @@ describe("Fab", () => {
       expect(toolbar).not.toBeNull();
     });
 
-    it("creates three toolbar items as plain buttons (no menuitem role)", () => {
+    it("creates four toolbar items as plain buttons (no menuitem role)", () => {
       const items = getToolbarItems(shadow);
-      expect(items.length).toBe(3);
+      expect(items.length).toBe(4);
       for (const item of items) {
         expect(item.getAttribute("role")).toBeNull();
       }
@@ -99,7 +99,7 @@ describe("Fab", () => {
     it("assigns correct data-item-id to each toolbar item", () => {
       const items = getToolbarItems(shadow);
       const ids = items.map((btn) => btn.dataset.itemId);
-      expect(ids).toEqual(["chat", "annotate", "toggle-annotations"]);
+      expect(ids).toEqual(["chat", "annotate", "target-picker", "toggle-annotations"]);
     });
 
     it("toolbar items are tabbable by default (toolbar visible)", () => {
@@ -109,14 +109,16 @@ describe("Fab", () => {
       }
     });
 
-    it("renders the documented icon family — list for chat, pencil for annotate, eye for toggle", () => {
+    it("renders the documented icon family — list for chat, pencil for annotate, crosshair for target-picker, eye for toggle", () => {
       const items = getToolbarItems(shadow);
       const chatSvg = items.find((b) => b.dataset.itemId === "chat")?.querySelector("svg");
       const annotateSvg = items.find((b) => b.dataset.itemId === "annotate")?.querySelector("svg");
+      const targetSvg = items.find((b) => b.dataset.itemId === "target-picker")?.querySelector("svg");
       const toggleSvg = items.find((b) => b.dataset.itemId === "toggle-annotations")?.querySelector("svg");
 
       expect(chatSvg?.querySelectorAll("line").length).toBe(6);
       expect(annotateSvg?.querySelectorAll("path").length).toBe(2);
+      expect(targetSvg?.querySelectorAll("circle").length).toBe(3);
       expect(toggleSvg?.querySelector("circle")).not.toBeNull();
     });
 
@@ -211,7 +213,7 @@ describe("Fab", () => {
       const items = getToolbarItems(shadow);
       const ids = items.map((btn) => btn.dataset.itemId);
       expect(ids).toContain("toggle-annotations");
-      expect(items.length).toBe(3);
+      expect(items.length).toBe(4);
     });
 
     it("`true` (explicit) keeps the toggle-annotations item", () => {
@@ -221,7 +223,7 @@ describe("Fab", () => {
       fab = new Fab(shadow, { ...defaultConfig(), showAnnotationsToggle: true }, bus, createT("fr"));
 
       const ids = getToolbarItems(shadow).map((btn) => btn.dataset.itemId);
-      expect(ids).toEqual(["chat", "annotate", "toggle-annotations"]);
+      expect(ids).toEqual(["chat", "annotate", "target-picker", "toggle-annotations"]);
     });
 
     it("`false` hides the toggle-annotations item entirely — no DOM, no click handler", () => {
@@ -231,7 +233,7 @@ describe("Fab", () => {
       fab = new Fab(shadow, { ...defaultConfig(), showAnnotationsToggle: false }, bus, createT("fr"));
 
       const ids = getToolbarItems(shadow).map((btn) => btn.dataset.itemId);
-      expect(ids).toEqual(["chat", "annotate"]);
+      expect(ids).toEqual(["chat", "annotate", "target-picker"]);
       expect(shadow.querySelector('[data-item-id="toggle-annotations"]')).toBeNull();
     });
 
@@ -250,7 +252,7 @@ describe("Fab", () => {
       expect(listener).not.toHaveBeenCalled();
     });
 
-    it("`false` — keyboard navigation still cycles through the remaining two items", () => {
+    it("`false` — keyboard navigation still cycles through the remaining three items", () => {
       fab.destroy();
       shadow.host.remove();
       shadow = createShadowRoot();
@@ -258,11 +260,13 @@ describe("Fab", () => {
 
       const items = getToolbarItems(shadow);
       const toolbar = shadow.querySelector<HTMLElement>('[role="toolbar"]')!;
-      expect(items.length).toBe(2);
+      expect(items.length).toBe(3);
 
       items[0]!.focus();
       toolbar.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
       expect(shadow.activeElement).toBe(items[1]);
+      toolbar.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+      expect(shadow.activeElement).toBe(items[2]);
 
       // ArrowRight again wraps back to the first item (last → first)
       toolbar.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
@@ -509,6 +513,61 @@ describe("Fab", () => {
 
       // First toggle: was visible (true), now hidden (false)
       expect(listener).toHaveBeenCalledWith(false);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // target-picker — the auto-target hover-and-click toggle button. Its
+  // active state is bus-driven (targeting:start/targeting:end), not mutated
+  // directly on click, so it stays correct regardless of who ended the
+  // session (Escape, a successful lock, or the button itself).
+  // -------------------------------------------------------------------------
+
+  describe("target-picker", () => {
+    function targetBtn(): HTMLButtonElement {
+      return shadow.querySelector<HTMLButtonElement>('[data-item-id="target-picker"]')!;
+    }
+
+    it("clicking it while inactive emits targeting:start", () => {
+      const listener = vi.fn();
+      bus.on("targeting:start", listener);
+
+      targetBtn().click();
+
+      expect(listener).toHaveBeenCalledOnce();
+    });
+
+    it("clicking it again while active emits targeting:end instead", () => {
+      const startListener = vi.fn();
+      const endListener = vi.fn();
+      bus.on("targeting:start", startListener);
+      bus.on("targeting:end", endListener);
+
+      targetBtn().click(); // starts — bus emits targeting:start, which (via the same bus) flips the button active
+      targetBtn().click(); // now active, so this emits targeting:end
+
+      expect(startListener).toHaveBeenCalledOnce();
+      expect(endListener).toHaveBeenCalledOnce();
+    });
+
+    it("starts with aria-pressed=false and no active class", () => {
+      expect(targetBtn().getAttribute("aria-pressed")).toBe("false");
+      expect(targetBtn().classList.contains("sp-toolbar-item--active")).toBe(false);
+    });
+
+    it("bus targeting:start sets aria-pressed=true and the active class, even when emitted by something else", () => {
+      bus.emit("targeting:start");
+
+      expect(targetBtn().getAttribute("aria-pressed")).toBe("true");
+      expect(targetBtn().classList.contains("sp-toolbar-item--active")).toBe(true);
+    });
+
+    it("bus targeting:end clears the active state", () => {
+      bus.emit("targeting:start");
+      bus.emit("targeting:end");
+
+      expect(targetBtn().getAttribute("aria-pressed")).toBe("false");
+      expect(targetBtn().classList.contains("sp-toolbar-item--active")).toBe(false);
     });
   });
 

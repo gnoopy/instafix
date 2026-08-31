@@ -3,14 +3,14 @@ title: What is InstaFix?
 description: Open-source client feedback widget — DOM-anchored annotations, self-hosted, zero SaaS fees.
 ---
 
-InstaFix lets your clients leave feedback **directly on the website you're building for them**. They draw a rectangle on the page (or right-click), type a comment, and you receive it pinned to the exact element — no more screenshots pasted into emails, no more "the button at the top… no, the other one".
+InstaFix lets your clients leave feedback **directly on the website you're building for them**. They draw a rectangle on the page (or click the toolbar's target button and click an element), type a comment, and you receive it pinned to the exact element — no more screenshots pasted into emails, no more "the button at the top… no, the other one".
 
 It's built for freelancers and agencies who review work-in-progress sites with clients, and it replaces tools like Marker.io or BugHerd with something you own: MIT-licensed, self-hosted, your database, zero subscription.
 
 ## How it works
 
 1. **You add the widget** to the site under review — one `npm install`, one `initInstaFix()` call. By default it only shows in development and staging, never to production visitors.
-2. **Your client annotates** — draw a rectangle, or right-click anywhere. Each comment is anchored to the DOM element under it, so it survives deploys and layout changes. Optional extras: a screenshot of the annotated area, console/network diagnostics.
+2. **Your client annotates** — draw a rectangle, or click the target button and click any element on the page. Each comment is anchored to the DOM element under it, so it survives deploys and layout changes. Optional extras: a screenshot of the annotated area, console/network diagnostics.
 3. **You triage** — in the drop-in dashboard (a Linear-style inbox with keyboard shortcuts) or through the plain HTTP API. Statuses flow `open` → `in_progress` → `resolved` / `wont_fix`.
 
 ## The pieces

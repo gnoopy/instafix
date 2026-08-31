@@ -3,7 +3,7 @@ import { sampleBackgroundIsLight } from "./dom/background-contrast.js";
 import { parseSvg, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
 import { type TFunction, type Translations, tWithParams } from "./i18n/index.js";
-import { ICON_CLOSE, ICON_EDIT, ICON_EYE, ICON_EYE_OFF, ICON_INSTAFIX, ICON_LIST } from "./icons.js";
+import { ICON_CLOSE, ICON_EDIT, ICON_EYE, ICON_EYE_OFF, ICON_INSTAFIX, ICON_LIST, ICON_TARGET } from "./icons.js";
 
 /** Re-sample the background behind the FAB/toolbar at most this often while scrolling/resizing. */
 const CONTRAST_DEBOUNCE_MS = 200;
@@ -12,7 +12,7 @@ const CONTRAST_DEBOUNCE_MS = 200;
 const SHINE_INTERVAL_CHOICES_MS = [3000, 4000, 5000];
 
 /** Closed set of toolbar item ids — keeps the label lookup exhaustive. */
-type ToolbarItemId = "chat" | "annotate" | "toggle-annotations";
+type ToolbarItemId = "chat" | "annotate" | "target-picker" | "toggle-annotations";
 
 interface ToolbarItem {
   id: ToolbarItemId;
@@ -26,6 +26,7 @@ interface ToolbarItem {
 const ITEM_LABEL_KEYS: Record<ToolbarItemId, keyof Translations> = {
   chat: "fab.messages",
   annotate: "fab.annotate",
+  "target-picker": "fab.targeting",
   "toggle-annotations": "fab.annotations",
 };
 
@@ -68,6 +69,10 @@ export class Fab {
   private badgeEl: HTMLElement | null = null;
   private toolbarVisible: boolean;
   private annotationsVisible = true;
+  /** Mirrors the annotator's hover-and-click targeting mode — driven by `targeting:start`/`targeting:end`, never mutated directly on click. */
+  private targetingActive = false;
+  private readonly unsubTargetingStart: () => void;
+  private readonly unsubTargetingEnd: () => void;
   private items: ToolbarItem[];
   /** The shadow host — hidden momentarily during a contrast sample so `elementFromPoint` sees the real page underneath. */
   private readonly host: HTMLElement;
@@ -86,19 +91,27 @@ export class Fab {
     this.host = shadowRoot.host as HTMLElement;
 
     // Horizontal toolbar next to the FAB. Icons:
-    // - list  → opens the feedback sidebar (panel of feedbacks).
-    // - edit  → creates a new annotation (the action).
-    // - eye   → toggles marker visibility on the page (state).
+    // - list    → opens the feedback sidebar (panel of feedbacks).
+    // - edit    → creates a new annotation (the action).
+    // - target  → toggles the hover-and-click "auto-target" picker mode.
+    // - eye     → toggles marker visibility on the page (state).
     // The marker-visibility toggle is opt-out via `config.showAnnotationsToggle`:
     // default `true` preserves historical behavior, `false` removes the item from
     // the toolbar entirely (no DOM, no keyboard slot, no click handler).
     this.items = [
       { id: "chat", icon: ICON_LIST },
       { id: "annotate", icon: ICON_EDIT },
+      { id: "target-picker", icon: ICON_TARGET },
     ];
     if (config.showAnnotationsToggle !== false) {
       this.items.push({ id: "toggle-annotations", icon: ICON_EYE, iconAlt: ICON_EYE_OFF });
     }
+
+    // The button's active state is driven entirely by the bus (not mutated
+    // directly on click) so it stays correct regardless of whether the
+    // session ended via Escape, a successful lock, or the button itself.
+    this.unsubTargetingStart = this.bus.on("targeting:start", () => this.setTargetingActive(true));
+    this.unsubTargetingEnd = this.bus.on("targeting:end", () => this.setTargetingActive(false));
 
     this.toolbarVisible = !loadToolbarHidden();
 
@@ -145,6 +158,8 @@ export class Fab {
     // Bind every `t()`-derived string into the freshly-built DOM. Kept as a
     // single pass so the constructor and `refreshLabels()` never drift.
     this.applyLabels();
+    // Explicit initial aria-pressed — the button starts inactive.
+    this.setTargetingActive(false);
 
     // Escape hides the toolbar — the keyboard equivalent of clicking the FAB
     // to collapse it. Unlike the old transient radial menu, a stray click
@@ -430,7 +445,20 @@ export class Fab {
         }
         break;
       }
+      case "target-picker":
+        // Never flips `targetingActive` directly — `setTargetingActive` (bus-driven)
+        // is the single source of truth, so a session ended by Escape or a
+        // successful lock (not this button) still leaves the button in sync.
+        this.bus.emit(this.targetingActive ? "targeting:end" : "targeting:start");
+        break;
     }
+  }
+
+  private setTargetingActive(active: boolean): void {
+    this.targetingActive = active;
+    const btn = this.toolbar.querySelector<HTMLButtonElement>('[data-item-id="target-picker"]');
+    btn?.setAttribute("aria-pressed", String(active));
+    btn?.classList.toggle("sp-toolbar-item--active", active);
   }
 
   destroy(): void {
@@ -438,6 +466,8 @@ export class Fab {
     window.removeEventListener("resize", this.onWindowChange);
     if (this.contrastDebounce) clearTimeout(this.contrastDebounce);
     this.stopShineSchedule();
+    this.unsubTargetingStart();
+    this.unsubTargetingEnd();
     this.root.remove();
   }
 }

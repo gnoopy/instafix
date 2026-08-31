@@ -1,4 +1,4 @@
 {
   "title": "Widget",
-  "pages": ["index", "configuration", "screenshots", "right-click", "copy-for-claude-code", "i18n", "anchoring"]
+  "pages": ["index", "configuration", "screenshots", "copy-for-claude-code", "i18n", "anchoring"]
 }
