@@ -25,8 +25,11 @@ import { buildStyles } from "./styles/base.js";
 import { buildThemeColors } from "./styles/theme.js";
 import { Tooltip } from "./tooltip.js";
 
-/** Singleton guard — prevents duplicate widgets from overlapping */
-let instance: InstaFixInstance | null = null;
+/** Raw, single-mount instance shape — everything `InstaFixInstance` has except `updateConfig`, which is facade-level (see `launch`). */
+type RawInstance = Omit<InstaFixInstance, "updateConfig">;
+
+/** Singleton guard — prevents duplicate widgets from overlapping. Set only on a real mount (never for a skipped one), matching the pre-`updateConfig` behavior of allowing repeated skipped calls to re-evaluate the guards fresh. */
+let activeInstance: { readonly facade: InstaFixInstance } | null = null;
 
 interface NormalisedDiagnostics {
   console: boolean;
@@ -59,8 +62,31 @@ function normaliseDiagnosticsOptions(value: InstaFixConfig["captureDiagnostics"]
   };
 }
 
-/** Build a no-op InstaFixInstance for when the widget is skipped */
-function skippedInstance(): InstaFixInstance {
+/**
+ * Build a no-op InstaFixInstance for when the widget is skipped (SSR, or a
+ * guard rejected `config`). `updateConfig` is the one non-noop method: it
+ * retries a full `launch()` with the merged config, so e.g. `forceShow`
+ * flipped on later via `updateConfig({ forceShow: true })` can still mount
+ * for real — that new attempt becomes the actual singleton if it succeeds.
+ */
+function skippedInstance(config: InstaFixConfig): InstaFixInstance {
+  const noop = () => {};
+  return {
+    destroy: noop,
+    open: noop,
+    close: noop,
+    refresh: noop,
+    focusFeedback: () => false,
+    on: () => noop,
+    off: noop,
+    updateConfig: (partial) => {
+      launch({ ...config, ...partial } as InstaFixConfig);
+    },
+  };
+}
+
+/** Build a fully inert `RawInstance` — used by `updateConfig` when the merged config now fails a guard. */
+function inertRaw(): RawInstance {
   const noop = () => {};
   return {
     destroy: noop,
@@ -123,13 +149,22 @@ function normaliseDeepLinkOptions(value: InstaFixConfig["deepLink"]): Normalised
 }
 
 /**
- * Main widget launcher — orchestrates all UI components.
+ * Main widget launcher — the stable public entry point.
  *
- * Architecture:
+ * Architecture (built by `mount()`, below):
  * - Creates a <instafix-widget> custom element in the document
  * - Attaches a closed Shadow DOM for CSS isolation
  * - FAB + Panel live inside the Shadow DOM
  * - Overlay, markers, tooltips live outside (appended to document.body)
+ *
+ * Guards (SSR / duplicate-call) live here; everything else (production/mobile/
+ * validation guards, then actually building the widget) is `mount()`, which
+ * `updateConfig` re-runs with a merged config to apply a live setting change.
+ * This wrapper is what makes that possible without invalidating the
+ * `InstaFixInstance` the host already has a reference to: `mount()` returns a
+ * fresh `RawInstance` every time, but `on`/`off`/etc. here always delegate to
+ * whichever raw instance is current, and registered listeners are replayed
+ * onto the new one after a remount.
  */
 export function launch(config: InstaFixConfig): InstaFixInstance {
   // Guard: no DOM, no widget — SSR frameworks (Next.js, Remix) may run the
@@ -137,19 +172,82 @@ export function launch(config: InstaFixConfig): InstaFixInstance {
   // cannot render without a document.
   if (typeof window === "undefined" || typeof document === "undefined") {
     config.onSkip?.("ssr");
-    return skippedInstance();
+    return skippedInstance(config);
   }
 
+  // Guard: prevent duplicate initInstaFix() calls
+  if (activeInstance) {
+    if (config.debug) console.debug("[instafix]", "initInstaFix() called more than once — returning existing instance");
+    return activeInstance.facade;
+  }
+
+  const listeners = new Map<string, Set<(...args: never[]) => void>>();
+  let currentConfig = config;
+
+  function updateConfig(partial: Partial<InstaFixConfig>): void {
+    current.destroy();
+    currentConfig = { ...currentConfig, ...partial } as InstaFixConfig;
+    current = mount(currentConfig, updateConfig) ?? inertRaw();
+    for (const [event, fns] of listeners) {
+      for (const fn of fns) current.on(event as never, fn as never);
+    }
+  }
+
+  const firstMount = mount(currentConfig, updateConfig);
+  if (!firstMount) return skippedInstance(currentConfig);
+  // Explicitly typed as non-null `RawInstance` (not the `RawInstance | null`
+  // `mount()` returns) — every closure below captures this `let` binding, and
+  // without the annotation TypeScript widens its type to include `null` from
+  // the pre-narrowing assignment above, even though it is never reassigned to
+  // null (a fallback `?? inertRaw()` guarantees that in `updateConfig`).
+  let current: RawInstance = firstMount;
+
+  const facade: InstaFixInstance = {
+    destroy: () => {
+      current.destroy();
+      activeInstance = null;
+    },
+    open: () => current.open(),
+    close: () => current.close(),
+    refresh: () => current.refresh(),
+    focusFeedback: (feedbackId) => current.focusFeedback(feedbackId),
+    on: (event, listener) => {
+      let set = listeners.get(event);
+      if (!set) listeners.set(event, (set = new Set()));
+      set.add(listener as (...args: never[]) => void);
+      current.on(event, listener);
+      // The returned unsubscribe (and `facade.off`, below) always act on
+      // whichever `current` is live *at call time* — not the raw instance
+      // that happened to exist when `.on()` was called — so a listener
+      // survives an `updateConfig()` remount and can still be removed
+      // afterward.
+      return () => {
+        set?.delete(listener as (...args: never[]) => void);
+        current.off(event, listener);
+      };
+    },
+    off: (event, listener) => {
+      listeners.get(event)?.delete(listener as (...args: never[]) => void);
+      current.off(event, listener);
+    },
+    updateConfig,
+  };
+
+  activeInstance = { facade };
+  return facade;
+}
+
+/**
+ * Build one real widget mount — the production/mobile/validation guards,
+ * then everything that creates DOM, wires events, and starts network
+ * requests. Returns `null` when a guard rejects `config` (never cached as
+ * the singleton — see `launch`).
+ */
+function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFixConfig>) => void): RawInstance | null {
   // Debug helper — only logs when config.debug is true
   const log: (...args: unknown[]) => void = config.debug
     ? (...args: unknown[]) => console.debug("[instafix]", ...args)
     : () => {};
-
-  // Guard: prevent duplicate initInstaFix() calls
-  if (instance) {
-    log("initInstaFix() called more than once — returning existing instance");
-    return instance;
-  }
 
   // Guard: only show in development (forceShow bypasses). Uses readNodeEnv()
   // instead of the literal `process.env.NODE_ENV` — avoids both bundler
@@ -159,7 +257,7 @@ export function launch(config: InstaFixConfig): InstaFixInstance {
     const reason = "production";
     console.info("[instafix] Widget not loaded: production mode detected. Use forceShow: true to override.");
     config.onSkip?.(reason);
-    return skippedInstance();
+    return null;
   }
 
   // Guard: desktop only (viewport below the threshold = hidden). forceShow
@@ -177,7 +275,7 @@ export function launch(config: InstaFixConfig): InstaFixInstance {
       `[instafix] Widget not loaded: viewport width < ${minViewportWidth}px (mobile not supported). Use forceShow: true or lower minViewportWidth to override.`,
     );
     config.onSkip?.(reason);
-    return skippedInstance();
+    return null;
   }
 
   // Guard: validate required config fields
@@ -185,11 +283,11 @@ export function launch(config: InstaFixConfig): InstaFixInstance {
     console.error(
       "[instafix] Missing 'endpoint' or 'store' in config. Provide an endpoint like '/api/instafix' or a InstaFixStore instance.",
     );
-    return skippedInstance();
+    return null;
   }
   if (!config.projectName || typeof config.projectName !== "string") {
     console.error("[instafix] Missing or invalid 'projectName' in config. Expected a non-empty string.");
-    return skippedInstance();
+    return null;
   }
 
   const locale = config.locale ?? "ko";
@@ -370,10 +468,18 @@ export function launch(config: InstaFixConfig): InstaFixInstance {
     if (!panelPromise) {
       panelPromise = import("./panel.js").then((mod) => {
         if (destroyed) return null;
-        panelInstance = new mod.Panel(shadow, colors, bus, client, config.projectName, markers, t, locale, {
-          getScope,
-          scopeAnnotationsByUrl,
-        });
+        panelInstance = new mod.Panel(
+          shadow,
+          colors,
+          bus,
+          client,
+          config.projectName,
+          markers,
+          t,
+          locale,
+          { getScope, scopeAnnotationsByUrl },
+          { config, onUpdateConfig },
+        );
         return panelInstance;
       });
     }
@@ -718,8 +824,11 @@ export function launch(config: InstaFixConfig): InstaFixInstance {
     };
   }
 
-  instance = {
+  const raw: RawInstance = {
     destroy: () => {
+      // Idempotent: `updateConfig` (and a stale reference held across one)
+      // may call this more than once on the same raw instance.
+      if (destroyed) return;
       log("Destroying widget");
       if (onContextMenu) {
         document.removeEventListener("contextmenu", onContextMenu);
@@ -744,7 +853,6 @@ export function launch(config: InstaFixConfig): InstaFixInstance {
       publicBus.removeAll();
       liveRegion.remove();
       host.remove();
-      instance = null;
     },
     open: () => {
       // Emit synchronously so consumers wired through `onOpen` / `panel:open`
@@ -779,7 +887,7 @@ export function launch(config: InstaFixConfig): InstaFixInstance {
     },
   };
 
-  return instance;
+  return raw;
 }
 
 /**

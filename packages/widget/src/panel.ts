@@ -4,6 +4,7 @@ import {
   type FeedbackResponse,
   type FeedbackStatus,
   type FeedbackType,
+  type InstaFixConfig,
   isClosedStatus,
   type PageScope,
 } from "@instafix/core";
@@ -27,6 +28,7 @@ import {
   ICON_OTHER,
   ICON_QUESTION,
   ICON_SEARCH,
+  ICON_SETTINGS,
   ICON_TRASH,
   ICON_UNDO,
 } from "./icons.js";
@@ -35,6 +37,7 @@ import { BulkActions } from "./panel-bulk.js";
 import { DetailView } from "./panel-detail.js";
 import { createPageGroupHeader, groupFeedbacksByPage, PanelSortControls, sortFeedbacks } from "./panel-sort.js";
 import { PanelStats } from "./panel-stats.js";
+import { type SettingsPatch, SettingsView } from "./settings-view.js";
 import { focusCardByIndex, getFocusedCardIndex, KeyboardShortcuts } from "./shortcuts.js";
 import { getStatusBgColor, getStatusColor, getTypeBgColor, getTypeColor, type ThemeColors } from "./styles/theme.js";
 
@@ -80,6 +83,7 @@ export class Panel {
   private readonly agentCopyBtn: AgentCopyButton;
   private readonly shortcuts: KeyboardShortcuts;
   private readonly detail: DetailView;
+  private readonly settings: SettingsView | null;
   private readonly shadowRoot: ShadowRoot;
 
   // i18n: t is shared with all submodules.
@@ -103,6 +107,10 @@ export class Panel {
     private readonly t: TFunction,
     private readonly locale: string,
     pageScopeOptions?: { getScope: () => PageScope; scopeAnnotationsByUrl: boolean },
+    private readonly settingsOptions?: {
+      config: InstaFixConfig;
+      onUpdateConfig: (partial: Partial<InstaFixConfig>) => void;
+    },
   ) {
     this.shadowRoot = shadowRoot;
     this.getScope = pageScopeOptions?.getScope ?? (() => ({ url: window.location.pathname, urlPattern: null }));
@@ -159,10 +167,35 @@ export class Panel {
     headerTop.appendChild(title);
     headerTop.appendChild(this.closeBtn);
 
+    // Settings — gear icon opens a compact panel-in-panel (same slide-in as
+    // DetailView) so visitors can adjust theme/locale/position/accent/feature
+    // toggles live, no host code required. Only wired when the launcher
+    // supplies settingsOptions (always true via initInstaFix() — omitted only
+    // by tests constructing Panel directly, in which case the gear is simply
+    // not rendered).
+    this.settings = this.settingsOptions
+      ? new SettingsView(
+          this.t,
+          this.settingsOptions.config,
+          (patch) => this.settingsOptions?.onUpdateConfig(patch),
+          () => {},
+        )
+      : null;
+    let settingsBtn: HTMLButtonElement | null = null;
+    if (this.settings) {
+      settingsBtn = document.createElement("button");
+      settingsBtn.type = "button";
+      settingsBtn.className = "sp-settings-btn";
+      settingsBtn.setAttribute("aria-label", this.t("settings.title"));
+      settingsBtn.appendChild(parseSvg(ICON_SETTINGS));
+      settingsBtn.addEventListener("click", () => this.settings?.show());
+    }
+
     // Secondary actions get their own row and wrap freely — safe to keep
     // growing (a future action button) without ever endangering the close
     // button above.
     const headerActions = el("div", { class: "sp-panel-header-actions" });
+    if (settingsBtn) headerActions.appendChild(settingsBtn);
     headerActions.appendChild(this.agentCopyBtn.element);
     headerActions.appendChild(this.exportBtn.element);
     headerActions.appendChild(this.deleteAllBtn);
@@ -347,6 +380,7 @@ export class Panel {
     this.root.appendChild(this.listContainer);
     this.root.appendChild(this.bulk.barElement);
     this.root.appendChild(this.detail.element);
+    if (this.settings) this.root.appendChild(this.settings.element);
     this.root.appendChild(this.shortcuts.helpOverlay);
     this.root.appendChild(this.shortcuts.hintButton);
     shadowRoot.appendChild(this.root);
@@ -445,7 +479,11 @@ export class Panel {
     shadowRoot.addEventListener("keydown", (e) => {
       const ke = e as KeyboardEvent;
       if (ke.key === "Escape" && this.isOpen) {
-        // If detail view is open, close it instead
+        // If the settings or detail view is open, close it instead
+        if (this.settings?.isVisible) {
+          this.settings.hide();
+          return;
+        }
         if (this.detail.isVisible) {
           this.detail.hide();
           return;
@@ -553,6 +591,7 @@ export class Panel {
     this.bus.emit("close");
     this.shortcuts.disable();
     this.detail.hide();
+    this.settings?.hide();
     // Restore focus to the FAB
     const fab = (this.root.getRootNode() as ShadowRoot).querySelector<HTMLButtonElement>(".sp-fab");
     fab?.focus();
@@ -1390,6 +1429,7 @@ export class Panel {
     this.agentCopyBtn.destroy();
     this.shortcuts.destroy();
     this.detail.destroy();
+    this.settings?.destroy();
     this.root.remove();
   }
 }

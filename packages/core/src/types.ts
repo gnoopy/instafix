@@ -347,6 +347,21 @@ export interface InstaFixInstance {
   /** Reload feedbacks from server */
   refresh: () => void;
   /**
+   * Update the widget's config at runtime — merges `partial` over the config
+   * it was last initialized with, then tears down and remounts (there is no
+   * cheaper path: `theme`/`locale`/`accentColor`/etc. are all baked in at
+   * mount time). Event listeners registered via `.on()` survive the remount
+   * automatically; this same `InstaFixInstance` stays valid to keep calling
+   * afterward — you don't need to re-capture a new return value.
+   *
+   * This is what the widget's own in-panel Settings view uses (gear icon in
+   * the feedback list header) to let visitors adjust theme/locale/position/
+   * accent/feature toggles live, without the host writing any code. Call it
+   * yourself too, e.g. to flip `theme` when your app's own theme switcher
+   * changes.
+   */
+  updateConfig: (partial: Partial<InstaFixConfig>) => void;
+  /**
    * Scroll the matching annotation into view, pin its highlight, and
    * pulse its marker. Returns `true` when a visible feedback matched the
    * given ID, `false` otherwise (unknown ID, feedback on another URL when

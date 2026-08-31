@@ -1020,4 +1020,89 @@ describe("launch", () => {
       instance.destroy();
     });
   });
+
+  // -------------------------------------------------------------------------
+  // updateConfig — the facade + listener-replay mechanism behind the
+  // widget's in-panel Settings view (and any host calling it directly)
+  // -------------------------------------------------------------------------
+
+  describe("updateConfig", () => {
+    it("tears down and remounts with a fresh host element, leaving exactly one in the DOM", () => {
+      const instance = launch(defaultConfig());
+      const before = document.querySelector("instafix-widget");
+      expect(before).not.toBeNull();
+
+      instance.updateConfig({ theme: "dark" });
+
+      const after = document.querySelector("instafix-widget");
+      expect(after).not.toBeNull();
+      expect(after).not.toBe(before);
+      expect(document.querySelectorAll("instafix-widget").length).toBe(1);
+
+      instance.destroy();
+      expect(document.querySelectorAll("instafix-widget").length).toBe(0);
+    });
+
+    it("replays .on() listeners onto the remounted instance", () => {
+      const instance = launch(defaultConfig());
+      const listener = vi.fn();
+      instance.on("feedback:deleted", listener);
+
+      instance.updateConfig({ theme: "dark" });
+
+      // The Annotator mock captures whichever internal bus it was last
+      // constructed with — after updateConfig that's the new mount's bus.
+      annotatorCapture.bus?.emit("feedback:deleted", "feedback-id-after-update");
+      expect(listener).toHaveBeenCalledWith("feedback-id-after-update");
+
+      instance.destroy();
+    });
+
+    it("off() removes a listener even after updateConfig rebuilt the underlying bus", () => {
+      const instance = launch(defaultConfig());
+      const listener = vi.fn();
+      instance.on("feedback:deleted", listener);
+      instance.updateConfig({ theme: "dark" });
+      instance.off("feedback:deleted", listener);
+
+      annotatorCapture.bus?.emit("feedback:deleted", "should-not-fire");
+      expect(listener).not.toHaveBeenCalled();
+
+      instance.destroy();
+    });
+
+    it("the unsubscribe returned by .on() also still works after updateConfig", () => {
+      const instance = launch(defaultConfig());
+      const listener = vi.fn();
+      const unsub = instance.on("feedback:deleted", listener);
+      instance.updateConfig({ theme: "dark" });
+      unsub();
+
+      annotatorCapture.bus?.emit("feedback:deleted", "should-not-fire");
+      expect(listener).not.toHaveBeenCalled();
+
+      instance.destroy();
+    });
+
+    it("a merged option takes effect for real — enableRightClickComment wires a live contextmenu listener", () => {
+      const spy = vi.spyOn(document, "addEventListener");
+      const instance = launch(defaultConfig({ enableRightClickComment: false }));
+      spy.mockClear();
+
+      instance.updateConfig({ enableRightClickComment: true });
+
+      const contextMenuCalls = spy.mock.calls.filter(([event]) => event === "contextmenu");
+      expect(contextMenuCalls.length).toBeGreaterThanOrEqual(1);
+
+      instance.destroy();
+      spy.mockRestore();
+    });
+
+    it("destroy() is idempotent, including after an updateConfig remount", () => {
+      const instance = launch(defaultConfig());
+      instance.updateConfig({ theme: "dark" });
+      instance.destroy();
+      expect(() => instance.destroy()).not.toThrow();
+    });
+  });
 });

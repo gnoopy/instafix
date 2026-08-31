@@ -6,6 +6,7 @@ import { BULK_CSS } from "../panel-bulk.js";
 import { DETAIL_CSS } from "../panel-detail.js";
 import { SORT_CSS } from "../panel-sort.js";
 import { STATS_CSS } from "../panel-stats.js";
+import { SETTINGS_CSS } from "../settings-view.js";
 import { SHORTCUTS_CSS } from "../shortcuts.js";
 import { ANIMATION_CSS } from "./animations.js";
 import { cssVariables, type ThemeColors } from "./theme.js";
@@ -1335,6 +1336,7 @@ export function buildStyles(colors: ThemeColors): string {
     ${EXPORT_CSS}
     ${SHORTCUTS_CSS}
     ${DETAIL_CSS}
+    ${SETTINGS_CSS}
     ${AGENT_COPY_CSS}
     ${ONBOARDING_CSS}
   `;
