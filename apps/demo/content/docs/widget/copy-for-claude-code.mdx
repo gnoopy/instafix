@@ -1,0 +1,54 @@
+---
+title: Copy for Claude Code
+description: Turn selected feedback into deterministic Markdown context you can paste straight into a coding agent.
+---
+
+Every card in the panel — and the whole open list — can be turned into one Markdown document built for a coding agent to act on, not for a human to read in a dashboard. Click **Copy for Claude Code** (in the panel header, or inside a single feedback's detail view) and the result is already on your clipboard.
+
+There's nothing to configure: it works out of the box once the widget is installed, using whatever selection you already have — a bulk multi-select if one is active, otherwise every open item on the current page.
+
+## What you get
+
+Paste this straight into your agent's prompt. This is real output — not a mockup — for one feedback with a single element target:
+
+```md
+# UI change requests
+
+- Review each request against the current code before making any change.
+- If a target is ambiguous or you can't find it in the code, report that instead of guessing.
+- Run the relevant tests after implementing each change.
+
+Page: https://app.acme.dev/reports/monthly
+Viewport: 1440x900 @2x
+
+## 1. Export CSV
+Request (verbatim):
+> The export button is disabled even after I pick a date range. Should be enabled once both dates are set.
+Target: element `button` "Export CSV"
+Selectors:
+- id: `#export-btn`
+- css: `button.export-btn`
+- xpath: `/html/body/div[1]/main/div[2]/button`
+Context: nearby text: "Date range: Aug 1 - Aug 30"
+Bounds: x=12% y=34% w=8% h=3% (relative to target element)
+```
+
+Every field an agent needs to locate the change is there: a CSS selector, an XPath fallback, nearby text, and a bounding box — the same multi-signal anchor the widget itself uses to re-find elements after your code changes shape the DOM (see [Anchoring](/docs/widget/anchoring)).
+
+## What changes shape per selection
+
+- **Click or drag-select one element** → the `Target:`/`Selectors:`/`Context:` block above.
+- **Select a range of text** → `Target: text in <tag>` plus a `Quote: "…[…]…"` line showing the exact quoted text with its surrounding prefix/suffix.
+- **Drag an empty area** (no element under it, or Alt-drag to force it) → `Target: area (no element — page region)` with bounds relative to the viewport instead of an element, since there's nothing to anchor a selector to.
+- **Shift-drag to add more targets to one note** → a single item with a `Targets (N):` numbered list instead of one flat `Target:` block, so "these three buttons are inconsistent" stays one request instead of three.
+- **Multiple feedback items in the selection** → each becomes its own `## N. …` section; a `Page:`/`Viewport:` header is hoisted once to the top when every item shares the same page, otherwise each section carries its own.
+
+## Why it's deterministic
+
+The same input, in the same order, always produces the exact same string — no timestamps, no random ordering, no environment-dependent formatting. That makes it safe to paste into a prompt, diff against a previous copy, or snapshot-test. User-provided text (the note, DOM text snippets) is always rendered inside a Markdown blockquote or an inline code span sized to whatever backtick run appears in the content, so nothing a page's own DOM contains can break out of its quoting and merge back into the document structure — including adversarial strings pulled straight off a hostile page.
+
+Long selections are capped rather than left unbounded: 200 items per document, 20 targets rendered per item (with a `(N more target(s) omitted)` line when a multi-select exceeds that), so a runaway selection can't produce a document too large for a prompt.
+
+## Onboarding
+
+New users see a 3-step coachmark the first time the widget loads — open the menu, select anything, then copy for your AI — shown once and never again (tracked in `localStorage`, not shown again even after a refresh). It doesn't block the page: skip it or click through at your own pace.

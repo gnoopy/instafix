@@ -1,0 +1,97 @@
+{
+  "name": "@siteping/widget",
+  "version": "0.10.7",
+  "description": "Feedback widget for client review during development — annotations, bugs, questions directly on the site",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "script": "./dist/index.global.js",
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./react": {
+      "import": {
+        "types": "./dist/react.d.ts",
+        "default": "./dist/react.js"
+      },
+      "require": {
+        "types": "./dist/react.d.cts",
+        "default": "./dist/react.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup && node ../../scripts/fix-dts.mjs dist && node scripts/verify-dist-guard.mjs",
+    "check": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "size": "NODE_PATH=./node_modules size-limit"
+  },
+  "keywords": [
+    "feedback",
+    "widget",
+    "annotation",
+    "client-review",
+    "development",
+    "bug-reporting",
+    "visual-feedback",
+    "website-feedback",
+    "dom-annotation",
+    "self-hosted",
+    "open-source",
+    "shadow-dom",
+    "lightweight"
+  ],
+  "author": "neosianexus",
+  "license": "MIT",
+  "homepage": "https://siteping.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "directory": "packages/widget"
+  },
+  "bugs": {
+    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@medv/finder": "^4.0.2",
+    "html2canvas": "^1.4.1"
+  },
+  "devDependencies": {
+    "@siteping/core": "workspace:*",
+    "@size-limit/preset-small-lib": "^12.1.0",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "esbuild": "^0.28.2",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "size-limit": "^12.1.0"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

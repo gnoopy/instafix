@@ -1,0 +1,57 @@
+{
+  "name": "siteping",
+  "private": true,
+  "description": "Client feedback widget \u2014 self-hosted, DOM-anchored annotations for websites",
+  "homepage": "https://siteping.dev",
+  "type": "module",
+  "author": "neosianexus",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NeosiaNexus/SitePing.git"
+  },
+  "packageManager": "bun@1.3.11",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "check": "turbo run check //#check:root",
+    "check:root": "tsc --noEmit",
+    "clean": "turbo run clean",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:e2e": "playwright test",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "verify": "bun run build && bun run check && bun run lint && bun run test:run",
+    "pkg-checks": "node scripts/pkg-checks.mjs",
+    "check:consistency": "node scripts/check-consistency.mjs",
+    "knip": "knip",
+    "new:locale": "node scripts/new-locale.mjs",
+    "new:adapter": "node scripts/new-adapter.mjs"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
+    "@biomejs/biome": "2.5.9",
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^26.2.0",
+    "@vitest/coverage-istanbul": "^4.1.11",
+    "fast-check": "^4.9.0",
+    "jsdom": "29.1.1",
+    "knip": "^6.32.2",
+    "publint": "0.3.24",
+    "tsup": "^8.5.1",
+    "turbo": "^2.10.11",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "brace-expansion": "^5.0.8",
+    "minimatch": "^10.2.5",
+    "esbuild": "^0.28.1",
+    "postcss": "^8.5.18",
+    "sharp": "^0.35.0"
+  }
+}

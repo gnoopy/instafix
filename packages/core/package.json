@@ -1,0 +1,43 @@
+{
+  "name": "@siteping/core",
+  "version": "0.7.2",
+  "private": true,
+  "description": "Shared types and schema definitions for @siteping packages",
+  "type": "module",
+  "sideEffects": false,
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    },
+    "./testing": {
+      "default": "./src/testing.ts"
+    }
+  },
+  "author": "neosianexus",
+  "scripts": {
+    "build": "tsc",
+    "check": "tsc --noEmit -p tsconfig.check.json",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "homepage": "https://siteping.dev",
+  "bugs": {
+    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+  },
+  "keywords": [
+    "siteping",
+    "types",
+    "schema",
+    "feedback"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "directory": "packages/core"
+  }
+}

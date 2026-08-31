@@ -1,0 +1,51 @@
+{
+  "name": "@siteping/cli",
+  "version": "0.5.4",
+  "description": "CLI tool to set up Siteping in your project",
+  "type": "module",
+  "bin": {
+    "siteping": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "siteping",
+    "cli",
+    "prisma",
+    "setup",
+    "developer-tools",
+    "feedback",
+    "nextjs",
+    "prisma-generator",
+    "typescript"
+  ],
+  "author": "neosianexus",
+  "license": "MIT",
+  "homepage": "https://siteping.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@siteping/core": "workspace:*",
+    "commander": "^15.0.0",
+    "@clack/prompts": "^1.7.0",
+    "@mrleebo/prisma-ast": "^0.16.0"
+  }
+}

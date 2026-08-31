@@ -1,0 +1,54 @@
+---
+title: Copier pour Claude Code
+description: Transformer les feedbacks sélectionnés en contexte Markdown déterministe, prêt à coller dans un agent de code.
+---
+
+Chaque carte du panneau — et toute la liste ouverte — peut devenir un seul document Markdown conçu pour qu'un agent de code agisse dessus, pas pour être lu dans un tableau de bord. Cliquez sur **Copier pour Claude Code** (dans l'en-tête du panneau, ou dans la vue détaillée d'un feedback) et le résultat est déjà dans votre presse-papiers.
+
+Rien à configurer : ça fonctionne dès l'installation du widget, avec la sélection déjà active — une sélection multiple si elle est en cours, sinon tous les éléments ouverts de la page actuelle.
+
+## Ce que vous obtenez
+
+Collez ceci directement dans le prompt de votre agent. C'est un vrai résultat — pas une maquette — pour un feedback avec une seule cible élément :
+
+```md
+# UI change requests
+
+- Review each request against the current code before making any change.
+- If a target is ambiguous or you can't find it in the code, report that instead of guessing.
+- Run the relevant tests after implementing each change.
+
+Page: https://app.acme.dev/reports/monthly
+Viewport: 1440x900 @2x
+
+## 1. Export CSV
+Request (verbatim):
+> The export button is disabled even after I pick a date range. Should be enabled once both dates are set.
+Target: element `button` "Export CSV"
+Selectors:
+- id: `#export-btn`
+- css: `button.export-btn`
+- xpath: `/html/body/div[1]/main/div[2]/button`
+Context: nearby text: "Date range: Aug 1 - Aug 30"
+Bounds: x=12% y=34% w=8% h=3% (relative to target element)
+```
+
+Le document reste en anglais quelle que soit la langue de l'interface du widget — c'est un format destiné à un agent de code, pas à un lecteur humain. Chaque champ dont un agent a besoin pour localiser le changement est présent : un sélecteur CSS, un repli XPath, du texte à proximité et une zone de délimitation — le même ancrage multi-signal que le widget utilise lui-même pour retrouver les éléments après que votre code a changé la forme du DOM (voir [Ancrage](/fr/docs/widget/anchoring)).
+
+## Ce qui change selon la sélection
+
+- **Cliquer ou glisser-sélectionner un élément** → le bloc `Target:`/`Selectors:`/`Context:` ci-dessus.
+- **Sélectionner une plage de texte** → `Target: text in <tag>` plus une ligne `Quote: "…[…]…"` montrant le texte cité exact avec son préfixe/suffixe environnant.
+- **Glisser sur une zone vide** (aucun élément dessous, ou Alt+glisser pour le forcer) → `Target: area (no element — page region)` avec des limites relatives à la fenêtre plutôt qu'à un élément, puisqu'il n'y a rien à quoi ancrer un sélecteur.
+- **Maj+glisser pour ajouter d'autres cibles à une même note** → un seul élément avec une liste numérotée `Targets (N):` au lieu d'un bloc `Target:` unique, pour que « ces trois boutons sont incohérents » reste une seule requête plutôt que trois.
+- **Plusieurs feedbacks dans la sélection** → chacun devient sa propre section `## N. …` ; un en-tête `Page:`/`Viewport:` n'apparaît qu'une fois en haut si tous les éléments partagent la même page, sinon chaque section porte le sien.
+
+## Pourquoi c'est déterministe
+
+La même entrée, dans le même ordre, produit toujours exactement la même chaîne — pas d'horodatage, pas d'ordre aléatoire, pas de mise en forme dépendante de l'environnement. Cela permet de coller le résultat dans un prompt, de le comparer à une copie précédente, ou de le tester par snapshot. Le texte fourni par l'utilisateur (la note, les extraits de texte du DOM) est toujours rendu dans une citation Markdown ou un span de code inline dont la longueur de balise s'adapte à toute séquence de backticks présente dans le contenu, pour que rien de ce que contient le DOM d'une page ne puisse s'échapper de sa citation et se fondre dans la structure du document — y compris des chaînes adversariales tirées d'une page hostile.
+
+Les sélections longues sont plafonnées plutôt que laissées sans limite : 200 éléments par document, 20 cibles rendues par élément (avec une ligne `(N more target(s) omitted)` quand une sélection multiple dépasse ce plafond), pour qu'une sélection incontrôlée ne puisse pas produire un document trop volumineux pour un prompt.
+
+## Onboarding
+
+Les nouveaux utilisateurs voient un guide en 3 étapes la première fois que le widget se charge — ouvrir le menu, sélectionner quelque chose, puis copier pour votre IA — affiché une seule fois et jamais revu ensuite (mémorisé dans `localStorage`, il ne réapparaît pas même après une actualisation). Il ne bloque pas la page : vous pouvez le passer ou cliquer à votre rythme.

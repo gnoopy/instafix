@@ -1,0 +1,83 @@
+import type { FeedbackResponse, SitepingUnsubscribe } from "@siteping/core";
+import type { AnnotationComplete } from "./annotator.js";
+
+/** Listener signature for a single key of an `EventBus` event map. */
+export type EventListener<E extends Record<keyof E, unknown[]>, K extends keyof E> = (...args: E[K]) => void;
+
+/**
+ * Lightweight typed `EventEmitter` — zero dependencies.
+ *
+ * The generic constraint guarantees each event maps to a tuple of argument
+ * types, so subscribers and emitters share the exact same shape.
+ */
+export class EventBus<E extends Record<keyof E, unknown[]>> {
+  private readonly listeners = new Map<keyof E, Set<EventListener<E, keyof E>>>();
+
+  on<K extends keyof E>(event: K, listener: EventListener<E, K>): SitepingUnsubscribe {
+    let set = this.listeners.get(event);
+    if (!set) {
+      set = new Set();
+      this.listeners.set(event, set);
+    }
+    set.add(listener as EventListener<E, keyof E>);
+
+    return () => {
+      set?.delete(listener as EventListener<E, keyof E>);
+    };
+  }
+
+  off<K extends keyof E>(event: K, listener: EventListener<E, K>): void {
+    this.listeners.get(event)?.delete(listener as EventListener<E, keyof E>);
+  }
+
+  emit<K extends keyof E>(event: K, ...args: E[K]): void {
+    const set = this.listeners.get(event);
+    if (!set) return;
+    for (const fn of set) {
+      try {
+        (fn as (...a: E[K]) => void)(...args);
+      } catch (err) {
+        // Isolate listener errors — one bad listener must not kill others
+        console.error(`[siteping] Error in event listener for "${String(event)}":`, err);
+      }
+    }
+  }
+
+  removeAll(): void {
+    this.listeners.clear();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Widget event types
+// ---------------------------------------------------------------------------
+
+/** Full internal event map — broader than the public surface exposed to hosts. */
+export interface WidgetEvents {
+  open: [];
+  close: [];
+  "feedback:sent": [FeedbackResponse];
+  "feedback:deleted": [FeedbackResponse["id"]];
+  "feedback:all-deleted": [];
+  "feedback:error": [Error];
+  /** Emitted whenever the marker set changes — payload is the open (unresolved) count for the current page. */
+  "markers:changed": [number];
+  "annotation:start": [];
+  "annotation:end": [];
+  "annotation:complete": [AnnotationComplete];
+  /**
+   * Internal-only: a feedback submission was aborted by a benign user action
+   * (e.g. cancelling the identity prompt). Distinct from `feedback:error` so a
+   * cancellation does not surface through the host's `onError` callback. Not
+   * part of `SitepingPublicEvents` — never exposed to consumers.
+   */
+  "submission:cancelled": [];
+  "annotations:toggle": [boolean];
+  "panel:toggle": [boolean];
+}
+
+// NOTE: the public event surface is `SitepingPublicEvents` from
+// `@siteping/core`. The launcher bridges internal events onto the public bus
+// through a mapped object keyed by `keyof SitepingPublicEvents`, so adding a
+// public event without bridging it is a compile error there — no alias or
+// duplicate map is needed on this side.

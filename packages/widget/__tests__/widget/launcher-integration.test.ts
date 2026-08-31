@@ -1,0 +1,1652 @@
+// @vitest-environment jsdom
+
+import type { FeedbackPayload, FeedbackResponse, SitepingConfig, SitepingHttpConfig } from "@siteping/core";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { mockMatchMedia } from "../helpers.js";
+
+// jsdom does not implement window.matchMedia — provide a stub
+mockMatchMedia(false);
+
+// ---------------------------------------------------------------------------
+// Mock modules before importing launcher
+// ---------------------------------------------------------------------------
+
+const mockSendFeedback = vi.fn<(payload: FeedbackPayload) => Promise<FeedbackResponse>>();
+const mockGetFeedbacks = vi.fn().mockResolvedValue({ feedbacks: [], total: 0 });
+
+vi.mock(new URL("../../src/api-client.js", import.meta.url).pathname, () => ({
+  ApiClient: vi.fn(function (this: unknown) {
+    return {
+      sendFeedback: mockSendFeedback,
+      getFeedbacks: mockGetFeedbacks,
+      resolveFeedback: vi.fn(),
+      deleteFeedback: vi.fn(),
+      deleteAllFeedbacks: vi.fn(),
+    };
+  }),
+  flushRetryQueue: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Capture the EventBus instance that launch() creates so we can emit events on it.
+// The Annotator receives the bus in its constructor — we intercept it.
+let capturedBus: {
+  emit: (event: string, ...args: unknown[]) => void;
+  on: (event: string, listener: (...args: unknown[]) => void) => () => void;
+} | null = null;
+
+// Spy on annotator.refreshLabels so the i18n test can assert it gets called
+// once the locale dictionary lands.
+const mockAnnotatorRefreshLabels = vi.fn();
+
+vi.mock(new URL("../../src/annotator.js", import.meta.url).pathname, () => ({
+  Annotator: vi.fn(function (
+    this: unknown,
+    _colors: unknown,
+    bus: {
+      emit: (event: string, ...args: unknown[]) => void;
+      on: (event: string, listener: (...args: unknown[]) => void) => () => void;
+    },
+  ) {
+    capturedBus = bus;
+    // Wire annotation:start listener like the real Annotator constructor does
+    bus.on("annotation:start", () => {});
+    return {
+      destroy: vi.fn(),
+      refreshLabels: mockAnnotatorRefreshLabels,
+    };
+  }),
+}));
+
+// Module-level marker spies so individual tests can assert against the same
+// instance that launch() created. Reset by `vi.clearAllMocks` in afterEach.
+const mockMarkersAddFeedback = vi.fn();
+const mockMarkersRender = vi.fn();
+const mockMarkersFocusFeedback = vi.fn().mockReturnValue(false);
+
+vi.mock(new URL("../../src/markers.js", import.meta.url).pathname, () => ({
+  MarkerManager: vi.fn(function (this: unknown) {
+    return {
+      render: mockMarkersRender,
+      highlight: vi.fn(),
+      pinHighlight: vi.fn(),
+      addFeedback: mockMarkersAddFeedback,
+      focusFeedback: mockMarkersFocusFeedback,
+      destroy: vi.fn(),
+      count: 0,
+    };
+  }),
+}));
+
+vi.mock(new URL("../../src/tooltip.js", import.meta.url).pathname, () => ({
+  Tooltip: vi.fn(function (this: unknown) {
+    return {
+      tooltipId: "sp-tooltip",
+      show: vi.fn(),
+      scheduleHide: vi.fn(),
+      contains: vi.fn(),
+      destroy: vi.fn(),
+    };
+  }),
+}));
+
+vi.mock(new URL("../../src/styles/base.js", import.meta.url).pathname, () => ({
+  buildStyles: vi.fn().mockReturnValue("/* styles */"),
+}));
+
+// Mock identity — simulate stored identity by default
+const mockGetIdentity = vi.fn().mockReturnValue({ name: "Test User", email: "test@example.com" });
+const mockSaveIdentity = vi.fn();
+
+vi.mock(new URL("../../src/identity.js", import.meta.url).pathname, () => ({
+  getIdentity: (...args: unknown[]) => mockGetIdentity(...args),
+  saveIdentity: (...args: unknown[]) => mockSaveIdentity(...args),
+}));
+
+import { ApiClient, flushRetryQueue } from "../../src/api-client.js";
+import * as i18n from "../../src/i18n/index.js";
+import { launch } from "../../src/launcher.js";
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function defaultConfig(overrides: Partial<Omit<SitepingHttpConfig, "store">> = {}): SitepingConfig {
+  return {
+    endpoint: "/api/siteping",
+    projectName: "test-project",
+    forceShow: true,
+    ...overrides,
+  };
+}
+
+function makeFeedbackResponse(overrides: Partial<FeedbackResponse> = {}): FeedbackResponse {
+  return {
+    id: "fb-new-1",
+    projectName: "test-project",
+    type: "bug",
+    message: "Found a bug",
+    status: "open",
+    url: "http://localhost/",
+    viewport: "1920x1080",
+    userAgent: "test",
+    authorName: "Test User",
+    authorEmail: "test@example.com",
+    resolvedAt: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    annotations: [],
+    urlPattern: null,
+    screenshotUrl: null,
+    screenshotRegion: null,
+    diagnostics: null,
+    ...overrides,
+  };
+}
+
+function makeAnnotationCompleteData() {
+  return {
+    annotations: [
+      {
+        anchor: {
+          cssSelector: "div.test",
+          xpath: "/html/body/div",
+          textSnippet: "test",
+          elementTag: "DIV",
+          textPrefix: "",
+          textSuffix: "",
+          fingerprint: "0:0:0",
+          neighborText: "",
+        },
+        rect: { xPct: 0, yPct: 0, wPct: 1, hPct: 1 },
+        scrollX: 0,
+        scrollY: 0,
+        viewportW: 1920,
+        viewportH: 1080,
+        devicePixelRatio: 1,
+        target: { kind: "element" as const },
+      },
+    ],
+    type: "bug",
+    message: "Test annotation message",
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+describe("launcher — annotation:complete integration", () => {
+  afterEach(() => {
+    // Clean up any siteping-widget elements left in the DOM
+    for (const el of document.querySelectorAll("siteping-widget")) {
+      el.remove();
+    }
+    for (const el of document.querySelectorAll('[role="status"]')) {
+      el.remove();
+    }
+    capturedBus = null;
+    vi.clearAllMocks();
+    mockGetIdentity.mockReturnValue({ name: "Test User", email: "test@example.com" });
+    mockMarkersFocusFeedback.mockReturnValue(false);
+    // Reset any test-set URL — jsdom keeps it across cases otherwise.
+    if (window.location.search) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // annotation:complete -> sendFeedback
+  // -------------------------------------------------------------------------
+
+  describe("annotation:complete triggers sendFeedback", () => {
+    it("calls sendFeedback with correct payload shape on annotation:complete", async () => {
+      const response = makeFeedbackResponse();
+      mockSendFeedback.mockResolvedValue(response);
+
+      const instance = launch(defaultConfig());
+      expect(capturedBus).not.toBeNull();
+
+      // Emit annotation:complete event on the captured internal bus
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      // Wait for async handler to process
+      await vi.waitFor(() => {
+        expect(mockSendFeedback).toHaveBeenCalledOnce();
+      });
+
+      const payload = mockSendFeedback.mock.calls[0]![0];
+      expect(payload).toMatchObject({
+        projectName: "test-project",
+        type: "bug",
+        message: "Test annotation message",
+      });
+      expect(payload.annotations).toHaveLength(1);
+      expect(payload.authorName).toBe("Test User");
+      expect(payload.authorEmail).toBe("test@example.com");
+
+      instance.destroy();
+    });
+
+    it("passes screenshotDataUrl and screenshotRegion from annotation:complete into the payload", async () => {
+      mockSendFeedback.mockResolvedValue(makeFeedbackResponse());
+
+      const instance = launch(defaultConfig());
+      const region = { xPct: 0.25, yPct: 0.1, wPct: 0.5, hPct: 0.4 };
+      capturedBus!.emit("annotation:complete", {
+        ...makeAnnotationCompleteData(),
+        screenshotDataUrl: "data:image/jpeg;base64,CAP",
+        screenshotRegion: region,
+      });
+
+      await vi.waitFor(() => {
+        expect(mockSendFeedback).toHaveBeenCalledOnce();
+      });
+
+      const payload = mockSendFeedback.mock.calls[0]![0];
+      expect(payload.screenshotDataUrl).toBe("data:image/jpeg;base64,CAP");
+      expect(payload.screenshotRegion).toEqual(region);
+
+      instance.destroy();
+    });
+
+    it("defaults screenshotDataUrl and screenshotRegion to null when capture was skipped", async () => {
+      mockSendFeedback.mockResolvedValue(makeFeedbackResponse());
+
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        expect(mockSendFeedback).toHaveBeenCalledOnce();
+      });
+
+      const payload = mockSendFeedback.mock.calls[0]![0];
+      expect(payload.screenshotDataUrl).toBeNull();
+      expect(payload.screenshotRegion).toBeNull();
+
+      instance.destroy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // feedback:sent event
+  // -------------------------------------------------------------------------
+
+  describe("feedback:sent event", () => {
+    it("emits feedback:sent after successful submission", async () => {
+      const response = makeFeedbackResponse({ id: "fb-sent-1" });
+      mockSendFeedback.mockResolvedValue(response);
+
+      const feedbackSentListener = vi.fn();
+      const instance = launch(defaultConfig({ onFeedbackSent: feedbackSentListener }));
+      expect(capturedBus).not.toBeNull();
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        expect(feedbackSentListener).toHaveBeenCalledWith(expect.objectContaining({ id: "fb-sent-1" }));
+      });
+
+      instance.destroy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Live region text
+  // -------------------------------------------------------------------------
+
+  describe("live region", () => {
+    it("sets live region text after successful submission", async () => {
+      const response = makeFeedbackResponse();
+      mockSendFeedback.mockResolvedValue(response);
+
+      const instance = launch(defaultConfig());
+      expect(capturedBus).not.toBeNull();
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        const liveRegion = document.querySelector<HTMLElement>('[role="status"][aria-live="polite"]');
+        expect(liveRegion).not.toBeNull();
+        expect(liveRegion!.textContent).not.toBe("");
+      });
+
+      instance.destroy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Identity modal
+  // -------------------------------------------------------------------------
+
+  describe("identity modal", () => {
+    it("uses stored identity when available (no modal shown)", async () => {
+      const response = makeFeedbackResponse();
+      mockSendFeedback.mockResolvedValue(response);
+
+      const instance = launch(defaultConfig());
+      expect(capturedBus).not.toBeNull();
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        expect(mockSendFeedback).toHaveBeenCalledOnce();
+      });
+
+      // No identity modal should appear — identity was stored
+      const widget = document.querySelector("siteping-widget");
+      const shadow = widget?.shadowRoot;
+      // Check for identity modal specifically (exclude DetailView's .sp-detail dialog)
+      const modal = shadow?.querySelector('[role="dialog"]:not(.sp-detail):not(.sp-shortcuts-overlay)') ?? null;
+      expect(modal).toBeNull();
+
+      instance.destroy();
+    });
+
+    it("shows identity modal when no stored identity", async () => {
+      // Make getIdentity return null to trigger the modal
+      mockGetIdentity.mockReturnValue(null);
+
+      const instance = launch(defaultConfig());
+      expect(capturedBus).not.toBeNull();
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      // The identity modal is appended to the shadow root
+      await vi.waitFor(() => {
+        const widget = document.querySelector("siteping-widget");
+        expect(widget).not.toBeNull();
+        const shadow = widget!.shadowRoot;
+        if (shadow) {
+          // Modal should be present inside the shadow root
+          const modal = shadow.querySelector('[role="dialog"]');
+          expect(modal).not.toBeNull();
+        }
+      });
+
+      instance.destroy();
+    });
+
+    // Regression: issue #126. The popup stays visible during submission since
+    // #114, and both the popup and the shadow host sit at Z_INDEX_MAX on
+    // document.body. Equal z-index resolves by source order, so without the
+    // re-append the popup (mounted after the host during init) would render
+    // above the identity prompt that lives inside the shadow root.
+    it("moves the shadow host to the end of <body> so identity prompt wins z-index over the popup", async () => {
+      mockGetIdentity.mockReturnValue(null);
+
+      const instance = launch(defaultConfig());
+      expect(capturedBus).not.toBeNull();
+
+      // Simulate a popup-like sibling already on document.body, mounted after
+      // the host (this is exactly the layout the real Popup creates — see
+      // popup.ts:258). Z_INDEX_MAX matches the host's z-index.
+      const fakePopup = document.createElement("div");
+      fakePopup.setAttribute("data-test-id", "fake-popup");
+      fakePopup.style.cssText = "position:fixed;z-index:2147483647;";
+      document.body.appendChild(fakePopup);
+
+      const hostBefore = document.querySelector("siteping-widget")!;
+      const hostIndexBefore = Array.from(document.body.children).indexOf(hostBefore);
+      const popupIndexBefore = Array.from(document.body.children).indexOf(fakePopup);
+      expect(popupIndexBefore).toBeGreaterThan(hostIndexBefore);
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        const widget = document.querySelector("siteping-widget")!;
+        const shadow = widget.shadowRoot;
+        expect(shadow?.querySelector('[role="dialog"]')).not.toBeNull();
+      });
+
+      // After promptIdentity runs, the host must be the LAST sibling so the
+      // identity prompt inside its stacking context renders above the popup.
+      const hostAfter = document.querySelector("siteping-widget")!;
+      const hostIndexAfter = Array.from(document.body.children).indexOf(hostAfter);
+      const popupIndexAfter = Array.from(document.body.children).indexOf(fakePopup);
+      expect(hostIndexAfter).toBeGreaterThan(popupIndexAfter);
+
+      fakePopup.remove();
+      instance.destroy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // config.identity option — host-provided identity short-circuits modal/LS
+  // -------------------------------------------------------------------------
+
+  describe("config.identity option", () => {
+    it("uses config.identity without showing the modal when localStorage is empty", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const response = makeFeedbackResponse({ authorName: "Host User", authorEmail: "host@example.com" });
+      mockSendFeedback.mockResolvedValue(response);
+
+      const instance = launch(defaultConfig({ identity: { name: "Host User", email: "host@example.com" } }));
+      expect(capturedBus).not.toBeNull();
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        expect(mockSendFeedback).toHaveBeenCalledOnce();
+      });
+
+      const payload = mockSendFeedback.mock.calls[0]![0];
+      expect(payload.authorName).toBe("Host User");
+      expect(payload.authorEmail).toBe("host@example.com");
+
+      // No identity modal should appear — config short-circuits the prompt
+      const widget = document.querySelector("siteping-widget");
+      const shadow = widget?.shadowRoot;
+      const modal = shadow?.querySelector('[role="dialog"]:not(.sp-detail):not(.sp-shortcuts-overlay)') ?? null;
+      expect(modal).toBeNull();
+
+      instance.destroy();
+    });
+
+    it("config.identity wins over a stored localStorage identity", async () => {
+      mockGetIdentity.mockReturnValue({ name: "LocalStorage User", email: "ls@example.com" });
+      const response = makeFeedbackResponse();
+      mockSendFeedback.mockResolvedValue(response);
+
+      const instance = launch(defaultConfig({ identity: { name: "Host User", email: "host@example.com" } }));
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        expect(mockSendFeedback).toHaveBeenCalledOnce();
+      });
+
+      const payload = mockSendFeedback.mock.calls[0]![0];
+      expect(payload.authorName).toBe("Host User");
+      expect(payload.authorEmail).toBe("host@example.com");
+
+      instance.destroy();
+    });
+
+    it("does not write config.identity to localStorage", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const response = makeFeedbackResponse();
+      mockSendFeedback.mockResolvedValue(response);
+
+      const instance = launch(defaultConfig({ identity: { name: "Host User", email: "host@example.com" } }));
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        expect(mockSendFeedback).toHaveBeenCalledOnce();
+      });
+
+      // Host stays the source of truth — no persistence side-effect.
+      expect(mockSaveIdentity).not.toHaveBeenCalled();
+
+      instance.destroy();
+    });
+
+    it("falls back to stored identity when config.identity is unset", async () => {
+      mockGetIdentity.mockReturnValue({ name: "LocalStorage User", email: "ls@example.com" });
+      const response = makeFeedbackResponse({
+        authorName: "LocalStorage User",
+        authorEmail: "ls@example.com",
+      });
+      mockSendFeedback.mockResolvedValue(response);
+
+      const instance = launch(defaultConfig());
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        expect(mockSendFeedback).toHaveBeenCalledOnce();
+      });
+
+      const payload = mockSendFeedback.mock.calls[0]![0];
+      expect(payload.authorName).toBe("LocalStorage User");
+      expect(payload.authorEmail).toBe("ls@example.com");
+
+      instance.destroy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // deepLink option — auto-focus annotation when ?siteping=<id> is set
+  // -------------------------------------------------------------------------
+
+  describe("deepLink option", () => {
+    it("does not read the URL when deepLink is omitted (default off)", async () => {
+      mockGetFeedbacks.mockResolvedValueOnce({
+        feedbacks: [makeFeedbackResponse({ id: "fb-deep-1" })],
+        total: 1,
+      });
+      window.history.replaceState(null, "", "/?siteping=fb-deep-1");
+
+      const instance = launch(defaultConfig());
+
+      // Initial getFeedbacks resolves and renders markers — wait for that.
+      await vi.waitFor(() => {
+        expect(mockMarkersRender).toHaveBeenCalled();
+      });
+
+      expect(mockMarkersFocusFeedback).not.toHaveBeenCalled();
+
+      instance.destroy();
+    });
+
+    it("calls focusFeedback with the id from ?siteping=<id> when deepLink is true", async () => {
+      mockGetFeedbacks.mockResolvedValueOnce({
+        feedbacks: [makeFeedbackResponse({ id: "fb-deep-1" })],
+        total: 1,
+      });
+      mockMarkersFocusFeedback.mockReturnValueOnce(true);
+      window.history.replaceState(null, "", "/?siteping=fb-deep-1");
+
+      const instance = launch(defaultConfig({ deepLink: true }));
+
+      await vi.waitFor(() => {
+        expect(mockMarkersFocusFeedback).toHaveBeenCalledWith("fb-deep-1");
+      });
+
+      instance.destroy();
+    });
+
+    it("uses the custom param name when deepLink: { param: 'fb' }", async () => {
+      mockGetFeedbacks.mockResolvedValueOnce({
+        feedbacks: [makeFeedbackResponse({ id: "fb-deep-2" })],
+        total: 1,
+      });
+      mockMarkersFocusFeedback.mockReturnValueOnce(true);
+      window.history.replaceState(null, "", "/?fb=fb-deep-2&siteping=ignored");
+
+      const instance = launch(defaultConfig({ deepLink: { param: "fb" } }));
+
+      await vi.waitFor(() => {
+        expect(mockMarkersFocusFeedback).toHaveBeenCalledWith("fb-deep-2");
+      });
+      // The default "siteping" key must not leak in when a custom param is configured.
+      expect(mockMarkersFocusFeedback).not.toHaveBeenCalledWith("ignored");
+
+      instance.destroy();
+    });
+
+    it("does not call focusFeedback when the configured param is absent", async () => {
+      mockGetFeedbacks.mockResolvedValueOnce({
+        feedbacks: [makeFeedbackResponse({ id: "fb-deep-3" })],
+        total: 1,
+      });
+      // URL carries some other key but not `siteping`.
+      window.history.replaceState(null, "", "/?other=value");
+
+      const instance = launch(defaultConfig({ deepLink: true }));
+
+      await vi.waitFor(() => {
+        expect(mockMarkersRender).toHaveBeenCalled();
+      });
+
+      expect(mockMarkersFocusFeedback).not.toHaveBeenCalled();
+
+      instance.destroy();
+    });
+
+    it("calls focusFeedback even when the id does not match (false return is OK)", async () => {
+      mockGetFeedbacks.mockResolvedValueOnce({
+        feedbacks: [makeFeedbackResponse({ id: "fb-deep-4" })],
+        total: 1,
+      });
+      mockMarkersFocusFeedback.mockReturnValueOnce(false);
+      window.history.replaceState(null, "", "/?siteping=does-not-exist");
+
+      const instance = launch(defaultConfig({ deepLink: true }));
+
+      // Still calls focusFeedback — the manager decides whether the id resolves.
+      await vi.waitFor(() => {
+        expect(mockMarkersFocusFeedback).toHaveBeenCalledWith("does-not-exist");
+      });
+
+      instance.destroy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // instance.focusFeedback — imperative entry point
+  // -------------------------------------------------------------------------
+
+  describe("instance.focusFeedback", () => {
+    it("delegates to the MarkerManager and returns its result", () => {
+      mockMarkersFocusFeedback.mockReturnValueOnce(true);
+      const instance = launch(defaultConfig());
+
+      const result = instance.focusFeedback("fb-imperative-1");
+
+      expect(mockMarkersFocusFeedback).toHaveBeenCalledWith("fb-imperative-1");
+      expect(result).toBe(true);
+
+      instance.destroy();
+    });
+
+    it("returns false when the MarkerManager has no matching entry", () => {
+      mockMarkersFocusFeedback.mockReturnValueOnce(false);
+      const instance = launch(defaultConfig());
+
+      expect(instance.focusFeedback("unknown-id")).toBe(false);
+
+      instance.destroy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Identity modal interactions (cover promptIdentity flows)
+  // -------------------------------------------------------------------------
+
+  describe("identity modal interactions", () => {
+    /**
+     * Wait for the identity modal to appear in shadow root and return its parts.
+     */
+    async function getIdentityModal(): Promise<{
+      backdrop: HTMLElement;
+      modal: HTMLElement;
+      nameInput: HTMLInputElement;
+      emailInput: HTMLInputElement;
+      cancelBtn: HTMLButtonElement;
+      submitBtn: HTMLButtonElement;
+    }> {
+      const widget = document.querySelector("siteping-widget");
+      if (!widget) throw new Error("widget not found");
+      const shadow = widget.shadowRoot;
+      if (!shadow) throw new Error("shadow root not found");
+
+      // The identity modal has aria-labelledby starting with "sp-identity-title-"
+      let modal: HTMLElement | null = null;
+      await vi.waitFor(() => {
+        const candidates = shadow.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]');
+        for (const c of candidates) {
+          const labelled = c.getAttribute("aria-labelledby") ?? "";
+          if (labelled.startsWith("sp-identity-title-")) {
+            modal = c;
+            break;
+          }
+        }
+        expect(modal).not.toBeNull();
+      });
+      const m = modal as unknown as HTMLElement;
+      const backdrop = m.parentElement as HTMLElement;
+      const nameInput = m.querySelector<HTMLInputElement>('input[type="text"]')!;
+      const emailInput = m.querySelector<HTMLInputElement>('input[type="email"]')!;
+      const buttons = m.querySelectorAll<HTMLButtonElement>("button");
+      const cancelBtn = buttons[0]!;
+      const submitBtn = buttons[1]!;
+      return { backdrop, modal: m, nameInput, emailInput, cancelBtn, submitBtn };
+    }
+
+    it("submits valid identity when user fills inputs and clicks Submit", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const response = makeFeedbackResponse({ id: "fb-modal-submit" });
+      mockSendFeedback.mockResolvedValue(response);
+
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      const { nameInput, emailInput, submitBtn } = await getIdentityModal();
+      nameInput.value = "Alice";
+      emailInput.value = "alice@example.com";
+
+      submitBtn.click();
+
+      // Wait for submission — sendFeedback should be called after the modal closes
+      await vi.waitFor(
+        () => {
+          expect(mockSendFeedback).toHaveBeenCalledOnce();
+        },
+        { timeout: 1500 },
+      );
+
+      const payload = mockSendFeedback.mock.calls[0]![0];
+      expect(payload.authorName).toBe("Alice");
+      expect(payload.authorEmail).toBe("alice@example.com");
+
+      instance.destroy();
+    });
+
+    it("returns early on Submit when name is empty (no closeModal)", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      const { nameInput, emailInput, submitBtn, modal } = await getIdentityModal();
+      nameInput.value = "";
+      emailInput.value = "alice@example.com";
+
+      submitBtn.click();
+
+      // sendFeedback should NOT be called — modal still open
+      await new Promise((r) => setTimeout(r, 50));
+      expect(mockSendFeedback).not.toHaveBeenCalled();
+      // Modal still in DOM (not removed)
+      expect(modal.isConnected).toBe(true);
+
+      instance.destroy();
+    });
+
+    it("returns early on Submit when email is empty", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      const { nameInput, emailInput, submitBtn, modal } = await getIdentityModal();
+      nameInput.value = "Alice";
+      emailInput.value = "";
+
+      submitBtn.click();
+
+      await new Promise((r) => setTimeout(r, 50));
+      expect(mockSendFeedback).not.toHaveBeenCalled();
+      expect(modal.isConnected).toBe(true);
+
+      instance.destroy();
+    });
+
+    it("marks email border red on Submit with invalid email format", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      const { nameInput, emailInput, submitBtn, modal } = await getIdentityModal();
+      nameInput.value = "Alice";
+      emailInput.value = "not-an-email";
+
+      submitBtn.click();
+
+      // Border style should change, modal should still be open
+      await new Promise((r) => setTimeout(r, 50));
+      expect(emailInput.style.borderColor).toBeTruthy();
+      expect(emailInput.style.borderColor).not.toBe("");
+      expect(mockSendFeedback).not.toHaveBeenCalled();
+      expect(modal.isConnected).toBe(true);
+
+      instance.destroy();
+    });
+
+    it("Cancel button click closes modal and aborts feedback submission", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      const { cancelBtn } = await getIdentityModal();
+      cancelBtn.click();
+
+      // Wait for closeModal setTimeout (~250ms) — sendFeedback should never fire
+      await new Promise((r) => setTimeout(r, 350));
+      expect(mockSendFeedback).not.toHaveBeenCalled();
+
+      instance.destroy();
+    });
+
+    it("emits submission:cancelled (not feedback:error) when the identity prompt is cancelled", async () => {
+      // Cancelling the identity prompt is a benign user action — it must
+      // unblock the popup's pending submit handler via `submission:cancelled`
+      // WITHOUT firing `feedback:error` (so `config.onError` is not called).
+      mockGetIdentity.mockReturnValue(null);
+      const onError = vi.fn();
+      const instance = launch(defaultConfig({ onError }));
+
+      const errorListener = vi.fn();
+      const cancelledListener = vi.fn();
+      capturedBus!.on("feedback:error", errorListener);
+      capturedBus!.on("submission:cancelled", cancelledListener);
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+      const { cancelBtn } = await getIdentityModal();
+      cancelBtn.click();
+
+      await vi.waitFor(
+        () => {
+          expect(cancelledListener).toHaveBeenCalledOnce();
+        },
+        { timeout: 1000 },
+      );
+      // The benign cancellation must NOT surface as an error.
+      expect(errorListener).not.toHaveBeenCalled();
+      expect(onError).not.toHaveBeenCalled();
+      expect(mockSendFeedback).not.toHaveBeenCalled();
+
+      instance.destroy();
+    });
+
+    it("Escape key closes modal and aborts submission", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      const { backdrop } = await getIdentityModal();
+      backdrop.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+
+      await new Promise((r) => setTimeout(r, 350));
+      expect(mockSendFeedback).not.toHaveBeenCalled();
+
+      instance.destroy();
+    });
+
+    it("Tab key on the last focusable element wraps focus to the first", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      const { backdrop, modal, nameInput, submitBtn } = await getIdentityModal();
+      // Manually set the last button as the active element
+      submitBtn.focus();
+
+      // Spy on focus to confirm cycling — directly check that preventDefault was called
+      const ev = new KeyboardEvent("keydown", { key: "Tab", bubbles: true });
+      const preventSpy = vi.spyOn(ev, "preventDefault");
+      backdrop.dispatchEvent(ev);
+
+      // The handler should prevent default and refocus the first element (nameInput)
+      // In jsdom, modal.contains(activeElement) checks the shadow root's activeElement
+      // — the launcher uses shadowRoot.activeElement, so we just confirm the handler ran
+      // by checking that preventDefault was called when the active element matches the last
+      expect(preventSpy).toHaveBeenCalled();
+      // nameInput should still be a known element (no error thrown)
+      expect(nameInput).toBeDefined();
+      expect(modal.contains(submitBtn)).toBe(true);
+
+      instance.destroy();
+    });
+
+    it("Shift+Tab on the first focusable element wraps focus to the last", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      const { backdrop, modal, nameInput, submitBtn } = await getIdentityModal();
+      nameInput.focus();
+
+      const ev = new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true });
+      const preventSpy = vi.spyOn(ev, "preventDefault");
+      backdrop.dispatchEvent(ev);
+
+      expect(preventSpy).toHaveBeenCalled();
+      expect(modal.contains(nameInput)).toBe(true);
+      expect(submitBtn).toBeDefined();
+
+      instance.destroy();
+    });
+
+    it("Tab key when no focus inside modal still triggers focus trap (refocus first)", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      const { backdrop, modal } = await getIdentityModal();
+      // Move focus outside the modal
+      const outside = document.createElement("button");
+      document.body.appendChild(outside);
+      outside.focus();
+
+      const ev = new KeyboardEvent("keydown", { key: "Tab", bubbles: true });
+      const preventSpy = vi.spyOn(ev, "preventDefault");
+      backdrop.dispatchEvent(ev);
+
+      // !modal.contains(active) branch → preventDefault + refocus first
+      expect(preventSpy).toHaveBeenCalled();
+      expect(modal.isConnected).toBe(true);
+
+      outside.remove();
+      instance.destroy();
+    });
+
+    it("non-Tab/Escape keys don't close the modal", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      const { backdrop, modal } = await getIdentityModal();
+
+      backdrop.dispatchEvent(new KeyboardEvent("keydown", { key: "a", bubbles: true }));
+      backdrop.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+
+      // Modal still open, no submission
+      await new Promise((r) => setTimeout(r, 50));
+      expect(modal.isConnected).toBe(true);
+      expect(mockSendFeedback).not.toHaveBeenCalled();
+
+      instance.destroy();
+    });
+
+    it("clicking the backdrop (outside modal) closes the modal", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      const { backdrop } = await getIdentityModal();
+      // Synthesize a click whose target is the backdrop itself (not bubbled from modal)
+      const ev = new MouseEvent("click", { bubbles: true });
+      Object.defineProperty(ev, "target", { value: backdrop });
+      backdrop.dispatchEvent(ev);
+
+      await new Promise((r) => setTimeout(r, 350));
+      expect(mockSendFeedback).not.toHaveBeenCalled();
+
+      instance.destroy();
+    });
+
+    it("clicking the modal (not backdrop) does not close it", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      const { backdrop, modal } = await getIdentityModal();
+      // Click event with target === modal (not backdrop) — guard does nothing
+      const ev = new MouseEvent("click", { bubbles: true });
+      Object.defineProperty(ev, "target", { value: modal });
+      backdrop.dispatchEvent(ev);
+
+      await new Promise((r) => setTimeout(r, 50));
+      // Modal still attached
+      expect(modal.isConnected).toBe(true);
+
+      instance.destroy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // crypto.randomUUID failure fallback (line 207-208)
+  // -------------------------------------------------------------------------
+
+  describe("clientId fallback", () => {
+    it("falls back to Date.now()-based id when crypto.randomUUID throws", async () => {
+      const origRandomUUID = (globalThis.crypto as Crypto & { randomUUID: () => string }).randomUUID;
+      Object.defineProperty(globalThis.crypto, "randomUUID", {
+        value: () => {
+          throw new Error("Insecure context");
+        },
+        writable: true,
+        configurable: true,
+      });
+
+      try {
+        const response = makeFeedbackResponse();
+        mockSendFeedback.mockResolvedValue(response);
+
+        const instance = launch(defaultConfig());
+        capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+        await vi.waitFor(() => {
+          expect(mockSendFeedback).toHaveBeenCalledOnce();
+        });
+
+        const payload = mockSendFeedback.mock.calls[0]![0];
+        // Fallback format: "<timestamp>-<random>"
+        expect(payload.clientId).toMatch(/^\d+-[a-z0-9]+$/);
+
+        instance.destroy();
+      } finally {
+        Object.defineProperty(globalThis.crypto, "randomUUID", {
+          value: origRandomUUID,
+          writable: true,
+          configurable: true,
+        });
+      }
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Initial markers load failure (line 247)
+  // -------------------------------------------------------------------------
+
+  describe("initial markers load failure", () => {
+    it("logs error when getFeedbacks rejects on initial load (debug mode)", async () => {
+      const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+      mockGetFeedbacks.mockRejectedValueOnce(new Error("Network down"));
+
+      try {
+        const instance = launch(defaultConfig({ debug: true }));
+
+        // Wait for the rejection handler to fire
+        await vi.waitFor(() => {
+          const errCalls = debugSpy.mock.calls.filter(
+            (c: unknown[]) => typeof c[1] === "string" && c[1].includes("Failed to load initial markers"),
+          );
+          expect(errCalls.length).toBeGreaterThan(0);
+        });
+
+        instance.destroy();
+      } finally {
+        debugSpy.mockRestore();
+        mockGetFeedbacks.mockResolvedValue({ feedbacks: [], total: 0 });
+      }
+    });
+
+    it("does not throw when getFeedbacks rejects in non-debug mode", async () => {
+      mockGetFeedbacks.mockRejectedValueOnce(new Error("Network down"));
+
+      try {
+        const instance = launch(defaultConfig());
+        // Just give the rejection a chance to settle
+        await new Promise((r) => setTimeout(r, 20));
+        // No assertion needed — if anything threw, the test would fail
+        instance.destroy();
+      } finally {
+        mockGetFeedbacks.mockResolvedValue({ feedbacks: [], total: 0 });
+      }
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Concurrency guard
+  // -------------------------------------------------------------------------
+
+  describe("concurrency guard", () => {
+    it("prevents duplicate submissions from concurrent annotation:complete events", async () => {
+      // Make sendFeedback slow so we can test concurrent calls
+      let resolveFirst!: (value: FeedbackResponse) => void;
+      const firstCallPromise = new Promise<FeedbackResponse>((resolve) => {
+        resolveFirst = resolve;
+      });
+      mockSendFeedback.mockReturnValueOnce(firstCallPromise);
+
+      const instance = launch(defaultConfig());
+      expect(capturedBus).not.toBeNull();
+
+      const data = makeAnnotationCompleteData();
+
+      // Emit two rapid annotation:complete events
+      capturedBus!.emit("annotation:complete", data);
+      capturedBus!.emit("annotation:complete", { ...data, message: "Second submission" });
+
+      // Only one sendFeedback call should be made (guard blocks second)
+      expect(mockSendFeedback).toHaveBeenCalledTimes(1);
+
+      // Resolve the first call to release the guard
+      resolveFirst(makeFeedbackResponse());
+
+      await vi.waitFor(() => {
+        // Guard released — but second was already dropped
+        expect(mockSendFeedback).toHaveBeenCalledTimes(1);
+      });
+
+      instance.destroy();
+    });
+
+    it("a dropped concurrent annotation:complete emits submission:cancelled (does not silently hang a waiter)", async () => {
+      // The guard must not *silently* drop the second event: a dropped event
+      // would leave a waiting `runSubmission` listener hung forever. It emits
+      // `submission:cancelled` instead so the waiter unblocks as a benign abort.
+      let resolveFirst!: (value: FeedbackResponse) => void;
+      mockSendFeedback.mockReturnValueOnce(
+        new Promise<FeedbackResponse>((resolve) => {
+          resolveFirst = resolve;
+        }),
+      );
+
+      const instance = launch(defaultConfig());
+      expect(capturedBus).not.toBeNull();
+
+      const cancelledListener = vi.fn();
+      const errorListener = vi.fn();
+      capturedBus!.on("submission:cancelled", cancelledListener);
+      capturedBus!.on("feedback:error", errorListener);
+
+      const data = makeAnnotationCompleteData();
+      capturedBus!.emit("annotation:complete", data);
+      capturedBus!.emit("annotation:complete", { ...data, message: "Second submission" });
+
+      // The dropped second event surfaces as a benign cancellation, not an error.
+      expect(cancelledListener).toHaveBeenCalledOnce();
+      expect(errorListener).not.toHaveBeenCalled();
+
+      resolveFirst(makeFeedbackResponse());
+      await vi.waitFor(() => {
+        expect(mockSendFeedback).toHaveBeenCalledTimes(1);
+      });
+
+      instance.destroy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Double init guard
+  // -------------------------------------------------------------------------
+
+  describe("double init guard", () => {
+    it("returns existing instance on duplicate launch() calls", () => {
+      const instance1 = launch(defaultConfig());
+      const instance2 = launch(defaultConfig());
+
+      // Both should be the same instance
+      expect(instance1).toBe(instance2);
+
+      instance1.destroy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // FAB unread-feedback badge wire-up
+  // -------------------------------------------------------------------------
+
+  describe("FAB unread badge", () => {
+    function getBadge(): HTMLElement | null {
+      const widget = document.querySelector("siteping-widget");
+      return widget!.shadowRoot!.querySelector<HTMLElement>(".sp-fab-badge");
+    }
+
+    it("renders the badge with the open count emitted via markers:changed", () => {
+      const instance = launch(defaultConfig());
+      expect(capturedBus).not.toBeNull();
+      expect(getBadge()).toBeNull();
+
+      capturedBus!.emit("markers:changed", 3);
+
+      const badge = getBadge();
+      expect(badge).not.toBeNull();
+      expect(badge!.textContent).toBe("3");
+
+      instance.destroy();
+    });
+
+    it("removes the badge when the open count drops to 0", () => {
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("markers:changed", 2);
+      expect(getBadge()).not.toBeNull();
+
+      capturedBus!.emit("markers:changed", 0);
+
+      expect(getBadge()).toBeNull();
+
+      instance.destroy();
+    });
+
+    it("formats counts above 99 as '99+'", () => {
+      const instance = launch(defaultConfig());
+
+      capturedBus!.emit("markers:changed", 150);
+
+      expect(getBadge()!.textContent).toBe("99+");
+
+      instance.destroy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // URL sanitization
+  // -------------------------------------------------------------------------
+
+  describe("URL identifier (scope-driven)", () => {
+    it("annotation:complete uses scope.url (pathname by default — query string never leaks)", async () => {
+      const response = makeFeedbackResponse();
+      mockSendFeedback.mockResolvedValue(response);
+
+      // Sensitive params would have leaked under the old "sanitize full URL"
+      // approach. The contract is now "scope identifier, not current URL":
+      // default scope returns `pathname`, so query strings are absent by
+      // construction.
+      const sensitiveUrl = "http://localhost/orders/123?token=abc&key=def&secret=ghi&auth=jkl&page=1";
+      Object.defineProperty(window, "location", {
+        value: new URL(sensitiveUrl),
+        writable: true,
+        configurable: true,
+      });
+
+      const instance = launch(defaultConfig());
+      expect(capturedBus).not.toBeNull();
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        expect(mockSendFeedback).toHaveBeenCalledOnce();
+      });
+
+      const payload = mockSendFeedback.mock.calls[0]![0];
+      // Pathname only — no origin, no query, no fragment.
+      expect(payload.url).toBe("/orders/123");
+      expect(payload.url).not.toContain("?");
+      expect(payload.url).not.toContain("token=");
+      expect(payload.url).not.toContain("key=");
+      expect(payload.url).not.toContain("secret=");
+      expect(payload.url).not.toContain("auth=");
+
+      instance.destroy();
+    });
+
+    it("annotation:complete honours a custom getPageScope().url", async () => {
+      const response = makeFeedbackResponse();
+      mockSendFeedback.mockResolvedValue(response);
+
+      const instance = launch({
+        ...defaultConfig(),
+        getPageScope: () => ({ url: "/custom/scope/key", urlPattern: "/custom/:id" }),
+      });
+      expect(capturedBus).not.toBeNull();
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        expect(mockSendFeedback).toHaveBeenCalledOnce();
+      });
+
+      const payload = mockSendFeedback.mock.calls[0]![0];
+      expect(payload.url).toBe("/custom/scope/key");
+      expect(payload.urlPattern).toBe("/custom/:id");
+
+      instance.destroy();
+    });
+
+    it("falls back to pathname when getPageScope() throws", async () => {
+      const response = makeFeedbackResponse();
+      mockSendFeedback.mockResolvedValue(response);
+
+      Object.defineProperty(window, "location", {
+        value: new URL("http://localhost/fallback/path"),
+        writable: true,
+        configurable: true,
+      });
+
+      const instance = launch({
+        ...defaultConfig(),
+        getPageScope: () => {
+          throw new Error("boom");
+        },
+      });
+      expect(capturedBus).not.toBeNull();
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        expect(mockSendFeedback).toHaveBeenCalledOnce();
+      });
+
+      const payload = mockSendFeedback.mock.calls[0]![0];
+      expect(payload.url).toBe("/fallback/path");
+      expect(payload.urlPattern).toBeNull();
+
+      instance.destroy();
+    });
+
+    it("does NOT add a marker when the response.url falls outside the current scope", async () => {
+      // The server may persist a feedback the widget submitted, but the
+      // panel.refresh() that follows could resolve to a different page (race
+      // with SPA navigation). The launcher compares response.url to scope.url
+      // and skips out-of-scope feedbacks so the user doesn't see a phantom
+      // marker for content they're no longer on.
+      const response = makeFeedbackResponse({ url: "/some-other-page" });
+      mockSendFeedback.mockResolvedValue(response);
+
+      const instance = launch({
+        ...defaultConfig(),
+        getPageScope: () => ({ url: "/current-page", urlPattern: null }),
+      });
+      expect(capturedBus).not.toBeNull();
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        expect(mockSendFeedback).toHaveBeenCalledOnce();
+      });
+
+      expect(mockMarkersAddFeedback).not.toHaveBeenCalled();
+
+      instance.destroy();
+    });
+
+    it("DOES add the marker when response.url matches scope.url", async () => {
+      // Inverse of the previous case — when the feedback's URL matches the
+      // current scope (or when scopeAnnotationsByUrl is off), the marker is
+      // added immediately so the user sees their submission land.
+      const response = makeFeedbackResponse({ url: "/current-page" });
+      mockSendFeedback.mockResolvedValue(response);
+
+      const instance = launch({
+        ...defaultConfig(),
+        getPageScope: () => ({ url: "/current-page", urlPattern: null }),
+      });
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        expect(mockMarkersAddFeedback).toHaveBeenCalledOnce();
+      });
+
+      instance.destroy();
+    });
+
+    it("DOES add the marker regardless of url when scopeAnnotationsByUrl is disabled", async () => {
+      // Legacy project-wide mode: the user opts out of scope filtering, so
+      // every feedback's marker is added on submit even if the URLs differ.
+      const response = makeFeedbackResponse({ url: "/some-other-page" });
+      mockSendFeedback.mockResolvedValue(response);
+
+      const instance = launch({
+        ...defaultConfig(),
+        scopeAnnotationsByUrl: false,
+        getPageScope: () => ({ url: "/current-page", urlPattern: null }),
+      });
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        expect(mockMarkersAddFeedback).toHaveBeenCalledOnce();
+      });
+
+      instance.destroy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Error handling
+  // -------------------------------------------------------------------------
+
+  describe("error handling", () => {
+    it("sendFeedback failure emits feedback:error and sets live region error text", async () => {
+      mockSendFeedback.mockRejectedValue(new Error("Network failure"));
+
+      const instance = launch(defaultConfig());
+      expect(capturedBus).not.toBeNull();
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        const liveRegion = document.querySelector<HTMLElement>('[role="status"][aria-live="polite"]');
+        expect(liveRegion).not.toBeNull();
+        expect(liveRegion!.textContent).not.toBe("");
+      });
+
+      instance.destroy();
+    });
+
+    it("onError callback is called on sendFeedback failure", async () => {
+      const error = new Error("Network failure");
+      mockSendFeedback.mockRejectedValue(error);
+
+      const onError = vi.fn();
+      const instance = launch(defaultConfig({ onError }));
+      expect(capturedBus).not.toBeNull();
+
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        expect(onError).toHaveBeenCalledWith(error);
+      });
+
+      instance.destroy();
+    });
+
+    it("non-Error rejections from sendFeedback are wrapped into Error instances", async () => {
+      // Reject with a string (non-Error) — launcher must wrap it
+      mockSendFeedback.mockRejectedValue("string error");
+
+      const onError = vi.fn();
+      const instance = launch(defaultConfig({ onError }));
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => {
+        expect(onError).toHaveBeenCalled();
+      });
+
+      const arg = onError.mock.calls[0]![0];
+      expect(arg).toBeInstanceOf(Error);
+      expect((arg as Error).message).toContain("string error");
+
+      instance.destroy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Focus trap edge cases — covers branches at lines 411, 414, 417, 422
+  // -------------------------------------------------------------------------
+
+  describe("identity modal focus trap edge cases", () => {
+    async function getModal(): Promise<{
+      backdrop: HTMLElement;
+      modal: HTMLElement;
+      nameInput: HTMLInputElement;
+      submitBtn: HTMLButtonElement;
+    }> {
+      const widget = document.querySelector("siteping-widget");
+      if (!widget) throw new Error("widget not found");
+      const shadow = widget.shadowRoot;
+      if (!shadow) throw new Error("shadow root not found");
+
+      let modal: HTMLElement | null = null;
+      await vi.waitFor(() => {
+        const candidates = shadow.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]');
+        for (const c of candidates) {
+          const labelled = c.getAttribute("aria-labelledby") ?? "";
+          if (labelled.startsWith("sp-identity-title-")) {
+            modal = c;
+            break;
+          }
+        }
+        expect(modal).not.toBeNull();
+      });
+      const m = modal as unknown as HTMLElement;
+      const backdrop = m.parentElement as HTMLElement;
+      const nameInput = m.querySelector<HTMLInputElement>('input[type="text"]')!;
+      const buttons = m.querySelectorAll<HTMLButtonElement>("button");
+      return { backdrop, modal: m, nameInput, submitBtn: buttons[1]! };
+    }
+
+    it("Tab when active is the last element wraps to first", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      const { backdrop, modal, submitBtn } = await getModal();
+
+      // Patch shadowRoot.activeElement to return the submitBtn (jsdom focus on
+      // shadow elements can be flaky in shadow root mode "open")
+      const shadow = modal.getRootNode() as ShadowRoot;
+      Object.defineProperty(shadow, "activeElement", { value: submitBtn, configurable: true });
+
+      const ev = new KeyboardEvent("keydown", { key: "Tab", bubbles: true });
+      const preventSpy = vi.spyOn(ev, "preventDefault");
+      backdrop.dispatchEvent(ev);
+
+      // active === last branch hit → preventDefault called and first focused
+      expect(preventSpy).toHaveBeenCalled();
+
+      instance.destroy();
+    });
+
+    it("Tab when active is in the middle (not last) does not preventDefault", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      const { backdrop, modal, nameInput } = await getModal();
+
+      // Patch shadow.activeElement to the nameInput (which is inside modal but not last)
+      const shadow = modal.getRootNode() as ShadowRoot;
+      Object.defineProperty(shadow, "activeElement", { value: nameInput, configurable: true });
+
+      const ev = new KeyboardEvent("keydown", { key: "Tab", bubbles: true });
+      const preventSpy = vi.spyOn(ev, "preventDefault");
+      backdrop.dispatchEvent(ev);
+
+      // The active element is in modal but not last → preventDefault should NOT be called
+      expect(preventSpy).not.toHaveBeenCalled();
+
+      instance.destroy();
+    });
+
+    it("Shift+Tab when active is in the middle (not first) does not preventDefault", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      const { backdrop, modal, submitBtn } = await getModal();
+
+      // Set active to submitBtn (last) — for Shift+Tab, this is "in middle" (not first)
+      // → no preventDefault
+      const shadow = modal.getRootNode() as ShadowRoot;
+      Object.defineProperty(shadow, "activeElement", { value: submitBtn, configurable: true });
+
+      const ev = new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true });
+      const preventSpy = vi.spyOn(ev, "preventDefault");
+      backdrop.dispatchEvent(ev);
+
+      // active is last (not first) and inside modal → no preventDefault for Shift+Tab
+      expect(preventSpy).not.toHaveBeenCalled();
+
+      instance.destroy();
+    });
+
+    it("Tab key with no focusable elements in modal returns without preventDefault", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      const { backdrop, modal } = await getModal();
+
+      // Strip every focusable child so the focus trap finds an empty list
+      const focusables = modal.querySelectorAll<HTMLElement>('input, button, [tabindex]:not([tabindex="-1"])');
+      for (const el of focusables) el.remove();
+
+      const ev = new KeyboardEvent("keydown", { key: "Tab", bubbles: true });
+      const preventSpy = vi.spyOn(ev, "preventDefault");
+      backdrop.dispatchEvent(ev);
+
+      // length === 0 → handler returns early; preventDefault not called
+      expect(preventSpy).not.toHaveBeenCalled();
+
+      instance.destroy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Locale dictionary swap — guards against a regression where non-English
+  // labels never reached the FAB and popup because `loadLocale()` resolved
+  // after the synchronous constructor had already baked the English fallback.
+  // -------------------------------------------------------------------------
+
+  describe("locale dictionary loading", () => {
+    it("re-localizes the FAB once the German chunk lands", async () => {
+      const instance = launch(defaultConfig({ locale: "de" }));
+
+      const widget = document.querySelector("siteping-widget")!;
+      const shadow = widget.shadowRoot!;
+      const fabBtn = shadow.querySelector<HTMLButtonElement>(".sp-fab")!;
+
+      // Wait for the German chunk to resolve and refreshLabels to run. The
+      // toolbar is visible by default, so the FAB's own label is the "hide" variant.
+      await vi.waitFor(() => {
+        expect(fabBtn.getAttribute("aria-label")).toBe("Werkzeuge ausblenden");
+        expect(mockAnnotatorRefreshLabels).toHaveBeenCalled();
+      });
+
+      // Toolbar item labels are German too
+      const chatItem = shadow.querySelector<HTMLButtonElement>('[data-item-id="chat"]')!;
+      expect(chatItem.getAttribute("aria-label")).toBe("Seitenleiste anzeigen");
+      expect(chatItem.querySelector(".sp-toolbar-label")?.textContent).toBe("Seitenleiste anzeigen");
+
+      instance.destroy();
+    });
+
+    it("does not call refreshLabels when locale is English (no chunk to wait for)", async () => {
+      const instance = launch(defaultConfig({ locale: "en" }));
+
+      // Microtask + an extra tick to let any accidental scheduling run.
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(mockAnnotatorRefreshLabels).not.toHaveBeenCalled();
+
+      instance.destroy();
+    });
+
+    it("still renders markers when loadLocale rejects (the .catch is load-bearing)", async () => {
+      // The launcher does `loadLocale(locale).catch(() => {})` and then
+      // `Promise.all([getFeedbacks, localeReady])`. Without that `.catch`, a
+      // failed locale chunk would reject the `Promise.all` and markers would
+      // silently stop rendering for every non-English locale. Mock the loader
+      // to reject and assert markers STILL render, no error escapes, and the
+      // refresh that follows is a harmless no-op (mocked Annotator).
+      const loadLocaleSpy = vi.spyOn(i18n, "loadLocale").mockRejectedValue(new Error("Failed to fetch locale chunk"));
+      mockGetFeedbacks.mockResolvedValueOnce({
+        feedbacks: [makeFeedbackResponse({ id: "fb-locale-fail" })],
+        total: 1,
+      });
+
+      try {
+        const instance = launch(defaultConfig({ locale: "de" }));
+
+        // Markers render despite the rejected locale chunk — the `.catch`
+        // kept `localeReady` resolved so `Promise.all` settled.
+        await vi.waitFor(() => {
+          expect(mockMarkersRender).toHaveBeenCalled();
+        });
+        expect(loadLocaleSpy).toHaveBeenCalledWith("de");
+
+        // `refreshLabels()` running after a failed load is a no-op — `t` just
+        // keeps returning the English fallback. It must not throw.
+        await vi.waitFor(() => {
+          expect(mockAnnotatorRefreshLabels).toHaveBeenCalled();
+        });
+
+        instance.destroy();
+      } finally {
+        loadLocaleSpy.mockRestore();
+      }
+    });
+
+    it("does not refresh labels when destroy() runs before the locale chunk resolves", async () => {
+      // The `localeReady.then(...)` block is guarded by `destroyed`. If the
+      // widget is torn down while the chunk is still in flight, neither
+      // `fab.refreshLabels()` nor `annotator.refreshLabels()` should run.
+      let resolveLocale!: () => void;
+      const loadLocaleSpy = vi.spyOn(i18n, "loadLocale").mockReturnValue(
+        new Promise((resolve) => {
+          resolveLocale = () => resolve(null);
+        }),
+      );
+
+      try {
+        const instance = launch(defaultConfig({ locale: "de" }));
+
+        // Destroy before the locale promise settles.
+        instance.destroy();
+
+        // Now let the locale chunk resolve — the `destroyed` guard must abort
+        // the refresh block.
+        resolveLocale();
+        await vi.waitFor(() => {
+          expect(loadLocaleSpy).toHaveBeenCalledWith("de");
+        });
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(mockAnnotatorRefreshLabels).not.toHaveBeenCalled();
+      } finally {
+        loadLocaleSpy.mockRestore();
+      }
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // auth config wiring — apiKey/headers flow into ApiClient + flushRetryQueue
+  // -------------------------------------------------------------------------
+
+  describe("auth config wiring", () => {
+    it("passes apiKey and headers from config to ApiClient and flushRetryQueue", () => {
+      const headers = { "X-Team": "acme" };
+      const instance = launch(defaultConfig({ apiKey: "widget-key", headers }));
+
+      expect(vi.mocked(ApiClient)).toHaveBeenCalledWith("/api/siteping", "test-project", {
+        apiKey: "widget-key",
+        headers,
+      });
+      expect(vi.mocked(flushRetryQueue)).toHaveBeenCalledWith(
+        "/api/siteping",
+        { name: "Test User", email: "test@example.com" },
+        { apiKey: "widget-key", headers },
+      );
+
+      instance.destroy();
+    });
+
+    it("passes an empty auth object when no auth is configured", () => {
+      const instance = launch(defaultConfig());
+
+      expect(vi.mocked(ApiClient)).toHaveBeenCalledWith("/api/siteping", "test-project", {
+        apiKey: undefined,
+        headers: undefined,
+      });
+
+      instance.destroy();
+    });
+  });
+});

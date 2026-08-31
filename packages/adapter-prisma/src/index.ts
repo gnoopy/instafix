@@ -1,0 +1,955 @@
+import { timingSafeEqual } from "node:crypto";
+import {
+  type FeedbackCreateInput,
+  type FeedbackPage,
+  type FeedbackPayload,
+  type FeedbackQuery,
+  type FeedbackRecord,
+  type FeedbackStatus,
+  type FeedbackType,
+  type FeedbackUpdateInput,
+  flattenAnnotation,
+  hasOwn,
+  isStoreDuplicate,
+  isStoreNotFound,
+  type ScreenshotStorage,
+  type SitepingStore,
+  toFeedbackUpdate,
+} from "@siteping/core";
+import {
+  feedbackCreateSchema,
+  feedbackDeleteSchema,
+  feedbackPatchSchema,
+  formatValidationErrors,
+  getQuerySchema,
+} from "./validation.js";
+import { dispatchWebhooks, type WebhookConfig } from "./webhooks.js";
+
+export type { ScreenshotStorage, SitepingStore } from "@siteping/core";
+export {
+  flattenAnnotation,
+  isStorePersistence,
+  StoreDuplicateError,
+  StoreNotFoundError,
+  StorePersistenceError,
+} from "@siteping/core";
+export type { FeedbackDeleteInput, FeedbackPatchInput, GetQueryInput } from "./validation.js";
+
+/**
+ * @deprecated The create wire shape is core's `FeedbackPayload` — import
+ * that instead. This alias is kept for one release cycle.
+ */
+export type FeedbackCreateSchemaInput = FeedbackPayload;
+export type {
+  DiscordWebhookPayload,
+  SlackWebhookPayload,
+  WebhookConfig,
+  WebhookPayloadMap,
+  WebhookType,
+} from "./webhooks.js";
+export { dispatchWebhook, dispatchWebhooks } from "./webhooks.js";
+
+// ---------------------------------------------------------------------------
+// Minimal PrismaClient shape expected by this adapter
+// ---------------------------------------------------------------------------
+
+/**
+ * Structural type for a Prisma model delegate (`prisma.sitepingFeedback`).
+ *
+ * Arguments are kept `unknown` so any Prisma version's generated client
+ * satisfies the constraint; the adapter assembles type-safe payloads
+ * internally before forwarding them.
+ *
+ * Members use **method syntax** (`create(args)`) rather than function-property
+ * syntax (`create: (args) => ...`) on purpose: under `strictFunctionTypes`,
+ * function-property parameters are checked *contravariantly*, so a real
+ * generated delegate — whose `create(args: SpecificArgs)` takes a type narrower
+ * than `unknown` — would fail to assign to `PrismaModelDelegate`. Method
+ * signatures are checked *bivariantly* on parameters, which is exactly what we
+ * want for structurally matching a third-party generated client (#99).
+ */
+export interface PrismaModelDelegate {
+  create(args: unknown): Promise<unknown>;
+  findMany(args: unknown): Promise<unknown[]>;
+  findUnique(args: unknown): Promise<unknown>;
+  update(args: unknown): Promise<unknown>;
+  delete(args: unknown): Promise<unknown>;
+  deleteMany(args: unknown): Promise<unknown>;
+  count(args: unknown): Promise<number>;
+}
+
+/**
+ * Compile-time regression guard for #99 — intentionally in `src/` because the
+ * package's `check` script (`tsc --noEmit`) only type-checks `src/`, and
+ * vitest transpiles tests without type-checking.
+ *
+ * `GeneratedDelegateProbe` mirrors a real generated client: every method
+ * declares args NARROWER than `unknown`. With method syntax the conditional
+ * below resolves to `true`; if `PrismaModelDelegate` ever regresses to
+ * function-property syntax (contravariant under `strictFunctionTypes`), it
+ * resolves to `false` and the `AssertTrue` constraint fails the build.
+ */
+type AssertTrue<T extends true> = T;
+interface GeneratedDelegateProbe {
+  create(args: { data: unknown; include?: unknown }): Promise<{ id: string }>;
+  findMany(args: { where?: unknown; include?: unknown }): Promise<{ id: string }[]>;
+  findUnique(args: { where: unknown }): Promise<{ id: string } | null>;
+  update(args: { where: unknown; data: unknown }): Promise<{ id: string }>;
+  delete(args: { where: unknown }): Promise<{ id: string }>;
+  deleteMany(args: { where?: unknown }): Promise<{ count: number }>;
+  count(args: { where?: unknown }): Promise<number>;
+}
+type _AssertDelegateBivariance = AssertTrue<GeneratedDelegateProbe extends PrismaModelDelegate ? true : false>;
+
+/**
+ * Minimal Prisma client shape expected by this adapter.
+ * Consumers pass their own `PrismaClient` instance at runtime — this interface
+ * defines the subset of methods the adapter actually uses, so it can be
+ * referenced in handler option types without importing `@prisma/client`.
+ */
+export interface SitepingPrismaClient {
+  sitepingFeedback: PrismaModelDelegate;
+}
+
+// ---------------------------------------------------------------------------
+// PrismaStore — SitepingStore implementation backed by Prisma
+// ---------------------------------------------------------------------------
+
+const INCLUDE_ANNOTATIONS = { annotations: true } as const;
+
+/**
+ * Prisma datasource providers whose generated client exposes `mode?: QueryMode`
+ * on string filters. Verified against Prisma 6.x by inspecting the generated
+ * `StringFilter` type per provider:
+ *   - postgresql, mongodb, cockroachdb → emit `mode?: QueryMode`
+ *   - mysql, sqlite, sqlserver → no `mode` field; passing it raises
+ *     `PrismaClientValidationError: Unknown argument 'mode'` at runtime.
+ * `postgres` is kept as a defensive alias in case `_activeProvider` ever
+ * surfaces the legacy spelling.
+ */
+const PROVIDERS_SUPPORTING_INSENSITIVE_MODE: ReadonlySet<string> = new Set([
+  "postgresql",
+  "postgres",
+  "mongodb",
+  "cockroachdb",
+]);
+
+/** Internal shape used to probe `PrismaClient` for the active provider. */
+interface PrismaClientProbe {
+  _activeProvider?: unknown;
+  _engineConfig?: { activeProvider?: unknown };
+  _engine?: { config?: { activeProvider?: unknown } };
+}
+
+/**
+ * Best-effort detection of the active Prisma provider for a runtime client.
+ *
+ * The provider is not part of any public API on `PrismaClient`. We probe a
+ * few known internal locations across Prisma 5.x and 6.x and fall back to
+ * `null` (treated as "unknown — assume default Postgres-style behaviour")
+ * when none match.
+ */
+function detectActiveProvider(prisma: unknown): string | null {
+  try {
+    const candidate = prisma as PrismaClientProbe | null | undefined;
+    const fromActive = candidate?._activeProvider;
+    if (typeof fromActive === "string") return fromActive;
+    const fromEngineConfig = candidate?._engineConfig?.activeProvider;
+    if (typeof fromEngineConfig === "string") return fromEngineConfig;
+    const fromEngine = candidate?._engine?.config?.activeProvider;
+    if (typeof fromEngine === "string") return fromEngine;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Options accepted by `PrismaStore`.
+ */
+export interface PrismaStoreOptions {
+  /**
+   * When `true`, the `?search=` filter is built with `mode: "insensitive"`
+   * (case-insensitive across all letters, including non-ASCII).
+   *
+   * When `false`, the filter is built without `mode` — uses each database's
+   * default `LIKE` semantics (case-insensitive ASCII on SQLite by default;
+   * case-sensitive on PostgreSQL with the standard `LIKE` operator;
+   * collation-driven on MySQL and SQL Server).
+   *
+   * When omitted, the value is auto-detected from the Prisma client's active
+   * provider: providers whose generated client exposes `mode?: QueryMode`
+   * (`postgresql`, `mongodb`, `cockroachdb`) get `true`; others (`mysql`,
+   * `sqlite`, `sqlserver`) get `false`. Unknown / undetectable providers
+   * default to `false` — `contains` without `mode` works on every provider;
+   * `mode: "insensitive"` throws on MySQL/SQLite/SQL Server, so the safer
+   * default is to omit it.
+   */
+  caseInsensitiveSearch?: boolean;
+  /**
+   * Optional storage backend for screenshots. Without it, the data URL is
+   * persisted inline on `Feedback.screenshotUrl` with a one-time warn.
+   */
+  screenshotStorage?: ScreenshotStorage | undefined;
+}
+
+/** `where` filter shape passed to `findMany` / `count`. Each field maps to a typed Prisma filter. */
+interface FeedbackWhereInput {
+  projectName: string;
+  type?: FeedbackType;
+  // Exact match (`status`) or bucket match (`{ in: [...] }` from `statuses`).
+  status?: FeedbackStatus | { in: FeedbackStatus[] };
+  url?: string;
+  urlPattern?: string;
+  message?: { contains: string; mode?: "insensitive" };
+}
+
+/**
+ * Prisma-backed implementation of `SitepingStore`.
+ *
+ * Wraps a PrismaClient to satisfy the abstract store interface.
+ *
+ * Pass `screenshotStorage` to externalise screenshots (S3, R2, B2, …) — the
+ * widget's data URL is uploaded and only the returned URL is persisted, so
+ * the database stays small. Without `screenshotStorage`, the data URL is
+ * persisted inline (logged once on first use as a heads-up).
+ */
+export class PrismaStore implements SitepingStore {
+  /** @internal */
+  private prisma: SitepingPrismaClient;
+  private readonly screenshotStorage: ScreenshotStorage | undefined;
+  /** Module-level flag would leak across PrismaStore instances in tests; use per-instance. */
+  private inlineFallbackWarned = false;
+  /** @internal */
+  private caseInsensitiveSearch: boolean;
+
+  constructor(prisma: SitepingPrismaClient, options: PrismaStoreOptions = {}) {
+    this.prisma = prisma;
+    this.screenshotStorage = options.screenshotStorage;
+    if (typeof options.caseInsensitiveSearch === "boolean") {
+      this.caseInsensitiveSearch = options.caseInsensitiveSearch;
+    } else {
+      const provider = detectActiveProvider(prisma);
+      // When the provider can't be detected, default to `false`: `contains`
+      // without `mode` works on every Prisma provider; `mode: "insensitive"`
+      // throws on MySQL/SQLite/SQL Server. Trades non-ASCII case-insensitivity
+      // on undetectable Postgres clients (rare — _activeProvider is set on
+      // every real Prisma 5/6 client) for not crashing on the others.
+      this.caseInsensitiveSearch = provider !== null && PROVIDERS_SUPPORTING_INSENSITIVE_MODE.has(provider);
+    }
+  }
+
+  async createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord> {
+    const screenshotUrl = await this.persistScreenshot(data.screenshotDataUrl, data.clientId);
+
+    return (await this.prisma.sitepingFeedback.create({
+      data: {
+        projectName: data.projectName,
+        type: data.type,
+        message: data.message,
+        status: data.status,
+        url: data.url,
+        urlPattern: data.urlPattern ?? null,
+        screenshotUrl,
+        // Persisted as JSON when the model has a `screenshotRegion Json?`
+        // column — same omit-when-null contract as `diagnostics` below, so
+        // hosts that haven't run `npx siteping sync` keep working.
+        ...(data.screenshotRegion ? { screenshotRegion: data.screenshotRegion } : {}),
+        // Persisted as JSON when the model has a `diagnostics Json?` column.
+        // Hosts that haven't run `npx siteping sync` keep their schema as-is
+        // and Prisma will throw if we pass an unknown column, so omit the
+        // key entirely when diagnostics is null.
+        ...(data.diagnostics ? { diagnostics: data.diagnostics } : {}),
+        viewport: data.viewport,
+        userAgent: data.userAgent,
+        authorName: data.authorName,
+        authorEmail: data.authorEmail,
+        clientId: data.clientId,
+        annotations: {
+          create: data.annotations.map((ann) => ({
+            cssSelector: ann.cssSelector,
+            xpath: ann.xpath,
+            textSnippet: ann.textSnippet,
+            elementTag: ann.elementTag,
+            elementId: ann.elementId,
+            textPrefix: ann.textPrefix,
+            textSuffix: ann.textSuffix,
+            fingerprint: ann.fingerprint,
+            neighborText: ann.neighborText,
+            anchorKey: ann.anchorKey ?? null,
+            xPct: ann.xPct,
+            yPct: ann.yPct,
+            wPct: ann.wPct,
+            hPct: ann.hPct,
+            scrollX: ann.scrollX,
+            scrollY: ann.scrollY,
+            viewportW: ann.viewportW,
+            viewportH: ann.viewportH,
+            devicePixelRatio: ann.devicePixelRatio,
+            // Persisted as JSON when the model has a `target Json?` column —
+            // same omit-when-null contract as `screenshotRegion`/`diagnostics`
+            // above, so hosts that haven't run `npx siteping sync` keep working.
+            ...(ann.target ? { target: ann.target } : {}),
+          })),
+        },
+      },
+      include: INCLUDE_ANNOTATIONS,
+    })) as FeedbackRecord;
+  }
+
+  /**
+   * Resolve the value to persist on `Feedback.screenshotUrl`.
+   *
+   * - No data URL → null
+   * - Storage configured → upload, return remote URL. Upload failures
+   *   persist `null` (drop the screenshot) rather than silently inlining
+   *   the data URL — an inline fallback would bloat Postgres unnoticed
+   *   during a multi-minute storage outage. The feedback message itself is
+   *   preserved; only the screenshot is missing, and the warn surfaces it.
+   * - No storage → inline base64, with a one-time warn so prod operators
+   *   notice the footgun.
+   *
+   * Operators who prefer the legacy inline-on-failure behaviour can wrap
+   * their `ScreenshotStorage.upload` with their own catch + return the
+   * data URL — the adapter treats whatever the storage returns as final.
+   */
+  private async persistScreenshot(dataUrl: string | null | undefined, clientId: string): Promise<string | null> {
+    if (!dataUrl) return null;
+
+    if (this.screenshotStorage) {
+      try {
+        // Use clientId as the upload-time identifier — the feedback row's
+        // own id isn't created yet and clientId is unique + stable.
+        // NOTE: clientId is client-supplied; storage implementations that
+        // map it to a filesystem path MUST sanitize against path traversal.
+        const { url } = await this.screenshotStorage.upload(dataUrl, {
+          feedbackId: clientId,
+          mimeType: "image/jpeg",
+        });
+        return url;
+      } catch (err) {
+        console.warn(
+          "[siteping] screenshotStorage.upload failed — feedback will be saved without a screenshot. Wrap your storage's upload to handle this differently:",
+          err,
+        );
+        return null;
+      }
+    }
+
+    if (!this.inlineFallbackWarned) {
+      this.inlineFallbackWarned = true;
+      console.warn(
+        "[siteping] enableScreenshot is on but no `screenshotStorage` is configured — base64 data URLs will be persisted inline on Feedback.screenshotUrl. Configure a ScreenshotStorage (S3/R2/…) for production.",
+      );
+    }
+    return dataUrl;
+  }
+
+  async findByClientId(clientId: string): Promise<FeedbackRecord | null> {
+    return (await this.prisma.sitepingFeedback.findUnique({
+      where: { clientId },
+      include: INCLUDE_ANNOTATIONS,
+    })) as FeedbackRecord | null;
+  }
+
+  async getFeedbacks(query: FeedbackQuery): Promise<FeedbackPage> {
+    const { projectName, type, status, statuses, search, url, urlPattern, page = 1, limit = 50 } = query;
+
+    const where: FeedbackWhereInput = { projectName };
+    if (type) where.type = type;
+    // Bucket filter (`statuses`) wins over the exact `status` filter; an empty
+    // array is treated as absent so no status constraint is applied.
+    if (statuses && statuses.length > 0) {
+      where.status = { in: [...statuses] };
+    } else if (status) {
+      where.status = status;
+    }
+    if (url) where.url = url;
+    if (urlPattern) where.urlPattern = urlPattern;
+    if (search) {
+      where.message = this.caseInsensitiveSearch ? { contains: search, mode: "insensitive" } : { contains: search };
+    }
+
+    const [feedbacks, total] = await Promise.all([
+      this.prisma.sitepingFeedback.findMany({
+        where,
+        include: INCLUDE_ANNOTATIONS,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.sitepingFeedback.count({ where }),
+    ]);
+
+    return { feedbacks: feedbacks as FeedbackRecord[], total };
+  }
+
+  async updateFeedback(id: string, data: FeedbackUpdateInput): Promise<FeedbackRecord> {
+    return (await this.prisma.sitepingFeedback.update({
+      where: { id },
+      data: {
+        status: data.status,
+        resolvedAt: data.resolvedAt,
+        ...(data.message !== undefined ? { message: data.message } : {}),
+        // Reconnect (G7): replace the whole annotation set in the same
+        // transaction Prisma builds for this nested write — delete every
+        // existing row for this feedback, then create the new one(s).
+        ...(data.annotations !== undefined
+          ? {
+              annotations: {
+                deleteMany: {},
+                create: data.annotations.map((ann) => ({
+                  cssSelector: ann.cssSelector,
+                  xpath: ann.xpath,
+                  textSnippet: ann.textSnippet,
+                  elementTag: ann.elementTag,
+                  elementId: ann.elementId,
+                  textPrefix: ann.textPrefix,
+                  textSuffix: ann.textSuffix,
+                  fingerprint: ann.fingerprint,
+                  neighborText: ann.neighborText,
+                  anchorKey: ann.anchorKey ?? null,
+                  xPct: ann.xPct,
+                  yPct: ann.yPct,
+                  wPct: ann.wPct,
+                  hPct: ann.hPct,
+                  scrollX: ann.scrollX,
+                  scrollY: ann.scrollY,
+                  viewportW: ann.viewportW,
+                  viewportH: ann.viewportH,
+                  devicePixelRatio: ann.devicePixelRatio,
+                  ...(ann.target ? { target: ann.target } : {}),
+                })),
+              },
+            }
+          : {}),
+      },
+      include: INCLUDE_ANNOTATIONS,
+    })) as FeedbackRecord;
+  }
+
+  async deleteFeedback(id: string): Promise<void> {
+    await this.prisma.sitepingFeedback.delete({ where: { id } });
+  }
+
+  async deleteAllFeedbacks(projectName: string): Promise<void> {
+    await this.prisma.sitepingFeedback.deleteMany({ where: { projectName } });
+  }
+
+  /**
+   * Verify that a feedback record with `id` belongs to `projectName`.
+   * Returns `true` when the record exists and matches, `false` otherwise.
+   */
+  async verifyProjectOwnership(id: string, projectName: string): Promise<boolean> {
+    const record = (await this.prisma.sitepingFeedback.findUnique({
+      where: { id },
+      // Only need projectName for the check — skip annotations
+    })) as { projectName: string } | null;
+    return record !== null && record.projectName === projectName;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Handler options — backwards compatible
+// ---------------------------------------------------------------------------
+
+/** HTTP methods that may be listed in `HandlerOptions.publicEndpoints`. */
+export type SitepingHttpMethod = "GET" | "POST" | "PATCH" | "DELETE" | "OPTIONS";
+
+export interface HandlerOptions {
+  /** Prisma client — used when `store` is not provided. Wrapped in a `PrismaStore` internally. */
+  prisma?: SitepingPrismaClient;
+  /** Abstract store — when provided, takes precedence over `prisma`. */
+  store?: SitepingStore;
+  /**
+   * Optional storage backend for screenshots. Used only with `prisma`
+   * (ignored when a custom `store` is passed — that store is responsible
+   * for its own screenshot strategy). Without a storage, the data URL is
+   * persisted inline on `Feedback.screenshotUrl` with a one-time warn.
+   */
+  screenshotStorage?: ScreenshotStorage;
+  /**
+   * Optional API key for bearer-token authentication.
+   *
+   * - **When set:** every request not listed in `publicEndpoints` must include an
+   *   `Authorization: Bearer {apiKey}` header. Requests without a valid token
+   *   receive a 401 Unauthorized response.
+   * - **When not set:** the API is fully public — anyone can create, read,
+   *   update, and delete feedbacks (including destructive DELETE operations).
+   * - **Recommendation:** always set `apiKey` in production environments.
+   */
+  apiKey?: string | undefined;
+  /**
+   * HTTP methods that don't require API key authentication.
+   * Defaults to `['POST', 'OPTIONS']` when `apiKey` is set — POST must stay open
+   * because the browser widget submits feedback from unauthenticated contexts.
+   */
+  publicEndpoints?: ReadonlyArray<SitepingHttpMethod>;
+  /** Allowed CORS origins — when set, validates the Origin header */
+  allowedOrigins?: ReadonlyArray<string> | undefined;
+  /**
+   * Override case-insensitive search behaviour for the built-in `PrismaStore`.
+   *
+   * Only applied when `prisma` is provided (not when a custom `store` is
+   * passed). See `PrismaStoreOptions.caseInsensitiveSearch` for details on
+   * auto-detection and per-provider semantics.
+   */
+  caseInsensitiveSearch?: boolean;
+  /**
+   * Whether destructive endpoints (DELETE, PATCH) require `apiKey`.
+   *
+   * Defaults to `true` and intentionally cannot be disabled in production:
+   * - `NODE_ENV === "production"` without `apiKey` throws at startup. The
+   *   factory refuses to return an unauthenticated destructive surface.
+   * - `NODE_ENV !== "production"` without `apiKey` keeps the handler running
+   *   for local dev/tests, but DELETE/PATCH return 401 until you set
+   *   `apiKey` or explicitly opt out with `requireAuthForDestructive: false`.
+   *
+   * Set to `false` only when you wrap `createSitepingHandler` in your own
+   * auth middleware (session, OAuth, etc.) and want SitePing to stay open.
+   */
+  requireAuthForDestructive?: boolean;
+  /**
+   * Blank `authorEmail` in GET/PATCH responses to requests that do not carry
+   * a valid `Authorization: Bearer <apiKey>` header. Defaults to `true`:
+   * reviewer emails are PII and the widget needs GET to be reachable, so an
+   * unauthenticated response must not enumerate them (issue #105).
+   *
+   * Set to `false` ONLY when the handler sits behind your own auth layer
+   * that covers GET as well (e.g. `requireAuthForDestructive: false` behind
+   * session middleware) — the handler cannot see that layer, and without it
+   * every visitor who can reach the endpoint can read reviewer emails.
+   * `clientId` is stripped from responses regardless of this option.
+   */
+  redactUnauthenticatedEmails?: boolean;
+  /**
+   * Outgoing webhooks fired after a feedback is successfully persisted.
+   *
+   * Pass a single config or an array — every entry receives a POST with a
+   * type-specific payload (Slack, Discord, or generic JSON). Dispatch is
+   * fire-and-forget: the HTTP response is returned to the widget before
+   * webhook delivery completes, so a slow receiver never blocks the client.
+   * Provide `onError` on each config to observe failures.
+   */
+  webhooks?: WebhookConfig | ReadonlyArray<WebhookConfig>;
+}
+
+/**
+ * Object returned by `createSitepingHandler` — one handler per HTTP method.
+ */
+export interface SitepingHandler {
+  OPTIONS: (request: Request) => Response;
+  POST: (request: Request) => Promise<Response>;
+  GET: (request: Request) => Promise<Response>;
+  PATCH: (request: Request) => Promise<Response>;
+  DELETE: (request: Request) => Promise<Response>;
+}
+
+// ---------------------------------------------------------------------------
+// CORS helpers
+// ---------------------------------------------------------------------------
+
+type CorsHeaders = Readonly<Record<string, string>>;
+
+/**
+ * Build CORS headers for a given request.
+ * When `allowedOrigins` is set, only matching origins get reflected.
+ * When unset, no CORS headers are added (no permissive wildcard by default).
+ */
+function buildCorsHeaders(request: Request, allowedOrigins: ReadonlyArray<string> | undefined): CorsHeaders {
+  if (!allowedOrigins) return {};
+
+  const origin = request.headers.get("Origin");
+  if (!origin) return {};
+
+  if (!allowedOrigins.includes(origin)) return {};
+
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Max-Age": "86400",
+    Vary: "Origin",
+  };
+}
+
+/**
+ * Attach CORS headers to an existing Response.
+ */
+function withCors(response: Response, corsHeaders: CorsHeaders): Response {
+  for (const [key, value] of Object.entries(corsHeaders)) {
+    response.headers.set(key, value);
+  }
+  return response;
+}
+
+// ---------------------------------------------------------------------------
+// Handler factory
+// ---------------------------------------------------------------------------
+
+/**
+ * Perform a constant-time string comparison to prevent timing attacks on API key validation.
+ * Returns `false` immediately when lengths differ (unavoidable length leak), but the
+ * byte-level comparison itself is timing-safe.
+ *
+ * Length must be compared in BYTES: `timingSafeEqual` throws on byte-length
+ * mismatch, and multi-byte characters make equal `.length` strings differ in
+ * bytes — an attacker-controlled `Authorization` header must never turn that
+ * into a 500.
+ */
+function safeCompare(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
+}
+
+/**
+ * Serialize a feedback record for the HTTP wire (edge DTO — stores return raw
+ * records, redaction happens here).
+ *
+ * `clientId` is always stripped: it is a browser-local dedup secret, and the
+ * POST dedup path returns the full existing record for whoever presents it —
+ * exposing it via responses would turn that into a record-theft oracle.
+ * `authorEmail` is PII: blanked unless the requester is Bearer-authenticated.
+ * Never mutates the input — webhooks receive the same record object.
+ */
+function toWireFeedback(feedback: FeedbackRecord, includeEmail: boolean): Omit<FeedbackRecord, "clientId"> {
+  const { clientId: _clientId, ...wire } = feedback;
+  return includeEmail ? wire : { ...wire, authorEmail: "" };
+}
+
+/**
+ * Create request handlers for the Siteping API endpoint.
+ *
+ * Accepts either a `store` (abstract) or a `prisma` client (backwards compatible).
+ * When `prisma` is provided without `store`, it is wrapped in a `PrismaStore`.
+ *
+ * **Rate limiting** is not handled by this library. Apply rate limiting at the
+ * framework or reverse-proxy level (e.g. Next.js middleware, Nginx, Cloudflare).
+ * The POST endpoint in particular should be rate-limited to prevent abuse, since
+ * the widget typically calls it from unauthenticated browser contexts.
+ *
+ * @example Next.js App Router — `app/api/siteping/route.ts`
+ * ```ts
+ * import { createSitepingHandler } from '@siteping/adapter-prisma'
+ * import { prisma } from '@/lib/prisma'
+ *
+ * export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ prisma })
+ * ```
+ *
+ * @example With abstract store
+ * ```ts
+ * import { createSitepingHandler, PrismaStore } from '@siteping/adapter-prisma'
+ * import { prisma } from '@/lib/prisma'
+ *
+ * const store = new PrismaStore(prisma)
+ * export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ store })
+ * ```
+ */
+export function createSitepingHandler({
+  prisma,
+  store: providedStore,
+  screenshotStorage,
+  apiKey,
+  publicEndpoints = apiKey ? ["POST", "OPTIONS"] : undefined,
+  allowedOrigins,
+  caseInsensitiveSearch,
+  requireAuthForDestructive = true,
+  redactUnauthenticatedEmails = true,
+  webhooks,
+}: HandlerOptions): SitepingHandler {
+  if (!providedStore && !prisma) {
+    throw new Error("[siteping] createSitepingHandler requires either `store` or `prisma`.");
+  }
+
+  // Refuse to expose destructive endpoints publicly in production. Without
+  // this guard, anyone could `DELETE { deleteAll: true }` against the API.
+  if (!apiKey && requireAuthForDestructive && process.env.NODE_ENV === "production") {
+    throw new Error(
+      "[siteping] adapter-prisma: apiKey is required in production. " +
+        "Set `apiKey` to enable destructive endpoints, or pass " +
+        "`requireAuthForDestructive: false` if SitePing sits behind your own auth middleware.",
+    );
+  }
+
+  // Safe: the throw above guarantees at least one is defined
+  const store: SitepingStore =
+    providedStore ??
+    new PrismaStore(prisma as NonNullable<typeof prisma>, {
+      screenshotStorage,
+      ...(typeof caseInsensitiveSearch === "boolean" ? { caseInsensitiveSearch } : {}),
+    });
+
+  const publicMethods: ReadonlySet<SitepingHttpMethod> | null = publicEndpoints ? new Set(publicEndpoints) : null;
+
+  // Normalise the webhook config to an array once so every POST avoids the
+  // allocation. Empty array short-circuits `dispatchWebhooks` cheaply.
+  const webhookList: ReadonlyArray<WebhookConfig> = webhooks
+    ? Array.isArray(webhooks)
+      ? (webhooks as ReadonlyArray<WebhookConfig>)
+      : [webhooks as WebhookConfig]
+    : [];
+
+  /**
+   * True iff `apiKey` is configured AND the request carries a matching Bearer
+   * token. Distinct from `authenticate`: a valid token on a public method still
+   * counts as authenticated here (drives PII redaction, not access control).
+   */
+  function isBearerAuthenticated(request: Request): boolean {
+    if (!apiKey) return false;
+    const header = request.headers.get("Authorization");
+    return header !== null && safeCompare(header, `Bearer ${apiKey}`);
+  }
+
+  /** Whether this request may see `authorEmail` (see `redactUnauthenticatedEmails`). */
+  function emailPermitted(request: Request): boolean {
+    return !redactUnauthenticatedEmails || isBearerAuthenticated(request);
+  }
+
+  /** Verify Bearer token when apiKey is configured. Skips methods listed in `publicEndpoints`. */
+  function authenticate(request: Request, method: SitepingHttpMethod): Response | null {
+    if (!apiKey) {
+      // No apiKey + destructive method + guard enabled → reject. GET/POST/OPTIONS
+      // stay open by default so the widget keeps working in dev without config.
+      if (requireAuthForDestructive && (method === "DELETE" || method === "PATCH")) {
+        return Response.json({ error: "apiKey required for destructive operations" }, { status: 401 });
+      }
+      return null;
+    }
+    if (publicMethods?.has(method)) return null;
+    if (!isBearerAuthenticated(request)) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return null;
+  }
+
+  return {
+    /**
+     * CORS preflight handler. In production, always configure `allowedOrigins`
+     * to restrict which domains can make cross-origin requests to the API.
+     * Without it, no CORS headers are emitted and browsers will block widget requests.
+     */
+    OPTIONS: (request: Request): Response => {
+      const corsHeaders = buildCorsHeaders(request, allowedOrigins);
+      return new Response(null, { status: 204, headers: corsHeaders });
+    },
+
+    POST: async (request: Request): Promise<Response> => {
+      const corsHeaders = buildCorsHeaders(request, allowedOrigins);
+      const authError = authenticate(request, "POST");
+      if (authError) return withCors(authError, corsHeaders);
+      const body = await request.json().catch(() => null);
+      if (!body) {
+        return withCors(Response.json({ error: "Invalid JSON" }, { status: 400 }), corsHeaders);
+      }
+
+      const parsed = feedbackCreateSchema.safeParse(body);
+      if (!parsed.success) {
+        return withCors(Response.json({ errors: formatValidationErrors(parsed.error) }, { status: 400 }), corsHeaders);
+      }
+
+      const data = parsed.data;
+
+      // Defense-in-depth: enforce annotation limit at handler level in addition to schema validation
+      if (data.annotations.length > 50) {
+        return withCors(Response.json({ error: "Too many annotations (max 50)" }, { status: 400 }), corsHeaders);
+      }
+
+      try {
+        const feedback = await store.createFeedback({
+          projectName: data.projectName,
+          type: data.type,
+          message: data.message,
+          status: "open",
+          url: data.url,
+          urlPattern: data.urlPattern ?? null,
+          viewport: data.viewport,
+          userAgent: data.userAgent,
+          authorName: data.authorName,
+          authorEmail: data.authorEmail,
+          clientId: data.clientId,
+          annotations: data.annotations.map(flattenAnnotation),
+          screenshotDataUrl: data.screenshotDataUrl ?? null,
+          screenshotRegion: data.screenshotRegion ?? null,
+          diagnostics: data.diagnostics ?? null,
+        });
+
+        // Fire-and-forget: drop the promise so the widget isn't held back
+        // on slow Slack/Discord/generic receivers. `dispatchWebhooks` traps
+        // its own errors and reports them through `WebhookConfig.onError`.
+        if (webhookList.length > 0) {
+          void dispatchWebhooks(webhookList, feedback);
+        }
+
+        // Email stays intact on POST responses: the requester supplied it.
+        return withCors(Response.json(toWireFeedback(feedback, true), { status: 201 }), corsHeaders);
+      } catch (error) {
+        // Handle unique constraint violation (clientId dedup) — presenting the
+        // clientId proves ownership of the record, so the email stays intact.
+        if (isStoreDuplicate(error)) {
+          const existing = await store.findByClientId(data.clientId);
+          if (existing) return withCors(Response.json(toWireFeedback(existing, true), { status: 201 }), corsHeaders);
+        }
+
+        const message = actionableErrorMessage(error);
+        console.error("[siteping] Failed to create feedback:", error);
+        return withCors(Response.json({ error: message }, { status: 500 }), corsHeaders);
+      }
+    },
+
+    GET: async (request: Request): Promise<Response> => {
+      const corsHeaders = buildCorsHeaders(request, allowedOrigins);
+      const authError = authenticate(request, "GET");
+      if (authError) return withCors(authError, corsHeaders);
+
+      const url = new URL(request.url);
+      const rawQuery: Record<string, string> = {};
+      for (const key of [
+        "projectName",
+        "page",
+        "limit",
+        "type",
+        "status",
+        "statuses",
+        "search",
+        "url",
+        "urlPattern",
+      ] as const) {
+        const val = url.searchParams.get(key);
+        if (val !== null) rawQuery[key] = val;
+      }
+
+      const parsed = getQuerySchema.safeParse(rawQuery);
+      if (!parsed.success) {
+        return withCors(Response.json({ errors: formatValidationErrors(parsed.error) }, { status: 400 }), corsHeaders);
+      }
+
+      try {
+        // GET can be public (no apiKey, or "GET" in publicEndpoints for widget
+        // hosts) — redact author emails unless the requester sent the key.
+        const authed = emailPermitted(request);
+        const result = await store.getFeedbacks(parsed.data);
+        const body = { ...result, feedbacks: result.feedbacks.map((f) => toWireFeedback(f, authed)) };
+        return withCors(Response.json(body, { headers: { "Cache-Control": "private, max-age=5" } }), corsHeaders);
+      } catch (error) {
+        const message = actionableErrorMessage(error);
+        console.error("[siteping] Failed to fetch feedbacks:", error);
+        return withCors(Response.json({ error: message }, { status: 500 }), corsHeaders);
+      }
+    },
+
+    PATCH: async (request: Request): Promise<Response> => {
+      const corsHeaders = buildCorsHeaders(request, allowedOrigins);
+      const authError = authenticate(request, "PATCH");
+      if (authError) return withCors(authError, corsHeaders);
+
+      const body = await request.json().catch(() => null);
+      if (!body) {
+        return withCors(Response.json({ error: "Invalid JSON" }, { status: 400 }), corsHeaders);
+      }
+
+      const parsed = feedbackPatchSchema.safeParse(body);
+      if (!parsed.success) {
+        return withCors(Response.json({ errors: formatValidationErrors(parsed.error) }, { status: 400 }), corsHeaders);
+      }
+
+      try {
+        // Verify project ownership before updating. Any store implementing
+        // the optional SitepingStore.verifyProjectOwnership gets the check;
+        // duck-typing instead of `instanceof` keeps it bundling-safe and
+        // open to third-party adapters.
+        if (store.verifyProjectOwnership) {
+          const owns = await store.verifyProjectOwnership(parsed.data.id, parsed.data.projectName);
+          if (!owns) {
+            return withCors(Response.json({ error: "Feedback not found" }, { status: 404 }), corsHeaders);
+          }
+        }
+
+        // resolvedAt is the CLOSURE timestamp — set when the feedback enters
+        // a terminal status (resolved / wont_fix), cleared otherwise. The
+        // derivation lives here at the edge; stores persist what they're given.
+        const feedback = await store.updateFeedback(
+          parsed.data.id,
+          toFeedbackUpdate(
+            parsed.data.status,
+            new Date(),
+            parsed.data.message,
+            parsed.data.annotations?.map(flattenAnnotation),
+          ),
+        );
+
+        // PATCH can be made public via publicEndpoints / requireAuthForDestructive:
+        // false — don't leak the author's email through the update response.
+        return withCors(Response.json(toWireFeedback(feedback, emailPermitted(request))), corsHeaders);
+      } catch (error) {
+        if (isStoreNotFound(error)) {
+          return withCors(Response.json({ error: "Feedback not found" }, { status: 404 }), corsHeaders);
+        }
+        const message = actionableErrorMessage(error);
+        console.error("[siteping] Failed to update feedback:", error);
+        return withCors(Response.json({ error: message }, { status: 500 }), corsHeaders);
+      }
+    },
+
+    DELETE: async (request: Request): Promise<Response> => {
+      const corsHeaders = buildCorsHeaders(request, allowedOrigins);
+      const authError = authenticate(request, "DELETE");
+      if (authError) return withCors(authError, corsHeaders);
+
+      const body = await request.json().catch(() => null);
+      if (!body) {
+        return withCors(Response.json({ error: "Invalid JSON" }, { status: 400 }), corsHeaders);
+      }
+
+      const parsed = feedbackDeleteSchema.safeParse(body);
+      if (!parsed.success) {
+        return withCors(Response.json({ errors: formatValidationErrors(parsed.error) }, { status: 400 }), corsHeaders);
+      }
+
+      try {
+        if ("deleteAll" in parsed.data) {
+          await store.deleteAllFeedbacks(parsed.data.projectName);
+          return withCors(Response.json({ deleted: true }), corsHeaders);
+        }
+
+        // Verify project ownership before deleting. Any store implementing
+        // the optional SitepingStore.verifyProjectOwnership gets the check;
+        // duck-typing instead of `instanceof` keeps it bundling-safe and
+        // open to third-party adapters.
+        if (store.verifyProjectOwnership) {
+          const owns = await store.verifyProjectOwnership(parsed.data.id, parsed.data.projectName);
+          if (!owns) {
+            return withCors(Response.json({ error: "Feedback not found" }, { status: 404 }), corsHeaders);
+          }
+        }
+
+        await store.deleteFeedback(parsed.data.id);
+        return withCors(Response.json({ deleted: true }), corsHeaders);
+      } catch (error) {
+        if (isStoreNotFound(error)) {
+          return withCors(Response.json({ error: "Feedback not found" }, { status: 404 }), corsHeaders);
+        }
+        const message = actionableErrorMessage(error);
+        console.error("[siteping] Failed to delete feedback:", error);
+        return withCors(Response.json({ error: message }, { status: 500 }), corsHeaders);
+      }
+    },
+  };
+}
+
+function isTableNotFoundError(error: unknown): error is { code: "P2021" } {
+  return hasOwn(error, "code") && (error as { code: unknown }).code === "P2021";
+}
+
+/**
+ * Return an actionable error message for known Prisma error codes.
+ * Falls back to a generic message for unknown errors.
+ */
+function actionableErrorMessage(error: unknown): string {
+  if (isTableNotFoundError(error)) {
+    return "Table 'SitepingFeedback' not found. Run 'npx prisma db push' to create it.";
+  }
+  return "Internal server error";
+}

@@ -1,0 +1,71 @@
+# Label definitions for SitePing.
+#
+# We keep the default GitHub labels (bug, enhancement, documentation,
+# dependencies, good first issue, help wanted) un-prefixed because they are
+# the standard names that Dependabot, badges and the GitHub search syntax
+# expect.
+#
+# All other "type of change" labels live under the `type:` namespace so they
+# group naturally next to the existing `type:performance`, `type:refactor`,
+# `type:breaking`, `type:dx` labels.
+
+- name: enhancement
+  color: a2eeef
+  description: New feature or request
+
+- name: bug
+  color: d73a4a
+  description: Something isn't working
+
+- name: documentation
+  color: 0075ca
+  description: Improvements or additions to documentation
+
+- name: dependencies
+  color: 0366d6
+  description: Updates to a dependency file
+
+- name: good first issue
+  color: 7057ff
+  description: Good for newcomers
+
+- name: help wanted
+  color: 008672
+  description: Extra attention is needed
+
+- name: type:test
+  color: 32a852
+  description: Adding or improving tests
+
+- name: type:ci
+  color: c5def5
+  description: CI / CD configuration changes
+
+- name: type:build
+  color: c2e0c6
+  description: Build system or bundling changes
+
+- name: type:chore
+  color: cccccc
+  description: Routine maintenance task
+
+- name: type:i18n
+  color: ff7eb6
+  description: Internationalization, locales, translations
+
+- name: ignore-for-release
+  color: e4e669
+  description: Exclude this PR from auto-generated release notes
+
+# Triage-flow labels — the stale workflow only acts on the first two.
+- name: awaiting-response
+  color: e99695
+  description: Waiting for more information from the author
+
+- name: needs-reproduction
+  color: fbca04
+  description: Needs a minimal reproduction before triage can continue
+
+- name: stale
+  color: ededed
+  description: No recent activity — will be closed soon without an update

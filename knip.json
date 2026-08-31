@@ -1,0 +1,24 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignoreExportsUsedInFile": true,
+  "ignoreDependencies": ["publint", "@arethetypeswrong/cli"],
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/*.mjs", "e2e/**/*.spec.ts", "tsup.preset.ts", "e2e/server.mjs"],
+      "project": ["scripts/**", "e2e/**", "*.ts"]
+    },
+    "packages/*": {
+      "entry": ["src/index.ts", "__tests__/**/*.{test,test-d}.{ts,tsx}"],
+      "project": ["src/**", "__tests__/**"]
+    },
+    "packages/widget": {
+      "entry": ["src/index.ts", "src/react.ts", "__tests__/**/*.{test,test-d}.{ts,tsx}", "__tests__/setup-i18n.ts"],
+      "project": ["src/**", "__tests__/**"]
+    },
+    "packages/adapter-kit": {
+      "entry": ["src/index.ts", "src/testing.ts", "__tests__/**/*.{test,test-d}.{ts,tsx}"],
+      "project": ["src/**", "__tests__/**"]
+    },
+    "apps/demo": {}
+  }
+}

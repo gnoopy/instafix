@@ -1,0 +1,37 @@
+---
+title: Choosing an adapter
+description: Where your feedback lives — Prisma for production, memory for tests and demos, localStorage for client-only setups.
+---
+
+An adapter is the storage layer behind SitePing. All three implement the same `SitepingStore` contract (6 methods), so you can swap them without touching the widget.
+
+| Adapter | Where data lives | Use it for |
+|---|---|---|
+| [`@siteping/adapter-prisma`](/docs/adapters/prisma) | Your database, via Prisma | Production — the standard setup |
+| [`@siteping/adapter-memory`](/docs/adapters/memory) | An in-process array | Tests, previews, throwaway demos |
+| [`@siteping/adapter-localstorage`](/docs/adapters/localstorage) | The visitor's browser | Client-side demos and prototypes — no server at all |
+
+Need a different backend? [Write your own](/docs/adapters/writing-an-adapter) with `@siteping/adapter-kit`.
+
+## Two ways to mount a store
+
+**Server mode** — the widget talks to an HTTP endpoint, and the endpoint talks to the store. This is the production shape:
+
+```ts
+// app/api/siteping/route.ts
+import { createSitepingHandler } from "@siteping/adapter-prisma";
+import { prisma } from "@/lib/prisma";
+
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ prisma });
+```
+
+**Client-side mode** — the widget writes to a store directly in the browser, no server needed:
+
+```ts
+import { initSiteping } from "@siteping/widget";
+import { LocalStorageStore } from "@siteping/adapter-localstorage";
+
+initSiteping({ store: new LocalStorageStore(), projectName: "my-demo" });
+```
+
+> Writing your own adapter? Install `@siteping/adapter-kit`: snapshot backends get a complete store from `createCollectionStore`, query backends implement the 6 methods, and both verify with the shared conformance suite (44 tests). See [Writing an adapter](/docs/adapters/writing-an-adapter).

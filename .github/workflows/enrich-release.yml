@@ -1,0 +1,223 @@
+name: Enrich release notes
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to (re-)enrich (e.g. widget-v0.9.9)'
+        required: true
+        type: string
+      force:
+        description: 'Re-enrich even if marker is present'
+        required: false
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: enrich-release-${{ github.event.release.id || inputs.release_tag }}
+  cancel-in-progress: false
+
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Append contributors section to release notes
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+          INPUT_FORCE: ${{ inputs.force }}
+        with:
+          script: |
+            const ENRICHED_MARKER = '<!-- contributors-enriched -->';
+            const BOT_LOGINS = new Set([
+              'github-actions[bot]',
+              'allcontributors[bot]',
+              'release-please[bot]',
+              'dependabot[bot]',
+              'renovate[bot]',
+              'pre-commit-ci[bot]',
+              'codecov[bot]',
+            ]);
+
+            const { owner, repo } = context.repo;
+
+            let release;
+            const force = process.env.INPUT_FORCE === 'true';
+            if (context.eventName === 'workflow_dispatch') {
+              const inputTag = process.env.INPUT_RELEASE_TAG;
+              if (!inputTag) {
+                core.setFailed('release_tag input is required for manual dispatch');
+                return;
+              }
+              const { data } = await github.rest.repos.getReleaseByTag({ owner, repo, tag: inputTag });
+              release = data;
+            } else {
+              release = context.payload.release;
+            }
+
+            const tag = release.tag_name;
+            const currentBody = release.body || '';
+
+            if (currentBody.includes(ENRICHED_MARKER) && !force) {
+              core.info(`Release ${tag} already enriched — skipping. Use workflow_dispatch with force=true to re-enrich.`);
+              return;
+            }
+
+            // Strip any prior enriched section so re-runs don't duplicate it.
+            const bodyWithoutPrior = currentBody.split(/\n\n---\n\n## 👥 Contributors/)[0].trimEnd();
+
+            // Tag prefix isolates per-package releases in this monorepo.
+            // e.g. "widget-v0.9.9" → prefix "widget-", "v1.2.3" → prefix "v"
+            const prefixMatch = tag.match(/^(.*?)v?\d+\.\d+\.\d+/);
+            const prefix = prefixMatch ? prefixMatch[1] : '';
+
+            // release-please scopes each release to commits touching the package
+            // directory; credit must use the same scope, or the raw tag range drags
+            // in every repo commit since that package last released and mentions
+            // people whose work shipped elsewhere.
+            const component = prefix.replace(/-$/, '');
+            const packagePaths = component ? [`packages/${component}`] : [];
+
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner, repo, per_page: 100,
+            });
+
+            const previous = releases.find(r =>
+              r.tag_name !== tag &&
+              r.tag_name.startsWith(prefix) &&
+              !r.draft &&
+              new Date(r.created_at) < new Date(release.created_at)
+            );
+
+            if (!previous) {
+              core.info(`No previous release found with prefix "${prefix}" — first release of this package, skipping contributor enrichment.`);
+              return;
+            }
+
+            const previousTag = previous.tag_name;
+            core.info(`Comparing ${previousTag}...${tag}`);
+
+            const { data: compare } = await github.rest.repos.compareCommitsWithBasehead({
+              owner, repo,
+              basehead: `${previousTag}...${tag}`,
+            });
+
+            // Keep only range commits that ship in this package. listCommits(path)
+            // walks newest-first from the tag, so once a whole page falls outside
+            // the range we are past it and can stop.
+            let releaseCommits = compare.commits;
+            if (packagePaths.length > 0) {
+              const rangeShas = new Set(compare.commits.map(c => c.sha));
+              const inPackage = new Set();
+              for (const path of packagePaths) {
+                const iterator = github.paginate.iterator(github.rest.repos.listCommits, {
+                  owner, repo, sha: tag, path, per_page: 100,
+                });
+                let pages = 0;
+                for await (const { data: page } of iterator) {
+                  const hits = page.filter(c => rangeShas.has(c.sha));
+                  for (const c of hits) inPackage.add(c.sha);
+                  if (hits.length === 0 || ++pages >= 10) break;
+                }
+              }
+              releaseCommits = compare.commits.filter(c => inPackage.has(c.sha));
+              core.info(`${releaseCommits.length}/${compare.commits.length} commits in range touch ${packagePaths.join(', ')}.`);
+            }
+
+            // Keyed by lowercased login so commit authorship and Co-authored-by
+            // trailers (arbitrary casing) collapse into a single entry.
+            const authors = new Map();
+            for (const commit of releaseCommits) {
+              const login = commit.author?.login;
+              if (login && !BOT_LOGINS.has(login)) {
+                const key = login.toLowerCase();
+                const entry = authors.get(key);
+                if (entry) {
+                  entry.count += 1;
+                  entry.login = login;
+                  entry.html_url = commit.author.html_url;
+                } else {
+                  authors.set(key, { login, html_url: commit.author.html_url, count: 1 });
+                }
+              }
+
+              // Co-authored-by trailers (carries credit for pair programming, etc.)
+              const coAuthorRegex = /^Co-authored-by:\s*([^<]+?)\s*<([^>]+)>/gim;
+              const message = commit.commit?.message || '';
+              let m;
+              while ((m = coAuthorRegex.exec(message)) !== null) {
+                const email = m[2].trim().toLowerCase();
+                if (email.includes('noreply.github.com')) {
+                  const loginMatch = email.match(/^(?:\d+\+)?([^@]+)@users\.noreply\.github\.com$/);
+                  const coLogin = loginMatch ? loginMatch[1] : null;
+                  if (coLogin && !BOT_LOGINS.has(coLogin) && !authors.has(coLogin.toLowerCase())) {
+                    authors.set(coLogin.toLowerCase(), {
+                      login: coLogin,
+                      html_url: `https://github.com/${coLogin}`,
+                      count: 0,
+                    });
+                  }
+                }
+              }
+            }
+
+            // Pull GitHub's own "New Contributors" section — it knows the full history.
+            let newContribSection = '';
+            try {
+              const { data: generated } = await github.rest.repos.generateReleaseNotes({
+                owner, repo,
+                tag_name: tag,
+                previous_tag_name: previousTag,
+              });
+              const match = generated.body.match(/##+\s*New Contributors[\s\S]*?(?=\n##|$)/);
+              if (match) {
+                // GitHub computes first-timers over the whole-repo range; keep only
+                // those whose work is in this package's release, or every package
+                // release re-pings the same people (plain @mentions notify).
+                const lines = match[0].trim().split('\n').filter(line => {
+                  const mention = line.match(/@([A-Za-z0-9-]+)/);
+                  return !mention || authors.has(mention[1].toLowerCase());
+                });
+                if (lines.some(line => line.includes('@'))) {
+                  newContribSection = lines.join('\n');
+                }
+              }
+            } catch (err) {
+              core.warning(`generateReleaseNotes failed: ${err.message}`);
+            }
+
+            let section = `\n\n---\n\n## 👥 Contributors\n\n`;
+
+            if (authors.size === 0) {
+              section += `_Maintainer-only release._\n`;
+            } else {
+              section += `Thanks to everyone whose work shipped in this release:\n\n`;
+              const sorted = [...authors.values()].sort((a, b) => b.count - a.count || a.login.localeCompare(b.login));
+              for (const a of sorted) {
+                const suffix = a.count === 0 ? ' _(co-author)_' : ` (${a.count} commit${a.count > 1 ? 's' : ''})`;
+                section += `- [@${a.login}](${a.html_url})${suffix}\n`;
+              }
+            }
+
+            if (newContribSection) {
+              const reformatted = newContribSection
+                .replace(/##+\s*New Contributors/, '### 🎉 First-time contributors');
+              section += `\n${reformatted}\n`;
+            }
+
+            section += `\n${ENRICHED_MARKER}`;
+
+            await github.rest.repos.updateRelease({
+              owner, repo,
+              release_id: release.id,
+              body: bodyWithoutPrior + section,
+            });
+
+            core.info(`Enriched ${tag} with ${authors.size} contributor(s)${newContribSection ? ' + first-time section' : ''}.`);

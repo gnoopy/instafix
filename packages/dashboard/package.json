@@ -1,0 +1,71 @@
+{
+  "name": "@siteping/dashboard",
+  "version": "0.2.5",
+  "description": "Linear-style triage inbox React component for SitePing feedback",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup && node ../../scripts/fix-dts.mjs dist",
+    "check": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "size": "NODE_PATH=./node_modules size-limit"
+  },
+  "keywords": [
+    "siteping",
+    "feedback",
+    "dashboard",
+    "inbox",
+    "triage",
+    "react",
+    "component",
+    "client-review",
+    "typescript"
+  ],
+  "author": "neosianexus",
+  "license": "MIT",
+  "homepage": "https://siteping.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "directory": "packages/dashboard"
+  },
+  "bugs": {
+    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@siteping/core": "workspace:*",
+    "@size-limit/preset-small-lib": "^12.1.0",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19.2.18",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "size-limit": "^12.1.0"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}
