@@ -76,19 +76,14 @@ export async function initCommand(): Promise<void> {
     p.log.info("See the documentation: https://github.com/gnoopy/instafix#prisma-schema-1");
   }
 
-  // Step 2: API route
-  const shouldRoute = await p.confirm({
-    message: "Generate the Next.js App Router API route?",
-  });
-
-  if (p.isCancel(shouldRoute)) {
-    p.cancel("Cancelled.");
-    process.exit(0);
-  }
-
-  if (shouldRoute) {
+  // Step 2: API route — backend depends on whether a Prisma schema exists.
+  // A schema found means Prisma is already this project's ORM; otherwise
+  // ask, rather than assuming Prisma and generating an unusable route (the
+  // route previously always imported `@instafix/adapter-prisma` + `@/lib/prisma`
+  // even in projects with no Prisma at all).
+  function generateRouteOrExit(basePath: string, backend: "prisma" | "sqlite"): void {
     try {
-      const { created, path } = generateRoute(cwd);
+      const { created, path } = generateRoute(basePath, backend);
       if (created) {
         p.log.success(`Route created: ${path}`);
       } else {
@@ -98,6 +93,48 @@ export async function initCommand(): Promise<void> {
       p.log.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
       p.outro("Fix the errors above and re-run `instafix init`.");
       process.exit(1);
+    }
+  }
+
+  let routeSkipped = false;
+
+  if (schemaPath) {
+    const shouldRoute = await p.confirm({
+      message: "Generate the Next.js App Router API route (Prisma)?",
+    });
+
+    if (p.isCancel(shouldRoute)) {
+      p.cancel("Cancelled.");
+      process.exit(0);
+    }
+
+    if (shouldRoute) {
+      generateRouteOrExit(cwd, "prisma");
+    } else {
+      routeSkipped = true;
+    }
+  } else {
+    const backend = await p.select({
+      message: "No Prisma schema found — how should InstaFix store feedback?",
+      options: [
+        {
+          value: "sqlite" as const,
+          label: "SQLite",
+          hint: "recommended — a local .db file, no ORM or database server needed",
+        },
+        { value: "skip" as const, label: "Skip — I'll wire storage myself" },
+      ],
+    });
+
+    if (p.isCancel(backend)) {
+      p.cancel("Cancelled.");
+      process.exit(0);
+    }
+
+    if (backend === "sqlite") {
+      generateRouteOrExit(cwd, "sqlite");
+    } else {
+      routeSkipped = true;
     }
   }
 
@@ -133,6 +170,14 @@ export async function initCommand(): Promise<void> {
 
   if (schemaPath && !dbPushed) {
     steps.push(`${steps.length + 1}. Run: npx prisma db push`);
+  }
+
+  if (routeSkipped) {
+    steps.push(
+      `${steps.length + 1}. Wire the API route yourself: app/api/instafix/route.ts, using either`,
+      "   @instafix/adapter-prisma or @instafix/adapter-sqlite's createInstaFixHandler(),",
+      "   or a custom store — see /docs/adapters.",
+    );
   }
 
   if (widgetResult) {

@@ -22,12 +22,16 @@ npx @instafix/cli init
 1. **Prisma 모델 동기화** — 스키마가 발견되면([스키마 탐지](#스키마-탐지) 참고), `InstaFixFeedback`과 `InstaFixAnnotation` 모델을 추가할지 제안합니다.
 2. **스키마 반영** — 스키마가 발견되었다면 `npx prisma db push`를 바로 실행할지 제안합니다. Prisma의 출력(그리고 Prisma가 요구하는 확인 절차까지)이 그대로 터미널에 표시됩니다.
 3. **API 라우트 생성** — 위젯을 서비스하는 Next.js App Router 라우트 생성을 제안합니다. 파일은 `app/api/instafix/route.ts`에, 프로젝트가 `src/` 구조를 사용한다면 `src/app/api/instafix/route.ts`에 생성됩니다. 기존 라우트는 절대 덮어쓰지 않습니다.
+   - **스키마를 찾은 경우**: `@instafix/adapter-prisma` 기반 라우트를 생성합니다.
+   - **스키마를 찾지 못한 경우**: 대신 어떤 백엔드를 쓸지 물어봅니다 — **SQLite**(`@instafix/adapter-sqlite`, 외부 서비스 불필요) 또는 건너뛰고 직접 연결. Prisma 스키마가 없는데도 무조건 Prisma를 가정하지 않습니다.
 4. **위젯 컴포넌트 생성** — `initInstaFix()`를 호출하는 `"use client"` 컴포넌트를 `components/instafix-widget.tsx`(또는 `src/` 구조라면 `src/components/...`)에 생성할지 제안합니다. `package.json`의 이름을 `projectName`으로 사용합니다. 기존 컴포넌트는 절대 덮어쓰지 않습니다.
 
-생성된 라우트는 여러분이 직접 준비해야 하는 두 가지를 import합니다 — CLI는 아무것도 설치하지 않습니다:
+Prisma 방식 라우트는 여러분이 직접 준비해야 하는 두 가지를 import합니다 — CLI는 아무것도 설치하지 않습니다:
 
 - `@instafix/adapter-prisma` 패키지 (`npm i @instafix/adapter-prisma`)
 - `@/lib/prisma`에서 export된 Prisma 클라이언트
+
+SQLite 방식 라우트는 `@instafix/adapter-sqlite`만 설치되어 있으면 됩니다 — 별도로 연결할 클라이언트도, 반영할 스키마도 없습니다. [SQLite 어댑터](/ko/docs/adapters/sqlite) 참고.
 
 프로젝트에 `app/`(또는 `src/app/`) 디렉터리가 없다면 `init`은 오류와 함께 종료됩니다: Next.js App Router 라우트만 스캐폴딩하기 때문입니다. 다른 프레임워크에서는 어댑터를 수동으로 연결해야 합니다 — [어댑터](/ko/docs/adapters) 참고.
 

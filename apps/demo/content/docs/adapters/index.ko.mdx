@@ -1,17 +1,20 @@
 ---
 title: 어댑터 선택하기
-description: 피드백이 저장되는 위치 — 프로덕션에는 Prisma, 테스트와 데모에는 memory, 클라이언트 전용 구성에는 localStorage.
+description: 피드백이 저장되는 위치 — 프로덕션에는 Prisma나 SQLite, 테스트와 데모에는 memory, 클라이언트 전용 구성에는 localStorage.
 ---
 
-어댑터는 InstaFix 뒤에서 동작하는 저장 계층입니다. 세 가지 모두 동일한 `InstaFixStore` 계약(메서드 6개)을 구현하므로, 위젯을 건드리지 않고도 서로 교체할 수 있습니다.
+어댑터는 InstaFix 뒤에서 동작하는 저장 계층입니다. 모두 동일한 `InstaFixStore` 계약(메서드 6개)을 구현하므로, 위젯을 건드리지 않고도 서로 교체할 수 있습니다.
 
 | 어댑터 | 데이터 저장 위치 | 사용 대상 |
 |---|---|---|
-| [`@instafix/adapter-prisma`](/ko/docs/adapters/prisma) | Prisma를 통한 여러분의 데이터베이스 | 프로덕션 — 표준 구성 |
+| [`@instafix/adapter-prisma`](/ko/docs/adapters/prisma) | Prisma를 통한 여러분의 데이터베이스 | 프로덕션 — 이미 Prisma를 쓰고 있다면 |
+| [`@instafix/adapter-sqlite`](/ko/docs/adapters/sqlite) | better-sqlite3를 통한 로컬 `.db` 파일 | 프로덕션 — ORM도 별도 DB 서버도 필요 없을 때 |
 | [`@instafix/adapter-memory`](/ko/docs/adapters/memory) | 프로세스 내 배열 | 테스트, 프리뷰, 일회성 데모 |
 | [`@instafix/adapter-localstorage`](/ko/docs/adapters/localstorage) | 방문자의 브라우저 | 서버가 전혀 없는 클라이언트 사이드 데모와 프로토타입 |
 
-다른 백엔드가 필요하신가요? `@instafix/adapter-kit`으로 [직접 작성하세요](/ko/docs/adapters/writing-an-adapter).
+어느 쪽을 골라야 할지 모르겠다면 — 프로젝트에 이미 Prisma가 세팅되어 있다면 그대로 쓰고, 아니면 SQLite가 별도 설치나 실행 없이 실질적인 영구 저장소를 제공합니다. `npx @instafix/cli init`을 실행하면 물어보고 선택한 대로 연결해 줍니다.
+
+완전히 다른 백엔드가 필요하신가요(Prisma 없는 Postgres, MongoDB, DynamoDB 등)? `@instafix/adapter-kit`으로 [직접 작성하세요](/ko/docs/adapters/writing-an-adapter).
 
 ## 스토어를 붙이는 두 가지 방법
 

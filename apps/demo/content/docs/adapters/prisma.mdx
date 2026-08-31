@@ -175,5 +175,5 @@ createInstaFixHandler({
 
 Two caveats, straight from the source:
 
-- The cross-project ownership check on PATCH/DELETE currently runs only for `PrismaStore`. With a custom store, any caller who knows a feedback `id` can modify it regardless of `projectName` — put custom-store endpoints behind an `apiKey`.
-- `screenshotStorage` and `caseInsensitiveSearch` only apply to the built-in Prisma path; with a custom store, handle screenshots inside your store.
+- The cross-project ownership check on PATCH/DELETE is duck-typed on the optional `store.verifyProjectOwnership` method — implement it and the handler enforces it automatically (`PrismaStore`, `MemoryStore`, and `LocalStorageStore` all do). Without it, any caller who knows a feedback `id` can modify it regardless of `projectName` — put such custom-store endpoints behind an `apiKey`.
+- `screenshotStorage` and `caseInsensitiveSearch` only apply to the built-in Prisma path; with a custom store, handle screenshots and search casing inside your store.

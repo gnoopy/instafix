@@ -22,12 +22,16 @@ npx @instafix/cli init
 1. **Synchroniser les modèles Prisma** — si un schéma est trouvé (voir [détection du schéma](#détection-du-schéma)), il propose d'ajouter les modèles `InstaFixFeedback` et `InstaFixAnnotation`.
 2. **Pousser le schéma** — si un schéma a été trouvé, il propose d'exécuter `npx prisma db push` immédiatement, en relayant directement dans votre terminal la sortie de Prisma (et toute confirmation qu'il demande).
 3. **Générer la route API** — propose de créer une route Next.js App Router qui sert le widget. Le fichier va dans `app/api/instafix/route.ts`, ou `src/app/api/instafix/route.ts` si votre projet utilise une arborescence `src/`. Une route existante n'est jamais écrasée.
+   - **Un schéma a été trouvé** : génère une route basée sur `@instafix/adapter-prisma`.
+   - **Aucun schéma trouvé** : demande plutôt quel backend utiliser — **SQLite** (`@instafix/adapter-sqlite`, zéro service externe) ou passer et brancher le stockage vous-même. `init` ne suppose plus Prisma en l'absence de schéma Prisma à synchroniser.
 4. **Générer le composant du widget** — propose de créer un composant `"use client"` dans `components/instafix-widget.tsx` (ou `src/components/...` avec une arborescence `src/`) qui appelle `initInstaFix()` pour vous, en utilisant le nom de votre `package.json` comme `projectName`. Un composant existant n'est jamais écrasé.
 
-La route générée importe deux choses que vous devez fournir vous-même — le CLI n'installe rien :
+La route au format Prisma importe deux choses que vous devez fournir vous-même — le CLI n'installe rien :
 
 - le package `@instafix/adapter-prisma` (`npm i @instafix/adapter-prisma`)
 - un client Prisma exporté depuis `@/lib/prisma`
+
+La route au format SQLite n'a besoin que de `@instafix/adapter-sqlite` installé — aucun client à brancher, aucun schéma à pousser ; voir l'[adapter SQLite](/fr/docs/adapters/sqlite).
 
 Si votre projet n'a pas de répertoire `app/` (ni `src/app/`), `init` se termine en erreur : il ne génère que des routes Next.js App Router. Les autres frameworks branchent l'adapter manuellement — voir [Adapters](/fr/docs/adapters).
 

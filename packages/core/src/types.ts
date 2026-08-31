@@ -718,16 +718,29 @@ function hasErrorCode<C extends string>(error: unknown, code: C): error is Coded
   return hasOwn(error, "code") && error.code === code;
 }
 
-/** Type guard — works for `StoreNotFoundError` and ORM-specific equivalents (e.g. Prisma P2025). */
+/**
+ * Type guard — works for `StoreNotFoundError` and ORM-specific equivalents
+ * (e.g. Prisma P2025). Also matches on the stable `code` field: every
+ * consumer package bundles its own copy of core (tsup `noExternal`), so an
+ * instance thrown by one package (e.g. a third-party store passed into
+ * another adapter's handler) fails an `instanceof` check against that
+ * handler's own bundled `StoreNotFoundError` class identity.
+ */
 export function isStoreNotFound(error: unknown): error is StoreNotFoundError | CodedError<"P2025"> {
   if (error instanceof StoreNotFoundError) return true;
+  if (hasErrorCode(error, "STORE_NOT_FOUND")) return true;
   // Backwards compat: Prisma's P2025
   return hasErrorCode(error, "P2025");
 }
 
-/** Type guard — works for `StoreDuplicateError` and ORM-specific equivalents (e.g. Prisma P2002). */
+/**
+ * Type guard — works for `StoreDuplicateError` and ORM-specific equivalents
+ * (e.g. Prisma P2002). Also matches on the stable `code` field — see
+ * {@link isStoreNotFound} for why.
+ */
 export function isStoreDuplicate(error: unknown): error is StoreDuplicateError | CodedError<"P2002"> {
   if (error instanceof StoreDuplicateError) return true;
+  if (hasErrorCode(error, "STORE_DUPLICATE")) return true;
   // Backwards compat: Prisma's P2002
   return hasErrorCode(error, "P2002");
 }

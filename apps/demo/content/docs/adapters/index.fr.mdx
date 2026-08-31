@@ -1,17 +1,20 @@
 ---
 title: Choisir un adapter
-description: Où vivent vos feedbacks — Prisma pour la production, memory pour les tests et démos, localStorage pour le tout-client.
+description: Où vivent vos feedbacks — Prisma ou SQLite pour la production, memory pour les tests et démos, localStorage pour le tout-client.
 ---
 
-Un adapter, c'est la couche de stockage derrière InstaFix. Les trois implémentent le même contrat `InstaFixStore` (6 méthodes), vous pouvez donc les échanger sans toucher au widget.
+Un adapter, c'est la couche de stockage derrière InstaFix. Tous implémentent le même contrat `InstaFixStore` (6 méthodes), vous pouvez donc les échanger sans toucher au widget.
 
 | Adapter | Où vivent les données | À utiliser pour |
 |---|---|---|
-| [`@instafix/adapter-prisma`](/fr/docs/adapters/prisma) | Votre base de données, via Prisma | La production — l'installation standard |
+| [`@instafix/adapter-prisma`](/fr/docs/adapters/prisma) | Votre base de données, via Prisma | La production — si Prisma est déjà en place |
+| [`@instafix/adapter-sqlite`](/fr/docs/adapters/sqlite) | Un fichier `.db` local, via better-sqlite3 | La production — sans ORM ni serveur de base de données |
 | [`@instafix/adapter-memory`](/fr/docs/adapters/memory) | Un tableau en mémoire du processus | Tests, previews, démos jetables |
 | [`@instafix/adapter-localstorage`](/fr/docs/adapters/localstorage) | Le navigateur du visiteur | Démos et prototypes côté client — aucun serveur |
 
-Besoin d'un autre backend ? [Écrivez le vôtre](/fr/docs/adapters/writing-an-adapter) avec `@instafix/adapter-kit`.
+Vous hésitez ? Si le projet a déjà Prisma, utilisez-le — sinon SQLite donne un stockage durable réel sans rien d'autre à installer ou faire tourner. `npx @instafix/cli init` vous le demande et branche celui que vous choisissez.
+
+Besoin d'un tout autre backend (Postgres sans Prisma, MongoDB, DynamoDB, …) ? [Écrivez le vôtre](/fr/docs/adapters/writing-an-adapter) avec `@instafix/adapter-kit`.
 
 ## Deux façons de monter un store
 

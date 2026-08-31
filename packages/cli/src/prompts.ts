@@ -5,7 +5,7 @@
  * which prevents vitest from spying on or replacing individual exports.
  * Importing `{ p }` from this module gives tests full control via vi.spyOn().
  */
-import { cancel, confirm, intro, isCancel, log, note, outro, spinner, text } from "@clack/prompts";
+import { cancel, confirm, intro, isCancel, log, note, outro, select, spinner, text } from "@clack/prompts";
 
 export const p = {
   cancel,
@@ -15,6 +15,7 @@ export const p = {
   log,
   note,
   outro,
+  select,
   spinner,
   text,
 };

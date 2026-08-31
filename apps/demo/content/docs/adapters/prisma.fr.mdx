@@ -175,5 +175,5 @@ createInstaFixHandler({
 
 Deux réserves, directement issues du code source :
 
-- La vérification d'appartenance inter-projets sur PATCH/DELETE ne tourne actuellement que pour `PrismaStore`. Avec un store personnalisé, quiconque connaît l'`id` d'un feedback peut le modifier quel que soit le `projectName` — placez les endpoints à store personnalisé derrière un `apiKey`.
+- La vérification d'appartenance inter-projets sur PATCH/DELETE repose sur la méthode optionnelle `store.verifyProjectOwnership` (duck-typing) — implémentez-la et le handler l'applique automatiquement (`PrismaStore`, `MemoryStore` et `LocalStorageStore` le font toutes). Sans elle, quiconque connaît l'`id` d'un feedback peut le modifier quel que soit le `projectName` — placez ces endpoints à store personnalisé derrière un `apiKey`.
 - `screenshotStorage` et `caseInsensitiveSearch` ne s'appliquent qu'au chemin Prisma intégré ; avec un store personnalisé, gérez les captures à l'intérieur de votre store.

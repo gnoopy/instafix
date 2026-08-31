@@ -1,0 +1,49 @@
+---
+title: Adapter SQLite
+description: Zéro service externe — un fichier .db local, aucun ORM ni serveur de base de données nécessaire.
+---
+
+`@instafix/adapter-sqlite` est le backend durable le moins contraignant : aucun ORM à installer, aucun serveur de base de données à faire tourner, aucune commande de migration. Les deux tables (`instafix_feedback`, `instafix_annotation`) sont créées automatiquement — via `better-sqlite3` — dès la première construction d'un `SqliteStore` pour un fichier donné. Nécessite Node 20+.
+
+```bash
+npm i @instafix/adapter-sqlite
+```
+
+## Montage
+
+`createInstaFixHandler` est ici exactement la même fabrique de handler que celle exportée par `@instafix/adapter-prisma` — mêmes auth, CORS, validation et webhooks — simplement réexportée pour que vous n'ayez jamais besoin d'installer ou d'importer quoi que ce soit lié à Prisma :
+
+```ts
+// app/api/instafix/route.ts — Next.js App Router
+import { createInstaFixHandler, SqliteStore } from "@instafix/adapter-sqlite";
+
+const store = new SqliteStore({ path: "./instafix.db" });
+
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({ store });
+```
+
+Toutes les options acceptées par `createInstaFixHandler` (`apiKey`, `allowedOrigins`, `webhooks`, `screenshotStorage`, …) fonctionnent ici à l'identique — voir le [tableau d'options de l'adapter Prisma](/fr/docs/adapters/prisma#options) et la [section webhooks](/fr/docs/adapters/prisma#webhooks) ; rien n'y est spécifique à Prisma.
+
+## Options de SqliteStore
+
+| Option | Type | Défaut | Ce que ça fait |
+|---|---|---|---|
+| `path` | `string` | `"./instafix.db"` | Emplacement du fichier de base de données. Passez `":memory:"` pour une base éphémère, sans disque (tests) |
+| `screenshotStorage` | `ScreenshotStorage` | — | Uploadez les captures d'écran quelque part de réel au lieu de les mettre en ligne — même contrat que l'option de même nom de l'adapter Prisma |
+| `caseInsensitiveSearch` | `boolean` | `true` | Voir [casse de la recherche](#casse-de-la-recherche) ci-dessous |
+
+## Comportements à connaître
+
+- **Auto-initialisation.** Les tables et index sont créés avec `CREATE TABLE IF NOT EXISTS` à la construction — vous pouvez construire un `SqliteStore` à chaque démarrage à froid sans risque.
+- **Mode WAL + clés étrangères activées.** Supprimer un feedback supprime en cascade ses annotations au niveau de la base (`ON DELETE CASCADE`).
+- **Un `clientId` en double lève `StoreDuplicateError`** plutôt que d'être résolu en interne — le handler partagé l'intercepte et renvoie l'enregistrement existant, donc `POST` reste idempotent du point de vue du widget.
+- **`verifyProjectOwnership` est implémenté** — la vérification d'appartenance inter-projets sur PATCH/DELETE du handler est appliquée, comme pour `PrismaStore`.
+- Les champs JSON (`screenshotRegion`, `diagnostics`, le `target` des annotations) sont stockés en `TEXT` et (dé)sérialisés à chaque lecture/écriture.
+
+### Casse de la recherche
+
+Par défaut, `LIKE` dans SQLite est insensible à la casse uniquement pour les lettres ASCII (pas d'extension ICU) — le défaut `true` ne coûte donc rien et correspond à ce qu'on attend d'un champ de recherche, mais `"café"` ne correspondra pas à `"CAFÉ"`. Passez `caseInsensitiveSearch: false` pour basculer sur `GLOB`, toujours sensible à la casse.
+
+## Une dépendance native
+
+Contrairement aux adapters memory/localStorage, celui-ci installe `better-sqlite3`, un module natif. La plupart des plateformes (Linux, macOS, Windows en x64/arm64) récupèrent un binaire précompilé à l'installation, sans compilateur nécessaire ; les plateformes moins courantes peuvent basculer sur une compilation depuis les sources.

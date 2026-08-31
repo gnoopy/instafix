@@ -22,12 +22,16 @@ npx @instafix/cli init
 1. **Sync Prisma models** — if a schema is found (see [schema detection](#schema-detection)), it offers to add the `InstaFixFeedback` and `InstaFixAnnotation` models.
 2. **Push the schema** — if a schema was found, it offers to run `npx prisma db push` for you right away, streaming Prisma's own output (and any confirmation it asks for) straight to your terminal.
 3. **Generate the API route** — offers to create a Next.js App Router route that serves the widget. The file goes to `app/api/instafix/route.ts`, or `src/app/api/instafix/route.ts` when your project uses a `src/` layout. An existing route is never overwritten.
+   - **A schema was found**: generates a route against `@instafix/adapter-prisma`.
+   - **No schema was found**: asks which backend to use instead — **SQLite** (`@instafix/adapter-sqlite`, zero external services) or skip and wire storage yourself. `init` no longer assumes Prisma when there's no Prisma schema to sync against.
 4. **Generate the widget component** — offers to create a `"use client"` component at `components/instafix-widget.tsx` (or `src/components/...` with a `src/` layout) that calls `initInstaFix()` for you, using your `package.json` name as the `projectName`. An existing component is never overwritten.
 
-The generated route imports two things you need to provide yourself — the CLI installs nothing:
+The Prisma-flavored route imports two things you need to provide yourself — the CLI installs nothing:
 
 - the `@instafix/adapter-prisma` package (`npm i @instafix/adapter-prisma`)
 - a Prisma client exported from `@/lib/prisma`
+
+The SQLite-flavored route only needs `@instafix/adapter-sqlite` installed — no client to wire up, no schema to push; see the [SQLite adapter](/docs/adapters/sqlite).
 
 If your project has no `app/` (or `src/app/`) directory, `init` exits with an error: it only scaffolds Next.js App Router routes. Other frameworks wire the adapter manually — see [Adapters](/docs/adapters).
 

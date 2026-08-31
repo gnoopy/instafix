@@ -48,6 +48,11 @@
       "component": "cli",
       "bump-minor-pre-major": true,
       "extra-files": ["src/index.ts"]
+    },
+    "packages/adapter-sqlite": {
+      "release-type": "node",
+      "component": "adapter-sqlite",
+      "bump-minor-pre-major": true
     }
   }
 }

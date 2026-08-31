@@ -92,6 +92,29 @@ describe("generateRoute", () => {
     expect(content).toContain('// allowedOrigins: ["https://your-site.com"],');
   });
 
+  it('defaults to the prisma backend when "backend" is not passed', () => {
+    mkdirSync(join(tmpDir, "app"), { recursive: true });
+
+    const result = generateRoute(tmpDir);
+    const content = readFileSync(result.path, "utf-8");
+
+    expect(content).toContain("@instafix/adapter-prisma");
+  });
+
+  it('generates a SqliteStore-backed route for backend: "sqlite"', () => {
+    mkdirSync(join(tmpDir, "app"), { recursive: true });
+
+    const result = generateRoute(tmpDir, "sqlite");
+    const content = readFileSync(result.path, "utf-8");
+
+    expect(content).toContain('import { createInstaFixHandler, SqliteStore } from "@instafix/adapter-sqlite"');
+    expect(content).toContain("new SqliteStore(");
+    expect(content).toContain("export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({");
+    expect(content).toContain("store,");
+    expect(content).not.toContain("@instafix/adapter-prisma");
+    expect(content).not.toContain("@/lib/prisma");
+  });
+
   // -------------------------------------------------------------------------
   // Permission error
   // -------------------------------------------------------------------------

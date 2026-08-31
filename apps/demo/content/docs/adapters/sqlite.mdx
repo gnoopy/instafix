@@ -1,0 +1,49 @@
+---
+title: SQLite adapter
+description: Zero external services — a local .db file, no ORM or database server needed.
+---
+
+`@instafix/adapter-sqlite` is the lowest-friction durable backend: no ORM to install, no database server to run, no migration command. The two tables (`instafix_feedback`, `instafix_annotation`) are created automatically — via `better-sqlite3` — the first time a `SqliteStore` is constructed against a given file. Requires Node 20+.
+
+```bash
+npm i @instafix/adapter-sqlite
+```
+
+## Mounting
+
+`createInstaFixHandler` here is the exact same handler factory `@instafix/adapter-prisma` exports — same auth, CORS, validation, and webhooks — just re-exported so you never need to `npm i` or import anything Prisma-flavored:
+
+```ts
+// app/api/instafix/route.ts — Next.js App Router
+import { createInstaFixHandler, SqliteStore } from "@instafix/adapter-sqlite";
+
+const store = new SqliteStore({ path: "./instafix.db" });
+
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({ store });
+```
+
+Every option `createInstaFixHandler` accepts (`apiKey`, `allowedOrigins`, `webhooks`, `screenshotStorage`, …) works identically here — see the [Prisma adapter's options table](/docs/adapters/prisma#options) and [webhooks section](/docs/adapters/prisma#webhooks); nothing about them is Prisma-specific.
+
+## SqliteStore options
+
+| Option | Type | Default | What it does |
+|---|---|---|---|
+| `path` | `string` | `"./instafix.db"` | Database file location. Pass `":memory:"` for an ephemeral, on-disk-free database (tests) |
+| `screenshotStorage` | `ScreenshotStorage` | — | Upload screenshots somewhere real instead of inlining data URLs — same contract as the Prisma adapter's option of the same name |
+| `caseInsensitiveSearch` | `boolean` | `true` | See [search casing](#search-casing) below |
+
+## Behavior notes
+
+- **Self-bootstrapping.** Tables and indexes are created with `CREATE TABLE IF NOT EXISTS` on construction — safe to construct a `SqliteStore` on every cold start.
+- **WAL mode + foreign keys on.** Deleting a feedback cascades to its annotations at the database level (`ON DELETE CASCADE`).
+- **Duplicate `clientId` throws `StoreDuplicateError`** rather than resolving it internally — the shared handler catches it and returns the existing record, so `POST` stays idempotent from the widget's point of view.
+- **`verifyProjectOwnership` is implemented** — the handler's cross-project ownership check on PATCH/DELETE is enforced, same as `PrismaStore`.
+- JSON fields (`screenshotRegion`, `diagnostics`, annotation `target`) are stored as `TEXT` and (de)serialized on every read/write.
+
+### Search casing
+
+SQLite's `LIKE` is case-insensitive for ASCII letters only by default (no ICU extension) — so the `true` default costs nothing and matches most search-box expectations, but `"café"` won't match `"CAFÉ"`. Set `caseInsensitiveSearch: false` to switch to `GLOB` instead, which is always case-sensitive.
+
+## A native dependency
+
+Unlike the memory/localStorage adapters, this one installs `better-sqlite3`, a native module. Most platforms (Linux, macOS, Windows on x64/arm64) get a prebuilt binary at install time with no compiler needed; unusual platforms may fall back to compiling from source.
