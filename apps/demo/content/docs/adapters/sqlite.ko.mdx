@@ -11,7 +11,7 @@ npm i @instafix/adapter-sqlite
 
 ## 연결하기
 
-여기서 쓰는 `createInstaFixHandler`는 `@instafix/adapter-prisma`가 내보내는 것과 완전히 동일한 핸들러 팩토리입니다 — 인증, CORS, 검증, 웹훅 모두 같습니다. Prisma 관련 패키지를 설치하거나 import할 필요가 없도록 그대로 재노출한 것뿐입니다:
+여기서 쓰는 `createInstaFixHandler`는 모든 InstaFix 어댑터가 공유하는, 스토어에 무관한 인증/CORS/검증/웹훅 로직을 그대로 실행합니다 — Prisma 관련 패키지를 설치하거나 import할 필요가 전혀 없습니다:
 
 ```ts
 // app/api/instafix/route.ts — Next.js App Router

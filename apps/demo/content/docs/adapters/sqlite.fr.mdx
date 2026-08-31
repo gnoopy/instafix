@@ -11,7 +11,7 @@ npm i @instafix/adapter-sqlite
 
 ## Montage
 
-`createInstaFixHandler` est ici exactement la même fabrique de handler que celle exportée par `@instafix/adapter-prisma` — mêmes auth, CORS, validation et webhooks — simplement réexportée pour que vous n'ayez jamais besoin d'installer ou d'importer quoi que ce soit lié à Prisma :
+`createInstaFixHandler` exécute ici la même logique auth/CORS/validation/webhooks, indépendante du store, que partage chaque adapter InstaFix — rien lié à Prisma à installer ou importer :
 
 ```ts
 // app/api/instafix/route.ts — Next.js App Router
