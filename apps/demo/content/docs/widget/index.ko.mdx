@@ -1,0 +1,101 @@
+---
+title: 위젯
+description: 피드백 위젯을 설치하고, 언제 표시되는지 이해하고, 앱에서 제어하는 방법.
+---
+
+위젯은 클라이언트가 직접 보게 되는 부분입니다. 페이지 위에 사각형을 그리고, 코멘트를 입력한 뒤 전송할 수 있게 해주는 플로팅 버튼으로, 정확한 요소에 고정됩니다.
+
+```bash
+npm i @instafix/widget
+```
+
+```ts
+import { initInstaFix } from "@instafix/widget";
+
+const instafix = initInstaFix({
+  endpoint: "/api/instafix",
+  projectName: "my-project",
+});
+```
+
+`initInstaFix`는 패키지의 주요 런타임 export이며, 두 개의 i18n 헬퍼(`registerLocale`, `loadLocale`)와 TypeScript 타입들도 함께 제공됩니다. gzip 기준 약 **30 KB**(ESM)이고, 무거운 부분(패널, 로케일, 스크린샷 엔진)은 지연 로드되며, closed 모드의 Shadow DOM 안에서 렌더링되므로 페이지 스타일과 위젯 스타일이 절대 충돌하지 않습니다.
+
+## 위젯이 표시되는 경우 — 그리고 표시되지 않는 경우
+
+`initInstaFix`는 다음 순서로 일련의 가드를 실행합니다. 하나라도 걸리면 no-op 인스턴스가 반환됩니다(모든 메서드는 존재하지만 아무것도 렌더링되지 않음):
+
+1. **서버 사이드 렌더링** — `window`가 없나요? 위젯은 `onSkip("ssr")`과 함께 건너뜁니다. 절대 우회할 수 없습니다.
+2. **이미 초기화됨** — `initInstaFix()`를 두 번째로 호출하면 *기존* 인스턴스를 반환합니다(페이지당 위젯 하나). `destroy()`가 이 상태를 초기화합니다.
+3. **프로덕션** — `process.env.NODE_ENV === "production"`일 때, 위젯은 `onSkip("production")`과 함께 건너뜁니다. "리뷰 중에는 클라이언트에게 보이고, 실제 방문자에게는 절대 보이지 않는다"는 기본 동작입니다. 스테이징/프리뷰 환경에서는 `forceShow: true`로 우회하세요. 참고: `process.env.NODE_ENV`만 읽으며 `import.meta.env`는 읽지 않습니다.
+4. **작은 뷰포트** — `minViewportWidth`(기본값 **768px**) 미만이면 `onSkip("mobile")`과 함께 건너뜁니다. 이 역시 `forceShow`로 우회할 수 있습니다.
+5. **설정 검증** — `endpoint`/`store`가 없거나 `projectName`이 없나요? 위젯은 `console.error`를 출력하고 아무 동작도 하지 않습니다. 이 경우는 `onSkip`을 호출하지 **않습니다** — 콜백이 아니라 콘솔을 확인하세요.
+
+## 인스턴스
+
+```ts
+const instafix = initInstaFix({ ... });
+
+instafix.open();                  // 피드백 패널 열기
+instafix.close();                 // 패널 닫기
+instafix.refresh();               // 현재 페이지의 피드백을 다시 가져오기 (절대 예외를 던지지 않음)
+instafix.focusFeedback(id);       // 마커로 스크롤하고 강조 표시; 알 수 없는 id면 false
+const off = instafix.on("feedback:sent", (feedback) => { ... });
+instafix.destroy();               // 완전한 해제, 패치된 모든 전역 객체 복원
+```
+
+`on()`은 구독 해제 함수를 반환합니다. 다음 7개의 공개 이벤트를 사용할 수 있습니다:
+
+| 이벤트 | 페이로드 | 발생 시점 |
+|---|---|---|
+| `feedback:sent` | 생성된 피드백 | 전송이 성공했을 때 |
+| `feedback:deleted` | 피드백 id | 피드백이 삭제되었을 때 |
+| `feedback:error` | `Error` 객체 | 피드백 API 호출이 실패했을 때 — `onError` 설정 콜백과 동일한 페이로드 |
+| `panel:open` / `panel:close` | — | 패널이 열리거나 닫혔을 때 |
+| `annotation:start` / `annotation:end` | — | 주석 작성 세션이 시작되거나 끝났을 때. `end`는 사용자가 제출했든 취소했든 발생하며, 두 진입 경로 — FAB와 [우클릭 댓글](/ko/docs/widget/right-click) — 모두 대칭적인 이벤트 쌍을 발생시키므로, 그 사이에 채팅 버블이나 분석 오버레이를 일시 중지할 수 있습니다 |
+
+## React
+
+전용 훅을 사용하세요 — StrictMode의 이중 마운트에도 안전하며, 재초기화 없이 렌더링 사이에 콜백을 바꿀 수 있습니다:
+
+```tsx
+"use client";
+import { useInstaFix } from "@instafix/widget/react";
+
+export function Feedback() {
+  const instafix = useInstaFix({
+    endpoint: "/api/instafix",
+    projectName: "my-project",
+    onFeedbackSent: (f) => console.log("new feedback", f.id),
+  });
+  return null; // 위젯은 스스로 렌더링됩니다
+}
+```
+
+훅은 마운트되기 전까지 `null`을 반환하고, 마운트 후에는 인스턴스를 반환합니다. `endpoint`나 다른 구조적 옵션을 변경하려면 리마운트가 필요하지만, 콜백을 바꾸는 데는 필요 없습니다 — 설정이 받는 **모든** 콜백(`onFeedbackSent`, `onError`, `onOpen`, `onClose`, `onAnnotationStart`, `onAnnotationEnd`, `onSkip`)은 호출되는 시점에 읽히므로, 최신 상태를 클로저로 캡처한 핸들러는 그 상태로 실행됩니다. 언마운트 후에는 조용해지므로, 늦게 도착한 응답이 이미 해제된 트리를 건드릴 일도 없습니다.
+
+## 오류 처리
+
+`onError`는 두 가지 유용한 필드를 가진 에러를 전달받습니다 — `code`(`"NETWORK" | "VALIDATION" | "AUTH" | "SERVER"`)와 `retryable`(불리언):
+
+```ts
+initInstaFix({
+  endpoint: "/api/instafix",
+  projectName: "my-project",
+  onError: (error) => {
+    const code = (error as { code?: string }).code;
+    if (code === "AUTH") console.warn("check your apiKey");
+  },
+});
+```
+
+`instanceof`가 아니라 `error.code`로 분기하세요 — 에러 클래스 자체는 패키지에서 export되지 않습니다. 사용자가 신원 확인 프롬프트를 취소하면 에러가 발생하지 않습니다. 그것은 실패가 아니라 취소이기 때문입니다.
+
+## 위젯 입장에서 본 상태
+
+피드백에는 네 가지 상태(`open`, `in_progress`, `resolved`, `wont_fix`)가 있습니다. 위젯은 네 가지 모두를 **표시**하지만, 자체 액션은 의도적으로 이진적입니다: 해결(resolve)과 재오픈(reopen). 중간 상태는 [대시보드](/ko/docs/dashboard)의 트리아지 워크플로에 속합니다.
+
+## 기본으로 제공되는 안정성 기능
+
+- **백오프를 적용한 재시도** — 실패한 전송은 3회 재시도됩니다(10초 타임아웃, 지터를 포함한 지수 백오프). 서버 오류와 네트워크 장애는 재시도되지만, 검증 오류는 재시도되지 않습니다.
+- **오프라인 큐** — 전송이 계속 실패하면 페이로드가 localStorage에 큐잉되고(최대 20개), 다음 페이지 로드 시 플러시됩니다. 큐에는 페이로드만 저장되며, 토큰이나 헤더는 절대 저장되지 않고 플러시 시점에 다시 계산됩니다.
+- 두 기능 모두 HTTP 모드(`endpoint`)에 적용됩니다. 클라이언트 사이드 [`store` 모드](/ko/docs/adapters/localstorage)에서는 쓰기가 로컬에서 이루어지므로 재시도할 것이 없습니다.

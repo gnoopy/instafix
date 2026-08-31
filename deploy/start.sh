@@ -27,11 +27,22 @@ if [[ "$MODE" == "build" ]]; then
   bun run build
 fi
 
-echo "Starting apps/demo (Next.js) on ${HOST}:${PORT}..."
-cd apps/demo
-nohup node_modules/.bin/next start -p "$PORT" -H "$HOST" > ../../deploy/logs/next.log 2>&1 &
-echo $! > ../../deploy/run/next.pid
-cd "$ROOT"
+# apps/demo builds with `output: "standalone"` (next.config.ts) — `next start`
+# against a standalone build is unsupported (it silently breaks middleware,
+# causing redirect loops on locale-aware routes like /docs) and next itself
+# warns about it. Run the standalone server.js instead, same as the
+# Dockerfile's runner stage — which means manually copying `.next/static`
+# in, since standalone output doesn't include it.
+rm -rf apps/demo/.next/standalone/apps/demo/.next/static
+cp -r apps/demo/.next/static apps/demo/.next/standalone/apps/demo/.next/static
+if [[ -d apps/demo/public ]]; then
+  rm -rf apps/demo/.next/standalone/apps/demo/public
+  cp -r apps/demo/public apps/demo/.next/standalone/apps/demo/public
+fi
+
+echo "Starting apps/demo (Next.js standalone) on ${HOST}:${PORT}..."
+PORT="$PORT" HOSTNAME="$HOST" nohup node apps/demo/.next/standalone/apps/demo/server.js > deploy/logs/next.log 2>&1 &
+echo $! > deploy/run/next.pid
 
 for _ in $(seq 1 60); do
   port_busy "$PORT" && break

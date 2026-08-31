@@ -8,12 +8,15 @@ import { Header } from "@/components/landing/header";
 import { Hero } from "@/components/landing/hero";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { WidgetDogfood } from "@/components/landing/widget-dogfood";
+import { getSiteLocale } from "@/lib/site-i18n/locale";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const locale = await getSiteLocale();
+
   return (
     <>
       <LandingAnimations />
-      <WidgetDogfood />
+      <WidgetDogfood locale={locale} />
       <Header />
       <main>
         <Hero />

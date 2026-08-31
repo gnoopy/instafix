@@ -1,0 +1,87 @@
+---
+title: 설정
+description: 실제 기본값과 동작을 포함한 모든 initInstaFix 옵션.
+---
+
+`initInstaFix(config)`의 모든 옵션입니다. 필수 항목은 `projectName`과 `endpoint` / `store` 중 하나뿐입니다.
+
+## 연결
+
+`InstaFixConfig`는 두 가지 전송 모드에 대한 판별 유니언(discriminated union)입니다 — `endpoint` **또는** `store` 중 하나이며, 둘 다 사용하거나 둘 다 사용하지 않을 수는 없습니다. TypeScript는 런타임에서 발견하게 두는 대신, 잘못된 조합을 컴파일 타임에 거부합니다:
+
+```ts
+initInstaFix({ endpoint: "/api/instafix", store, projectName: "x" }); // ✗ 두 모드 모두 사용
+initInstaFix({ store, apiKey: "sk-…", projectName: "x" });           // ✗ store 모드에서 HTTP 전용 옵션 사용
+initInstaFix({ projectName: "x" });                                   // ✗ 전송 방식 없음
+```
+
+| 옵션 | 타입 | 기본값 | 동작 |
+|---|---|---|---|
+| `endpoint` | `string` | — | **HTTP 모드.** InstaFix API의 URL (예: `/api/instafix`) |
+| `store` | `InstaFixStore` | — | **Store 모드.** HTTP 대신 브라우저 내 store에 씁니다 — `endpoint`, `apiKey`, `headers`와 함께 사용할 수 없습니다 |
+| `projectName` | `string` | — | 두 모드 모두 필수. 위젯이 읽고 쓰는 모든 것의 범위를 지정합니다 |
+| `apiKey` | `string` | — | HTTP 모드 전용. 모든 요청에 `Authorization: Bearer <key>`로 전송됩니다 |
+| `headers` | 객체 또는 함수 | — | HTTP 모드 전용. 정적이거나 요청마다 계산되는(동기 또는 비동기) 추가 헤더. 가장 나중에 병합되므로, 여기에 명시한 `Authorization`이 `apiKey`보다 우선합니다 |
+
+이 두 절반은 각각 `InstaFixHttpConfig`와 `InstaFixStoreConfig`로 export됩니다 — 래퍼 컴포넌트가 config를 prop으로 받고 한 가지 모드만 지원할 때 유용합니다:
+
+```ts
+import type { InstaFixHttpConfig } from "@instafix/widget";
+
+function mountFeedback(config: InstaFixHttpConfig) { /* endpoint가 보장됨 */ }
+```
+
+> `apiKey`는 클라이언트 번들에 그대로 포함되므로 모든 방문자가 읽을 수 있습니다. 이미 로그인으로 보호된 내부 도구에서만 사용하세요. 공개 사이트에서는 단기 토큰을 반환하는 함수 형태의 `headers`를 사용하는 편이 좋습니다.
+
+## 표시 여부
+
+| 옵션 | 타입 | 기본값 | 동작 |
+|---|---|---|---|
+| `forceShow` | `boolean` | `false` | 프로덕션 가드와 뷰포트 가드를 우회합니다(SSR 가드는 절대 우회하지 않음) |
+| `minViewportWidth` | `number` | `768` | 이 너비 미만에서는 위젯이 `onSkip("mobile")`과 함께 건너뜁니다. 모든 너비를 허용하려면 `0`을 사용하세요 |
+| `position` | `"bottom-right"` \| `"bottom-left"` | `"bottom-right"` | 플로팅 버튼이 위치할 모서리 |
+| `showAnnotationsToggle` | `boolean` | `true` | 액션 툴바에서 마커 표시 토글을 제거하려면 `false`로 설정하세요 |
+
+## 외관
+
+| 옵션 | 타입 | 기본값 | 동작 |
+|---|---|---|---|
+| `accentColor` | `string` | `"#0066ff"` | **16진수만 지원**(`#RGB`, `#RRGGBB`, `#RRGGBBAA`). 색상 이름, `rgb()`, `hsl()` 등을 사용하면 경고를 출력하고 기본값으로 대체됩니다 |
+| `theme` | `"light"` \| `"dark"` \| `"auto"` | `"light"` | `auto`는 **초기화 시 한 번만** 시스템 설정을 읽습니다 — 세션 중간에 OS 테마가 바뀌어도 위젯 테마는 다시 바뀌지 않습니다 |
+| `locale` | `string` | `"ko"` | 모든 BCP-47 태그를 사용할 수 있습니다. [언어](/ko/docs/widget/i18n) 참고 |
+
+## 기능
+
+| 옵션 | 타입 | 기본값 | 동작 |
+|---|---|---|---|
+| `enableScreenshot` | `boolean` | `false` | 제출 시 주석이 달린 영역의 JPEG를 캡처합니다 — [스크린샷](/ko/docs/widget/screenshots) 참고 |
+| `enableRightClickComment` | `boolean` | `false` | 어디서든 우클릭하면 즉시 댓글을 남길 수 있습니다 — [우클릭 댓글](/ko/docs/widget/right-click) 참고 |
+| `captureDiagnostics` | `boolean` 또는 객체 | `false` | 각 피드백에 최근 콘솔 로그(최대 50개)와 네트워크 요청(최대 20개)을 첨부합니다. `true`로 설정하면 둘 다 활성화되며, 객체를 전달하면 채널과 한도를 개별 지정할 수 있습니다 |
+| `deepLink` | `boolean` 또는 `{ param?: string }` | `false` | 최초 로드 시 `?instafix=<id>`(또는 커스텀 파라미터)로 참조된 피드백에 포커스합니다. 최초 로드에만 적용되며, 라우트 변경 시에는 `focusFeedback()`을 직접 호출하세요 |
+| `identity` | `{ name, email }` | — | 작성자 정보를 미리 채웁니다(SSO 앱용): 신원 확인 모달을 완전히 건너뛰며, localStorage에는 절대 저장되지 않습니다 |
+
+## 페이지 스코핑
+
+| 옵션 | 타입 | 기본값 | 동작 |
+|---|---|---|---|
+| `scopeAnnotationsByUrl` | `boolean` | `true` | 현재 페이지에서 생성된 마커만 표시합니다. 서버 사이드와 클라이언트 사이드 양쪽에서 필터링되므로 주석이 페이지 간에 새어 나갈 수 없습니다 |
+| `getPageScope` | `() => { url, urlPattern }` | pathname | "현재 페이지"가 의미하는 바를 커스터마이즈합니다 — 안정적인 `url`을 반환하세요(선택적으로 `/products/:id`처럼 `urlPattern` 템플릿도 반환하면 동적 라우트끼리 피드백을 공유할 수 있습니다) |
+| `watchNavigation` | `boolean` | `true` | SPA 내비게이션 시 피드백을 다시 가져옵니다(History API 패치 + `popstate`/`hashchange`). 데이터만 갱신하며 스크롤이나 포커스는 절대 건드리지 않습니다. 이 동작을 끄려면 `false`로 설정하고 직접 `refresh()`를 호출하세요 |
+
+> 기본 페이지 스코프는 `window.location.pathname`입니다 — 구조적으로 쿼리 스트링을 포함하지 않으므로, URL의 토큰이나 검색 파라미터가 서버에 전달될 일이 없습니다. `getPageScope`를 직접 제공한다면 이 속성을 유지하세요: `location.href`가 아니라 경로나 템플릿을 반환해야 합니다.
+
+## 콜백
+
+| 옵션 | 시그니처 | 발생 시점 |
+|---|---|---|
+| `onFeedbackSent` | `(feedback) => void` | 피드백이 성공적으로 생성되었을 때 |
+| `onError` | `(error) => void` | 제출 또는 조회가 실패했을 때 — [오류 처리](/ko/docs/widget#오류-처리) 참고 |
+| `onOpen` / `onClose` | `() => void` | 패널이 열리거나 닫혔을 때 |
+| `onAnnotationStart` / `onAnnotationEnd` | `() => void` | 주석 작성 세션이 시작되거나 끝났을 때 — 이 사이에 채팅 버블이나 분석 오버레이를 일시 중지하세요 |
+| `onSkip` | `(reason) => void` | 위젯이 렌더링하지 않기로 결정했을 때: `"ssr"`, `"production"`, 또는 `"mobile"`. 잘못된 설정은 대신 `console.error`를 출력합니다 |
+
+## 디버그
+
+| 옵션 | 타입 | 기본값 | 동작 |
+|---|---|---|---|
+| `debug` | `boolean` | `false` | `console.debug`를 통한 상세한 `[instafix]` 라이프사이클 로깅 |

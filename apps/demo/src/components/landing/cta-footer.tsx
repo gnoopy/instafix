@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { ctaFooterContent } from "@/lib/site-i18n/content/cta-footer";
+import { getSiteLocale } from "@/lib/site-i18n/locale";
 
-export function CtaFooter() {
+export async function CtaFooter() {
+  const locale = await getSiteLocale();
+  const t = ctaFooterContent[locale];
+
   return (
     <section className="relative bg-gray-950 px-6 py-32">
       {/* Radial accent glow */}
@@ -9,8 +14,8 @@ export function CtaFooter() {
       </div>
 
       <div data-gsap="cta-section" className="relative mx-auto max-w-3xl text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Ready to ditch screenshot emails?</h2>
-        <p className="mt-4 text-lg text-gray-400">Get started in minutes. Free forever.</p>
+        <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">{t.heading}</h2>
+        <p className="mt-4 text-lg text-gray-400">{t.subheading}</p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <a
@@ -19,13 +24,13 @@ export function CtaFooter() {
             rel="noopener noreferrer"
             className="rounded-lg bg-white px-6 py-3 text-base font-medium text-accent transition-colors hover:bg-gray-100"
           >
-            Get Started
+            {t.getStarted}
           </a>
           <Link
             href="/demo"
             className="rounded-lg border border-gray-600 px-6 py-3 text-base font-medium text-gray-300 transition-colors hover:border-gray-400 hover:text-white"
           >
-            Try the Demo
+            {t.tryDemo}
           </Link>
         </div>
       </div>

@@ -1,0 +1,56 @@
+---
+title: 테마 설정
+description: 스코프가 지정된 스타일, CSS 변수, 그리고 이를 올바르게 오버라이드하는 방법.
+---
+
+대시보드는 Shadow DOM을 **사용하지 않습니다** — 여러분 앱의 DOM 그대로이며, 최초 마운트 시 `document.head`에 `<style id="instafix-inbox-styles">`로 주입되는 스타일시트 하나로 스타일링됩니다(여러 인스턴스가 공유하며, SSR에서도 안전합니다). 모든 셀렉터는 `.ifd-root` 아래로 스코프가 지정되어 있고, `!important`는 어디에도 쓰이지 않으며, 반응형 동작은 전부 **컨테이너 쿼리**로 처리됩니다 — 인박스는 뷰포트가 아니라 자신이 담긴 박스의 너비에 맞춰 적응합니다. 컨테이너 너비가 960px 미만이면 상세 드로어가 포커스 트랩이 걸린 오버레이가 되고, 그 이상이면 나란히 도킹됩니다.
+
+> CSP 참고: 주입되는 스타일시트가 동작하려면 `style-src`가 이를 허용해야 합니다(`'unsafe-inline'`이나 nonce 없이 `'self'`만 허용하는 정책이라면 차단됩니다).
+
+## 강조 색상
+
+prop으로 지정하세요 — 인라인 CSS 변수로 적용되므로, 어떤 스타일시트 규칙도 이를 오버라이드할 수 없습니다:
+
+```tsx
+<InstaFixInbox accentColor="#7c3aed" ... />
+```
+
+HEX 값만 가능합니다(`#RGB`, `#RRGGBB`, `#RRGGBBAA`). 그 외의 값은 경고를 띄우고 `#0066ff`로 대체됩니다. UI의 모든 강조 색상 단계는 이 단일 값을 `color-mix()`로 파생한 것입니다.
+
+## CSS에서 변수 오버라이드하기
+
+구조 관련 변수는 `.ifd-root`에 정의되어 있습니다:
+
+```css
+.my-app .ifd-root {
+  --ifd-font: "Inter", sans-serif;
+  --ifd-mono: "Fira Code", monospace;
+  --ifd-fs-body: 13px;
+  --ifd-radius: 10px;
+  --ifd-radius-sm: 8px;
+  --ifd-radius-xs: 6px;
+  --ifd-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+```
+
+팔레트 변수는 **테마별로** 선언되어 있으므로, 오버라이드가 안정적으로 적용되게 하려면 테마 속성을 함께 지정해야 합니다:
+
+```css
+.my-app .ifd-root[data-theme="dark"] {
+  --ifd-bg: #0b0d12;
+  --ifd-surface: #12151d;
+  --ifd-raised: #1a1e29;
+  --ifd-border: #232838;
+  --ifd-border-strong: #2e3448;
+  --ifd-text: #e7eaf2;
+  --ifd-text-2: #a7adbf;
+  --ifd-text-3: #6b7186;
+}
+/* 라이트/다크 모두 지원한다면 [data-theme="light"]에도 동일하게 반복하세요 */
+```
+
+전체 팔레트는 모두 같은 방식으로 오버라이드할 수 있습니다: `--ifd-bg`, `--ifd-surface`, `--ifd-raised`, `--ifd-border`, `--ifd-border-strong`, `--ifd-text`, `--ifd-text-2`, `--ifd-text-3`, `--ifd-accent-bright`, 상태 색상인 `--ifd-st-open`, `--ifd-st-progress`, `--ifd-st-resolved`, `--ifd-st-wontfix`, 타입 색상인 `--ifd-ty-question`, `--ifd-ty-change`, `--ifd-ty-bug`, `--ifd-ty-other`, 그리고 `--ifd-danger`, `--ifd-danger-strong`, `--ifd-dim`까지 포함됩니다.
+
+행 높이는 밀도(density)를 따라가므로, density 속성으로 오버라이드하세요: `.my-app .ifd-root[data-density="comfortable"] { --ifd-row-h: 48px; }`.
+
+> 솔직한 주의 사항 하나: 주입되는 스타일시트는 마운트 시점에 `<head>` 맨 끝에 추가되므로, 여러분이 링크한 스타일시트보다 뒤에 위치합니다. 위와 정확히 같은 셀렉터(주입된 스타일과 동일한 우선순위를 갖는)로 오버라이드하면 소스 순서에 따른 우선순위 판정에서 밀릴 수 있습니다 — 위 예시처럼 여러분 앱의 클래스를 접두어로 붙이면 우선순위가 확실하게 결정됩니다.

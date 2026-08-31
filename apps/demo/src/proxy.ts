@@ -5,5 +5,5 @@ export default createI18nMiddleware(i18n);
 
 export const config = {
   // Only docs URLs are locale-aware — the landing and /demo stay untouched.
-  matcher: ["/docs/:path*", "/en/docs/:path*", "/fr/docs/:path*"],
+  matcher: ["/docs/:path*", "/en/docs/:path*", "/fr/docs/:path*", "/ko/docs/:path*"],
 };

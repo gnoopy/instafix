@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { type FeaturesContent, featuresContent } from "@/lib/site-i18n/content/features";
+import { getSiteLocale } from "@/lib/site-i18n/locale";
 
 interface Framework {
   name: string;
@@ -78,10 +80,10 @@ function FrameworkPill({ fw }: { fw: Framework }) {
   );
 }
 
-function FrameworkMarquee() {
+function FrameworkMarquee({ caption }: { caption: string }) {
   return (
     <div className="mt-16 -rotate-1">
-      <p className="mb-5 text-center text-sm text-gray-500">Works with your stack</p>
+      <p className="mb-5 text-center text-sm text-gray-500">{caption}</p>
       <div
         className="overflow-hidden"
         style={{ maskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent)" }}
@@ -103,7 +105,7 @@ function FrameworkMarquee() {
   );
 }
 
-function SelfHostedVisual() {
+function SelfHostedVisual({ t }: { t: FeaturesContent["selfHostedVisual"] }) {
   return (
     <div className="mt-6 overflow-hidden rounded-xl border border-gray-800/60 bg-gray-950/80 p-4 font-mono text-xs leading-relaxed sm:text-sm">
       <div className="flex items-center gap-2 text-gray-500">
@@ -119,7 +121,7 @@ function SelfHostedVisual() {
         </p>
         <p>
           <span className="text-green-500/70">&#10003;</span>{" "}
-          <span className="text-gray-400">Your data stays on your server</span>
+          <span className="text-gray-400">{t.dataStaysOnServer}</span>
         </p>
       </div>
       <div className="mt-3 flex items-center gap-2 text-gray-500">
@@ -130,7 +132,7 @@ function SelfHostedVisual() {
   );
 }
 
-function DomAnchoredVisual() {
+function DomAnchoredVisual({ t }: { t: FeaturesContent["domAnchoredVisual"] }) {
   return (
     <div className="relative mt-6 h-28 overflow-hidden rounded-xl border border-gray-800/60 bg-gray-950/80 sm:h-32">
       {/* Mock page element that shifts around */}
@@ -143,7 +145,7 @@ function DomAnchoredVisual() {
         <div className="flex items-center gap-1">
           <div className="h-5 w-5 rounded-full border-2 border-accent bg-accent/20 shadow-[0_0_8px_rgba(23,60,255,0.3)] sm:h-6 sm:w-6" />
           <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[9px] text-accent-light sm:text-[10px]">
-            Anchored
+            {t.anchoredBadge}
           </span>
         </div>
       </div>
@@ -172,45 +174,45 @@ function DomAnchoredVisual() {
       />
 
       <p className="absolute right-3 bottom-2 text-[9px] text-gray-600 sm:right-4 sm:bottom-3 sm:text-[10px]">
-        CSS + XPath + text fallback
+        {t.caption}
       </p>
     </div>
   );
 }
 
-function TriageInboxVisual() {
+function TriageInboxVisual({ t }: { t: FeaturesContent["triageInboxVisual"] }) {
+  const dotColors = ["bg-blue-400", "bg-yellow-400", "bg-green-400"];
+  const rowClasses = [
+    "flex items-center gap-2.5 border-l-2 border-accent bg-accent/5 px-3 py-2",
+    "flex items-center gap-2.5 border-l-2 border-transparent px-3 py-2",
+    "flex items-center gap-2.5 border-l-2 border-transparent px-3 py-2",
+  ];
+  const textClasses = ["truncate text-gray-300", "truncate text-gray-400", "truncate text-gray-500 line-through"];
+
   return (
     <div className="mt-6 overflow-hidden rounded-xl border border-gray-800/60 bg-gray-950/80 text-xs">
       <div className="flex items-center justify-between border-b border-gray-800/60 px-3 py-2 text-gray-500">
-        <span>Inbox &middot; 2 open</span>
+        <span>{t.header}</span>
         <span className="flex items-center gap-1" aria-hidden="true">
           <kbd className="rounded border border-gray-700 bg-gray-900 px-1.5 font-mono text-[10px] text-gray-400">j</kbd>
           <kbd className="rounded border border-gray-700 bg-gray-900 px-1.5 font-mono text-[10px] text-gray-400">k</kbd>
-          <span className="ml-1 text-[10px]">to move</span>
+          <span className="ml-1 text-[10px]">{t.moveHint}</span>
         </span>
       </div>
       <div className="divide-y divide-gray-800/60">
-        <div className="flex items-center gap-2.5 border-l-2 border-accent bg-accent/5 px-3 py-2">
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
-          <span className="truncate text-gray-300">The hero image is blurry on retina</span>
-          <span className="ml-auto shrink-0 text-[10px] text-gray-500">Open</span>
-        </div>
-        <div className="flex items-center gap-2.5 border-l-2 border-transparent px-3 py-2">
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-yellow-400" />
-          <span className="truncate text-gray-400">Swap the two hero buttons</span>
-          <span className="ml-auto shrink-0 text-[10px] text-gray-500">In progress</span>
-        </div>
-        <div className="flex items-center gap-2.5 border-l-2 border-transparent px-3 py-2">
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-green-400" />
-          <span className="truncate text-gray-500 line-through">Footer links open in the same tab</span>
-          <span className="ml-auto shrink-0 text-[10px] text-gray-500">Resolved</span>
-        </div>
+        {t.items.map((item, idx) => (
+          <div key={item.text} className={rowClasses[idx]}>
+            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dotColors[idx]}`} />
+            <span className={textClasses[idx]}>{item.text}</span>
+            <span className="ml-auto shrink-0 text-[10px] text-gray-500">{item.status}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
-function DiagnosticsVisual() {
+function DiagnosticsVisual({ t }: { t: FeaturesContent["diagnosticsVisual"] }) {
   return (
     <div className="mt-6 overflow-hidden rounded-xl border border-gray-800/60 bg-gray-950/80 p-4 font-mono text-[11px] leading-relaxed sm:text-xs">
       <p className="text-red-400/80">
@@ -220,21 +222,25 @@ function DiagnosticsVisual() {
         <span className="mr-1.5">&#10007;</span>POST /api/checkout &rarr; 500
       </p>
       <p className="mt-1 text-gray-500">
-        <span className="mr-1.5 text-green-500/70">&#10003;</span>Attached to the feedback
+        <span className="mr-1.5 text-green-500/70">&#10003;</span>
+        {t.attachedToFeedback}
       </p>
     </div>
   );
 }
 
-export function Features() {
+export async function Features() {
+  const locale = await getSiteLocale();
+  const t = featuresContent[locale];
+
   return (
     <section id="features" className="bg-gray-950 px-6 pb-24 pt-16">
       <div className="mx-auto max-w-6xl">
         {/* Section title */}
         <div data-gsap="section-title" className="text-center">
           <div className="mx-auto mb-4 h-px w-8 bg-accent/50" />
-          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Built different</h2>
-          <p className="mt-4 text-lg text-gray-400">Everything you need, nothing you don&apos;t.</p>
+          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">{t.sectionTitle}</h2>
+          <p className="mt-4 text-lg text-gray-400">{t.sectionSubtitle}</p>
         </div>
 
         {/* Bento grid */}
@@ -258,11 +264,9 @@ export function Features() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6" />
               </svg>
             </div>
-            <h3 className="mt-4 text-xl font-semibold text-white">Self-Hosted</h3>
-            <p className="mt-2 max-w-md leading-relaxed text-gray-400">
-              Your database, your data. No vendor lock-in, no monthly fees. Deploy anywhere you run Node.js.
-            </p>
-            <SelfHostedVisual />
+            <h3 className="mt-4 text-xl font-semibold text-white">{t.selfHosted.title}</h3>
+            <p className="mt-2 max-w-md leading-relaxed text-gray-400">{t.selfHosted.description}</p>
+            <SelfHostedVisual t={t.selfHostedVisual} />
           </article>
 
           {/* ── Medium card: DOM-Anchored (single col, full row height on desktop) ── */}
@@ -288,11 +292,9 @@ export function Features() {
                 />
               </svg>
             </div>
-            <h3 className="mt-4 text-xl font-semibold text-white">DOM-Anchored</h3>
-            <p className="mt-2 leading-relaxed text-gray-400">
-              Annotations survive layout changes. Multi-selector anchoring with CSS, XPath, and text fallback.
-            </p>
-            <DomAnchoredVisual />
+            <h3 className="mt-4 text-xl font-semibold text-white">{t.domAnchored.title}</h3>
+            <p className="mt-2 leading-relaxed text-gray-400">{t.domAnchored.description}</p>
+            <DomAnchoredVisual t={t.domAnchoredVisual} />
           </article>
 
           {/* ── Row 2: Annotated screenshots (1 col) pairs with DOM-Anchored on sm; Triage inbox (2 cols) takes the next row ── */}
@@ -319,12 +321,9 @@ export function Features() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
               </svg>
             </div>
-            <h3 className="mt-4 text-xl font-semibold text-white">Annotated screenshots</h3>
-            <p className="mt-2 leading-relaxed text-gray-400">
-              Each report can attach a capture of the exact area the client circled, plus the last console errors and
-              failed requests — &quot;it just doesn&apos;t work&quot; arrives with evidence.
-            </p>
-            <DiagnosticsVisual />
+            <h3 className="mt-4 text-xl font-semibold text-white">{t.annotatedScreenshots.title}</h3>
+            <p className="mt-2 leading-relaxed text-gray-400">{t.annotatedScreenshots.description}</p>
+            <DiagnosticsVisual t={t.diagnosticsVisual} />
           </article>
 
           {/* ── Row 3: i18n (1) + Accessibility (1) + Auth & privacy (1) = 3 cols ── */}
@@ -350,19 +349,21 @@ export function Features() {
                 />
               </svg>
             </div>
-            <h3 className="mt-4 text-xl font-semibold text-white">Triage inbox</h3>
+            <h3 className="mt-4 text-xl font-semibold text-white">{t.triageInbox.title}</h3>
             <p className="mt-2 max-w-xl leading-relaxed text-gray-400">
-              Drop <code className="font-mono text-sm text-accent-light">&lt;InstaFixInbox /&gt;</code> into your admin
-              page and work through reports with <kbd className="font-mono text-sm text-gray-300">j</kbd>/
-              <kbd className="font-mono text-sm text-gray-300">k</kbd> — four statuses, the client&apos;s annotation
-              re-drawn on the screenshot. Slack, Discord, and generic webhooks ping your team the moment feedback lands.
+              {t.triageInbox.descBeforeComponent}
+              <code className="font-mono text-sm text-accent-light">&lt;InstaFixInbox /&gt;</code>
+              {t.triageInbox.descBetweenComponentAndKeys}
+              <kbd className="font-mono text-sm text-gray-300">j</kbd>/
+              <kbd className="font-mono text-sm text-gray-300">k</kbd>
+              {t.triageInbox.descAfterKeys}
             </p>
-            <TriageInboxVisual />
+            <TriageInboxVisual t={t.triageInboxVisual} />
             <Link
               href="/demo/inbox"
               className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent-light transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent-light"
             >
-              See it live in the demo inbox &rarr;
+              {t.triageInbox.linkText}
             </Link>
           </article>
 
@@ -387,10 +388,8 @@ export function Features() {
                 />
               </svg>
             </div>
-            <h3 className="mt-4 text-lg font-semibold text-white">7 languages built in</h3>
-            <p className="mt-2 text-sm leading-relaxed text-gray-400">
-              English, French, German, Spanish, Italian, Portuguese, and Russian — in the widget and the inbox.
-            </p>
+            <h3 className="mt-4 text-lg font-semibold text-white">{t.languages.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-gray-400">{t.languages.description}</p>
             <div className="mt-4 rounded-lg border border-gray-800/60 bg-gray-950/80 px-3 py-2">
               <code className="font-mono text-xs text-accent-light">registerLocale(code, translations)</code>
             </div>
@@ -417,11 +416,8 @@ export function Features() {
                 />
               </svg>
             </div>
-            <h3 className="mt-4 text-lg font-semibold text-white">Keyboard-first accessibility</h3>
-            <p className="mt-2 text-sm leading-relaxed text-gray-400">
-              Audited against WCAG 2.1 AA. Clients can annotate without a mouse — Tab to the element, press Enter. Ready
-              for the European Accessibility Act.
-            </p>
+            <h3 className="mt-4 text-lg font-semibold text-white">{t.accessibility.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-gray-400">{t.accessibility.description}</p>
             <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-1 text-xs font-medium text-accent-light">
               WCAG 2.1 AA
             </div>
@@ -448,11 +444,8 @@ export function Features() {
                 />
               </svg>
             </div>
-            <h3 className="mt-4 text-lg font-semibold text-white">Auth &amp; privacy</h3>
-            <p className="mt-2 text-sm leading-relaxed text-gray-400">
-              Set an API key and admin routes require a Bearer token. Reads without one get reviewer emails blanked by
-              default.
-            </p>
+            <h3 className="mt-4 text-lg font-semibold text-white">{t.authPrivacy.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-gray-400">{t.authPrivacy.description}</p>
             <div className="mt-4 rounded-lg border border-gray-800/60 bg-gray-950/80 px-3 py-2">
               <code className="font-mono text-xs text-gray-400">Authorization: Bearer &bull;&bull;&bull;</code>
             </div>
@@ -481,10 +474,8 @@ export function Features() {
                 />
               </svg>
             </div>
-            <h3 className="mt-4 text-lg font-semibold text-white">npm Install &amp; Go</h3>
-            <p className="mt-2 text-sm leading-relaxed text-gray-400">
-              Three lines of code. Works with Next.js, any framework, or vanilla JavaScript.
-            </p>
+            <h3 className="mt-4 text-lg font-semibold text-white">{t.npmInstall.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-gray-400">{t.npmInstall.description}</p>
             <div className="mt-4 rounded-lg border border-gray-800/60 bg-gray-950/80 px-3 py-2">
               <code className="font-mono text-xs text-accent-light">npm i @instafix/widget</code>
             </div>
@@ -511,10 +502,8 @@ export function Features() {
                 />
               </svg>
             </div>
-            <h3 className="mt-4 text-lg font-semibold text-white">Open Source</h3>
-            <p className="mt-2 text-sm leading-relaxed text-gray-400">
-              Full transparency, full control. Contribute, fork, or customize.
-            </p>
+            <h3 className="mt-4 text-lg font-semibold text-white">{t.openSource.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-gray-400">{t.openSource.description}</p>
             <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-1 text-xs font-medium text-accent-light">
               <svg aria-hidden="true" className="h-3 w-3" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
@@ -544,8 +533,8 @@ export function Features() {
                 />
               </svg>
             </div>
-            <h3 className="mt-4 text-lg font-semibold text-white">CLI Scaffold</h3>
-            <p className="mt-2 text-sm leading-relaxed text-gray-400">Prisma schema and API route set up in seconds.</p>
+            <h3 className="mt-4 text-lg font-semibold text-white">{t.cliScaffold.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-gray-400">{t.cliScaffold.description}</p>
             <div className="mt-4 rounded-lg border border-gray-800/60 bg-gray-950/80 px-3 py-2">
               <code className="font-mono text-xs">
                 <span className="text-gray-500">$</span>{" "}
@@ -577,16 +566,14 @@ export function Features() {
                     />
                   </svg>
                 </div>
-                <h3 className="mt-4 text-lg font-semibold text-white">Shadow DOM Isolated</h3>
-                <p className="mt-2 text-sm leading-relaxed text-gray-400">
-                  Widget CSS never leaks into your site. Your site CSS never breaks the widget.
-                </p>
+                <h3 className="mt-4 text-lg font-semibold text-white">{t.shadowDom.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-gray-400">{t.shadowDom.description}</p>
               </div>
               {/* Wide visual: two layers side by side showing isolation */}
               <div className="flex flex-1 items-center justify-center gap-4 sm:gap-6">
                 <div className="flex flex-col items-center gap-2">
                   <div className="flex h-16 w-28 items-center justify-center rounded-lg border border-accent/20 bg-accent/5 sm:h-20 sm:w-36">
-                    <span className="text-xs text-accent-light">Your site CSS</span>
+                    <span className="text-xs text-accent-light">{t.shadowDomVisual.yourSiteCss}</span>
                   </div>
                 </div>
                 <div className="text-gray-600">
@@ -607,7 +594,7 @@ export function Features() {
                 </div>
                 <div className="flex flex-col items-center gap-2">
                   <div className="flex h-16 w-28 items-center justify-center rounded-lg border border-gray-700 bg-gray-800/80 sm:h-20 sm:w-36">
-                    <span className="text-xs text-gray-400">Widget CSS</span>
+                    <span className="text-xs text-gray-400">{t.shadowDomVisual.widgetCss}</span>
                   </div>
                 </div>
               </div>
@@ -617,7 +604,7 @@ export function Features() {
       </div>
 
       {/* Framework marquee — full bleed outside max-w container */}
-      <FrameworkMarquee />
+      <FrameworkMarquee caption={t.marqueeCaption} />
     </section>
   );
 }

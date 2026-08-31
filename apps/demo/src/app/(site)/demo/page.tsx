@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { DemoSite } from "@/components/demo/demo-site";
+import { getSiteLocale } from "@/lib/site-i18n/locale";
 import { Playground } from "./playground";
 
 export const metadata: Metadata = {
@@ -13,12 +14,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function DemoPage() {
+export default async function DemoPage() {
+  const siteLocale = await getSiteLocale();
+
   return (
     <>
       {/* useSearchParams in Playground requires a Suspense boundary for static rendering */}
       <Suspense fallback={null}>
-        <Playground />
+        <Playground siteLocale={siteLocale} />
       </Suspense>
       <DemoSite />
     </>

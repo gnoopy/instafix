@@ -90,14 +90,16 @@ If you find the code is wrong rather than the docs, say so in the PR (or open an
 
 ### Translations
 
-English is the source language and lives at bare URLs (`/docs/widget`). Other languages are prefixed (`/fr/docs/widget`).
+English is the source language. Every locale is explicit-prefixed, including English (`/en/docs/widget`, `/ko/docs/widget`, `/fr/docs/widget`) — bare `/docs/...` redirects to the visitor's negotiated language.
 
-- To translate a page, add a sibling with the language code before the extension: `configuration.mdx` → `configuration.fr.mdx`. Same for sidebar labels: `meta.json` → `meta.fr.json`.
-- **Internal links must carry the locale prefix** — `/fr/docs/widget/configuration`, not `/docs/widget/configuration`.
+(This used to hide the English prefix via `hideLocale: "default-locale"`. That relies on the i18n middleware issuing a same-path `NextResponse.rewrite()`, which — verified empirically — works in `next dev` but comes back as an unresolved redirect loop in production on a self-hosted `output: "standalone"` build once the destination is a static/ISR-cached page. `hideLocale: "never"` sidesteps that broken code path entirely; see the comment on `i18n` in `apps/demo/src/lib/docs/i18n.ts`.)
+
+- To translate a page, add a sibling with the language code before the extension: `configuration.mdx` → `configuration.ko.mdx`. Same for sidebar labels: `meta.json` → `meta.ko.json`.
+- **Internal links must carry the locale prefix** — `/ko/docs/widget/configuration`, not `/docs/widget/configuration`.
 - A page without a translation still resolves in that language, served in English (`fallbackLanguage: "en"`), so partial translations never 404.
-- Adding a language means one entry in `apps/demo/src/lib/docs/i18n.ts` plus its UI dictionary in `apps/demo/src/lib/docs/ui.ts`, and a `localeMap` entry in `apps/demo/src/app/api/search/route.ts` so search uses the right stemmer.
+- Adding a language means one entry in `apps/demo/src/lib/docs/i18n.ts` plus its UI dictionary in `apps/demo/src/lib/docs/ui.ts`. A `localeMap` entry in `apps/demo/src/app/api/search/route.ts` gives search the right stemmer where one exists (Orama ships one for French; there isn't a dedicated Korean stemmer, so Korean search runs without one for now).
 
-> **French is currently 100% translated** (18/18 pages). Adding a new English page without its `.fr.mdx` twin silently drops that page back to English for French readers — please add both, or flag it in the PR so a translator can pick it up.
+> **French and Korean are currently 100% translated** (18/18 pages each). Adding a new English page without its `.fr.mdx`/`.ko.mdx` twin silently drops that page back to English for those readers — please add all three, or flag it in the PR so a translator can pick it up.
 
 ### Before you open the PR
 

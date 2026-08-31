@@ -1,0 +1,179 @@
+---
+title: Prisma 어댑터
+description: 프로덕션용 어댑터 — 데이터베이스를 뒷단으로 삼는 HTTP 핸들러로, 인증, CORS, 정보 은닉(redaction), 웹훅을 지원합니다.
+---
+
+`@instafix/adapter-prisma`는 여러분 앱의 URL 하나를 완전한 피드백 API로 바꿔줍니다. Prisma Client v5, v6, v7을 모두 지원하며 Node 20 이상이 필요합니다.
+
+```bash
+npm i @instafix/adapter-prisma
+```
+
+## 마운트하기
+
+이 팩토리 함수는 HTTP 메서드마다 하나씩, Web 표준 핸들러(`Request` → `Response`)를 반환합니다 — 이를 마운트하는 방법은 여러분이 사용하는 프레임워크에 달려 있습니다:
+
+```ts
+// app/api/instafix/route.ts — Next.js App Router
+import { createInstaFixHandler } from "@instafix/adapter-prisma";
+import { prisma } from "@/lib/prisma";
+
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({ prisma });
+```
+
+Web `Request`/`Response`를 사용하는 프레임워크라면(Hono, Remix, SvelteKit 등) 어떤 것이든 동일한 핸들러들을 하나의 엔드포인트에 마운트하고 메서드별로 디스패치할 수 있습니다.
+
+## 옵션
+
+| 옵션 | 타입 | 기본값 | 하는 일 |
+|---|---|---|---|
+| `prisma` | `InstaFixPrismaClient` | — | 여러분의 Prisma 클라이언트. `store`를 전달하지 않는 한 필수입니다 |
+| `store` | `InstaFixStore` | — | Prisma 대신 임의의 스토어를 사용합니다(지정 시 우선 적용됩니다) |
+| `apiKey` | `string` | — | Bearer 인증을 활성화합니다. 요청에 `Authorization: Bearer <key>`를 담아 보냅니다 |
+| `publicEndpoints` | `InstaFixHttpMethod[]` | `apiKey`가 설정된 경우 `["POST", "OPTIONS"]` | 인증을 건너뛰는 메서드입니다. **값을 지정하면 기본값을 완전히 대체합니다** — `"POST"`를 직접 포함시키지 않으면 위젯이 더 이상 제출할 수 없게 됩니다 |
+| `requireAuthForDestructive` | `boolean` | `true` | `apiKey`가 없으면 PATCH와 DELETE는 `401`을 반환합니다. `NODE_ENV=production`에서는 `apiKey` 없이는 팩토리가 아예 시작을 거부합니다 |
+| `redactUnauthenticatedEmails` | `boolean` | `true` | [응답에 노출되는 정보](#응답에-노출되는-정보) 참고 |
+| `allowedOrigins` | `string[]` | — | 완전 일치 방식의 CORS 허용 목록입니다. **와일드카드는 지원하지 않습니다** — `["*"]`는 아무것도 매칭하지 않으며, 설정하지 않으면 CORS 헤더가 전혀 붙지 않습니다 |
+| `screenshotStorage` | `ScreenshotStorage` | — | 스크린샷을 data URL로 인라인 처리하는 대신 실제 저장소에 업로드합니다. 커스텀 `store`를 전달하면 무시됩니다 |
+| `caseInsensitiveSearch` | `boolean` | 자동 감지 | Prisma provider로부터 감지됩니다(PostgreSQL, MongoDB, CockroachDB에서는 켜짐). `prisma`를 지정했을 때만 적용됩니다 |
+| `webhooks` | `WebhookConfig \| WebhookConfig[]` | — | 새 피드백이 생성될 때마다 발동합니다 — [웹훅](#웹훅) 참고 |
+
+## 보안 모델, 있는 그대로
+
+- **읽기는 기본적으로 공개입니다.** `apiKey`가 없으면 URL을 아는 누구나 피드백 목록을 조회할 수 있습니다(단, 이메일은 아래 설명대로 가려집니다).
+- **파괴적인 호출은 그렇지 않습니다.** `apiKey`를 설정하거나 `requireAuthForDestructive: false`로 명시적으로 opt-out하지 않는 한, PATCH와 DELETE는 `401`을 반환합니다. 프로덕션에서는 키 없이 실행되는 대신 팩토리가 시작 시점에 예외를 던집니다.
+- `OPTIONS`는 항상 공개입니다 — 프리플라이트 요청은 반드시 동작해야 하기 때문입니다.
+
+### 응답에 노출되는 정보
+
+- `clientId`는 **모든** 응답에서 제거됩니다.
+- `authorEmail`은 요청에 유효한 `Authorization: Bearer` 헤더가 없으면 비워집니다. 단, 예외가 하나 있습니다: `POST` 요청이 성공하면 작성자 본인에게는 이메일을 그대로 돌려줍니다.
+
+## HTTP 레퍼런스
+
+엔드포인트는 하나, 메서드는 다섯 개입니다. 모든 바디는 JSON입니다.
+
+| 메서드 | 목적 | 성공 시 |
+|---|---|---|
+| `POST` | 피드백 생성(위젯 제출) | `201` + 레코드. `clientId`가 중복되면 실패하지 않고 기존 레코드를 반환합니다 |
+| `GET` | 피드백 목록 조회 | `200` + `{ feedbacks, total }`, `Cache-Control: private, max-age=5` 포함 |
+| `PATCH` | 상태 변경 | `200` + 갱신된 레코드 |
+| `DELETE` | 하나 또는 전체 삭제 | `200` + `{ deleted: true }` |
+| `OPTIONS` | CORS 프리플라이트 | `204` |
+
+**GET 쿼리 파라미터:** `projectName`(필수), `page`(기본 1), `limit`(기본 50, 최대 100), `type`, `status`, `statuses`(콤마로 구분된 목록, 최대 4개 — 예: `statuses=open,in_progress`), `search`, `url`, `urlPattern`.
+
+**PATCH 바디:** `{ id, projectName, status }` — 세 필드 모두 필수입니다. `status`는 `open`, `in_progress`, `resolved`, `wont_fix` 중 하나입니다. `resolvedAt`은 서버가 자동으로 계산합니다: 상태가 닫힘(`resolved`/`wont_fix`)이면 값이 설정되고, 그 외에는 지워집니다.
+
+**DELETE 바디:** 레코드 하나를 지울 때는 `{ id, projectName }`, 프로젝트 전체를 지울 때는 `{ projectName, deleteAll: true }`.
+
+**에러:** 잘못된 JSON → `400 { error }`; 유효성 검증 실패 → `400 { errors: [{ field, message }] }`; 알 수 없는 id → `404`; 테이블 없음 → `500`과 함께 `npx prisma db push` 실행을 안내하는 힌트; 그 외 → `500 { error: "Internal server error" }`.
+
+### 알아 두어야 할 유효성 검증 한도
+
+`message`는 5000자 이하 · `annotations`는 피드백당 50개 이하 · `screenshotDataUrl`은 1.5MB 이하, JPEG/PNG/WebP만 허용 · `diagnostics`는 콘솔 로그 50개, 네트워크 항목 20개까지 · `clientId`는 `[a-zA-Z0-9_-]+` 패턴과 일치해야 함.
+
+## 데이터베이스 스키마
+
+이것이 어댑터가 필요로 하는 정확한 스키마이며, `npx @instafix/cli sync`가 생성하는 것과 동일합니다. 가능하면 CLI를 사용하세요. 직접 작성한다면 컬럼을 빠뜨리지 마세요: 어댑터는 모든 삽입 시 `urlPattern`, `screenshotUrl`, `anchorKey`를 함께 기록하므로, 스키마 일부가 빠지면 첫 제출부터 실패합니다.
+
+```prisma
+model InstaFixFeedback {
+  id               String               @id @default(cuid())
+  projectName      String
+  type             String
+  message          String               @db.Text
+  status           String               @default("open")
+  url              String
+  urlPattern       String?
+  screenshotUrl    String?              @db.Text
+  screenshotRegion Json?
+  diagnostics      Json?
+  viewport         String
+  userAgent        String
+  authorName       String
+  authorEmail      String
+  clientId         String               @unique
+  resolvedAt       DateTime?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  annotations      InstaFixAnnotation[]
+
+  @@index([projectName])
+  @@index([projectName, status, createdAt])
+  @@index([projectName, url])
+}
+
+model InstaFixAnnotation {
+  id               String           @id @default(cuid())
+  feedbackId       String
+  feedback         InstaFixFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  cssSelector      String           @db.Text
+  xpath            String           @db.Text
+  textSnippet      String           @db.Text
+  elementTag       String
+  elementId        String?
+  textPrefix       String           @db.Text
+  textSuffix       String           @db.Text
+  fingerprint      String
+  neighborText     String           @db.Text
+  anchorKey        String?
+  xPct             Float
+  yPct             Float
+  wPct             Float
+  hPct             Float
+  scrollX          Float
+  scrollY          Float
+  viewportW        Int
+  viewportH        Int
+  devicePixelRatio Float            @default(1)
+  createdAt        DateTime         @default(now())
+
+  @@index([feedbackId])
+}
+```
+
+> `@db.Text`는 PostgreSQL과 MySQL을 대상으로 합니다. SQLite에서는 이 속성들을 제거하세요 — 거기서는 일반 `String`이 이미 크기 제한이 없습니다.
+
+## 스크린샷 저장
+
+기본적으로 스크린샷은 `screenshotUrl` 컬럼에 `data:` URL 형태로 인라인 저장됩니다 — 가볍게 시도해 보기에는 괜찮지만, 실제 데이터베이스에는 부담이 됩니다. 프로덕션에서는 `ScreenshotStorage`를 연결하세요:
+
+```ts
+createInstaFixHandler({
+  prisma,
+  screenshotStorage: {
+    async upload(dataUrl, { feedbackId, mimeType }) {
+      const url = await uploadToS3(dataUrl, `instafix/${feedbackId}.jpg`, mimeType);
+      return { url };
+    },
+  },
+});
+```
+
+업로드가 실패해도 피드백 자체는 저장되며(`screenshotUrl: null` 상태로), 경고 로그가 남습니다 — 스토리지 버킷이 고장 나도 고객이 남긴 코멘트를 잃어버리지 않습니다.
+
+## 웹훅
+
+새 피드백이 생길 때마다 알림을 받으세요:
+
+```ts
+createInstaFixHandler({
+  prisma,
+  webhooks: [
+    { url: process.env.SLACK_WEBHOOK_URL!, type: "slack" },
+    { url: "https://my-api.dev/hooks/instafix", type: "generic", headers: { "x-secret": "…" } },
+  ],
+});
+```
+
+`type`은 `"slack"`, `"discord"`, 또는 `"generic"`(기본값 — 가공되지 않은 원본 레코드를 그대로 전송하므로, generic 웹훅 대상은 신뢰할 수 있는 곳으로만 지정하세요)입니다. 각 호출에는 5초의 타임아웃이 적용되고, 실패해도 제출 자체는 절대 막히지 않으며, 선택적으로 `onError(err, feedbackId)`를 지정해 실패를 기록할 수 있습니다.
+
+## 커스텀 스토어 사용하기
+
+`createInstaFixHandler({ store })`는 어떤 `InstaFixStore`든(memory 어댑터든, 여러분이 직접 만든 것이든) 동일한 HTTP 인터페이스 뒤에 마운트합니다 — 검증, 인증, 정보 은닉 방식도 동일합니다.
+
+소스 코드에서 확인한 주의사항이 두 가지 있습니다:
+
+- PATCH/DELETE에서의 프로젝트 간 소유권 검사는 현재 `PrismaStore`에서만 동작합니다. 커스텀 스토어를 사용하면, 피드백 `id`를 아는 누구든 `projectName`과 무관하게 수정할 수 있습니다 — 커스텀 스토어 엔드포인트는 반드시 `apiKey` 뒤에 두세요.
+- `screenshotStorage`와 `caseInsensitiveSearch`는 내장된 Prisma 경로에만 적용됩니다. 커스텀 스토어를 사용한다면 스크린샷 처리는 스토어 안에서 직접 구현해야 합니다.

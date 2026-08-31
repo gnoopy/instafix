@@ -1,0 +1,60 @@
+---
+title: 데이터 소스
+description: 엔드포인트, 스토어, 또는 완전한 커스텀 — 인박스가 여러분의 데이터와 통신하는 방법.
+---
+
+인박스는 작은 추상화 계층을 통해 데이터를 읽고 씁니다. 이 계층을 제공하는 방법은 세 가지입니다. `source`, `store`, `endpoint` 중 **정확히 하나만** 선택하세요. 타입 상에서 서로 배타적이기 때문에, 우선순위를 기억할 필요도 없고 둘 다 넘겨서 어느 쪽이 이겼는지 헷갈릴 일도 없습니다.
+
+## 엔드포인트 모드 (프로덕션 기본값)
+
+```tsx
+<InstaFixInbox projects="my-project" endpoint="/api/instafix" apiKey={KEY} />
+```
+
+[어댑터 엔드포인트](/ko/docs/adapters/prisma)와 통신합니다: 목록 조회는 `GET`, 상태 변경은 `PATCH`, 삭제는 `DELETE`를 사용하며 항상 `cache: "no-store"`가 적용됩니다. 에러는 `code`로 타입이 지정되어 도착합니다(401/403은 `AUTH`, 그 외 4xx는 `VALIDATION`, 5xx는 `SERVER`, fetch 실패는 `NETWORK`). **의도적으로 재시도를 하지 않습니다** — 트리아지 UI라면 즉시 알려줘야 하기 때문입니다.
+
+## 스토어 모드
+
+```tsx
+<InstaFixInbox projects="my-demo" store={new LocalStorageStore()} />
+```
+
+프로세스 내에서 어떤 `InstaFixStore`와도 동작합니다 — 위젯의 클라이언트 사이드 모드가 사용하는 것과 동일한 스토어입니다. 데모와 프로토타입은 서버가 전혀 필요 없습니다.
+
+## 커스텀 소스
+
+tRPC, GraphQL, 서버 액션을 사용한다면 세 개의 메서드로 이루어진 `InboxSource` 계약을 구현해 `source`로 전달하세요:
+
+```ts
+import type { InboxSource } from "@instafix/dashboard";
+
+const source: InboxSource = {
+  async list(query) {
+    // query: projectName, page, limit, status?, type?, search?, url?, urlPattern?
+    const { feedbacks, total } = await trpc.instafix.list.query(query);
+    // 중요: createdAt / updatedAt / resolvedAt은 반드시 실제 Date 객체여야 합니다
+    return { feedbacks: feedbacks.map(reviveDates), total };
+  },
+  async setStatus(id, projectName, status) {
+    return reviveDates(await trpc.instafix.setStatus.mutate({ id, projectName, status }));
+  },
+  async remove(id, projectName) {
+    await trpc.instafix.remove.mutate({ id, projectName });
+  },
+};
+```
+
+내장 모드들을 떠받치고 있는 두 개의 빌딩 블록도 함께 export됩니다 — `createEndpointSource({ endpoint, apiKey, headers })`와 `createStoreSource(store)`입니다. 이들을 감싸거나, 조합하거나, 데코레이트해서(예: HTTP 클라이언트 주변에 로깅을 추가하는 식으로) 처음부터 새로 만들지 않고도 활용할 수 있습니다.
+
+## 추가 의존성 없이 타입 사용하기
+
+`@instafix/dashboard`는 이를 감싸는 래퍼에 타입을 붙이는 데 필요한 모든 것을 재export하므로, 다른 패키지를 따로 설치할 필요가 없습니다:
+
+| 타입을 지정할 대상 | Exports |
+|---|---|
+| 피드백 데이터 | `FeedbackRecord`, `FeedbackStatus`, `FeedbackType`, `InstaFixStore`, 그리고 `FEEDBACK_STATUSES` / `FEEDBACK_TYPES` 상수와 `isClosedStatus()` |
+| 훅 옵션 | `UseInstaFixInboxOptions`와 그 세 구성원인 `InboxEndpointOptions`, `InboxStoreOptions`, `InboxCustomSourceOptions`, 그리고 공통 요소인 `InboxSharedOptions` |
+| 훅 결과 | `InboxState`, `InboxStatusFilter`, `InboxTypeFilter` |
+| 소스 | `InboxSource`, `EndpointSourceOptions`(`createEndpointSource`의 인자) |
+| 컴포넌트 props | `InstaFixInboxProps`, 또는 표시(presentation) 부분만 필요하다면 `InstaFixInboxPresentationProps` |
+| 테마 | `InboxTheme`(`"light"` \| `"dark"` \| `"auto"`)와 `ResolvedTheme`(`"light"` \| `"dark"` — `auto`가 해석되는 실제 값) |

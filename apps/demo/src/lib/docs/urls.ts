@@ -6,17 +6,17 @@ export const SITE_URL = "https://instafix.realstory.blog";
 /**
  * Strip the locale prefix from a page URL.
  *
- * `page.url` already carries it (`/docs/...` for the default language,
- * `/fr/docs/...` otherwise) because `hideLocale: "default-locale"` keeps English
- * on bare URLs.
+ * Every locale is explicit-prefixed (`hideLocale: "never"` — see the comment
+ * on `i18n` in `./i18n.ts` for why), so `page.url` always carries it
+ * (`/en/docs/...`, `/fr/docs/...`, `/ko/docs/...`).
  */
 export function pathWithoutLocale(url: string, lang: string): string {
-  return lang === i18n.defaultLanguage ? url : url.slice(`/${lang}`.length);
+  return url.slice(`/${lang}`.length);
 }
 
 /** Absolute URL of a locale-neutral docs path in a given language. */
 export function absoluteUrl(path: string, lang: string): string {
-  return lang === i18n.defaultLanguage ? `${SITE_URL}${path}` : `${SITE_URL}/${lang}${path}`;
+  return `${SITE_URL}/${lang}${path}`;
 }
 
 /**
@@ -33,7 +33,9 @@ export function languageAlternates(path: string): Record<string, string> {
   for (const lang of i18n.languages) {
     languages[lang] = absoluteUrl(path, lang);
   }
-  // x-default points at the language-neutral entry point (the bare English URL).
-  languages["x-default"] = `${SITE_URL}${path}`;
+  // x-default points at the language-neutral entry point. Bare /docs/...
+  // now redirects (see next.config.ts) rather than resolving directly, so
+  // point search engines straight at the canonical English URL instead.
+  languages["x-default"] = absoluteUrl(path, i18n.defaultLanguage);
   return languages;
 }

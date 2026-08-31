@@ -1,6 +1,8 @@
+import { howItWorksContent } from "@/lib/site-i18n/content/how-it-works";
+import { getSiteLocale } from "@/lib/site-i18n/locale";
 import { PackageManagerTabs } from "./package-manager-tabs";
 
-function ClientMockup() {
+function ClientMockup({ bugLabel, comment }: { bugLabel: string; comment: string }) {
   return (
     <div className="overflow-hidden rounded-lg border border-gray-800 bg-gray-950">
       {/* Browser chrome */}
@@ -80,9 +82,9 @@ function ClientMockup() {
           style={{ left: "12%", top: "52%" }}
         >
           <span className="mb-1 inline-block rounded-full bg-red-100 px-2 py-0.5 text-[9px] font-semibold text-red-700">
-            Bug
+            {bugLabel}
           </span>
-          <p className="text-[10px] leading-relaxed text-gray-700">The hero image is blurry on retina</p>
+          <p className="text-[10px] leading-relaxed text-gray-700">{comment}</p>
           <p className="mt-1 text-[8px] text-gray-400">Sarah M.</p>
         </div>
 
@@ -107,7 +109,10 @@ function ClientMockup() {
   );
 }
 
-export function HowItWorks() {
+export async function HowItWorks() {
+  const locale = await getSiteLocale();
+  const t = howItWorksContent[locale];
+
   return (
     <section id="how-it-works" className="relative bg-gray-950 px-6 py-24">
       {/* Subtle accent glow for section differentiation */}
@@ -118,12 +123,8 @@ export function HowItWorks() {
       <div className="relative mx-auto max-w-4xl">
         {/* Header */}
         <div data-gsap="section-title" className="text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            From zero to client feedback in 3 commands
-          </h2>
-          <p className="mt-4 text-lg text-gray-400">
-            Install, scaffold, and ship. Your clients annotate directly on the live site.
-          </p>
+          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">{t.heading}</h2>
+          <p className="mt-4 text-lg text-gray-400">{t.subheading}</p>
         </div>
 
         {/* Timeline */}
@@ -162,15 +163,13 @@ export function HowItWorks() {
 
               {/* Card */}
               <div className="min-w-0 flex-1 rounded-xl border border-gray-800 bg-gray-900 p-6">
-                <h3 className="text-lg font-bold text-white">Your clients see this</h3>
+                <h3 className="text-lg font-bold text-white">{t.resultTitle}</h3>
 
                 <div className="mt-4">
-                  <ClientMockup />
+                  <ClientMockup bugLabel={t.mockup.bugLabel} comment={t.mockup.comment} />
                 </div>
 
-                <p className="mt-4 leading-relaxed text-gray-400">
-                  No login. No account. Just a floating button and pixel-perfect annotations.
-                </p>
+                <p className="mt-4 leading-relaxed text-gray-400">{t.cardCaption}</p>
               </div>
             </div>
           </div>
@@ -187,7 +186,7 @@ export function HowItWorks() {
                 clipRule="evenodd"
               />
             </svg>
-            No account required
+            {t.frictionPoints.noAccount}
           </span>
           <span className="mx-3">&middot;</span>
           <span className="inline-flex items-center gap-2">
@@ -199,7 +198,7 @@ export function HowItWorks() {
                 clipRule="evenodd"
               />
             </svg>
-            No API key
+            {t.frictionPoints.noApiKey}
           </span>
           <span className="mx-3">&middot;</span>
           <span className="inline-flex items-center gap-2">
@@ -211,7 +210,7 @@ export function HowItWorks() {
                 clipRule="evenodd"
               />
             </svg>
-            No monthly bill
+            {t.frictionPoints.noBill}
           </span>
         </p>
       </div>

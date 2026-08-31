@@ -4,6 +4,8 @@ import type { InstaFixInstance } from "@instafix/widget";
 import { useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { CopyButton } from "@/components/landing/copy-button";
+import type { SiteLocale } from "@/lib/site-i18n/constants";
+import { playgroundContent } from "@/lib/site-i18n/content/playground";
 import { DiagnosticsTriggers } from "./diagnostics-triggers";
 
 // ---------------------------------------------------------------------------
@@ -13,6 +15,7 @@ import { DiagnosticsTriggers } from "./diagnostics-triggers";
 // ---------------------------------------------------------------------------
 
 const LOCALES = [
+  { code: "ko", label: "한국어" },
   { code: "en", label: "English" },
   { code: "fr", label: "Français" },
   { code: "de", label: "Deutsch" },
@@ -39,7 +42,7 @@ interface PlaygroundState {
 const DEFAULTS: PlaygroundState = {
   mode: "server",
   theme: "light",
-  locale: "en",
+  locale: "ko",
   position: "bottom-right",
   accent: "#173CFF",
   screenshot: true,
@@ -89,7 +92,7 @@ function parseState(params: ParamsLike): PlaygroundState {
   return {
     mode: params.get("mode") === "local" ? "local" : "server",
     theme: theme === "dark" || theme === "auto" ? theme : "light",
-    locale: LOCALES.some((l) => l.code === locale) ? (locale as LocaleCode) : "en",
+    locale: LOCALES.some((l) => l.code === locale) ? (locale as LocaleCode) : DEFAULTS.locale,
     position: params.get("position") === "bottom-left" ? "bottom-left" : "bottom-right",
     accent: accent && HEX_RE.test(accent) ? `#${accent}` : DEFAULTS.accent,
     screenshot: params.get("screenshot") !== "off",
@@ -192,7 +195,7 @@ function buildOptionLines(state: PlaygroundState): { key: string; tokens: RawTok
   }
   lines.push({ key: "projectName", tokens: [str("demo")] });
   if (state.theme !== "light") lines.push({ key: "theme", tokens: [str(state.theme)] });
-  if (state.locale !== "en") lines.push({ key: "locale", tokens: [str(state.locale)] });
+  if (state.locale !== DEFAULTS.locale) lines.push({ key: "locale", tokens: [str(state.locale)] });
   if (state.position !== "bottom-right") lines.push({ key: "position", tokens: [str(state.position)] });
   if (state.accent.toLowerCase() !== WIDGET_DEFAULT_ACCENT) {
     lines.push({ key: "accentColor", tokens: [str(state.accent)] });
@@ -321,7 +324,8 @@ function ToggleRow({ label, checked, onChange, caption }: ToggleRowProps) {
 
 const PANEL_ID = "instafix-playground";
 
-export function Playground() {
+export function Playground({ siteLocale }: { siteLocale: SiteLocale }) {
+  const t = playgroundContent[siteLocale];
   const params = useSearchParams();
   const state = useMemo(() => parseState(params), [params]);
   const { mode, theme, locale, position, accent, screenshot, diagnostics, rightClick, identity } = state;
@@ -441,7 +445,7 @@ export function Playground() {
     // data-instafix-ignore keeps the panel out of widget screenshots.
     <aside
       data-instafix-ignore="true"
-      aria-label="Widget playground"
+      aria-label={t.panelAriaLabel}
       className="fixed left-0 top-28 z-40 flex max-h-[calc(100vh-8.5rem)]"
     >
       {open ? (
@@ -450,14 +454,14 @@ export function Playground() {
           className="flex w-72 max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-r-xl border border-l-0 border-gray-200 bg-white shadow-xl"
         >
           <div className="flex items-center justify-between border-b border-gray-100 py-2 pl-4 pr-2">
-            <h2 className="text-sm font-bold tracking-tight text-gray-900">Widget playground</h2>
+            <h2 className="text-sm font-bold tracking-tight text-gray-900">{t.panelTitle}</h2>
             <button
               ref={collapseRef}
               type="button"
               onClick={() => toggleOpen(false)}
               aria-expanded="true"
               aria-controls={PANEL_ID}
-              aria-label="Collapse the playground"
+              aria-label={t.collapseAriaLabel}
               className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-accent motion-reduce:transition-none"
             >
               <svg
@@ -476,30 +480,28 @@ export function Playground() {
           <div className="flex-1 space-y-5 overflow-y-auto p-4">
             <div>
               <RadioRow
-                legend="Mode"
+                legend={t.modeLegend}
                 name="pg-mode"
                 value={mode}
                 options={[
-                  { value: "server", label: "Server API" },
-                  { value: "local", label: "Local (this browser)" },
+                  { value: "server", label: t.modeServerLabel },
+                  { value: "local", label: t.modeLocalLabel },
                 ]}
                 onChange={(value) => patch({ mode: value })}
               />
               <p className="mt-1.5 text-xs leading-snug text-gray-500">
-                {mode === "local"
-                  ? "Feedbacks stay in this browser — no server involved"
-                  : "Feedbacks go to the demo API (resets every 10 minutes)"}
+                {mode === "local" ? t.modeLocalCaption : t.modeServerCaption}
               </p>
             </div>
 
             <RadioRow
-              legend="Theme"
+              legend={t.themeLegend}
               name="pg-theme"
               value={theme}
               options={[
-                { value: "light", label: "Light" },
-                { value: "dark", label: "Dark" },
-                { value: "auto", label: "Auto" },
+                { value: "light", label: t.themeLightLabel },
+                { value: "dark", label: t.themeDarkLabel },
+                { value: "auto", label: t.themeAutoLabel },
               ]}
               onChange={(value) => patch({ theme: value })}
             />
@@ -509,7 +511,7 @@ export function Playground() {
                 htmlFor="pg-locale"
                 className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500"
               >
-                Locale
+                {t.localeLabel}
               </label>
               <select
                 id="pg-locale"
@@ -526,19 +528,19 @@ export function Playground() {
             </div>
 
             <RadioRow
-              legend="Position"
+              legend={t.positionLegend}
               name="pg-position"
               value={position}
               options={[
-                { value: "bottom-right", label: "Bottom right" },
-                { value: "bottom-left", label: "Bottom left" },
+                { value: "bottom-right", label: t.positionRightLabel },
+                { value: "bottom-left", label: t.positionLeftLabel },
               ]}
               onChange={(value) => patch({ position: value })}
             />
 
             <fieldset>
               <legend className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Accent color
+                {t.accentLegend}
               </legend>
               <div className="flex items-center gap-2">
                 {SWATCHES.map((swatch) => (
@@ -546,7 +548,7 @@ export function Playground() {
                     key={swatch.hex}
                     type="button"
                     onClick={() => handleAccentSelect(swatch.hex)}
-                    aria-label={`Accent ${swatch.name}`}
+                    aria-label={t.swatchAriaLabels[swatch.hex]}
                     aria-pressed={shownAccent.toLowerCase() === swatch.hex.toLowerCase()}
                     style={{ backgroundColor: swatch.hex }}
                     className="h-7 w-7 rounded-full border border-black/10 transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-900 aria-pressed:ring-offset-2 motion-reduce:transition-none motion-reduce:hover:scale-100"
@@ -557,42 +559,46 @@ export function Playground() {
                     type="color"
                     value={toColorInputValue(shownAccent)}
                     onChange={(event) => handleAccentInput(event.target.value)}
-                    aria-label="Custom accent color"
+                    aria-label={t.customColorAriaLabel}
                     className="h-7 w-8 cursor-pointer rounded border border-gray-200 bg-white p-0.5"
                   />
-                  Custom
+                  {t.customLabel}
                 </label>
               </div>
             </fieldset>
 
             <fieldset className="space-y-2.5">
-              <legend className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">Options</legend>
-              <ToggleRow label="Screenshots" checked={screenshot} onChange={(value) => patch({ screenshot: value })} />
+              <legend className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                {t.optionsLegend}
+              </legend>
+              <ToggleRow
+                label={t.screenshotsLabel}
+                checked={screenshot}
+                onChange={(value) => patch({ screenshot: value })}
+              />
               <div>
                 <ToggleRow
-                  label="Capture diagnostics"
+                  label={t.diagnosticsLabel}
                   checked={diagnostics}
                   onChange={(value) => patch({ diagnostics: value })}
                 />
                 {diagnostics ? (
                   <div className="mt-2 rounded-lg border border-gray-100 bg-gray-50 p-2.5">
-                    <p className="mb-2 text-xs leading-snug text-gray-500">
-                      Fire fake events, then submit a feedback to see them captured.
-                    </p>
+                    <p className="mb-2 text-xs leading-snug text-gray-500">{t.diagnosticsCaption}</p>
                     <DiagnosticsTriggers />
                   </div>
                 ) : null}
               </div>
               <ToggleRow
-                label="Right-click to comment"
+                label={t.rightClickLabel}
                 checked={rightClick}
                 onChange={(value) => patch({ rightClick: value })}
               />
               <ToggleRow
-                label="Prefilled identity"
+                label={t.identityLabel}
                 checked={identity}
                 onChange={(value) => patch({ identity: value })}
-                caption="Skips the name/email prompt, like an SSO integration would"
+                caption={t.identityCaption}
               />
             </fieldset>
 
@@ -601,13 +607,13 @@ export function Playground() {
               onClick={handleReset}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:transition-none"
             >
-              Reset to defaults
+              {t.resetButtonLabel}
             </button>
 
-            <section aria-label="Generated widget code">
+            <section aria-label={t.codeSectionAriaLabel}>
               <div className="overflow-hidden rounded-lg border border-gray-800 bg-gray-950">
                 <div className="flex items-center justify-between border-b border-gray-800 pl-3">
-                  <span className="font-mono text-xs text-gray-500">The code you&apos;d ship</span>
+                  <span className="font-mono text-xs text-gray-500">{t.codeHeaderLabel}</span>
                   <CopyButton text={snippet.text} />
                 </div>
                 <pre className="overflow-x-auto px-3 py-3 font-mono text-xs leading-relaxed">
@@ -636,7 +642,7 @@ export function Playground() {
           aria-expanded="false"
           className="rounded-r-lg border border-l-0 border-gray-200 bg-white px-1.5 py-4 text-xs font-semibold tracking-wide text-gray-700 shadow-lg transition-colors [writing-mode:vertical-rl] hover:bg-gray-50 hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-accent motion-reduce:transition-none"
         >
-          Playground
+          {t.collapsedTabLabel}
         </button>
       )}
     </aside>

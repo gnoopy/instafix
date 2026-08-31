@@ -1,0 +1,54 @@
+---
+title: Claude Code용으로 복사
+description: 선택한 피드백을 코딩 에이전트에 바로 붙여넣을 수 있는 결정적(deterministic) 마크다운 컨텍스트로 변환합니다.
+---
+
+패널의 각 카드 — 그리고 열려 있는 목록 전체 — 는 하나의 마크다운 문서로 변환할 수 있습니다. 이 문서는 대시보드에서 사람이 읽기 위한 것이 아니라, 코딩 에이전트가 바로 실행에 옮길 수 있도록 만들어졌습니다. **Claude Code용으로 복사**(패널 헤더 또는 개별 피드백의 상세 보기 안)를 클릭하면 결과가 곧바로 클립보드에 복사됩니다.
+
+따로 설정할 것은 없습니다: 위젯을 설치하기만 하면 바로 동작하며, 현재 활성화된 선택 상태를 그대로 사용합니다 — 다중 선택이 활성화되어 있다면 그 선택을, 그렇지 않다면 현재 페이지의 열려 있는 항목 전체를 사용합니다.
+
+## 결과물
+
+이 결과를 에이전트의 프롬프트에 그대로 붙여넣으면 됩니다. 아래는 실제 출력물입니다 — 목업이 아니라, 단일 요소를 대상으로 한 피드백 하나에 대한 실제 결과입니다:
+
+```md
+# UI change requests
+
+- Review each request against the current code before making any change.
+- If a target is ambiguous or you can't find it in the code, report that instead of guessing.
+- Run the relevant tests after implementing each change.
+
+Page: https://app.acme.dev/reports/monthly
+Viewport: 1440x900 @2x
+
+## 1. Export CSV
+Request (verbatim):
+> The export button is disabled even after I pick a date range. Should be enabled once both dates are set.
+Target: element `button` "Export CSV"
+Selectors:
+- id: `#export-btn`
+- css: `button.export-btn`
+- xpath: `/html/body/div[1]/main/div[2]/button`
+Context: nearby text: "Date range: Aug 1 - Aug 30"
+Bounds: x=12% y=34% w=8% h=3% (relative to target element)
+```
+
+에이전트가 변경 대상을 찾는 데 필요한 모든 정보가 담겨 있습니다: CSS 선택자, XPath 대체 수단, 주변 텍스트, 그리고 바운딩 박스 — 이는 코드 변경으로 DOM 구조가 바뀐 뒤에도 위젯 스스로 요소를 다시 찾아내는 데 사용하는 것과 동일한 다중 신호 앵커링 방식입니다([앵커링](/ko/docs/widget/anchoring) 참고).
+
+## 선택 방식에 따라 달라지는 내용
+
+- **요소 하나를 클릭하거나 드래그로 선택** → 위에서 본 `Target:`/`Selectors:`/`Context:` 블록.
+- **텍스트 범위를 선택** → `Target: text in <tag>`와 함께, 앞뒤 문맥을 포함해 정확히 인용된 텍스트를 보여주는 `Quote: "…[…]…"` 줄.
+- **빈 영역을 드래그**(아래에 요소가 없거나, Alt를 누른 채 드래그해 강제로 지정) → 선택자를 고정할 대상이 없으므로, 요소가 아닌 뷰포트 기준의 좌표를 담은 `Target: area (no element — page region)`.
+- **Shift를 누른 채 드래그해 하나의 노트에 대상을 추가** → 하나의 `Target:` 블록 대신 번호가 매겨진 `Targets (N):` 목록을 가진 단일 항목이 생성되어, "이 세 버튼이 서로 일치하지 않는다"가 세 개가 아니라 하나의 요청으로 남습니다.
+- **선택 항목에 여러 피드백이 포함된 경우** → 각각이 별도의 `## N. …` 섹션이 됩니다. 모든 항목이 같은 페이지를 공유하면 `Page:`/`Viewport:` 헤더가 맨 위에 한 번만 표시되고, 그렇지 않으면 각 섹션이 자신만의 헤더를 갖습니다.
+
+## 결정적(deterministic)인 이유
+
+같은 입력은 같은 순서로 항상 정확히 동일한 문자열을 만들어냅니다 — 타임스탬프도, 무작위 순서도, 환경에 따라 달라지는 포맷팅도 없습니다. 덕분에 프롬프트에 붙여넣거나, 이전 복사본과 diff를 비교하거나, 스냅샷 테스트를 하기에도 안전합니다. 사용자가 입력한 텍스트(노트, DOM 텍스트 조각)는 항상 마크다운 인용구 또는 콘텐츠에 등장하는 백틱 연속 개수에 맞춰 크기를 조정한 인라인 코드 스팬 안에 렌더링됩니다. 따라서 페이지의 DOM에 어떤 내용이 들어 있든 — 악의적인 페이지에서 그대로 가져온 문자열이라 해도 — 인용 구조를 벗어나 문서 구조에 섞여 들어갈 수 없습니다.
+
+긴 선택 항목은 무제한으로 두지 않고 상한을 둡니다: 문서당 최대 200개 항목, 항목당 최대 20개의 대상(다중 선택이 이를 초과하면 `(N more target(s) omitted)` 줄이 추가됩니다) — 통제되지 않은 선택으로 인해 프롬프트에 담기 어려울 만큼 큰 문서가 만들어지는 일을 막습니다.
+
+## 온보딩
+
+위젯이 처음 로드될 때 신규 사용자에게는 3단계 코치마크가 표시됩니다 — 메뉴를 열고, 아무 요소나 선택한 뒤, AI를 위해 복사하기 — 이 안내는 한 번만 표시되고 다시는 나타나지 않습니다(`localStorage`에 기록되며, 새로고침해도 다시 표시되지 않습니다). 페이지를 막지 않으므로, 건너뛰거나 자신의 속도에 맞춰 클릭해 나가면 됩니다.

@@ -2,6 +2,7 @@
 
 import gsap from "gsap";
 import { useEffect, useRef } from "react";
+import type { HeroMockupContent } from "@/lib/site-i18n/content/hero-mockup";
 
 function CursorSvg() {
   return (
@@ -19,7 +20,7 @@ const DRAW_END = { x: 67, y: 50 };
 const RECT = { left: 15, top: 28, width: 52, height: 22 };
 const POPUP = { left: 15, top: 52 };
 
-export function HeroMockup() {
+export function HeroMockup({ t }: { t: HeroMockupContent }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
   const rectRef = useRef<HTMLDivElement>(null);
@@ -287,11 +288,11 @@ export function HeroMockup() {
             style={{ opacity: 0 }}
           >
             <span className="mb-1.5 inline-block rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">
-              Bug
+              {t.bugLabel}
             </span>
             <p className="overflow-hidden text-xs leading-relaxed text-gray-700">
               <span ref={typingRef} className="inline-block overflow-hidden whitespace-nowrap align-top">
-                The CTA button is too small on mobile
+                {t.comment}
               </span>
             </p>
             <p className="mt-1.5 text-[10px] text-gray-400">Sarah M.</p>

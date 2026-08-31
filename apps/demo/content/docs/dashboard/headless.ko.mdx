@@ -1,0 +1,86 @@
+---
+title: 헤드리스 훅
+description: useInstaFixInbox — UI 없이 인박스 로직만. 나만의 트리아지 화면을 직접 만들어 보세요.
+---
+
+`InstaFixInbox`가 하는 모든 일 — 데이터 가져오기, 필터링, 낙관적 뮤테이션, 실행 취소, 페이지네이션 — 은 하나의 훅에 담겨 있으며, 여러분의 컴포넌트에서 직접 다룰 수 있습니다:
+
+```tsx
+import { useInstaFixInbox } from "@instafix/dashboard";
+
+const inbox = useInstaFixInbox({
+  projects: "my-project",
+  endpoint: "/api/instafix",
+});
+```
+
+## 옵션
+
+옵션은 세 가지 소스 모드에 대한 유니온 타입입니다: `source`, `store`, `endpoint` 중 **정확히 하나만** 지정하세요. 아무것도 지정하지 않거나, 둘 다 지정하거나, endpoint 전용 옵션(`apiKey`, `headers`)을 `store`/`source`와 함께 사용하면 컴파일 에러가 발생합니다 — 런타임 예외도 아니고, 조용히 무시되는 옵션도 아닙니다.
+
+| 옵션 | 타입 | 기본값 | 비고 |
+|---|---|---|---|
+| `projects` | `string` 또는 `string[]` | **필수** | 빈 배열을 넘기면 렌더링 시점에 예외가 발생합니다. 첫 번째 항목이 초기값으로 선택됩니다 |
+| `endpoint` | `string` | — | HTTP 모드 |
+| `store` | `InstaFixStore` | — | 스토어 모드 |
+| `source` | `InboxSource` | — | 완전히 커스텀한 데이터 소스. [데이터 소스](/ko/docs/dashboard/sources) 참고 |
+| `apiKey` | `string` | — | endpoint 모드 전용. 모든 요청에 `Authorization: Bearer`를 추가합니다 |
+| `headers` | 객체 또는 함수 | — | endpoint 모드 전용. 명시적인 `Authorization`이 `apiKey`보다 우선합니다. 실시간으로 읽히므로, 값을 바꿔도 소스가 다시 만들어지지는 않습니다 |
+| `pageSize` | `number` | `50` | 1~100 사이로 제한됩니다 |
+| `onStatusChange` | `(feedback, previousStatus) => void` | — | 서버가 확인한 이후 호출됩니다 |
+| `onDelete` | `(feedback) => void` | — | 서버가 확인한 이후 호출됩니다 |
+| `onError` | `(error) => void` | — | 로드나 뮤테이션이 실패할 때마다 호출됩니다 |
+
+각 모드는 개별적으로 export됩니다 — `InboxEndpointOptions`, `InboxStoreOptions`, `InboxCustomSourceOptions`, 공통 요소인 `InboxSharedOptions`, 그리고 이들의 유니온인 `UseInstaFixInboxOptions` — 그래서 래퍼 컴포넌트가 자신이 지원하는 모드만 받도록 타입을 좁힐 수 있습니다. 순수 JavaScript로 사용할 때는 기존 동작이 그대로 유지됩니다: 소스를 아예 지정하지 않으면 여전히 렌더링 시점에 예외가 발생합니다.
+
+## 반환값
+
+**데이터** — `items`(로드된 모든 페이지), `total`(첫 페이지가 도착하기 전까지는 `null`), `counts`(상태별 합계, 최선을 다한 값), `loading`, `loadingMore`, `error`, `hasMore`, `loadMore()`, `refresh()`.
+
+**필터** — `project`/`setProject`, `status`/`setStatus`(`"open"`에서 시작), `type`/`setType`, `search`/`setSearch`. 검색은 상태를 즉시 반영하되 재조회는 250ms만큼 디바운스됩니다. 검색어는 트리밍되며 최대 200자로 제한됩니다.
+
+**포커스와 드로어** — `focusedId`, `focus(id)`, `focusNext()`, `focusPrev()`, `openedId`, `opened`(열려 있는 레코드 — 필터로 인해 해당 행이 목록에서 사라져도 계속 사용할 수 있습니다), `openFeedback(id)`, `closeFeedback()`.
+
+**뮤테이션** — `changeStatus(id, status)`, `deleteFeedback(id)`, `pendingUndo`, `undo()`.
+
+## `view` — 플래그 조합을 직접 계산할 필요 없음
+
+스켈레톤, 에러 상태, 빈 상태, 그리고 `loading` / `error` / `items.length`로부터 나오는 목록 중 무엇을 보여줄지 판단하는 일은 까다롭고, 조금이라도 잘못 짜면 재조회할 때 화면이 통째로 비어버리는 문제로 이어지기 쉽습니다. `view`는 이 판단을 이미 끝내 둔 값입니다 — 실제로 제공되는 컴포넌트가 렌더링에 사용하는 바로 그 값입니다:
+
+| `view` | 의미 |
+|---|---|
+| `"loading"` | 첫 페이지를 로딩 중이며 아직 보여줄 것이 없음 |
+| `"error"` | 로드에 실패했고 보여줄 것이 없음 |
+| `"empty"` | 로드는 성공했지만 현재 필터에 맞는 행이 없음 |
+| `"ready"` | 표시할 행이 있음 |
+
+```tsx
+if (inbox.view === "loading") return <Skeleton />;
+if (inbox.view === "error") return <ErrorState error={inbox.error} onRetry={inbox.refresh} />;
+if (inbox.view === "empty") return <EmptyState />;
+return <List items={inbox.items} />;
+```
+
+행이 있으면 다른 어떤 신호보다 우선합니다: 재조회 중에도 이미 로드된 행은 화면에 그대로 남아 있고 `view`도 `"ready"`를 유지하므로, 목록이 갑자기 스켈레톤으로 되돌아가는 일이 없습니다. 화면에 보이는 행 위에 세밀한 스피너를 얹고 싶을 때는 `loading` 값을 참고하세요.
+
+## 뮤테이션은 낙관적이며, 실패 시 다시 에러를 던집니다
+
+UI는 즉시 업데이트되고, 서버가 요청을 거부하면 훅이 모든 것(items, counts, focus, 열린 레코드)을 원상 복구한 **다음 에러를 다시 던집니다**. 항상 catch를 붙여 두세요:
+
+```tsx
+<button
+  onClick={() => {
+    inbox.changeStatus(item.id, "resolved").catch(() => {
+      // 상태는 이미 원상 복구되었습니다 — 여기서 토스트 등을 띄우세요
+    });
+  }}
+>
+  Resolve
+</button>
+```
+
+실행 취소가 가능한 것은 마지막 상태 변경뿐입니다(`pendingUndo` + `undo()`). 삭제는 되돌릴 수 없으므로, 여러분만의 확인 UI 뒤에 두세요.
+
+## 페이지네이션
+
+`loadMore()`는 수동입니다 — 번들된 컴포넌트는 무한 스크롤이 아니라 "더 불러오기" 버튼을 렌더링합니다. 페이지는 id 기준으로 중복 제거되고, 다음 페이지 번호는 `items.length`로부터 계산되므로, 낙관적 삭제가 일어나도 행을 건너뛰는 일이 없습니다.

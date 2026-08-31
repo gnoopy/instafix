@@ -1,3 +1,6 @@
+import { comparisonContent } from "@/lib/site-i18n/content/comparison";
+import { getSiteLocale } from "@/lib/site-i18n/locale";
+
 function Check() {
   return (
     <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-500/10">
@@ -37,95 +40,98 @@ function Partial({ label }: { label: string }) {
   );
 }
 
-const rows = [
-  {
-    feature: "Self-hosted",
-    instafix: <Check />,
-    markerio: <Cross />,
-    bugherd: <Cross />,
-    userback: <Cross />,
-  },
-  {
-    feature: "npm package",
-    instafix: <Check />,
-    markerio: <Partial label="SDK only" />,
-    bugherd: <Cross />,
-    userback: <Cross />,
-  },
-  {
-    feature: "Open source",
-    instafix: (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-400">
-        MIT
-      </span>
-    ),
-    markerio: <Cross />,
-    bugherd: <Cross />,
-    userback: <Cross />,
-  },
-  {
-    feature: "Pricing",
-    instafix: (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-bold text-green-400">
-        Free
-      </span>
-    ),
-    markerio: <span className="text-sm text-gray-500">$39/mo</span>,
-    bugherd: <span className="text-sm text-gray-500">$42/mo</span>,
-    userback: <span className="text-sm text-gray-500">$79/mo</span>,
-  },
-  {
-    feature: "DOM-anchored",
-    instafix: <Check />,
-    markerio: <Partial label="Screenshot" />,
-    bugherd: <Partial label="Pin only" />,
-    userback: <Partial label="Screenshot" />,
-  },
-  {
-    feature: "Survives layout changes",
-    instafix: <Check />,
-    markerio: <Cross />,
-    bugherd: <Partial label="Partial" />,
-    userback: <Cross />,
-  },
-  {
-    feature: "Triage inbox",
-    instafix: (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-400">
-        React component
-      </span>
-    ),
-    markerio: <Partial label="SaaS only" />,
-    bugherd: <Partial label="SaaS only" />,
-    userback: <Partial label="SaaS only" />,
-  },
-  {
-    feature: "Customizable",
-    instafix: (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-400">
-        Full control
-      </span>
-    ),
-    markerio: <span className="text-xs text-gray-500">Limited</span>,
-    bugherd: <span className="text-xs text-gray-500">Limited</span>,
-    userback: <span className="text-xs text-gray-500">Limited</span>,
-  },
-] as const;
-
 const competitors = [
   { name: "Marker.io", key: "markerio" as const },
   { name: "BugHerd", key: "bugherd" as const },
   { name: "Userback", key: "userback" as const },
 ];
 
-export function Comparison() {
+export async function Comparison() {
+  const locale = await getSiteLocale();
+  const t = comparisonContent[locale];
+
+  const rows = [
+    {
+      feature: t.features.selfHosted,
+      instafix: <Check />,
+      markerio: <Cross />,
+      bugherd: <Cross />,
+      userback: <Cross />,
+    },
+    {
+      feature: t.features.npmPackage,
+      instafix: <Check />,
+      markerio: <Partial label={t.labels.sdkOnly} />,
+      bugherd: <Cross />,
+      userback: <Cross />,
+    },
+    {
+      feature: t.features.openSource,
+      instafix: (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-400">
+          MIT
+        </span>
+      ),
+      markerio: <Cross />,
+      bugherd: <Cross />,
+      userback: <Cross />,
+    },
+    {
+      feature: t.features.pricing,
+      instafix: (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-bold text-green-400">
+          {t.labels.freeBadge}
+        </span>
+      ),
+      markerio: <span className="text-sm text-gray-500">{t.prices.markerio}</span>,
+      bugherd: <span className="text-sm text-gray-500">{t.prices.bugherd}</span>,
+      userback: <span className="text-sm text-gray-500">{t.prices.userback}</span>,
+    },
+    {
+      feature: t.features.domAnchored,
+      instafix: <Check />,
+      markerio: <Partial label={t.labels.screenshot} />,
+      bugherd: <Partial label={t.labels.pinOnly} />,
+      userback: <Partial label={t.labels.screenshot} />,
+    },
+    {
+      feature: t.features.survivesLayout,
+      instafix: <Check />,
+      markerio: <Cross />,
+      bugherd: <Partial label={t.labels.partial} />,
+      userback: <Cross />,
+    },
+    {
+      feature: t.features.triageInbox,
+      instafix: (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-400">
+          {t.labels.reactComponent}
+        </span>
+      ),
+      markerio: <Partial label={t.labels.saasOnly} />,
+      bugherd: <Partial label={t.labels.saasOnly} />,
+      userback: <Partial label={t.labels.saasOnly} />,
+    },
+    {
+      feature: t.features.customizable,
+      instafix: (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-400">
+          {t.labels.fullControl}
+        </span>
+      ),
+      markerio: <span className="text-xs text-gray-500">{t.labels.limited}</span>,
+      bugherd: <span className="text-xs text-gray-500">{t.labels.limited}</span>,
+      userback: <span className="text-xs text-gray-500">{t.labels.limited}</span>,
+    },
+  ];
+
   return (
     <section id="comparison" className="bg-gray-950 px-6 py-24">
       <div className="mx-auto max-w-5xl">
         <div data-gsap="section-title" className="text-center">
           <div className="mx-auto mb-4 h-px w-8 bg-accent/50" />
-          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">InstaFix vs. the alternatives</h2>
-          <p className="mt-4 text-lg text-gray-400">Why pay $39-79/mo for features you can self-host for free?</p>
+          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">{t.heading}</h2>
+          <p className="mt-4 text-lg text-gray-400">{t.subheading}</p>
         </div>
 
         <div data-gsap="comparison" className="mt-14 overflow-x-auto">
@@ -138,7 +144,7 @@ export function Comparison() {
                   <div className="flex flex-col items-center gap-1">
                     <span className="text-sm font-bold text-accent">InstaFix</span>
                     <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent-light">
-                      Recommended
+                      {t.recommendedBadge}
                     </span>
                   </div>
                 </th>

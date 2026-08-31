@@ -1,0 +1,78 @@
+---
+title: 대시보드
+description: 피드백을 위한 Linear 스타일 트리아지 인박스 — React 컴포넌트 하나로, 키보드 우선 설계.
+---
+
+`@instafix/dashboard`는 완전한 트리아지 UI를 제공합니다: 필터링, 검색, 상태 변경, 삭제, 실행 취소 — 키보드를 염두에 두고 설계했고, 여러분의 앱에 자연스럽게 녹아들도록 스타일링했습니다.
+
+```bash
+npm i @instafix/dashboard
+```
+
+```tsx
+import { InstaFixInbox } from "@instafix/dashboard";
+
+export function Triage() {
+  return (
+    <InstaFixInbox
+      projects="my-project"
+      endpoint="https://my-site.com/api/instafix"
+      apiKey={process.env.NEXT_PUBLIC_INSTAFIX_KEY}
+      theme="auto"
+    />
+  );
+}
+```
+
+React 18과 19를 모두 지원하고, ESM과 CJS로 제공되며, React 외에는 의존성이 전혀 없습니다. 높이가 지정된 컨테이너를 하나 마련해 주세요 — 인박스는 부모 요소를 가득 채웁니다(최소 480px).
+
+## Props
+
+`InstaFixInbox`는 [`useInstaFixInbox`의 모든 옵션](/ko/docs/dashboard/headless)에 더해 다음 표시용(presentation) props를 받습니다.
+
+| Prop | 타입 | 기본값 | 하는 일 |
+|---|---|---|---|
+| `theme` | `"light"` \| `"dark"` \| `"auto"` | `"auto"` | `auto`는 시스템 설정을 실시간으로 따라갑니다 — 세션 도중 설정이 바뀌어도 반영됩니다 |
+| `accentColor` | `string` | `"#0066ff"` | HEX 값만 가능합니다. 모든 강조 색상은 이 값 하나에서 파생됩니다. [테마 설정](/ko/docs/dashboard/theming) 참고 |
+| `density` | `"comfortable"` \| `"compact"` | `"comfortable"` | 행 높이 44px 대 36px |
+| `locale` | `string` | `"ko"` | 임의의 BCP-47 태그 — [언어](#언어) 참고 |
+| `deepLinkParam` | `string` | `"instafix"` | "페이지에서 열기" 링크가 사용하는 쿼리 파라미터 — 위젯의 `deepLink` 파라미터와 일치해야 합니다 |
+| `emptyState` | `ReactNode` | — | "이 프로젝트에 아직 피드백이 없음" 상태에만 적용되는 커스텀 노드입니다 — 인박스 제로 상태와 필터 결과 없음 상태는 기본값을 그대로 사용합니다 |
+| `className` | `string` | — | 루트 요소의 클래스에 추가됩니다 |
+
+## 키보드
+
+리스트에 포커스를 한 번 준 다음:
+
+| 키 | 동작 |
+|---|---|
+| `j` / `↓`, `k` / `↑` | 행 간 이동 |
+| `Enter` 또는 `o` | 포커스된 피드백 열기. 이미 열린 항목에서 다시 `Enter`를 누르면 실제 페이지에서 엽니다 |
+| `e` / `p` / `x` | 해결됨 / 진행 중 / 처리하지 않음 전환(현재 상태의 키를 다시 누르면 열림 상태로 되돌아갑니다) |
+| `u` | 마지막 상태 변경 실행 취소 |
+| `r` | 새로고침 |
+| `/` | 검색으로 이동 |
+| `1`–`5` | 상태 탭(전체, 열림, 진행 중, 해결됨, 처리하지 않음) |
+| `?` | 단축키 치트시트 |
+| `Esc` | 검색 중이면: 먼저 검색어를 지우고, 그다음 검색을 종료합니다. 그 외에는: 드로어를 닫고, 그다음 치트시트를 닫습니다 |
+
+단축키는 컴포넌트 내부에 포커스가 있어야 동작하며(`document`가 아니라 컴포넌트 자체에 바인딩됩니다), `Esc`를 제외하고는 입력 필드에 타이핑 중일 때는 절대 실행되지 않습니다.
+
+## 상태와 액션
+
+상태는 총 네 가지입니다: `open`, `in_progress`, `resolved`, `wont_fix`. 대시보드는 이 중 어떤 상태로도 변경할 수 있습니다(위젯 자체의 액션은 여전히 이진적입니다 — 해결/재오픈). 피드백을 닫으면(`resolved` 또는 `wont_fix`) `resolvedAt`이 기록되고, 다시 열면 이 값이 지워집니다. 상태 변경은 낙관적(optimistic)으로 처리되며 실행 취소가 가능합니다. **삭제는 되돌릴 수 없습니다** — 인라인 확인 절차를 거치며 실행 취소 기능이 없습니다.
+
+## 언어
+
+위젯과 동일한 8개의 내장 로케일(`en`, `ko`, `fr`, `de`, `es`, `it`, `pt`, `ru`)을 지원하며, 영어와 한국어(기본값)는 번들에 포함되고 나머지는 지연 로드됩니다. BCP-47 태그는 정규화됩니다(`fr-CA` → `fr`).
+
+대시보드는 런타임에 커스텀 로케일도 받아들입니다:
+
+```ts
+import { registerLocale } from "@instafix/dashboard";
+
+registerLocale("nl", { "status.open": "Open", "status.resolved": "Opgelost" });
+// 이후: <InstaFixInbox locale="nl" ... />
+```
+
+**부분 사전(partial dictionary)도 허용됩니다** — 빠뜨린 키는 자동으로 영어로 대체되므로, 라벨 하나만 고치기 위해 전체 사전을 유지보수할 필요는 없습니다. 구현이 강제하는 두 가지 규칙이 있습니다: **기본 언어 코드**로 등록해야 하고(`"nl-BE"`가 아니라 `"nl"` — 조회 시 기본 코드로 정규화됩니다), `registerLocale`은 인박스가 마운트되기 **전에** 호출해야 합니다. 위젯의 `registerLocale`도 [자체 키 집합](/ko/docs/widget/i18n)에 대해 동일한 방식으로 동작합니다.

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { footerContent } from "@/lib/site-i18n/content/footer";
+import { getSiteLocale } from "@/lib/site-i18n/locale";
 
 const links = [
   {
@@ -15,14 +17,17 @@ const links = [
   },
 ] as const;
 
-export function Footer() {
+export async function Footer() {
+  const locale = await getSiteLocale();
+  const t = footerContent[locale];
+
   return (
     <footer className="border-t border-gray-800 bg-gray-950 px-6 py-12">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
           <div>
             <p className="text-lg font-bold tracking-tight text-white">InstaFix</p>
-            <p className="mt-1 text-sm text-gray-500">Open-source feedback widget</p>
+            <p className="mt-1 text-sm text-gray-500">{t.tagline}</p>
           </div>
 
           <nav>
@@ -41,7 +46,7 @@ export function Footer() {
               ))}
               <li>
                 <Link href="/contact" className="text-sm text-gray-400 transition-colors hover:text-white">
-                  문의하기
+                  {t.contactLabel}
                 </Link>
               </li>
             </ul>
@@ -51,7 +56,7 @@ export function Footer() {
         <div className="mt-8 flex flex-col items-start justify-between gap-2 border-t border-gray-800 pt-6 text-xs text-gray-600 sm:flex-row sm:items-center">
           <span>MIT License</span>
           <span>
-            Built by{" "}
+            {t.builtBy}{" "}
             <a
               href="https://github.com/gnoopy"
               target="_blank"

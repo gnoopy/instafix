@@ -1,13 +1,16 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
+import type { SiteLocale } from "@/lib/site-i18n/constants";
+import { contactContent } from "@/lib/site-i18n/content/contact";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
 const INPUT_CLASSNAME =
   "w-full rounded-lg border border-gray-700 bg-gray-900 px-3.5 py-2.5 text-sm text-white placeholder:text-gray-600 focus:border-accent focus:outline-none disabled:opacity-60";
 
-export function ContactForm() {
+export function ContactForm({ siteLocale }: { siteLocale: SiteLocale }) {
+  const t = contactContent[siteLocale];
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -36,7 +39,7 @@ export function ContactForm() {
         const message =
           typeof data === "object" && data !== null && "error" in data && typeof data.error === "string"
             ? data.error
-            : "전송에 실패했습니다. 잠시 후 다시 시도해주세요.";
+            : t.genericErrorMessage;
         setErrorMessage(message);
         setStatus("error");
         return;
@@ -45,7 +48,7 @@ export function ContactForm() {
       form.reset();
       setStatus("success");
     } catch {
-      setErrorMessage("전송에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      setErrorMessage(t.genericErrorMessage);
       setStatus("error");
     }
   }
@@ -53,8 +56,8 @@ export function ContactForm() {
   if (status === "success") {
     return (
       <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-6 text-center">
-        <p className="text-lg font-semibold text-white">문의가 접수되었습니다</p>
-        <p className="mt-2 text-sm text-gray-400">빠른 시일 내에 답변드리겠습니다. 감사합니다.</p>
+        <p className="text-lg font-semibold text-white">{t.successTitle}</p>
+        <p className="mt-2 text-sm text-gray-400">{t.successMessage}</p>
       </div>
     );
   }
@@ -63,7 +66,7 @@ export function ContactForm() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div>
         <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-gray-300">
-          이름
+          {t.nameLabel}
         </label>
         <input
           id="name"
@@ -72,12 +75,12 @@ export function ContactForm() {
           required
           disabled={status === "submitting"}
           className={INPUT_CLASSNAME}
-          placeholder="홍길동"
+          placeholder={t.namePlaceholder}
         />
       </div>
       <div>
         <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-300">
-          이메일
+          {t.emailLabel}
         </label>
         <input
           id="email"
@@ -86,12 +89,12 @@ export function ContactForm() {
           required
           disabled={status === "submitting"}
           className={INPUT_CLASSNAME}
-          placeholder="you@example.com"
+          placeholder={t.emailPlaceholder}
         />
       </div>
       <div>
         <label htmlFor="message" className="mb-1.5 block text-sm font-medium text-gray-300">
-          메시지
+          {t.messageLabel}
         </label>
         <textarea
           id="message"
@@ -100,7 +103,7 @@ export function ContactForm() {
           rows={5}
           disabled={status === "submitting"}
           className={`${INPUT_CLASSNAME} resize-none`}
-          placeholder="문의하실 내용을 자세히 적어주세요."
+          placeholder={t.messagePlaceholder}
         />
       </div>
       {errorMessage ? <p className="text-sm text-red-400">{errorMessage}</p> : null}
@@ -109,7 +112,7 @@ export function ContactForm() {
         disabled={status === "submitting"}
         className="mt-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white transition hover:bg-accent-light disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {status === "submitting" ? "전송 중..." : "보내기"}
+        {status === "submitting" ? t.submittingLabel : t.submitLabel}
       </button>
     </form>
   );

@@ -1,0 +1,170 @@
+---
+title: 어댑터 작성하기
+description: "@instafix/adapter-kit으로 나만의 스토어 어댑터 만들기 — 엔진, 계약, 그리고 conformance 스위트."
+---
+
+번들에 포함된 세 가지 어댑터가 대부분의 구성을 커버하지만, InstaFix의 스토어는 플러그인 방식으로 교체 가능합니다: 레코드를 저장할 수 있는 것이라면 무엇이든 위젯과 대시보드의 뒷단이 될 수 있습니다. `@instafix/adapter-kit`은 바로 이를 위해 공개된 패키지입니다 — `InstaFixStore` 계약, 퍼스트파티 어댑터들이 실제로 사용하는 빌딩 블록, 그리고 여러분의 구현이 다른 어댑터들과 동일하게 동작함을 증명하는 conformance 스위트를 담고 있습니다.
+
+```bash
+npm i -D @instafix/adapter-kit vitest
+```
+
+`vitest`는 **선택적 peer dependency**로, `@instafix/adapter-kit/testing` 엔트리를 사용할 때만 필요합니다. conformance 스위트를 실행하지 않는다면 설치하지 않아도 됩니다. 킷 자체는 런타임 의존성이 없으므로(`@instafix/core`는 킷의 `dist`에 번들되어 있습니다), 여러분의 패키지를 번들링해서 배포한다면 dev dependency로 두어도 충분합니다. 번들링하지 않은 결과물을 그대로 배포한다면 `dependencies`로 옮기세요.
+
+> 왜 별도 패키지가 필요한가: `@instafix/core`는 내부 전용 패키지로, 원본 TypeScript 그대로 export되며 npm에 배포되지 않습니다. 이 킷은 이 저장소 바깥에서 해당 타입과 헬퍼에 의존하기 위한 공식적인 방법입니다.
+
+## 어떤 방식을 선택할지
+
+| 여러분의 백엔드 | 작성해야 할 것 | 가이드 |
+|---|---|---|
+| 스냅샷 — KV, 플랫 파일, IndexedDB, 쿠키, 배열 | `load` / `persist` / `generateId` | [스냅샷 백엔드](#스냅샷-백엔드) |
+| 쿼리 — SQL, ORM, HTTP API | `InstaFixStore`의 메서드 6개 | [쿼리 백엔드](#쿼리-백엔드) |
+
+## 스냅샷 백엔드
+
+여러분의 저장소가 전체 피드백 목록을 통째로 돌려주고 통째로 받아들일 수 있다면, `createCollectionStore`가 완전히 규격을 준수하는(conformant) 스토어를 대신 만들어 줍니다. 계약이 요구하는 모든 동작을 구현합니다 — `clientId` 중복 제거, 최신순 정렬, 필터·페이지네이션 파이프라인, 존재하지 않는 레코드에 대한 `StoreNotFoundError`, 프로젝트 범위의 일괄 삭제, 그리고 `verifyProjectOwnership`까지:
+
+```ts
+import { createCollectionStore, type FeedbackRecord, type InstaFixStore } from "@instafix/adapter-kit";
+
+export function createArrayStore(): InstaFixStore {
+  let feedbacks: FeedbackRecord[] = [];
+  let counter = 1;
+
+  return createCollectionStore({
+    load: () => feedbacks,
+    persist: (next) => {
+      feedbacks = next;
+    },
+    generateId: () => `kit-${counter++}`,
+  });
+}
+```
+
+이것은 실제로 동작하는, 완전히 규격을 준수하는 어댑터입니다 — 킷 자체의 테스트 스위트가 44개의 conformance 테스트를 돌릴 때 사용하는 dogfood 예제이기도 합니다. 세 함수를 여러분의 저장소에 맞게 바꾸면 끝입니다: [`MemoryStore`](/ko/docs/adapters/memory)와 [`LocalStorageStore`](/ko/docs/adapters/localstorage)도 동일한 엔진에 서로 다른 원시 저장 수단을 결합한 것뿐입니다.
+
+**세 가지 기본 요소:**
+
+| 함수 | 계약 |
+|---|---|
+| `load()` | 현재 전체 레코드 스냅샷을 반환합니다. 동기든 비동기든 상관없습니다 — 엔진이 어느 쪽이든 await합니다 |
+| `persist(feedbacks)` | 전체 스냅샷을 다시 기록합니다. 쓰기가 반영되지 않았다면(용량 초과, 저장소 비활성화 등) `StorePersistenceError`를 던지세요 — 절대 삼키면 안 됩니다 |
+| `generateId()` | 고유 id를 생성합니다. 피드백과 어노테이션 레코드 양쪽에 사용됩니다 |
+
+`createCollectionStore`는 `CollectionStore`를 반환합니다 — `verifyProjectOwnership`이 선택 사항이 아니라 항상 보장되는 `InstaFixStore`이므로, null 체크 없이 그대로 위임할 수 있습니다.
+
+**용량 압박 시 스크린샷부터 제외합니다.** `createFeedback` 도중 `persist`가 예외를 던지고 해당 레코드에 인라인 스크린샷이 들어 있다면, 엔진은 가장 무거운 필드인 `screenshotUrl`을 비운 뒤 한 번 더 시도합니다. 이 덕분에 저장 공간이 가득 찬 상황에서도 작성된 코멘트는 살아남습니다. 두 번째 시도마저 실패하면 에러가 그대로 전파됩니다 — 레코드를 반환해 버리면 실제로는 일어나지 않은 성공을 주장하는 셈이기 때문입니다.
+
+## 쿼리 백엔드
+
+SQL이나 ORM을 사용한다면 6개의 메서드를 직접 구현하세요 — `WHERE` 절은 요청마다 테이블 전체를 로드하는 대신 데이터베이스 쪽에서 처리하고 싶을 것입니다. 그래도 킷은 입력값을 레코드로 변환하는 작업만큼은 대신 처리해 줍니다:
+
+```ts
+import {
+  buildFeedbackRecord,
+  StoreNotFoundError,
+  type FeedbackCreateInput,
+  type FeedbackRecord,
+  type InstaFixStore,
+} from "@instafix/adapter-kit";
+
+export class DrizzleStore implements InstaFixStore {
+  async createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord> {
+    const record = buildFeedbackRecord(data, {
+      id: crypto.randomUUID(),
+      annotationId: () => crypto.randomUUID(),
+    });
+    // …record와 record.annotations를 삽입
+    return record;
+  }
+
+  async deleteFeedback(id: string): Promise<void> {
+    const deleted = await db.delete(feedbacks).where(eq(feedbacks.id, id)).returning();
+    if (deleted.length === 0) throw new StoreNotFoundError();
+  }
+  // …나머지 네 개의 메서드
+}
+```
+
+`buildFeedbackRecord`는 모든 선택적 필드를 `null`로 정규화하고, `createdAt`/`updatedAt`을 기록하며, `resolvedAt`을 `null`로 설정하고, 어노테이션 레코드를 만들어 줍니다(어노테이션을 따로 삽입한다면 `buildAnnotationRecord`가 단일 어노테이션 하나만 독립적으로 처리해 줍니다). 스크린샷 data URL은 `screenshotUrl`에 그대로 인라인 유지됩니다. 외부 오브젝트 스토리지를 사용하는 어댑터라면 먼저 업로드한 뒤 이 필드를 덮어쓰면 됩니다.
+
+### 에러 계약
+
+핸들러와 대시보드는 이 에러들을 기준으로 동작하므로, 여러분이 사용하는 ORM의 에러가 아니라 킷이 제공하는 에러 클래스를 던지세요:
+
+| 상황 | 해야 할 일 |
+|---|---|
+| 알 수 없는 id로 `updateFeedback` / `deleteFeedback` 호출 | `StoreNotFoundError`를 던지세요 — HTTP 핸들러가 이를 404로 변환합니다 |
+| 이미 사용 중인 `clientId`로 `createFeedback` 호출 | 기존 레코드를 반환하거나(멱등 처리) `StoreDuplicateError`를 던지세요. 둘 다 유효하며, 핸들러는 어느 쪽이든 대응합니다 |
+| 뮤테이션은 수락되었지만 실제로는 저장되지 않음 | 가짜 성공을 알리는 대신 `StorePersistenceError`를 던지세요 |
+| `getFeedbacks` / `findByClientId`의 결과가 없음 | 예외를 던지지 마세요 — 빈 배열이나 `null`을 반환하세요 |
+
+이에 대응하는 가드 함수도 함께 제공됩니다: `isStoreNotFound`, `isStoreDuplicate`, `isStorePersistence`. 패키지 경계를 넘나들며 에러를 잡을 때는 `instanceof` 대신 이 가드들을 사용하세요 — 모든 패키지가 각자 이 에러 클래스들을 자체 번들에 포함하고 있어서, 다른 패키지가 던진 에러에 대해 `instanceof`가 실패할 수 있습니다. 이 가드들은 Prisma의 `P2025`, `P2002` 코드도 함께 인식합니다.
+
+### 맞춰야 할 쿼리 시맨틱
+
+`getFeedbacks`는 `FeedbackQuery`를 받아 `{ feedbacks, total }`을 반환합니다. 여기서 `total`은 페이지네이션 **이전**의 전체 개수입니다. 스위트가 검증하는 동작은 다음과 같습니다:
+
+- 필터: `projectName`(항상 적용), 그리고 `type`, `status`, `statuses`, `url`, `urlPattern`, `search`(`message`에 대한 부분 문자열 검색).
+- `statuses`는 버킷 방식입니다 — 나열된 값 중 하나라도 일치하면 되며, 둘 다 지정된 경우 `status`보다 우선합니다. 빈 배열이면 상태 필터가 적용되지 않습니다.
+- `createdAt` 기준 내림차순, 즉 최신순입니다.
+- `page`는 1부터 시작하고, `limit`은 기본값 50에 최대 100까지 제한됩니다.
+
+스냅샷을 메모리에 들고 있다면, `applyFeedbackFilters(records, query)`가 정확히 이 용도로 export되어 위 내용을 전부 구현해 줍니다.
+
+## 프로젝트 소유권
+
+`verifyProjectOwnership(id, projectName)`은 유일한 선택적 메서드입니다. HTTP 핸들러는 `PATCH`와 `DELETE` 전에 이를 호출하며, 결과가 `false`이면 404로 응답합니다 — 이것이 한 프로젝트가 추측한 id로 다른 프로젝트의 피드백을 변경하지 못하게 막는 장치입니다. 스토어는 이 지점에서 덕 타이핑(duck-typed) 방식으로 다뤄지므로, 서드파티 어댑터도 별도 작업 없이 이 검사를 자동으로 얻게 됩니다:
+
+```ts
+async verifyProjectOwnership(id: string, projectName: string): Promise<boolean> {
+  const row = await db.feedback.findUnique({ where: { id }, select: { projectName: true } });
+  return row?.projectName === projectName;
+}
+```
+
+스토어가 둘 이상의 프로젝트를 다룬다면 반드시 구현하세요. 구현하지 않으면 핸들러는 이 검사를 건너뛰고 `id` 하나만 믿고 처리합니다.
+
+## 검증하기: conformance 스위트
+
+퍼스트파티 어댑터들이 실제로 사용하는 것과 동일한 스위트입니다. 비어 있는 새 스토어를 반환하는 팩토리 함수를 넘기면, 전체 계약을 검증합니다 — 테스트 44개:
+
+```ts
+// __tests__/my-store.test.ts
+import { testInstaFixStore } from "@instafix/adapter-kit/testing";
+import { MyStore } from "../src/index.js";
+
+testInstaFixStore(() => new MyStore());
+```
+
+이 팩토리 함수는 각 테스트 전에 실행되며 비동기여도 됩니다 — 트랜잭션을 열거나 새 스키마를 준비하기에 적절한 지점입니다. 정당하게 백엔드마다 다를 수 있는 계약상의 차이를 다루는 옵션이 두 개 있습니다:
+
+| 옵션 | 기본값 | 설정해야 할 때 |
+|---|---|---|
+| `duplicateBehavior` | `"return"` | `createFeedback`이 `clientId` 중복 시 기존 레코드를 반환하는 대신 `StoreDuplicateError`를 던진다면 `"throw"`로 설정하세요 |
+| `caseInsensitiveSearch` | `true` | 사용 중인 콜레이션(collation)이 `search`를 대소문자 구분으로 처리한다면 `false`로 설정하세요. 그러면 스위트는 대소문자가 일치하는 부분 문자열 매칭만 검증합니다 |
+
+```ts
+testInstaFixStore(() => new PostgresStore(db), {
+  duplicateBehavior: "throw",
+  caseInsensitiveSearch: false,
+});
+```
+
+`verifyProjectOwnership`도 함께 검증됩니다: 이를 구현하지 않은 스토어는 관련 검증을 건너뛰므로, 나중에 추가하더라도 테스트 코드를 바꿀 필요 없이 자동으로 검증됩니다.
+
+## 작성한 어댑터 사용하기
+
+그 외에는 달라지는 것이 없습니다. 서버 사이드에서는 요청 핸들러에 넘기고, 클라이언트 사이드에서는 위젯이나 인박스에 바로 넘기면 됩니다:
+
+```ts
+// 서버 — 요청 핸들러는 Prisma 여부와 관계없이 어떤 InstaFixStore든 받습니다
+import { createInstaFixHandler } from "@instafix/adapter-prisma";
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({ store: new MyStore() });
+
+// 브라우저 — 클라이언트 사이드 모드, 서버가 전혀 없음
+import { initInstaFix } from "@instafix/widget";
+initInstaFix({ store: new MyStore(), projectName: "my-app" });
+```
+
+직접 만든 어댑터를 공개했다면 [이슈를 열어 주세요](https://github.com/gnoopy/instafix/issues) — 이 페이지에 링크해 드리겠습니다.
