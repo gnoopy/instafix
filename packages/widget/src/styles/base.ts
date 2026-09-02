@@ -296,6 +296,10 @@ export function buildStyles(colors: ThemeColors): string {
       border-radius: 9999px;
     }
 
+    /* White/light-gray sweep — the buttons underneath wear the detected
+       selection color, which can itself land in the yellow family; a yellow
+       band over yellow buttons is invisible, while a white one reads on any
+       detected hue. */
     .sp-toolbar-shine::before {
       content: "";
       position: absolute;
@@ -306,9 +310,9 @@ export function buildStyles(colors: ThemeColors): string {
       background: linear-gradient(
         100deg,
         transparent,
-        rgba(250, 204, 21, 0.85) 45%,
-        rgba(255, 241, 153, 0.95) 50%,
-        rgba(250, 204, 21, 0.85) 55%,
+        rgba(241, 245, 249, 0.75) 45%,
+        rgba(255, 255, 255, 0.95) 50%,
+        rgba(241, 245, 249, 0.75) 55%,
         transparent
       );
       transform: rotate(18deg);
@@ -860,6 +864,17 @@ export function buildStyles(colors: ThemeColors): string {
     .sp-card:active {
       transform: translateY(0) scale(0.99);
       transition-duration: 0.1s;
+    }
+
+    /* The list's current selection — set by clicking a card or the card's
+       on-page numbered marker. Selection-colored (host-distinct) ring, the
+       same visual language as the on-page outline it corresponds to. */
+    .sp-card--selected {
+      background: var(--sp-bg);
+      border-color: var(--sp-selection, var(--sp-accent));
+      box-shadow:
+        0 0 0 2px var(--sp-selection-light, var(--sp-accent-light)),
+        var(--sp-shadow-sm);
     }
 
     .sp-card-bar {

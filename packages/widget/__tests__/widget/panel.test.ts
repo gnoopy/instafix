@@ -1150,6 +1150,57 @@ describe("Panel", () => {
       // Should not throw
       expect(() => panel.scrollToFeedback("nonexistent")).not.toThrow();
     });
+
+    it("marks the target card as selected, moving the selection off the previous card", async () => {
+      const fb1 = makeFeedback({ id: "fb-1" });
+      const fb2 = makeFeedback({ id: "fb-2" });
+      apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb1, fb2], total: 2 });
+
+      await panel.open();
+
+      const card1 = shadow.querySelector<HTMLElement>('[data-feedback-id="fb-1"]')!;
+      const card2 = shadow.querySelector<HTMLElement>('[data-feedback-id="fb-2"]')!;
+      card1.scrollIntoView = vi.fn();
+      card2.scrollIntoView = vi.fn();
+
+      panel.scrollToFeedback("fb-1");
+      expect(card1.classList.contains("sp-card--selected")).toBe(true);
+
+      panel.scrollToFeedback("fb-2");
+      expect(card1.classList.contains("sp-card--selected")).toBe(false);
+      expect(card2.classList.contains("sp-card--selected")).toBe(true);
+    });
+
+    it("a marker click that lands before the list has loaded scrolls and selects once it renders", async () => {
+      // The marker click opens the panel and fires sp-marker-click
+      // synchronously — the card does not exist yet at that moment.
+      panel.scrollToFeedback("fb-1");
+
+      const fb = makeFeedback({ id: "fb-1" });
+      apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
+      await panel.open();
+
+      const card = shadow.querySelector<HTMLElement>('[data-feedback-id="fb-1"]')!;
+      // Selection is applied at render time from the remembered target.
+      expect(card.classList.contains("sp-card--selected")).toBe(true);
+
+      // The deferred (post-layout) scroll fires on the next frame.
+      card.scrollIntoView = vi.fn();
+      await new Promise((r) => requestAnimationFrame(() => r(null)));
+      expect(card.scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "center" });
+    });
+
+    it("clicking a card marks it selected", async () => {
+      const fb = makeFeedback({ id: "fb-1" });
+      apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
+
+      await panel.open();
+
+      const card = shadow.querySelector<HTMLElement>('[data-feedback-id="fb-1"]')!;
+      card.click();
+
+      expect(card.classList.contains("sp-card--selected")).toBe(true);
+    });
   });
 
   // -------------------------------------------------------------------------

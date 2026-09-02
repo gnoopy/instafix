@@ -1056,6 +1056,24 @@ describe("Fab", () => {
       expect(shine.style.width).toBe("302px");
     });
 
+    it("pauses the sweep while the panel is open and resumes when it closes", () => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      mockRafSynchronous();
+      recreateFab();
+      stubLayout();
+
+      // Panel open — it covers the toolbar, so no sweep may fire.
+      bus.emit("open");
+      vi.advanceTimersByTime(10000);
+      expect(findShine()).toBeNull();
+
+      // Panel closed — the schedule restarts and the next interval sweeps.
+      bus.emit("close");
+      vi.advanceTimersByTime(3000);
+      expect(findShine()).not.toBeNull();
+    });
+
     it("removes the sweep element once its animation ends", () => {
       vi.useFakeTimers();
       vi.spyOn(Math, "random").mockReturnValue(0);

@@ -73,6 +73,10 @@ export class Panel {
   private loadController: AbortController | null = null;
   /** Tracks feedback IDs with in-flight mutations to prevent spam-click race conditions */
   private pendingMutations = new Set<string>();
+  /** The feedback currently shown as "selected" in the list (marker click, card click) — re-applied by createCard across re-renders. */
+  private selectedFeedbackId: string | null = null;
+  /** Marker-click scroll target whose card wasn't in the DOM yet (the click opens the panel, which loads the list asynchronously) — consumed once by renderList(). */
+  private pendingScrollFeedbackId: string | null = null;
 
   // New feature modules
   private readonly stats: PanelStats;
@@ -420,6 +424,7 @@ export class Panel {
         const feedback = this.feedbacks.find((f) => f.id === feedbackId);
         if (feedback) {
           const number = this.feedbacks.indexOf(feedback) + 1;
+          this.setSelectedCard(feedback.id);
           this.detail.show(feedback, number);
           if (!this.markers.focusFeedback(feedback.id)) {
             this.markers.pinHighlight(feedback);
@@ -441,6 +446,7 @@ export class Panel {
       const feedback = this.feedbacks.find((f) => f.id === feedbackId);
       if (feedback) {
         const number = this.feedbacks.indexOf(feedback) + 1;
+        this.setSelectedCard(feedback.id);
         this.detail.show(feedback, number);
         // Same reveal-the-region behavior as the pointer path above.
         if (!this.markers.focusFeedback(feedback.id)) {
@@ -832,6 +838,21 @@ export class Panel {
       loadMoreWrap.appendChild(loadMoreBtn);
       this.listContainer.appendChild(loadMoreWrap);
     }
+
+    // A marker click may have requested a scroll before this render existed.
+    // One-shot: if the target still isn't in this list (filtered out, other
+    // page scope), it's dropped rather than re-armed — a stale target must
+    // not hijack scrolling on some later, unrelated render.
+    if (this.pendingScrollFeedbackId) {
+      const target = this.pendingScrollFeedbackId;
+      this.pendingScrollFeedbackId = null;
+      const card = this.listContainer.querySelector<HTMLElement>(`[data-feedback-id="${CSS.escape(target)}"]`);
+      if (card) {
+        // Deferred a frame — the cards were just appended and need layout
+        // before scrollIntoView can compute a position.
+        requestAnimationFrame(() => this.scrollToFeedback(target));
+      }
+    }
   }
 
   private createCard(feedback: FeedbackResponse, number: number): HTMLElement {
@@ -840,7 +861,9 @@ export class Panel {
     const typeColor = getTypeColor(feedback.type, this.colors);
 
     const card = el("div", {
-      class: `sp-card ${isResolved ? "sp-card--resolved" : ""}`,
+      class: `sp-card ${isResolved ? "sp-card--resolved" : ""}${
+        feedback.id === this.selectedFeedbackId ? " sp-card--selected" : ""
+      }`,
     });
     card.setAttribute("role", "listitem");
     card.setAttribute("tabindex", "0");
@@ -1389,20 +1412,37 @@ export class Panel {
     return this.feedbacks.find((f) => f.id === card.dataset.feedbackId);
   }
 
+  /** Mark one card as the current selection (selection-colored ring), clearing any previous one. */
+  private setSelectedCard(feedbackId: string | null): void {
+    this.selectedFeedbackId = feedbackId;
+    for (const selected of this.listContainer.querySelectorAll(".sp-card--selected")) {
+      selected.classList.remove("sp-card--selected");
+    }
+    if (!feedbackId) return;
+    const card = this.listContainer.querySelector<HTMLElement>(`[data-feedback-id="${CSS.escape(feedbackId)}"]`);
+    card?.classList.add("sp-card--selected");
+  }
+
   scrollToFeedback(feedbackId: string): void {
+    this.setSelectedCard(feedbackId);
     const escapedId = CSS.escape(feedbackId);
     const card = this.listContainer.querySelector<HTMLElement>(`[data-feedback-id="${escapedId}"]`);
-    if (card) {
-      card.scrollIntoView({ behavior: "smooth", block: "center" });
-      card.classList.add("sp-anim-flash");
-      card.addEventListener(
-        "animationend",
-        () => {
-          card.classList.remove("sp-anim-flash");
-        },
-        { once: true },
-      );
+    if (!card) {
+      // A marker click opens the panel and fires this synchronously, while
+      // the list is still loading — remember the target so renderList()
+      // finishes the scroll once the card actually exists.
+      this.pendingScrollFeedbackId = feedbackId;
+      return;
     }
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    card.classList.add("sp-anim-flash");
+    card.addEventListener(
+      "animationend",
+      () => {
+        card.classList.remove("sp-anim-flash");
+      },
+      { once: true },
+    );
   }
 
   /** Refresh the panel after a new feedback is submitted */

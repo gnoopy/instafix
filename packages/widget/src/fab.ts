@@ -73,6 +73,10 @@ export class Fab {
   private targetingActive = false;
   private readonly unsubTargetingStart: () => void;
   private readonly unsubTargetingEnd: () => void;
+  /** Whether the feedback panel (right sidebar) is open — it covers the toolbar, so the discovery shine is pointless (and distracting at the panel's edge) while it is. */
+  private panelOpen = false;
+  private readonly unsubPanelOpen: () => void;
+  private readonly unsubPanelClose: () => void;
   private items: ToolbarItem[];
   /** The shadow host — hidden momentarily during a contrast sample so `elementFromPoint` sees the real page underneath. */
   private readonly host: HTMLElement;
@@ -112,6 +116,17 @@ export class Fab {
     // session ended via Escape, a successful lock, or the button itself.
     this.unsubTargetingStart = this.bus.on("targeting:start", () => this.setTargetingActive(true));
     this.unsubTargetingEnd = this.bus.on("targeting:end", () => this.setTargetingActive(false));
+
+    // The panel covers the toolbar while open — pause the discovery shine
+    // for that window and pick it back up once the toolbar is visible again.
+    this.unsubPanelOpen = this.bus.on("open", () => {
+      this.panelOpen = true;
+      this.stopShineSchedule();
+    });
+    this.unsubPanelClose = this.bus.on("close", () => {
+      this.panelOpen = false;
+      this.scheduleShine();
+    });
 
     this.toolbarVisible = !loadToolbarHidden();
 
@@ -256,7 +271,7 @@ export class Fab {
    */
   private scheduleShine(): void {
     if (this.shineTimer) clearTimeout(this.shineTimer);
-    if (!this.toolbarVisible) return;
+    if (!this.toolbarVisible || this.panelOpen) return;
     const choices = SHINE_INTERVAL_CHOICES_MS;
     const delay = choices[Math.floor(Math.random() * choices.length)] as number;
     this.shineTimer = setTimeout(() => {
@@ -285,7 +300,7 @@ export class Fab {
    */
   private playShine(): void {
     requestAnimationFrame(() => {
-      if (!this.toolbarVisible) return; // hidden again before this frame ran
+      if (!this.toolbarVisible || this.panelOpen) return; // hidden/covered again before this frame ran
       const toolbarRect = this.toolbar.getBoundingClientRect();
       const fabRect = this.fab.getBoundingClientRect();
       if (toolbarRect.width === 0 || fabRect.width === 0) return; // not laid out (hidden, or a non-browser test env)
@@ -468,6 +483,8 @@ export class Fab {
     this.stopShineSchedule();
     this.unsubTargetingStart();
     this.unsubTargetingEnd();
+    this.unsubPanelOpen();
+    this.unsubPanelClose();
     this.root.remove();
   }
 }
