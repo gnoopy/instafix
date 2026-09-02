@@ -407,7 +407,9 @@ export class Panel {
         return;
       }
 
-      // Card click → open detail view
+      // Card click → open detail view + pin the on-page outline for its
+      // target, so "selecting" an item in the list is answered by "here's
+      // where that lives on the page" (G8), not just the detail panel.
       const card = target.closest<HTMLElement>(".sp-card");
       if (card) {
         const feedbackId = card.dataset.feedbackId;
@@ -415,6 +417,7 @@ export class Panel {
         if (feedback) {
           const number = this.feedbacks.indexOf(feedback) + 1;
           this.detail.show(feedback, number);
+          this.markers.pinHighlight(feedback);
         }
       }
     };
@@ -433,6 +436,7 @@ export class Panel {
       if (feedback) {
         const number = this.feedbacks.indexOf(feedback) + 1;
         this.detail.show(feedback, number);
+        this.markers.pinHighlight(feedback);
       }
     };
     this.listContainer.addEventListener("keydown", this.onListKeydown);
@@ -443,7 +447,13 @@ export class Panel {
       const card = target.closest<HTMLElement>(".sp-card");
       if (!card) return;
       const feedbackId = card.dataset.feedbackId;
-      if (feedbackId) this.markers.highlight(feedbackId);
+      const feedback = this.feedbacks.find((f) => f.id === feedbackId);
+      if (!feedback) return;
+      // Pulse the on-page marker AND preview its outline — the pulse alone
+      // (pre-existing) draws the eye to a dot that may be small/offscreen;
+      // the outline actually shows the region it covers (G8).
+      this.markers.highlight(feedback.id);
+      this.markers.previewHighlight(feedback);
     };
     this.listContainer.addEventListener("mouseover", this.onListMouseover);
 
@@ -451,7 +461,7 @@ export class Panel {
       const target = (e as MouseEvent).relatedTarget as Element | null;
       // Only clear highlight when leaving all cards (relatedTarget is outside listContainer)
       if (target && this.listContainer.contains(target)) return;
-      this.markers.highlight("");
+      this.markers.previewHighlight(null);
     };
     this.listContainer.addEventListener("mouseout", this.onListMouseout);
 

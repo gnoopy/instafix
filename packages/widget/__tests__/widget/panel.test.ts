@@ -36,6 +36,7 @@ function createMockMarkers() {
     render: vi.fn(),
     highlight: vi.fn(),
     pinHighlight: vi.fn(),
+    previewHighlight: vi.fn(),
     addFeedback: vi.fn(),
     destroy: vi.fn(),
     count: 0,
@@ -1008,7 +1009,7 @@ describe("Panel", () => {
   // -------------------------------------------------------------------------
 
   describe("mouseover/mouseout on list", () => {
-    it("mouseover on a card calls markers.highlight(feedbackId)", async () => {
+    it("mouseover on a card calls markers.highlight(feedbackId) and previewHighlight(feedback)", async () => {
       const fb = makeFeedback({ id: "fb-42" });
       apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
 
@@ -1022,9 +1023,10 @@ describe("Panel", () => {
       listContainer.dispatchEvent(event);
 
       expect(markers.highlight).toHaveBeenCalledWith("fb-42");
+      expect(markers.previewHighlight).toHaveBeenCalledWith(fb);
     });
 
-    it("mouseout leaving all cards calls markers.highlight('')", async () => {
+    it("mouseout leaving all cards calls markers.previewHighlight(null)", async () => {
       const fb = makeFeedback({ id: "fb-42" });
       apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
 
@@ -1037,7 +1039,7 @@ describe("Panel", () => {
       Object.defineProperty(event, "target", { value: listContainer });
       listContainer.dispatchEvent(event);
 
-      expect(markers.highlight).toHaveBeenCalledWith("");
+      expect(markers.previewHighlight).toHaveBeenCalledWith(null);
     });
   });
 
@@ -3004,8 +3006,12 @@ describe("Panel", () => {
       const gotoBtn = shadow.querySelector<HTMLButtonElement>(".sp-detail-btn-goto");
       expect(gotoBtn).toBeNull();
 
+      // scrollTo is still specific to the "Go to annotation" button (absent
+      // here) — but selecting the card itself always pins the highlight
+      // (a no-op render when there's nothing to outline), independent of
+      // whether a "Go to annotation" action exists.
       expect(scrollSpy).not.toHaveBeenCalled();
-      expect(markers.pinHighlight).not.toHaveBeenCalled();
+      expect(markers.pinHighlight).toHaveBeenCalledWith(fb);
 
       scrollSpy.mockRestore();
     });

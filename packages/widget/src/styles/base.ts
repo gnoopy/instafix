@@ -182,32 +182,32 @@ export function buildStyles(colors: ThemeColors): string {
       left: 88px;
     }
 
+    /* Filled with the same accent color as the FAB (not the neutral glass
+       card other toolbar-adjacent surfaces use) so the row reads as one
+       unit: "the FAB, and the buttons that belong to it" — see the FAB rule
+       block above for the color this matches. */
     .sp-toolbar-item {
       position: relative;
       flex-shrink: 0;
       width: 44px;
       height: 44px;
       border-radius: var(--sp-radius-full);
-      background: var(--sp-glass-bg-heavy);
-      backdrop-filter: blur(var(--sp-blur));
-      -webkit-backdrop-filter: blur(var(--sp-blur));
-      color: var(--sp-text);
-      border: 1px solid var(--sp-glass-border);
+      background: var(--sp-accent);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: var(--sp-shadow-md);
+      box-shadow: var(--sp-shadow-md), 0 2px 10px var(--sp-accent-glow);
       font-size: 12px;
       font-weight: 600;
-      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+      transition: filter 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
     }
 
     .sp-toolbar-item:hover,
     .sp-toolbar-item:focus-visible {
-      background: rgba(255, 255, 255, 0.95);
-      border-color: var(--sp-accent);
-      color: var(--sp-accent);
+      filter: brightness(1.08);
       box-shadow:
         var(--sp-shadow-md),
         0 0 0 3px var(--sp-accent-light);
@@ -224,73 +224,42 @@ export function buildStyles(colors: ThemeColors): string {
 
     /* Persistent "mode is on" state for the auto-target picker button —
        distinct from :hover/:focus-visible, which only apply while the
-       pointer/keyboard focus is actually on the button itself. */
+       pointer/keyboard focus is actually on the button itself. Recessed
+       (inset shadow + darkened fill) rather than just a color swap, so it
+       still reads as visibly "pressed" even when selection === accent
+       (detection off, or nothing chromatic on the host page to contrast
+       against). */
     .sp-toolbar-item--active {
       background: var(--sp-selection, var(--sp-accent));
-      border-color: var(--sp-selection, var(--sp-accent));
+      border-color: rgba(255, 255, 255, 0.5);
       color: #fff;
+      filter: brightness(0.88);
       box-shadow:
-        var(--sp-shadow-md),
+        inset 0 2px 4px rgba(0, 0, 0, 0.25),
         0 0 0 3px var(--sp-selection-light, var(--sp-accent-light));
     }
 
     /* ---- Auto-contrast against the host page's background (G8) ----
        Fab.updateContrast() samples the actual rendered background behind
-       the FAB/toolbar and toggles one of these on the shared root wrapper —
-       a solid, opaque style beats the default translucent glass whenever
-       the glass itself would be hard to tell apart from the page underneath
-       (e.g. the light theme's near-white glass over a white page). */
+       the FAB/toolbar and toggles one of these on the shared root wrapper.
+       Unlike before, the toolbar items keep their accent fill on any host
+       background (same branding logic as the FAB, which never swaps its own
+       background either) — contrast is assisted with a light ring, exactly
+       like the FAB's own on-light/on-dark rule below. */
 
-    .sp-fab-root--on-light .sp-toolbar-item {
-      background: rgba(15, 23, 42, 0.92);
-      border-color: rgba(15, 23, 42, 0.92);
-      color: #fff;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 1px 4px rgba(0, 0, 0, 0.2);
-    }
-
-    .sp-fab-root--on-light .sp-toolbar-item:hover,
-    .sp-fab-root--on-light .sp-toolbar-item:focus-visible {
-      background: rgba(30, 41, 59, 0.97);
-      border-color: var(--sp-accent);
-      color: #fff;
-      box-shadow:
-        0 4px 16px rgba(0, 0, 0, 0.4),
-        0 0 0 3px var(--sp-accent-light);
-    }
-
-    .sp-fab-root--on-light .sp-toolbar-item--active {
-      background: rgba(30, 41, 59, 0.97);
-      border-color: var(--sp-selection, var(--sp-accent));
-      color: #fff;
-      box-shadow:
-        0 4px 16px rgba(0, 0, 0, 0.4),
-        0 0 0 3px var(--sp-selection-light, var(--sp-accent-light));
-    }
-
+    .sp-fab-root--on-light .sp-toolbar-item,
     .sp-fab-root--on-dark .sp-toolbar-item {
-      background: rgba(255, 255, 255, 0.96);
-      border-color: rgba(255, 255, 255, 0.96);
-      color: #0f172a;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 1px 4px rgba(0, 0, 0, 0.2);
-    }
-
-    .sp-fab-root--on-dark .sp-toolbar-item:hover,
-    .sp-fab-root--on-dark .sp-toolbar-item:focus-visible {
-      background: #ffffff;
-      border-color: var(--sp-accent);
-      color: var(--sp-accent);
       box-shadow:
-        0 4px 16px rgba(0, 0, 0, 0.4),
-        0 0 0 3px var(--sp-accent-light);
+        var(--sp-shadow-md),
+        0 2px 10px var(--sp-accent-glow),
+        0 0 0 3px rgba(255, 255, 255, 0.9);
     }
 
+    .sp-fab-root--on-light .sp-toolbar-item--active,
     .sp-fab-root--on-dark .sp-toolbar-item--active {
-      background: #ffffff;
-      border-color: var(--sp-selection, var(--sp-accent));
-      color: var(--sp-selection, var(--sp-accent));
       box-shadow:
-        0 4px 16px rgba(0, 0, 0, 0.4),
-        0 0 0 3px var(--sp-selection-light, var(--sp-accent-light));
+        inset 0 2px 4px rgba(0, 0, 0, 0.25),
+        0 0 0 3px rgba(255, 255, 255, 0.9);
     }
 
     /* A thin light ring around the FAB itself separates its (already

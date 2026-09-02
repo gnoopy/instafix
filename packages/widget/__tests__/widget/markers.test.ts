@@ -785,6 +785,92 @@ describe("MarkerManager", () => {
   });
 
   // -------------------------------------------------------------------------
+  // previewHighlight — shared by marker hover and the panel list's card hover
+  // -------------------------------------------------------------------------
+
+  describe("previewHighlight", () => {
+    function countHighlights(): number {
+      const container = document.getElementById("instafix-markers")!;
+      return Array.from(container.children).filter(
+        (child) => !child.hasAttribute("data-feedback-id") && !child.classList.contains("sp-cluster-badge"),
+      ).length;
+    }
+
+    it("shows the outline for a feedback", () => {
+      const fb = makeFeedback({ id: "fb-preview" });
+      markers.render([fb]);
+
+      markers.previewHighlight(fb);
+
+      expect(countHighlights()).toBeGreaterThanOrEqual(1);
+    });
+
+    it("clears the outline when passed null", () => {
+      vi.useFakeTimers();
+      const fb = makeFeedback({ id: "fb-preview-clear" });
+      markers.render([fb]);
+
+      markers.previewHighlight(fb);
+      expect(countHighlights()).toBeGreaterThanOrEqual(1);
+
+      markers.previewHighlight(null);
+      vi.advanceTimersByTime(400);
+
+      expect(countHighlights()).toBe(0);
+      vi.useRealTimers();
+    });
+
+    it("is a no-op while a different feedback is pinned", () => {
+      const pinned = makeFeedback({ id: "fb-preview-pinned" });
+      const other = makeFeedback({ id: "fb-preview-other" });
+      markers.render([pinned, other]);
+
+      markers.pinHighlight(pinned);
+      expect(countHighlights()).toBe(1);
+
+      // Previewing a different feedback must not clobber the pin.
+      markers.previewHighlight(other);
+      expect(countHighlights()).toBe(1);
+
+      // Nor must clearing the preview un-pin it.
+      markers.previewHighlight(null);
+      expect(countHighlights()).toBe(1);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Selection-colored outline/marker (distinct from the host app's palette)
+  // -------------------------------------------------------------------------
+
+  describe("selection color", () => {
+    it("uses colors.selection (not the feedback type color) for the marker border and the pinned outline", () => {
+      const customColors = buildThemeColors("#0066ff");
+      customColors.selection = "#ff00aa";
+      const customMarkers = new MarkerManager(customColors, tooltip, bus, t);
+
+      const fb = makeFeedback({ id: "fb-selection-color", type: "bug" });
+      customMarkers.render([fb]);
+
+      const marker = document.querySelector<HTMLElement>('[data-feedback-id="fb-selection-color"]')!;
+      expect(marker.style.borderColor).toBe("rgb(255, 0, 170)");
+      // The (vibrant, light-theme) bug type color must NOT leak through.
+      expect(marker.style.borderColor).not.toBe(customColors.typeBug);
+
+      customMarkers.pinHighlight(fb);
+      // Query relative to this marker's own container — the shared
+      // `markers` instance from `beforeEach` also has an #instafix-markers
+      // container live in the document at the same time.
+      const container = marker.parentElement!;
+      const outline = Array.from(container.children).find(
+        (child) => !child.hasAttribute("data-feedback-id") && !child.classList.contains("sp-cluster-badge"),
+      ) as HTMLElement;
+      expect(outline.style.borderColor).toBe("rgb(255, 0, 170)");
+
+      customMarkers.destroy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // repositionAll
   // -------------------------------------------------------------------------
 

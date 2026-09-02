@@ -11,7 +11,7 @@ import { classifyVisibility } from "./dom/visibility.js";
 import { el, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
 import { getTypeLabel, type TFunction, tWithParams } from "./i18n/index.js";
-import { getTypeColor, type ThemeColors } from "./styles/theme.js";
+import type { ThemeColors } from "./styles/theme.js";
 import type { Tooltip } from "./tooltip.js";
 
 type Annotation = FeedbackResponse["annotations"][number];
@@ -513,7 +513,7 @@ export class MarkerManager {
         position:absolute;top:-6px;right:-6px;
         min-width:16px;height:16px;padding:0 4px;
         border-radius:9999px;
-        background:${this.colors.accent};color:#fff;
+        background:${this.colors.selection};color:#fff;
         font-size:10px;font-weight:700;
         display:flex;align-items:center;justify-content:center;
         border:1.5px solid #fff;
@@ -584,7 +584,13 @@ export class MarkerManager {
   }
 
   private createMarker(number: number, feedback: FeedbackResponse, pos: { top: number; left: number }): HTMLElement {
-    const typeColor = getTypeColor(feedback.type, this.colors);
+    // The marker's own border/number color is the selection color (distinct
+    // from the host app's palette, per `dom/selection-color.ts`) rather than
+    // the feedback-type color — so an on-page numbered marker reads as
+    // "InstaFix put this here" at a glance, the same visual language as the
+    // live drag/auto-target outline. Type is still conveyed in the tooltip
+    // and the panel list, which have room to spell it out.
+    const markerColor = this.colors.selection;
     // Closed feedbacks (resolved, wont_fix) render as muted checkmark markers.
     const isResolved = isClosedStatus(feedback.status);
 
@@ -596,13 +602,13 @@ export class MarkerManager {
         width:26px;height:26px;
         border-radius:50%;
         background:${isResolved ? "rgba(241,245,249,0.9)" : "rgba(255,255,255,0.92)"};
-        border:2px solid ${isResolved ? "#cbd5e1" : typeColor};
+        border:2px solid ${isResolved ? "#cbd5e1" : markerColor};
         display:flex;align-items:center;justify-content:center;
         font-family:"Inter",system-ui,-apple-system,sans-serif;
         font-size:11px;font-weight:700;
-        color:${isResolved ? "#94a3b8" : typeColor};
+        color:${isResolved ? "#94a3b8" : markerColor};
         cursor:pointer;pointer-events:auto;
-        box-shadow:${isResolved ? "0 2px 8px rgba(0,0,0,0.06)" : `0 2px 12px ${typeColor}25, 0 2px 6px rgba(0,0,0,0.06)`};
+        box-shadow:${isResolved ? "0 2px 8px rgba(0,0,0,0.06)" : `0 2px 12px ${markerColor}25, 0 2px 6px rgba(0,0,0,0.06)`};
         transition:top 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), left 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.15s ease, box-shadow 0.15s ease;
         user-select:none;
         -webkit-font-smoothing:antialiased;
@@ -625,18 +631,18 @@ export class MarkerManager {
       marker.style.transform = "scale(1.2)";
       marker.style.boxShadow = isResolved
         ? "0 4px 16px rgba(0,0,0,0.1)"
-        : `0 4px 20px ${typeColor}35, 0 4px 12px rgba(0,0,0,0.08)`;
+        : `0 4px 20px ${markerColor}35, 0 4px 12px rgba(0,0,0,0.08)`;
       this.tooltip.show(feedback, marker.getBoundingClientRect());
-      if (!this.pinnedFeedback) this.showHighlight(feedback);
+      this.previewHighlight(feedback);
     });
 
     marker.addEventListener("mouseleave", () => {
       marker.style.transform = "scale(1)";
       marker.style.boxShadow = isResolved
         ? "0 2px 8px rgba(0,0,0,0.06)"
-        : `0 2px 12px ${typeColor}25, 0 2px 6px rgba(0,0,0,0.06)`;
+        : `0 2px 12px ${markerColor}25, 0 2px 6px rgba(0,0,0,0.06)`;
       this.tooltip.scheduleHide();
-      if (!this.pinnedFeedback) this.clearHighlight();
+      this.previewHighlight(null);
     });
 
     // WCAG 1.4.13 — tooltip must be reachable via keyboard (focus), not only
@@ -644,12 +650,12 @@ export class MarkerManager {
     // keyboard user gets the same affordance as a mouse user.
     marker.addEventListener("focus", () => {
       this.tooltip.show(feedback, marker.getBoundingClientRect());
-      if (!this.pinnedFeedback) this.showHighlight(feedback);
+      this.previewHighlight(feedback);
     });
 
     marker.addEventListener("blur", () => {
       this.tooltip.scheduleHide();
-      if (!this.pinnedFeedback) this.clearHighlight();
+      this.previewHighlight(null);
     });
 
     const activateMarker = (e: MouseEvent | KeyboardEvent) => {
@@ -717,13 +723,19 @@ export class MarkerManager {
     }
   }
 
+  /**
+   * Draw the outline for a feedback's target(s) — used for both a
+   * transient hover preview and (via `pinHighlight`) a persistent pinned
+   * selection. Selection-colored (not type-colored, like the marker dot
+   * itself) so it reads as InstaFix's own on-page indicator rather than
+   * host content.
+   */
   showHighlight(feedback: FeedbackResponse): void {
     this.removeHighlightElements();
     for (const annotation of feedback.annotations) {
       const resolved = resolveMarkerGeometry(annotation);
       if (!resolved) continue;
 
-      const typeColor = getTypeColor(feedback.type, this.colors);
       const rect = resolved.rect;
       const highlight = el("div", {
         style: `
@@ -731,12 +743,12 @@ export class MarkerManager {
           top:${rect.top + window.scrollY}px;
           left:${rect.left + window.scrollX}px;
           width:${rect.width}px;height:${rect.height}px;
-          border:2px solid ${typeColor};
-          background:${typeColor}0c;
+          border:2px solid ${this.colors.selection};
+          background:${this.colors.selection}0c;
           border-radius:8px;
           pointer-events:none;z-index:-1;
           opacity:0;
-          box-shadow:0 0 16px ${typeColor}20;
+          box-shadow:0 0 16px ${this.colors.selectionGlow};
           transition:opacity ${HIGHLIGHT_FADE}ms ease;
         `,
       });
@@ -745,6 +757,19 @@ export class MarkerManager {
       void highlight.offsetHeight; // Force reflow for CSS transition
       highlight.style.opacity = "1";
     }
+  }
+
+  /**
+   * Transient hover/focus preview of a feedback's on-page outline — used by
+   * both the marker's own hover handlers above and the panel list's card
+   * hover (G8). A no-op while a feedback is pinned (`pinHighlight`): a
+   * pinned selection must not be clobbered by incidentally hovering a
+   * different list row or marker.
+   */
+  previewHighlight(feedback: FeedbackResponse | null): void {
+    if (this.pinnedFeedback) return;
+    if (feedback) this.showHighlight(feedback);
+    else this.clearHighlight();
   }
 
   pinHighlight(feedback: FeedbackResponse): void {

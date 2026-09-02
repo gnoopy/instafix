@@ -1,0 +1,20 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "createdAt": "2026-09-02T07:03:34.468Z",
+        "reason": "pre-existing FAB micro-interaction (button transform, svg icon, badge) established before this session's selection-color work; this session only swapped colors.accent->colors.selection color values, never touched easing"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-09-02T07:03:34.527Z",
+        "reason": "pre-existing widget-wide typeface convention (toolbar/badge chrome in annotator.ts and multi-target-preview.ts, both authored before this session's selection-color feature); this session only swapped colors.accent->colors.selection, never touched font-family"
+      }
+    ]
+  }
+}

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EventBus, type WidgetEvents } from "../../src/events.js";
 import { createT } from "../../src/i18n/index.js";
 import { buildThemeColors } from "../../src/styles/theme.js";
-import { mockMatchMedia } from "../helpers.js";
+import { makeDOMRect, mockMatchMedia } from "../helpers.js";
 
 // ---------------------------------------------------------------------------
 // Stubs — jsdom lacks matchMedia
@@ -1533,6 +1533,63 @@ describe("Annotator", () => {
         expect(completeListener).toHaveBeenCalledOnce();
         const data = completeListener.mock.calls[0]![0];
         expect(data.annotations[0].anchor.elementTag).toBe("SECTION");
+        card.remove();
+      });
+    });
+
+    // -----------------------------------------------------------------------
+    // Persistent outline (G8) — the auto-target click-to-lock indicator must
+    // track the actual selected component's bounds, not a small fixed-size
+    // box at the click point, and must keep tracking it through the popup's
+    // Element/Container toggle. See annotator.ts's `startInstantAnnotation`.
+    // -----------------------------------------------------------------------
+
+    describe("post-click outline", () => {
+      it("outlines the resolved element's real bounding box, not a small fixed square", () => {
+        const target = document.createElement("div");
+        target.getBoundingClientRect = () => makeDOMRect(40, 60, 220, 90);
+        document.body.appendChild(target);
+        vi.mocked(findAnchorElement).mockReturnValue(target);
+        vi.mocked(findLargestAncestor).mockReturnValue(target);
+        popupMocks.keepShowPending = true;
+
+        void annotator.startInstantAnnotation(100, 100);
+
+        const overlay = findOverlay()!;
+        const drawingRect = overlay.querySelector<HTMLElement>("div")!;
+        expect(drawingRect.style.left).toBe("40px");
+        expect(drawingRect.style.top).toBe("60px");
+        expect(drawingRect.style.width).toBe("220px");
+        expect(drawingRect.style.height).toBe("90px");
+
+        annotator.destroy();
+        target.remove();
+      });
+
+      it("re-outlines the container when the user toggles from smallest to largest", () => {
+        const card = document.createElement("section");
+        card.getBoundingClientRect = () => makeDOMRect(10, 10, 300, 200);
+        const heading = document.createElement("h3");
+        heading.getBoundingClientRect = () => makeDOMRect(20, 20, 100, 30);
+        card.appendChild(heading);
+        document.body.appendChild(card);
+        vi.mocked(findAnchorElement).mockReturnValue(heading);
+        vi.mocked(findLargestAncestor).mockReturnValue(card);
+        popupMocks.toggleTargetSizeBeforeSubmit = "largest";
+        popupMocks.keepShowPending = true;
+
+        void annotator.startInstantAnnotation(100, 100);
+
+        // The mocked popup.show() invokes targetSizeOptions.onChange("largest")
+        // synchronously before returning — the outline must already reflect it.
+        const overlay = findOverlay()!;
+        const drawingRect = overlay.querySelector<HTMLElement>("div")!;
+        expect(drawingRect.style.left).toBe("10px");
+        expect(drawingRect.style.top).toBe("10px");
+        expect(drawingRect.style.width).toBe("300px");
+        expect(drawingRect.style.height).toBe("200px");
+
+        annotator.destroy();
         card.remove();
       });
     });

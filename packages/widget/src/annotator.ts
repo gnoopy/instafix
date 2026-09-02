@@ -976,23 +976,19 @@ export class Annotator {
     let { annotation, anchorBounds } = this.annotationForElement(currentElement, pointRect);
     let captureRect = captureRectFor(anchorBounds);
 
-    // Create a visual indicator at the click point
+    // Keep outlining the actual selected COMPONENT (its real bounding box,
+    // matching what `targetingHighlight` showed while hovering) rather than
+    // a tiny fixed-size box at the click point — the hover→click flow reads
+    // as one continuous outline, never as "the outline disappeared and a
+    // small square appeared instead." Stays up for as long as the popup is
+    // open (through Element/Container re-selection below), same lifetime as
+    // the draw-flow's own `drawingRect`.
     this.drawingRect?.remove();
-    this.drawingRect = el("div", {
-      style: `
-        position:fixed;
-        left:${x}px;
-        top:${y}px;
-        width:${INSTANT_ANNOTATION_SIZE}px;
-        height:${INSTANT_ANNOTATION_SIZE}px;
-        border:2px solid ${this.colors.selection};
-        background:${this.colors.selection}12;
-        pointer-events:none;
-        border-radius:8px;
-        box-shadow:0 0 16px ${this.colors.selectionGlow};
-      `,
-    });
-    this.drawingRect.setAttribute("data-instafix-ignore", "true");
+    this.drawingRect = this.createDrawingRect();
+    this.drawingRect.style.left = `${anchorBounds.left}px`;
+    this.drawingRect.style.top = `${anchorBounds.top}px`;
+    this.drawingRect.style.width = `${anchorBounds.width}px`;
+    this.drawingRect.style.height = `${anchorBounds.height}px`;
     this.overlay?.appendChild(this.drawingRect);
 
     const screenshotCache: { value?: AnnotatedScreenshot | null } = {};
@@ -1011,6 +1007,14 @@ export class Annotator {
               // Bounds changed — a cached screenshot from the previous
               // choice would no longer match what's being reported.
               delete screenshotCache.value;
+              // The outline must track the newly-chosen element/container,
+              // not stay pinned to whichever one was selected first.
+              if (this.drawingRect) {
+                this.drawingRect.style.left = `${anchorBounds.left}px`;
+                this.drawingRect.style.top = `${anchorBounds.top}px`;
+                this.drawingRect.style.width = `${anchorBounds.width}px`;
+                this.drawingRect.style.height = `${anchorBounds.height}px`;
+              }
             },
           }
         : undefined,
