@@ -5,7 +5,7 @@ import {
   type RectData,
   resolveAnnotationTarget,
 } from "@instafix/core";
-import { Z_INDEX_MAX } from "./constants.js";
+import { FONT_STACK, Z_INDEX_MAX } from "./constants.js";
 import { type ResolvedAnnotation, resolveAnnotation, type ScanBudget } from "./dom/resolver.js";
 import { classifyVisibility } from "./dom/visibility.js";
 import { el, setText } from "./dom-utils.js";
@@ -520,7 +520,7 @@ export class MarkerManager {
         display:flex;align-items:center;justify-content:center;
         border:1.5px solid ${this.colors.selection};
         pointer-events:none;
-        font-family:"Inter",system-ui,-apple-system,sans-serif;
+        font-family:${FONT_STACK};
         line-height:1;
       `,
     });
@@ -608,7 +608,7 @@ export class MarkerManager {
         background:${isResolved ? "rgba(241,245,249,0.9)" : markerColor};
         border:2px solid ${isResolved ? "#cbd5e1" : "#ffffff"};
         display:flex;align-items:center;justify-content:center;
-        font-family:"Inter",system-ui,-apple-system,sans-serif;
+        font-family:${FONT_STACK};
         font-size:11px;font-weight:700;
         color:${isResolved ? "#94a3b8" : "#ffffff"};
         cursor:pointer;pointer-events:auto;

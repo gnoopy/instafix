@@ -15,7 +15,7 @@
  * be positioned in page-absolute coordinates over arbitrary host content.
  */
 
-import { Z_INDEX_MAX } from "./constants.js";
+import { FONT_STACK, Z_INDEX_MAX } from "./constants.js";
 import { el, setText } from "./dom-utils.js";
 import type { TFunction } from "./i18n/index.js";
 import { tWithParams } from "./i18n/index.js";
@@ -129,7 +129,7 @@ export class MultiTargetPreview {
       border-radius:9999px;
       display:flex;align-items:center;justify-content:center;
       background:${this.colors.selection};color:#fff;
-      font-family:"Inter",system-ui,-apple-system,sans-serif;
+      font-family:${FONT_STACK};
       font-size:11px;font-weight:700;
       border:2px solid #fff;
       box-shadow:0 2px 8px rgba(0,0,0,0.3);
@@ -157,7 +157,7 @@ export class MultiTargetPreview {
       left:${anchorRect.left + window.scrollX}px;
       display:flex;align-items:center;gap:6px;
       padding:4px 10px;border-radius:9999px;
-      font-family:"Inter",system-ui,-apple-system,sans-serif;
+      font-family:${FONT_STACK};
       font-size:11px;font-weight:600;
       border:1px solid ${this.colors.border};
       background:${this.colors.glassBgHeavy};color:${this.colors.textTertiary};
@@ -203,7 +203,7 @@ export class MultiTargetPreview {
       btn.type = "button";
       btn.style.cssText = `
         border:none;border-radius:9999px;padding:3px 10px;cursor:pointer;
-        font-family:"Inter",system-ui,-apple-system,sans-serif;
+        font-family:${FONT_STACK};
         font-size:11px;font-weight:600;
         transition:background 0.15s ease,color 0.15s ease;
       `;

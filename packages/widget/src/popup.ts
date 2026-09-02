@@ -1,5 +1,5 @@
 import type { FeedbackType } from "@instafix/core";
-import { Z_INDEX_MAX } from "./constants.js";
+import { FONT_STACK, Z_INDEX_MAX } from "./constants.js";
 import { el, parseSvg, setText } from "./dom-utils.js";
 import { clearDraft, loadDraft, saveDraft } from "./draft-storage.js";
 import type { TFunction, Translations } from "./i18n/index.js";
@@ -159,7 +159,7 @@ export class Popup {
         -webkit-backdrop-filter:blur(24px);
         border:1px solid ${this.colors.glassBorder};
         box-shadow:0 8px 32px ${this.colors.shadow}, 0 2px 8px ${this.colors.shadow};
-        font-family:"Inter",system-ui,-apple-system,sans-serif;
+        font-family:${FONT_STACK};
         opacity:0;
         transform:translateY(8px) scale(0.98);
         transition:opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -183,7 +183,7 @@ export class Popup {
       style: "display:none;align-items:center;gap:6px;margin-bottom:10px;",
     });
     this.targetLabelEl = el("span", {
-      style: `font-size:11px;color:${this.colors.textTertiary};font-family:"Inter",system-ui,-apple-system,sans-serif;flex-shrink:0;`,
+      style: `font-size:11px;color:${this.colors.textTertiary};font-family:${FONT_STACK};flex-shrink:0;`,
     });
     const targetToggle = el("div", {
       style: `display:flex;border-radius:9999px;border:1px solid ${this.colors.border};padding:2px;gap:2px;`,
@@ -193,7 +193,7 @@ export class Popup {
       btn.type = "button";
       btn.style.cssText = `
         border:none;border-radius:9999px;padding:3px 10px;cursor:pointer;
-        font-family:"Inter",system-ui,-apple-system,sans-serif;
+        font-family:${FONT_STACK};
         font-size:11px;font-weight:600;
         transition:background 0.15s ease,color 0.15s ease;
       `;
@@ -237,7 +237,7 @@ export class Popup {
         border-radius:9999px;border:1px solid ${this.colors.border};
         background:${this.colors.glassBg};cursor:pointer;
         display:flex;align-items:center;justify-content:center;gap:5px;
-        font-family:"Inter",system-ui,-apple-system,sans-serif;
+        font-family:${FONT_STACK};
         font-size:13px;font-weight:500;color:${this.colors.textTertiary};
         transition:all 0.2s ease;
         padding:0 12px;
@@ -284,7 +284,7 @@ export class Popup {
         border-radius:8px;
         background:${this.colors.accentLight};
         color:${this.colors.accent};
-        font-family:"Inter",system-ui,-apple-system,sans-serif;
+        font-family:${FONT_STACK};
         font-size:11px;font-weight:500;
       `,
     });
@@ -293,7 +293,7 @@ export class Popup {
     discardBtn.type = "button";
     discardBtn.style.cssText = `
       border:none;background:none;color:${this.colors.accent};
-      font-family:"Inter",system-ui,-apple-system,sans-serif;
+      font-family:${FONT_STACK};
       font-size:11px;font-weight:600;text-decoration:underline;
       cursor:pointer;padding:0;flex-shrink:0;
     `;
@@ -316,7 +316,7 @@ export class Popup {
       padding:10px 12px;border-radius:12px;
       border:1px solid ${this.colors.border};
       background:${this.colors.glassBgHeavy};
-      color:${this.colors.text};font-family:"Inter",system-ui,-apple-system,sans-serif;
+      color:${this.colors.text};font-family:${FONT_STACK};
       font-size:13px;line-height:1.5;resize:vertical;
       outline:none;transition:all 0.2s ease;
       box-sizing:border-box;
@@ -328,7 +328,7 @@ export class Popup {
       style: `
         font-size:11px;color:${this.colors.textTertiary};
         text-align:right;margin-top:4px;
-        font-family:"Inter",system-ui,-apple-system,sans-serif;
+        font-family:${FONT_STACK};
         letter-spacing:0.01em;
       `,
     });
@@ -357,7 +357,7 @@ export class Popup {
       this.voiceStatusEl = el("span", {
         style: `
           font-size:11px;color:${this.colors.textTertiary};
-          font-family:"Inter",system-ui,-apple-system,sans-serif;
+          font-family:${FONT_STACK};
           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
         `,
       });
@@ -417,7 +417,7 @@ export class Popup {
       height:34px;padding:0 16px;border-radius:9999px;
       border:1px solid ${this.colors.border};
       background:${this.colors.glassBg};
-      color:${this.colors.textTertiary};font-family:"Inter",system-ui,-apple-system,sans-serif;
+      color:${this.colors.textTertiary};font-family:${FONT_STACK};
       font-size:13px;font-weight:500;cursor:pointer;
       transition:all 0.2s ease;
     `;
@@ -437,7 +437,7 @@ export class Popup {
     this.submitBtn.style.cssText = `
       height:34px;padding:0 18px;border-radius:9999px;
       border:none;background:${this.colors.accentGradient};
-      color:#fff;font-family:"Inter",system-ui,-apple-system,sans-serif;
+      color:#fff;font-family:${FONT_STACK};
       font-size:13px;font-weight:600;cursor:pointer;
       opacity:0.35;pointer-events:none;
       transition:all 0.2s ease;
@@ -543,7 +543,7 @@ export class Popup {
     }
     for (const entry of entries) {
       const item = el("span", {
-        style: `font-size:11px;color:${this.colors.textTertiary};font-family:"Inter",system-ui,-apple-system,sans-serif;white-space:nowrap;`,
+        style: `font-size:11px;color:${this.colors.textTertiary};font-family:${FONT_STACK};white-space:nowrap;`,
       });
       setText(item, `${entry.number}. ${entry.label}`);
       this.legendListEl.appendChild(item);

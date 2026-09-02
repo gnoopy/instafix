@@ -1,5 +1,5 @@
 import type { FeedbackResponse } from "@instafix/core";
-import { Z_INDEX_MAX } from "./constants.js";
+import { FONT_STACK, Z_INDEX_MAX } from "./constants.js";
 import { el, formatRelativeDate, setText } from "./dom-utils.js";
 import { createT, getTypeLabel } from "./i18n/index.js";
 import { getTypeBgColor, getTypeColor, type ThemeColors } from "./styles/theme.js";
@@ -39,7 +39,7 @@ export class Tooltip {
         -webkit-backdrop-filter: blur(24px);
         border: 1px solid ${this.colors.glassBorder};
         box-shadow: 0 8px 32px ${this.colors.shadow}, 0 2px 8px ${this.colors.shadow};
-        font-family: "Inter", system-ui, -apple-system, sans-serif;
+        font-family: ${FONT_STACK};
         pointer-events: auto;
         opacity: 0;
         transform: translateY(6px) scale(0.97);

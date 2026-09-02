@@ -1,5 +1,5 @@
 import type { AnnotationPayload, FeedbackType, ScreenshotRegion } from "@instafix/core";
-import { CLICK_THRESHOLD_PX, Z_INDEX_MAX } from "./constants.js";
+import { CLICK_THRESHOLD_PX, FONT_STACK, Z_INDEX_MAX } from "./constants.js";
 import { findAnchorElement, findLargestAncestor, generateAnchor, rectToPercentages } from "./dom/anchor.js";
 import { computeAutoScrollDelta } from "./dom/auto-scroll.js";
 import { collectMarqueeElements, collectMarqueeElementsDetailed } from "./dom/marquee.js";
@@ -220,7 +220,7 @@ export class Annotator {
           -webkit-backdrop-filter:blur(24px);
           border-bottom:1px solid ${this.colors.glassBorder};
           display:flex;align-items:center;justify-content:center;gap:16px;
-          font-family:"Inter",system-ui,-apple-system,sans-serif;
+          font-family:${FONT_STACK};
           font-size:14px;color:${this.colors.text};
           box-shadow:0 4px 16px ${this.colors.shadow};
           -webkit-font-smoothing:antialiased;
@@ -254,7 +254,7 @@ export class Annotator {
         height:34px;padding:0 18px;border-radius:9999px;
         border:1px solid ${this.colors.border};
         background:${this.colors.glassBg};
-        color:${this.colors.textTertiary};font-family:"Inter",system-ui,-apple-system,sans-serif;
+        color:${this.colors.textTertiary};font-family:${FONT_STACK};
         font-size:13px;font-weight:500;cursor:pointer;
         transition:all 0.2s ease;
       `;

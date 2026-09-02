@@ -9,7 +9,7 @@ import type {
 } from "@instafix/core";
 import { Annotator } from "./annotator.js";
 import { ApiClient, flushRetryQueue, type WidgetClient } from "./api-client.js";
-import { MOBILE_BREAKPOINT, PAGE_SIZE, Z_INDEX_MAX } from "./constants.js";
+import { FONT_STACK, MOBILE_BREAKPOINT, PAGE_SIZE, Z_INDEX_MAX } from "./constants.js";
 import { ConsoleBuffer } from "./diagnostics/console-buffer.js";
 import { NetworkBuffer } from "./diagnostics/network-buffer.js";
 import { detectSelectionColor } from "./dom/selection-color.js";
@@ -946,7 +946,7 @@ function promptIdentity(shadowRoot: ShadowRoot, t: TFunction): Promise<Identity 
       -webkit-backdrop-filter:blur(var(--sp-blur-heavy));
       border:1px solid var(--sp-glass-border);
       box-shadow:0 16px 48px var(--sp-shadow), 0 8px 16px var(--sp-shadow);
-      font-family:var(--sp-font, "Inter",system-ui,-apple-system,sans-serif);
+      font-family:var(--sp-font, ${FONT_STACK});
       color:var(--sp-text);
       transform:translateY(12px) scale(0.97);
       transition:transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);

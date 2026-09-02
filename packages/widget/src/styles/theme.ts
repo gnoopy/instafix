@@ -1,3 +1,5 @@
+import { FONT_STACK } from "../constants.js";
+
 /** Color palette and glassmorphism tokens derived from the accent color */
 export interface ThemeColors {
   accent: string;
@@ -285,6 +287,6 @@ export function cssVariables(colors: ThemeColors): string {
     --sp-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
     --sp-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.04);
     --sp-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.06);
-    --sp-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --sp-font: ${FONT_STACK};
   `;
 }
