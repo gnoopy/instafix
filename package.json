@@ -1,0 +1,49 @@
+{
+  "name": "@instafix/adapter-fs",
+  "version": "0.0.0",
+  "description": "FsStore adapter for InstaFix",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "instafix",
+    "fs",
+    "adapter",
+    "feedback",
+    "typescript"
+  ],
+  "author": "gnoopy",
+  "license": "MIT",
+  "homepage": "https://instafix.realstory.blog",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gnoopy/instafix.git",
+    "directory": "packages/adapter-fs"
+  },
+  "bugs": {
+    "url": "https://github.com/gnoopy/instafix/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
