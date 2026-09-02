@@ -36,11 +36,12 @@ Claude Code, Cursor 같은 AI 코딩 에이전트와 함께 개발할 때 쓰는
 
 ## 기능
 
-- **말로 설명할 필요 없이, 클릭 한 번으로 정확한 대상 지정** — "왼쪽에서 두 번째 카드", "그 버튼 아래 여백" 같은 애매한 표현 대신, 페이지 위에 사각형을 그리거나 요소를 클릭하기만 하면 CSS/XPath/텍스트 기반의 정확한 DOM 셀렉터가 자동으로 캡처됨
-- **프롬프트 복사(Copy Prompt)** — 주석·정확한 DOM 셀렉터·스크린샷 경로·콘솔 에러를 하나의 마크다운 프롬프트로 정리해 클립보드에 복사 — Claude Code, Cursor 등 어떤 코딩 에이전트에도 바로 붙여넣기 가능
+- **말로 설명할 필요 없이, 클릭 한 번으로 정확한 대상 지정** — "왼쪽에서 두 번째 카드", "그 버튼 아래 여백" 같은 애매한 표현 대신, 요소 자동 선택 픽커(호버 → 클릭)로 컴포넌트를 집거나 사각형 드래그로 여러 요소를 한 번에 지정 — CSS/XPath/텍스트 기반의 정확한 DOM 셀렉터가 자동으로 캡처됨. dev 서버에서는 클릭한 요소를 렌더링한 **React 컴포넌트 이름까지 힌트로 캡처**되어 에이전트가 파일을 바로 찾음
+- **프롬프트 복사(Copy Prompt)** — 주석·정확한 DOM 셀렉터·스크린샷 경로·콘솔 에러를 하나의 마크다운 프롬프트로 정리해 클립보드에 복사 — Claude Code, Cursor 등 어떤 코딩 에이전트에도 바로 붙여넣기 가능. 항목마다 피드백 ID가 붙고 완료 처리 방법까지 명시되어, **에이전트가 고친 항목을 스스로 닫음**
+- **터미널 직결 (`instafix prompt` · `/instafix` · "Agent에게")** — 쌓인 피드백을 `npx @instafix/cli prompt | claude -p`로 새 에이전트 세션에 통째로 발주하거나, 작업 중이던 Claude Code 세션에서 `/instafix`로 끌어오거나, 패널의 "Agent에게" 버튼 → `instafix watch`로 현재 세션에 밀어넣기 — 복사/붙여넣기 없이도 루프가 돔
 - **DOM 기반 영속성** — 주석이 픽셀이 아니라 요소에 결속되어, 에이전트가 레이아웃을 바꿔도 주석이 유지됨
-- **스크린샷 + 진단 정보** — 주석 영역의 JPEG 캡처(프라이버시 마스킹 포함)와 콘솔/네트워크 캡처, 둘 다 옵트인 — "에러가 난다"는 말 대신 실제 콘솔 로그를 그대로 프롬프트에 담을 수 있음
-- **즉석 우클릭 코멘트** — 옵트인 방식이며, 키보드/수정키 컨텍스트 메뉴를 가로채지 않음
+- **스크린샷 + 진단 정보** — 주석 영역의 JPEG 캡처(프라이버시 마스킹 포함)와 콘솔/네트워크 캡처, 둘 다 옵트인 — "에러가 난다"는 말 대신 실제 콘솔 로그를 그대로 프롬프트에 담을 수 있음. 디자인 시안을 보여주고 싶다면 메모장에 이미지를 ⌘V로 붙여넣으면 됨
+- **숙주 앱과 절대 헷갈리지 않는 레이어 색** — 페이지의 브랜드 색을 자동 감지해, 툴바·팝오버·패널·마커 전부가 숙주 앱 팔레트와 뚜렷이 구분되는 하나의 톤을 입음 (`autoSelectionColor: false`로 끄면 `accentColor` 사용)
 - **로컬 히스토리 (`.instafix/` 폴더)** — DB 없이 프로젝트 폴더에 작업 이력(과 스크린샷)을 평문으로 남기고 언제든 검색 가능 (`@instafix/adapter-fs`)
 - **트리아지 인박스** — `<InstaFixInbox />`(`@instafix/dashboard`): 팀 단위로 피드백을 관리하고 싶을 때, Linear 스타일 키보드 우선 UI, 라이트/다크, 8개 로케일
 - **기본 내장된 안정성** — 백오프 재시도 + localStorage 큐로, 불안정한 네트워크에서도 코멘트를 잃지 않음
@@ -64,6 +65,18 @@ Claude Code, Cursor 같은 AI 코딩 에이전트와 함께 개발할 때 쓰는
 ```
 
 이게 전부입니다 — 이제 화면에 사각형을 그리고 메모를 남기면, 에이전트에게 바로 줄 프롬프트로 복사할 수 있습니다.
+
+쌓인 피드백을 에이전트에게 넘기는 방법은 취향대로 고르세요:
+
+```bash
+# 열린 피드백 전체(또는 --id로 고른 것만)를 새 에이전트 세션에 발주
+npx github:gnoopy/instafix#cli-dist prompt --status open | claude -p
+
+# 에이전트가 고친 항목은 스스로 닫습니다 (프롬프트에 방법이 적혀 있음)
+npx github:gnoopy/instafix#cli-dist resolve <ID>
+```
+
+작업 중이던 Claude Code 세션에 이어서 처리하고 싶다면 그 세션에서 `/instafix`를 입력하세요(`init`이 슬래시 커맨드를 설치해 둡니다). 브라우저를 벗어나기 싫다면 피드백 상세의 **"Agent에게"** 버튼 — `instafix watch`를 백그라운드로 켜 둔 세션이 즉시 이어받습니다.
 
 ### 직접 설치하고 싶다면?
 
@@ -128,7 +141,7 @@ import { InstaFixInbox } from "@instafix/dashboard";
 | [`@instafix/adapter-fs`](./packages/adapter-fs) | DB 없음 — `.instafix/` 아래 평문 파일, 혼자 개발하는 경우용 | [파일시스템 어댑터](https://instafix.realstory.blog/docs/adapters/fs) |
 | [`@instafix/adapter-memory`](./packages/adapter-memory) | 인메모리 스토어 (테스트, 데모용) | [메모리 어댑터](https://instafix.realstory.blog/docs/adapters/memory) |
 | [`@instafix/adapter-localstorage`](./packages/adapter-localstorage) | 클라이언트 사이드 스토어 (서버 불필요) | [localStorage 어댑터](https://instafix.realstory.blog/docs/adapters/localstorage) |
-| [`@instafix/cli`](./packages/cli) | `init` / `sync` / `status` / `doctor` | [CLI](https://instafix.realstory.blog/docs/cli) |
+| [`@instafix/cli`](./packages/cli) | `init` / `prompt` / `resolve` / `watch` / `sync` / `status` / `doctor` | [CLI](https://instafix.realstory.blog/docs/cli) |
 
 ## 기여하기
 

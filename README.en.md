@@ -37,11 +37,12 @@ to your clipboard. Paste it into your agent's chat and you're done.
 
 ## Features
 
-- **Point instead of describing** — no more "the second card from the left" or "the gap under that button." Draw a rectangle or click an element, and InstaFix captures an exact CSS/XPath/text-based DOM selector for it automatically
-- **Copy Prompt** — bundles the annotation, exact DOM selectors, a screenshot path, and any console errors into one Markdown prompt, copied to your clipboard — paste it into Claude Code, Cursor, or any coding agent
+- **Point instead of describing** — no more "the second card from the left" or "the gap under that button." Pick a component with the hover-and-click auto-target picker, or drag a rectangle to grab several elements at once — InstaFix captures exact CSS/XPath/text-based DOM selectors automatically. On a dev server it also captures the **name of the React component that rendered the element**, so the agent finds the file in one grep
+- **Copy Prompt** — bundles the annotation, exact DOM selectors, a screenshot path, and any console errors into one Markdown prompt, copied to your clipboard — paste it into Claude Code, Cursor, or any coding agent. Every item carries its feedback ID plus close-out instructions, so **the agent marks fixed items resolved itself**
+- **Straight into the terminal (`instafix prompt` · `/instafix` · "To agent")** — pipe your open feedback wholesale into a fresh agent session with `npx @instafix/cli prompt | claude -p`, pull it into your CURRENT Claude Code session with `/instafix`, or push one item from the panel's "To agent" button to a session running `instafix watch` — the loop runs without copy/paste
 - **DOM-anchored persistence** — annotations tie to elements, not pixels; they survive the agent reshuffling the layout
-- **Screenshots + diagnostics** — opt-in JPEG of the annotated area (with privacy masking) and console/network capture — hand the agent the actual console log instead of just saying "it's erroring"
-- **Instant right-click comments** — opt-in, and it never hijacks keyboard or modifier-key context menus
+- **Screenshots + diagnostics** — opt-in JPEG of the annotated area (with privacy masking) and console/network capture — hand the agent the actual console log instead of just saying "it's erroring". Want to show a design reference instead? Paste an image straight into the note with ⌘V
+- **A layer color your app can never be confused with** — InstaFix samples the page's own brand colors and dresses its toolbar, popover, panel, and markers in one tone picked to stand apart from all of them (`autoSelectionColor: false` falls back to your `accentColor`)
 - **Local history (`.instafix/` folder)** — no database — a plain-text record of your session (and its screenshots) at your project root, searchable any time (`@instafix/adapter-fs`)
 - **Triage inbox** — `<InstaFixInbox />` (`@instafix/dashboard`): for when you want to manage feedback as a team — Linear-style, keyboard-first, light/dark, 8 locales
 - **Reliability built in** — retry with backoff plus a localStorage queue; a flaky network never loses a comment
@@ -64,6 +65,18 @@ Install and set up InstaFix (a self-hosted feedback widget) in this project:
 ```
 
 That's it — draw a rectangle on the page, leave a note, and copy it as a prompt for your agent.
+
+Hand the accumulated feedback to an agent whichever way suits the moment:
+
+```bash
+# Dispatch everything open (or just --id picks) to a fresh agent session
+npx github:gnoopy/instafix#cli-dist prompt --status open | claude -p
+
+# Agents close what they fixed themselves (the prompt tells them how)
+npx github:gnoopy/instafix#cli-dist resolve <ID>
+```
+
+To continue in the Claude Code session you're already working in, type `/instafix` there (`init` installs the slash command). Don't want to leave the browser? The **"To agent"** button on a feedback's detail view hands it to any session running `instafix watch` in the background.
 
 ### Prefer to do it by hand?
 
@@ -128,7 +141,7 @@ The full documentation lives at **[instafix.realstory.blog/docs](https://instafi
 | [`@instafix/adapter-fs`](./packages/adapter-fs) | No database — plain files under `.instafix/`, for a single developer working locally | [Filesystem adapter](https://instafix.realstory.blog/docs/adapters/fs) |
 | [`@instafix/adapter-memory`](./packages/adapter-memory) | In-memory store (tests, demos) | [Memory adapter](https://instafix.realstory.blog/docs/adapters/memory) |
 | [`@instafix/adapter-localstorage`](./packages/adapter-localstorage) | Client-side store (zero server) | [localStorage adapter](https://instafix.realstory.blog/docs/adapters/localstorage) |
-| [`@instafix/cli`](./packages/cli) | `init` / `sync` / `status` / `doctor` | [CLI](https://instafix.realstory.blog/docs/cli) |
+| [`@instafix/cli`](./packages/cli) | `init` / `prompt` / `resolve` / `watch` / `sync` / `status` / `doctor` | [CLI](https://instafix.realstory.blog/docs/cli) |
 
 ## Contributing
 
