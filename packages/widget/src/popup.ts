@@ -389,13 +389,16 @@ export class Popup {
     `;
     this.textarea.maxLength = 5000;
 
-    // Keyboard shortcut hint
+    // Keyboard shortcut hint. keep-all: when the voice-status text squeezes
+    // this narrow, the line must break between words ("Ctrl+Enter" / "로
+    // 전송"), never inside the chord ("Ctrl+E" / "nter").
     this.hint = el("div", {
       style: `
         font-size:11px;color:${this.colors.textTertiary};
         text-align:right;margin-top:4px;
         font-family:${FONT_STACK};
         letter-spacing:0.01em;
+        word-break:keep-all;
       `,
     });
 
