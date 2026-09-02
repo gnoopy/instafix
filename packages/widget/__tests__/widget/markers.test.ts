@@ -843,7 +843,7 @@ describe("MarkerManager", () => {
   // -------------------------------------------------------------------------
 
   describe("selection color", () => {
-    it("uses colors.selection (not the feedback type color) for the marker border and the pinned outline", () => {
+    it("fills the marker with colors.selection (white number/ring) and colors the pinned outline with it", () => {
       const customColors = buildThemeColors("#0066ff");
       customColors.selection = "#ff00aa";
       const customMarkers = new MarkerManager(customColors, tooltip, bus, t);
@@ -852,9 +852,13 @@ describe("MarkerManager", () => {
       customMarkers.render([fb]);
 
       const marker = document.querySelector<HTMLElement>('[data-feedback-id="fb-selection-color"]')!;
-      expect(marker.style.borderColor).toBe("rgb(255, 0, 170)");
+      // Filled circle in the selection color, white number and white ring —
+      // the same visual language as the pre-submission multi-target badges.
+      expect(marker.style.backgroundColor).toBe("rgb(255, 0, 170)");
+      expect(marker.style.color).toBe("rgb(255, 255, 255)");
+      expect(marker.style.borderColor).toBe("rgb(255, 255, 255)");
       // The (vibrant, light-theme) bug type color must NOT leak through.
-      expect(marker.style.borderColor).not.toBe(customColors.typeBug);
+      expect(marker.style.backgroundColor).not.toBe(customColors.typeBug);
 
       customMarkers.pinHighlight(fb);
       // Query relative to this marker's own container — the shared

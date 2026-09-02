@@ -1,7 +1,15 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it } from "vitest";
-import { circularHueDistance, detectSelectionColor, hslToHex, rgbToHsl } from "../../src/dom/selection-color.js";
+import { relativeLuminance } from "../../src/dom/background-contrast.js";
+import {
+  adjustLightnessForBackground,
+  circularHueDistance,
+  detectSelectionColor,
+  hslToHex,
+  hslToRgb,
+  rgbToHsl,
+} from "../../src/dom/selection-color.js";
 import { makeDOMRect } from "../helpers.js";
 
 function stubRect(el: HTMLElement, rect: { x: number; y: number; width: number; height: number }): void {
@@ -36,6 +44,41 @@ describe("rgbToHsl / hslToHex", () => {
 
   it("hslToHex(0, s, l) produces pure red", () => {
     expect(hslToHex(0, 1, 0.5).toLowerCase()).toBe("#ff0000");
+  });
+});
+
+describe("adjustLightnessForBackground", () => {
+  /** WCAG contrast ratio between a color and pure white/black. */
+  function contrastVs(lum: number, bgLum: number): number {
+    const hi = Math.max(lum, bgLum);
+    const lo = Math.min(lum, bgLum);
+    return (hi + 0.05) / (lo + 0.05);
+  }
+
+  it("darkens a yellow until it clears 3:1 against a light page", () => {
+    // Yellow at l=0.52 has very high luminance — invisible on white.
+    const l = adjustLightnessForBackground(50, 0.82, 0.52, true);
+    expect(l).toBeLessThan(0.52);
+    const { r, g, b } = hslToRgb(50, 0.82, l);
+    expect(contrastVs(relativeLuminance(r, g, b), 1)).toBeGreaterThanOrEqual(3);
+  });
+
+  it("keeps a lightness that already has enough contrast", () => {
+    // Yellow on a DARK page is already high-contrast — untouched.
+    expect(adjustLightnessForBackground(50, 0.82, 0.52, false)).toBe(0.52);
+    // A vivid blue on a LIGHT page is already dark enough — untouched.
+    expect(adjustLightnessForBackground(230, 0.82, 0.52, true)).toBe(0.52);
+  });
+
+  it("lightens a deep blue against a dark page when needed", () => {
+    const l = adjustLightnessForBackground(230, 0.82, 0.3, false);
+    const { r, g, b } = hslToRgb(230, 0.82, l);
+    expect(contrastVs(relativeLuminance(r, g, b), 0)).toBeGreaterThanOrEqual(3);
+  });
+
+  it("never leaves the vivid-signal lightness range", () => {
+    expect(adjustLightnessForBackground(50, 0.82, 0.52, true)).toBeGreaterThanOrEqual(0.22);
+    expect(adjustLightnessForBackground(230, 0.82, 0.52, false)).toBeLessThanOrEqual(0.78);
   });
 });
 
@@ -85,6 +128,22 @@ describe("detectSelectionColor", () => {
     expect(result).not.toBeNull();
     const { h } = rgbToHsl(hexToRgb(result!.hex).r, hexToRgb(result!.hex).g, hexToRgb(result!.hex).b);
     expect(circularHueDistance(h, 229)).toBeGreaterThan(120);
+  });
+
+  it("the returned color clears 3:1 non-text contrast against a light page (yellow gets darkened)", () => {
+    // jsdom has no elementFromPoint and no body background — the sampler
+    // falls back to "light page". A blue-heavy host pushes the maximin
+    // choice toward yellow, the worst-case hue for luminance-on-white.
+    const btn = document.createElement("button");
+    btn.style.backgroundColor = "rgb(23, 60, 255)";
+    stubRect(btn, { x: 10, y: 10, width: 80, height: 30 });
+    document.body.appendChild(btn);
+
+    const result = detectSelectionColor();
+    expect(result).not.toBeNull();
+    const { r, g, b } = hexToRgb(result!.hex);
+    const lum = relativeLuminance(r, g, b);
+    expect((1 + 0.05) / (lum + 0.05)).toBeGreaterThanOrEqual(3);
   });
 
   it("falls back to a link's text color when its background is transparent", () => {

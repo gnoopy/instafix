@@ -507,16 +507,18 @@ export class MarkerManager {
   private addClusterBadge(cluster: Cluster): void {
     const topMarker = clusterMarker(cluster, cluster.entries.length - 1);
     if (!topMarker) return;
+    // Inverted relative to the marker it sits on (white on the marker's
+    // selection-colored fill) — same-on-same would make the count vanish.
     const badge = el("div", {
       class: "sp-cluster-badge",
       style: `
         position:absolute;top:-6px;right:-6px;
         min-width:16px;height:16px;padding:0 4px;
         border-radius:9999px;
-        background:${this.colors.selection};color:#fff;
+        background:#ffffff;color:${this.colors.selection};
         font-size:10px;font-weight:700;
         display:flex;align-items:center;justify-content:center;
-        border:1.5px solid #fff;
+        border:1.5px solid ${this.colors.selection};
         pointer-events:none;
         font-family:"Inter",system-ui,-apple-system,sans-serif;
         line-height:1;
@@ -584,11 +586,13 @@ export class MarkerManager {
   }
 
   private createMarker(number: number, feedback: FeedbackResponse, pos: { top: number; left: number }): HTMLElement {
-    // The marker's own border/number color is the selection color (distinct
-    // from the host app's palette, per `dom/selection-color.ts`) rather than
-    // the feedback-type color — so an on-page numbered marker reads as
-    // "InstaFix put this here" at a glance, the same visual language as the
-    // live drag/auto-target outline. Type is still conveyed in the tooltip
+    // A FILLED circle in the selection color (host-distinct, per
+    // `dom/selection-color.ts`) with a white number and white ring — the
+    // exact visual language of the pre-submission multi-target badges, so
+    // "a filled colored circle with a white number = InstaFix put this
+    // here" holds before AND after submission. A white circle with only a
+    // tinted border/number was invisible whenever the detected color sat
+    // close to the page background. Type is still conveyed in the tooltip
     // and the panel list, which have room to spell it out.
     const markerColor = this.colors.selection;
     // Closed feedbacks (resolved, wont_fix) render as muted checkmark markers.
@@ -601,14 +605,14 @@ export class MarkerManager {
         left:${pos.left}px;
         width:26px;height:26px;
         border-radius:50%;
-        background:${isResolved ? "rgba(241,245,249,0.9)" : "rgba(255,255,255,0.92)"};
-        border:2px solid ${isResolved ? "#cbd5e1" : markerColor};
+        background:${isResolved ? "rgba(241,245,249,0.9)" : markerColor};
+        border:2px solid ${isResolved ? "#cbd5e1" : "#ffffff"};
         display:flex;align-items:center;justify-content:center;
         font-family:"Inter",system-ui,-apple-system,sans-serif;
         font-size:11px;font-weight:700;
-        color:${isResolved ? "#94a3b8" : markerColor};
+        color:${isResolved ? "#94a3b8" : "#ffffff"};
         cursor:pointer;pointer-events:auto;
-        box-shadow:${isResolved ? "0 2px 8px rgba(0,0,0,0.06)" : `0 2px 12px ${markerColor}25, 0 2px 6px rgba(0,0,0,0.06)`};
+        box-shadow:${isResolved ? "0 2px 8px rgba(0,0,0,0.06)" : `0 2px 12px ${markerColor}40, 0 2px 6px rgba(0,0,0,0.15)`};
         transition:top 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), left 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.15s ease, box-shadow 0.15s ease;
         user-select:none;
         -webkit-font-smoothing:antialiased;
@@ -631,7 +635,7 @@ export class MarkerManager {
       marker.style.transform = "scale(1.2)";
       marker.style.boxShadow = isResolved
         ? "0 4px 16px rgba(0,0,0,0.1)"
-        : `0 4px 20px ${markerColor}35, 0 4px 12px rgba(0,0,0,0.08)`;
+        : `0 4px 20px ${markerColor}59, 0 4px 12px rgba(0,0,0,0.15)`;
       this.tooltip.show(feedback, marker.getBoundingClientRect());
       this.previewHighlight(feedback);
     });
@@ -640,7 +644,7 @@ export class MarkerManager {
       marker.style.transform = "scale(1)";
       marker.style.boxShadow = isResolved
         ? "0 2px 8px rgba(0,0,0,0.06)"
-        : `0 2px 12px ${markerColor}25, 0 2px 6px rgba(0,0,0,0.06)`;
+        : `0 2px 12px ${markerColor}40, 0 2px 6px rgba(0,0,0,0.15)`;
       this.tooltip.scheduleHide();
       this.previewHighlight(null);
     });
@@ -737,6 +741,8 @@ export class MarkerManager {
       if (!resolved) continue;
 
       const rect = resolved.rect;
+      // White halo rings on both sides of the colored border — same
+      // any-background legibility guarantee as the annotator's drawing rect.
       const highlight = el("div", {
         style: `
           position:absolute;
@@ -744,11 +750,14 @@ export class MarkerManager {
           left:${rect.left + window.scrollX}px;
           width:${rect.width}px;height:${rect.height}px;
           border:2px solid ${this.colors.selection};
-          background:${this.colors.selection}0c;
+          background:${this.colors.selection}14;
           border-radius:8px;
           pointer-events:none;z-index:-1;
           opacity:0;
-          box-shadow:0 0 16px ${this.colors.selectionGlow};
+          box-shadow:
+            0 0 0 1px rgba(255,255,255,0.85),
+            inset 0 0 0 1px rgba(255,255,255,0.85),
+            0 0 16px ${this.colors.selectionGlow};
           transition:opacity ${HIGHLIGHT_FADE}ms ease;
         `,
       });

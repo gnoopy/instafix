@@ -37,6 +37,9 @@ function createMockMarkers() {
     highlight: vi.fn(),
     pinHighlight: vi.fn(),
     previewHighlight: vi.fn(),
+    // false = "no marker entry on this page" — panel then falls back to
+    // pinHighlight, which keeps the pinHighlight assertions meaningful.
+    focusFeedback: vi.fn().mockReturnValue(false),
     addFeedback: vi.fn(),
     destroy: vi.fn(),
     count: 0,

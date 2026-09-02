@@ -23,7 +23,7 @@ import { hasSeenOnboarding, Onboarding } from "./onboarding.js";
 import type { Panel as PanelType } from "./panel.js";
 import { StoreClient } from "./store-client.js";
 import { buildStyles } from "./styles/base.js";
-import { buildThemeColors } from "./styles/theme.js";
+import { buildThemeColors, darkenHex } from "./styles/theme.js";
 import { Tooltip } from "./tooltip.js";
 
 /** Raw, single-mount instance shape — everything `InstaFixInstance` has except `updateConfig`, which is facade-level (see `launch`). */
@@ -439,7 +439,10 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
   if (config.autoSelectionColor !== false) {
     requestAnimationFrame(() => {
       if (destroyed) return;
-      const detected = detectSelectionColor();
+      // Pass the shadow host so the detector can sample the real page
+      // background at the viewport center (hiding the widget for the
+      // sample) and adjust the color's lightness for contrast against it.
+      const detected = detectSelectionColor(host);
       if (!detected) return;
       colors.selection = detected.hex;
       colors.selectionLight = `${detected.hex}26`;
@@ -447,6 +450,14 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
       host.style.setProperty("--sp-selection", colors.selection);
       host.style.setProperty("--sp-selection-light", colors.selectionLight);
       host.style.setProperty("--sp-selection-glow", colors.selectionGlow);
+      // The FAB + toolbar wear the detected color too (styles/base.ts reads
+      // these with an accent fallback) — the whole cluster is "InstaFix's
+      // own UI", and matching the host's primary is exactly the ambiguity
+      // this feature exists to remove.
+      host.style.setProperty(
+        "--sp-selection-gradient",
+        `linear-gradient(135deg, ${detected.hex}, ${darkenHex(detected.hex, 0.15)})`,
+      );
     });
   }
 

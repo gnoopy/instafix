@@ -83,8 +83,8 @@ function normalizeHex(raw: string): string {
   return DEFAULT_ACCENT;
 }
 
-/** Darken a hex color by a percentage (0-1) */
-function darkenHex(hex: string, amount: number): string {
+/** Darken a hex color by a percentage (0-1). Exported for launcher.ts's detected-selection-color gradient. */
+export function darkenHex(hex: string, amount: number): string {
   const r = Math.max(0, Math.round(parseInt(hex.slice(1, 3), 16) * (1 - amount)));
   const g = Math.max(0, Math.round(parseInt(hex.slice(3, 5), 16) * (1 - amount)));
   const b = Math.max(0, Math.round(parseInt(hex.slice(5, 7), 16) * (1 - amount)));

@@ -262,7 +262,10 @@ export class MultiTargetPreview {
         border:2px solid ${this.colors.selection};
         background:${this.colors.selection}14;
         border-radius:8px;
-        box-shadow:0 0 16px ${this.colors.selectionGlow};
+        box-shadow:
+          0 0 0 1px rgba(255,255,255,0.85),
+          inset 0 0 0 1px rgba(255,255,255,0.85),
+          0 0 16px ${this.colors.selectionGlow};
         pointer-events:none;
       `,
     });

@@ -19,7 +19,7 @@
  */
 
 import { isWidgetChrome } from "../focus-tracker.js";
-import { parseRgb } from "./background-contrast.js";
+import { parseRgb, relativeLuminance, sampleBackgroundIsLight } from "./background-contrast.js";
 
 export interface SelectionColorResult {
   hex: string;
@@ -57,7 +57,7 @@ export function rgbToHsl(r: number, g: number, b: number): { h: number; s: numbe
 }
 
 /** Exported for direct unit testing — not otherwise part of the module's public surface. */
-export function hslToHex(h: number, s: number, l: number): string {
+export function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: number } {
   const c = (1 - Math.abs(2 * l - 1)) * s;
   const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
   const m = l - c / 2;
@@ -71,10 +71,17 @@ export function hslToHex(h: number, s: number, l: number): string {
   else if (h < 300) [r, g, b] = [x, 0, c];
   else [r, g, b] = [c, 0, x];
 
-  const toHex = (v: number): string =>
-    Math.round((v + m) * 255)
-      .toString(16)
-      .padStart(2, "0");
+  return {
+    r: Math.round((r + m) * 255),
+    g: Math.round((g + m) * 255),
+    b: Math.round((b + m) * 255),
+  };
+}
+
+/** Exported for direct unit testing — not otherwise part of the module's public surface. */
+export function hslToHex(h: number, s: number, l: number): string {
+  const { r, g, b } = hslToRgb(h, s, l);
+  const toHex = (v: number): string => v.toString(16).padStart(2, "0");
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
@@ -85,13 +92,74 @@ export function circularHueDistance(a: number, b: number): number {
 }
 
 /**
+ * WCAG 1.4.11 non-text contrast — the minimum ratio a UI indicator needs
+ * against the surface it sits on. A hue picked purely by wheel distance can
+ * still be invisible in practice: yellow at l=0.52 over a white page is a
+ * maximally-distinct HUE with near-zero LUMINANCE contrast.
+ */
+const MIN_BACKGROUND_CONTRAST = 3;
+const LIGHTNESS_STEP = 0.03;
+const MIN_LIGHTNESS = 0.22;
+const MAX_LIGHTNESS = 0.78;
+
+function contrastRatio(lumA: number, lumB: number): number {
+  const hi = Math.max(lumA, lumB);
+  const lo = Math.min(lumA, lumB);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/**
+ * Walk the lightness away from the page background (darker on a light page,
+ * lighter on a dark one) until the color clears `MIN_BACKGROUND_CONTRAST`
+ * against it, keeping the chosen hue intact. Clamped to a range that still
+ * reads as a vivid "signal" tone rather than near-black/near-white.
+ * Exported for direct unit testing.
+ */
+export function adjustLightnessForBackground(h: number, s: number, startL: number, backgroundIsLight: boolean): number {
+  // The worst realistic case, not the average one: a white (lum 1) or
+  // near-black (lum 0) page surface.
+  const bgLum = backgroundIsLight ? 1 : 0;
+  const step = backgroundIsLight ? -LIGHTNESS_STEP : LIGHTNESS_STEP;
+  let l = startL;
+  while (l >= MIN_LIGHTNESS && l <= MAX_LIGHTNESS) {
+    const { r, g, b } = hslToRgb(h, s, l);
+    if (contrastRatio(relativeLuminance(r, g, b), bgLum) >= MIN_BACKGROUND_CONTRAST) return l;
+    l += step;
+  }
+  return backgroundIsLight ? MIN_LIGHTNESS : MAX_LIGHTNESS;
+}
+
+/**
+ * Is the page behind the widget light or dark? Prefers a real sample at the
+ * viewport center (through `sampleBackgroundIsLight`, which needs the shadow
+ * host to hide); falls back to the body/html computed background, then to
+ * "light" — the browser's own canvas is white in every engine.
+ */
+function samplePageBackgroundIsLight(hostToIgnore?: HTMLElement): boolean {
+  if (hostToIgnore) {
+    const sampled = sampleBackgroundIsLight(
+      Math.round(window.innerWidth / 2),
+      Math.round(window.innerHeight / 2),
+      hostToIgnore,
+    );
+    if (sampled !== null) return sampled;
+  }
+  for (const el of [document.body, document.documentElement]) {
+    if (!el) continue;
+    const parsed = parseRgb(getComputedStyle(el).backgroundColor);
+    if (parsed && parsed.a > 0.5) return relativeLuminance(parsed.r, parsed.g, parsed.b) > 0.5;
+  }
+  return true;
+}
+
+/**
  * Sample the host page's own visible buttons/links and pick a hue that's
  * maximally distinct from all of them. Fails closed (returns null) on any
  * error or when nothing chromatic is found — same discipline as
  * `background-contrast.ts`'s `sampleBackgroundIsLight`: an uncaught throw
  * here must never break the host page.
  */
-export function detectSelectionColor(): SelectionColorResult | null {
+export function detectSelectionColor(hostToIgnore?: HTMLElement): SelectionColorResult | null {
   if (typeof document === "undefined" || typeof document.querySelectorAll !== "function") return null;
 
   try {
@@ -137,7 +205,13 @@ export function detectSelectionColor(): SelectionColorResult | null {
       }
     }
 
-    return { hex: hslToHex(bestHue, SIGNAL_SATURATION, SIGNAL_LIGHTNESS) };
+    // Hue distance alone doesn't guarantee visibility — pull the lightness
+    // away from the page background until the color actually clears WCAG
+    // non-text contrast against it (a light page darkens yellows toward
+    // amber, a dark page lifts deep blues, etc).
+    const backgroundIsLight = samplePageBackgroundIsLight(hostToIgnore);
+    const lightness = adjustLightnessForBackground(bestHue, SIGNAL_SATURATION, SIGNAL_LIGHTNESS, backgroundIsLight);
+    return { hex: hslToHex(bestHue, SIGNAL_SATURATION, lightness) };
   } catch {
     return null;
   }

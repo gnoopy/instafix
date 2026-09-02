@@ -407,9 +407,13 @@ export class Panel {
         return;
       }
 
-      // Card click → open detail view + pin the on-page outline for its
-      // target, so "selecting" an item in the list is answered by "here's
-      // where that lives on the page" (G8), not just the detail panel.
+      // Card click → open detail view + reveal the on-page region, so
+      // "selecting" an item in the list is answered by "here's where that
+      // lives on the page" (G8), not just the detail panel. focusFeedback
+      // scrolls the marker into view AND pins the outline — an outline
+      // drawn on a region scrolled off-screen answers nothing. Feedbacks
+      // with no resolvable marker on this page fall back to a plain pin
+      // (harmless no-op render when there's nothing to outline).
       const card = target.closest<HTMLElement>(".sp-card");
       if (card) {
         const feedbackId = card.dataset.feedbackId;
@@ -417,7 +421,9 @@ export class Panel {
         if (feedback) {
           const number = this.feedbacks.indexOf(feedback) + 1;
           this.detail.show(feedback, number);
-          this.markers.pinHighlight(feedback);
+          if (!this.markers.focusFeedback(feedback.id)) {
+            this.markers.pinHighlight(feedback);
+          }
         }
       }
     };
@@ -436,7 +442,10 @@ export class Panel {
       if (feedback) {
         const number = this.feedbacks.indexOf(feedback) + 1;
         this.detail.show(feedback, number);
-        this.markers.pinHighlight(feedback);
+        // Same reveal-the-region behavior as the pointer path above.
+        if (!this.markers.focusFeedback(feedback.id)) {
+          this.markers.pinHighlight(feedback);
+        }
       }
     };
     this.listContainer.addEventListener("keydown", this.onListKeydown);

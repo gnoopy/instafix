@@ -68,12 +68,18 @@ export function buildStyles(colors: ThemeColors): string {
        FAB (Floating Action Button)
        ============================ */
 
+    /* Wears the auto-detected selection color (host-distinct, see
+       dom/selection-color.ts) once launcher.ts sets the --sp-selection-*
+       inline properties on the host — until then (or with detection off)
+       the fallbacks keep it on the configured accent. The point: the FAB
+       and its toolbar must never look like the HOST app's own primary
+       buttons. */
     .sp-fab {
       position: fixed;
       width: 52px;
       height: 52px;
       border-radius: var(--sp-radius-full);
-      background: var(--sp-accent-gradient);
+      background: var(--sp-selection-gradient, var(--sp-accent-gradient));
       color: #fff;
       border: none;
       cursor: pointer;
@@ -81,7 +87,7 @@ export function buildStyles(colors: ThemeColors): string {
       align-items: center;
       justify-content: center;
       box-shadow:
-        0 4px 20px var(--sp-accent-glow),
+        0 4px 20px var(--sp-selection-glow, var(--sp-accent-glow)),
         0 2px 8px rgba(0, 0, 0, 0.08);
       transition:
         transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -97,7 +103,7 @@ export function buildStyles(colors: ThemeColors): string {
     .sp-fab:hover {
       transform: translateY(-2px) scale(1.05);
       box-shadow:
-        0 8px 28px var(--sp-accent-glow),
+        0 8px 28px var(--sp-selection-glow, var(--sp-accent-glow)),
         0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
@@ -182,24 +188,25 @@ export function buildStyles(colors: ThemeColors): string {
       left: 88px;
     }
 
-    /* Filled with the same accent color as the FAB (not the neutral glass
-       card other toolbar-adjacent surfaces use) so the row reads as one
-       unit: "the FAB, and the buttons that belong to it" — see the FAB rule
-       block above for the color this matches. */
+    /* Filled with the same (auto-detected, host-distinct) color as the FAB —
+       not the neutral glass other surfaces use, and never the raw accent
+       when detection has produced a selection color — so the row reads as
+       one unit: "the FAB, and the buttons that belong to it", visibly NOT
+       part of the host app's own palette. */
     .sp-toolbar-item {
       position: relative;
       flex-shrink: 0;
       width: 44px;
       height: 44px;
       border-radius: var(--sp-radius-full);
-      background: var(--sp-accent);
+      background: var(--sp-selection, var(--sp-accent));
       border: 1px solid rgba(255, 255, 255, 0.3);
       color: #fff;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: var(--sp-shadow-md), 0 2px 10px var(--sp-accent-glow);
+      box-shadow: var(--sp-shadow-md), 0 2px 10px var(--sp-selection-glow, var(--sp-accent-glow));
       font-size: 12px;
       font-weight: 600;
       transition: filter 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
@@ -210,7 +217,7 @@ export function buildStyles(colors: ThemeColors): string {
       filter: brightness(1.08);
       box-shadow:
         var(--sp-shadow-md),
-        0 0 0 3px var(--sp-accent-light);
+        0 0 0 3px var(--sp-selection-light, var(--sp-accent-light));
       outline: none;
     }
 
@@ -251,7 +258,7 @@ export function buildStyles(colors: ThemeColors): string {
     .sp-fab-root--on-dark .sp-toolbar-item {
       box-shadow:
         var(--sp-shadow-md),
-        0 2px 10px var(--sp-accent-glow),
+        0 2px 10px var(--sp-selection-glow, var(--sp-accent-glow)),
         0 0 0 3px rgba(255, 255, 255, 0.9);
     }
 
@@ -268,7 +275,7 @@ export function buildStyles(colors: ThemeColors): string {
     .sp-fab-root--on-light .sp-fab,
     .sp-fab-root--on-dark .sp-fab {
       box-shadow:
-        0 4px 20px var(--sp-accent-glow),
+        0 4px 20px var(--sp-selection-glow, var(--sp-accent-glow)),
         0 0 0 3px rgba(255, 255, 255, 0.9),
         0 2px 10px rgba(0, 0, 0, 0.3);
     }

@@ -584,6 +584,12 @@ export class Annotator {
    * Excluded from screenshot capture (see overlay creation in activate()).
    */
   private createDrawingRect(): HTMLElement {
+    // The white inner+outer halo rings keep the colored border legible over
+    // ANY local background — the detected selection color is
+    // contrast-adjusted against the page's overall background
+    // (dom/selection-color.ts), but the specific element under the outline
+    // can still be a similar mid-tone; the halo is the guarantee (same
+    // trick browser DevTools' element highlighter uses).
     const rect = el("div", {
       style: `
         position:fixed;
@@ -591,7 +597,10 @@ export class Annotator {
         background:${this.colors.selection}12;
         pointer-events:none;
         border-radius:8px;
-        box-shadow:0 0 16px ${this.colors.selectionGlow};
+        box-shadow:
+          0 0 0 1px rgba(255,255,255,0.85),
+          inset 0 0 0 1px rgba(255,255,255,0.85),
+          0 0 16px ${this.colors.selectionGlow};
         transition:box-shadow 0.15s ease;
       `,
     });

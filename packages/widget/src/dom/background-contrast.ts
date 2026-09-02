@@ -6,8 +6,8 @@
  * page scrolls, so this is meant to be re-sampled, not computed once.
  */
 
-/** WCAG relative luminance — https://www.w3.org/TR/WCAG21/#dfn-relative-luminance */
-function relativeLuminance(r: number, g: number, b: number): number {
+/** WCAG relative luminance — https://www.w3.org/TR/WCAG21/#dfn-relative-luminance. Exported for `dom/selection-color.ts`'s contrast-aware lightness adjustment. */
+export function relativeLuminance(r: number, g: number, b: number): number {
   const toLinear = (c: number): number => {
     const s = c / 255;
     return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
