@@ -1545,6 +1545,23 @@ describe("Annotator", () => {
     // -----------------------------------------------------------------------
 
     describe("post-click outline", () => {
+      it("hit-tests at the cursor's exact hotspot, not a 20px box centered on it", async () => {
+        // The old centered box spilled ~10px past the hotspot on every
+        // side, so `findAnchorElement`'s contains-the-rect ancestor walk
+        // rejected any small element the cursor was near the edge of and
+        // silently selected its CONTAINER — disagreeing with the hover
+        // highlight, which resolves at exactly (clientX, clientY).
+        vi.mocked(findAnchorElement).mockClear();
+
+        await annotator.startInstantAnnotation(105, 207);
+
+        const rect = vi.mocked(findAnchorElement).mock.calls[0]![0] as DOMRect;
+        expect(rect.x).toBe(105);
+        expect(rect.y).toBe(207);
+        expect(rect.width).toBe(1);
+        expect(rect.height).toBe(1);
+      });
+
       it("records the annotation as the element's FULL bounds, never a click-point sub-rect", async () => {
         // The stored rect is what the marker-hover outline re-renders from
         // later (markers.ts showHighlight) — a point-sized sub-rect made

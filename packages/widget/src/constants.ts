@@ -8,13 +8,6 @@ export const MOBILE_BREAKPOINT = 768;
 export const PAGE_SIZE = 20;
 
 /**
- * Size in CSS pixels of the point-rect created by the instant (right-click)
- * annotation flow. Large enough for `findAnchorElement` to resolve the target
- * but small enough to feel like a point click rather than an area selection.
- */
-export const INSTANT_ANNOTATION_SIZE = 20;
-
-/**
  * Minimum drag distance (px, either axis) before a pointer-down/up pair is
  * treated as a drag rather than a click (G3). Below this, a small hand
  * tremor must not draw a bogus rectangle — it completes as a single-element

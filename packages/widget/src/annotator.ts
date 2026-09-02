@@ -1,5 +1,5 @@
 import type { AnnotationPayload, FeedbackType, ScreenshotRegion } from "@instafix/core";
-import { CLICK_THRESHOLD_PX, INSTANT_ANNOTATION_SIZE, Z_INDEX_MAX } from "./constants.js";
+import { CLICK_THRESHOLD_PX, Z_INDEX_MAX } from "./constants.js";
 import { findAnchorElement, findLargestAncestor, generateAnchor, rectToPercentages } from "./dom/anchor.js";
 import { computeAutoScrollDelta } from "./dom/auto-scroll.js";
 import { collectMarqueeElements, collectMarqueeElementsDetailed } from "./dom/marquee.js";
@@ -950,14 +950,15 @@ export class Annotator {
     this.instantMode = true;
     this.bus.emit("annotation:start");
 
-    // Build a small point-rect centered at the cursor for the marker/percentage
-    // math. Clamped to viewport edges on all sides.
-    const x = Math.max(0, Math.min(clientX - INSTANT_ANNOTATION_SIZE / 2, window.innerWidth - INSTANT_ANNOTATION_SIZE));
-    const y = Math.max(
-      0,
-      Math.min(clientY - INSTANT_ANNOTATION_SIZE / 2, window.innerHeight - INSTANT_ANNOTATION_SIZE),
-    );
-    const pointRect = new DOMRect(x, y, INSTANT_ANNOTATION_SIZE, INSTANT_ANNOTATION_SIZE);
+    // Hit-test with a 1×1 rect at the cursor's exact hotspot (clientX/Y —
+    // the arrow tip), matching both the draw-mode click path and, more
+    // importantly, the targeting-mode HOVER highlight (which resolves via
+    // elementFromPoint at these same coordinates). The old 20px box
+    // centered on the cursor made `findAnchorElement`'s contains-the-rect
+    // ancestor walk reject any element the box spilled out of — clicking
+    // within 10px of a small element's edge silently selected its
+    // CONTAINER instead of the element the hover outline was showing.
+    const pointRect = new DOMRect(clientX, clientY, 1, 1);
 
     // Resolve the smallest (most specific) element under the cursor, and —
     // G8 — the nearest reasonably-sized container above it. When the two
