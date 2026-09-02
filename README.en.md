@@ -4,10 +4,12 @@
 
 <h1>InstaFix</h1>
 
-**Client feedback, pinned to the pixel.**
+**Debugging with a coding agent? Point at the UI, get a ready-made prompt.**
 
-A lightweight feedback widget that lets your clients annotate websites during development.
-Draw rectangles, leave comments, track bugs — directly on the live site.
+A lightweight browser widget for developers working with AI coding agents (Claude Code, Cursor, and the like).
+While an agent is building your page, click or draw a rectangle on whatever's wrong and leave a short note —
+InstaFix turns it into a prompt with the exact DOM target, a screenshot, and any console errors, copied straight
+to your clipboard. Paste it into your agent's chat and you're done.
 
 ![Demo](./demo.gif)
 
@@ -26,33 +28,22 @@ Draw rectangles, leave comments, track bugs — directly on the live site.
 
 </div>
 
-> **[See InstaFix in action →](https://instafix.realstory.blog/demo)** — Draw annotations, leave feedback, track bugs directly on the live site.
+> **[See InstaFix in action →](https://instafix.realstory.blog/demo)** — Click to annotate the UI and watch it turn into a prompt ready for your agent.
 
 > [!NOTE]
 > InstaFix is a fork of **[SitePing](https://github.com/NeosiaNexus/SitePing)** by [NeosiaNexus](https://github.com/NeosiaNexus), continued here under a new name. See [Provenance](#provenance) for what changed and how attribution/licensing works.
 
 ---
 
-## Why InstaFix?
-
-Stop chasing client feedback across Slack threads, email chains, and Notion docs. InstaFix gives your clients a **contextual** way to leave feedback — anchored to the exact element they're looking at.
-
-| | InstaFix | Marker.io | BugHerd |
-|---|---|---|---|
-| **Self-hosted** | Yes — your DB, your data | No (SaaS) | No (SaaS) |
-| **Package install** | `npm install` from GitHub — no registry gatekeeping | npm + script tag | Script tag only |
-| **Framework-native** | First-class Next.js support | Framework-agnostic | Framework-agnostic |
-| **Pricing** | Free & open source | From $39/mo | From $42/mo |
-| **DOM-anchored annotations** | Multi-selector (CSS + XPath + text) | Screenshot-based | Pin-based |
-| **Annotations survive layout changes** | Yes (percentage-relative rects) | No (pixel coordinates) | Partially |
-
 ## Features
 
-- **Rectangle annotations** — clients draw directly on the page, with category + message
+- **Copy Prompt** — bundles the annotation, exact DOM selectors, a screenshot path, and any console errors into one Markdown prompt, copied to your clipboard — paste it into Claude Code, Cursor, or any coding agent
+- **Local history (`.instafix/` folder)** — no database — a plain-text record of your session (and its screenshots) at your project root, searchable any time (`@instafix/adapter-fs`)
+- **Rectangle annotations** — draw directly on the page, with category + message
 - **DOM-anchored persistence** — annotations tie to elements, not pixels; they survive layout changes
 - **Instant right-click comments** — opt-in, and it never hijacks keyboard or modifier-key context menus
 - **Screenshots + diagnostics** — opt-in JPEG of the annotated area (with privacy masking) and console/network capture
-- **Triage inbox** — `<InstaFixInbox />` (`@instafix/dashboard`): Linear-style, keyboard-first, light/dark, 7 locales
+- **Triage inbox** — `<InstaFixInbox />` (`@instafix/dashboard`): for when you want to manage feedback as a team — Linear-style, keyboard-first, light/dark, 8 locales
 - **Reliability built in** — retry with backoff plus a localStorage queue; a flaky network never loses a comment
 - **Shadow DOM isolation** — widget CSS never leaks into your site, and your site CSS never breaks the widget
 - **Dev-only by default** — auto-hides in production builds unless `forceShow: true`
@@ -72,7 +63,7 @@ Install and set up InstaFix (a self-hosted feedback widget) in this project:
 3. It generates components/instafix-widget.tsx, exporting a component named InstaFixWidget — add <InstaFixWidget /> once inside <body> in this app's root layout (app/layout.tsx for Next.js App Router, or the equivalent root layout/root component for whatever framework this project uses), importing from @/components/instafix-widget (adjust the import path if this project doesn't use the @/ alias). It renders nothing itself, so exact placement doesn't matter — don't wrap it in a conditional, it already no-ops outside development unless forceShow is set.
 ```
 
-That's it — clients can now draw rectangles on the site and leave feedback.
+That's it — draw a rectangle on the page, leave a note, and copy it as a prompt for your agent.
 
 ### Prefer to do it by hand?
 
@@ -110,6 +101,19 @@ import { InstaFixInbox } from "@instafix/dashboard";
 No server? The widget also runs fully client-side with `store: new LocalStorageStore()` (`github:gnoopy/instafix#adapter-localstorage-dist`).
 
 **To remove InstaFix**: revert your lockfile and `package.json` (`git checkout -- package.json package-lock.json`, or your lockfile), delete `app/api/instafix/` and `components/instafix-widget.tsx`, then reinstall.
+
+## Why InstaFix?
+
+Beyond the agent workflow, InstaFix works just as well for the original use case — collecting client feedback as a team. Stop chasing it across Slack threads, email chains, and Notion docs; it gives clients a **contextual** way to leave feedback, anchored to the exact element they're looking at.
+
+| | InstaFix | Marker.io | BugHerd |
+|---|---|---|---|
+| **Self-hosted** | Yes — your DB, your data | No (SaaS) | No (SaaS) |
+| **Package install** | `npm install` from GitHub — no registry gatekeeping | npm + script tag | Script tag only |
+| **Framework-native** | First-class Next.js support | Framework-agnostic | Framework-agnostic |
+| **Pricing** | Free & open source | From $39/mo | From $42/mo |
+| **DOM-anchored annotations** | Multi-selector (CSS + XPath + text) | Screenshot-based | Pin-based |
+| **Annotations survive layout changes** | Yes (percentage-relative rects) | No (pixel coordinates) | Partially |
 
 ## Documentation
 
