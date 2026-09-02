@@ -13,7 +13,7 @@ describe("getSourceHint", () => {
     expect(getSourceHint(document.createElement("div"))).toBeNull();
   });
 
-  it("reads file:line from the fiber's _debugSource and trims the path", () => {
+  it("reads file:line from the fiber's _debugSource and trims the path (React ≤18 dev builds)", () => {
     const el = document.createElement("button");
     attachFiber(el, {
       _debugSource: { fileName: "/Users/dev/app/src/components/ContactForm.tsx", lineNumber: 38 },
@@ -24,7 +24,31 @@ describe("getSourceHint", () => {
     const hint = getSourceHint(el);
     expect(hint).not.toBeNull();
     expect(hint!.location).toBe("app/src/components/ContactForm.tsx:38");
-    expect(hint!.componentName).toBe("EmailField");
+    expect(hint!.componentPath).toBe("EmailField");
+  });
+
+  it("falls back to the owner-chain component path when _debugSource is gone (React 19)", () => {
+    // The live-verified shape on Next 14 / React 19: no _debugSource
+    // anywhere, but authored component names up the owner chain.
+    const el = document.createElement("button");
+    attachFiber(el, {
+      type: "button",
+      _debugOwner: {
+        type: {}, // anonymous wrapper object — skipped
+        _debugOwner: {
+          type: function PasswordField() {},
+          _debugOwner: {
+            type: function AccountKeyBootstrap() {},
+            _debugOwner: { type: function InnerLayoutRouter() {} }, // framework noise — filtered
+          },
+        },
+      },
+    });
+
+    const hint = getSourceHint(el);
+    expect(hint).not.toBeNull();
+    expect(hint!.location).toBeNull();
+    expect(hint!.componentPath).toBe("PasswordField ‹ AccountKeyBootstrap");
   });
 
   it("walks up the owner chain when the host fiber itself has no source", () => {
@@ -39,7 +63,7 @@ describe("getSourceHint", () => {
 
     const hint = getSourceHint(el);
     expect(hint!.location).toBe("components/Card.tsx:12");
-    expect(hint!.componentName).toBe("Card");
+    expect(hint!.componentPath).toBe("Card");
   });
 
   it("never throws on hostile fiber shapes", () => {

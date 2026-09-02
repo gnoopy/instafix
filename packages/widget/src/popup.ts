@@ -746,14 +746,19 @@ export class Popup {
    * appended to the compose copy. Reset to null by show(); absent entirely
    * on production host builds (dom/source-hint.ts returns null there).
    */
-  setSourceHint(hint: { location: string; componentName: string } | null): void {
-    this.sourceHint = hint ? `\`${hint.location}\`${hint.componentName ? ` <${hint.componentName}>` : ""}` : null;
+  setSourceHint(hint: { location: string | null; componentPath: string } | null): void {
     if (!hint) {
+      this.sourceHint = null;
       this.sourceHintEl.style.display = "none";
       return;
     }
-    setText(this.sourceHintEl, `⌖ ${hint.location}${hint.componentName ? ` · <${hint.componentName}>` : ""}`);
-    this.sourceHintEl.title = `${hint.location}${hint.componentName ? ` · <${hint.componentName}>` : ""}`;
+    const parts: string[] = [];
+    if (hint.componentPath) parts.push(`<${hint.componentPath}>`);
+    if (hint.location) parts.push(`\`${hint.location}\``);
+    this.sourceHint = parts.join(" — ");
+    const display = [hint.componentPath, hint.location].filter(Boolean).join(" · ");
+    setText(this.sourceHintEl, `⌖ ${display}`);
+    this.sourceHintEl.title = display;
     this.sourceHintEl.style.display = "flex";
   }
 
