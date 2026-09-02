@@ -35,6 +35,18 @@ export interface ThemeColors {
   glassBgHeavy: string;
   glassBorder: string;
   glassBorderSubtle: string;
+  /**
+   * Layer SURFACE tokens — the background/edge of InstaFix's own floating
+   * surfaces (panel, composer popover, tooltips, on-page toggle chips).
+   * Seeded to the neutral glass tokens; `applyLayerColor` rewrites them to
+   * a subtle layer-hue tint + a clearly layer-toned edge, so a surface
+   * never disappears into a host page of the same background color — the
+   * "this is an overlaid app" cue lives in the surface itself, not only in
+   * the accents on it (LAYER COLOR RULES, rule 1).
+   */
+  layerBg: string;
+  layerBgHeavy: string;
+  layerBorder: string;
   // Feedback type colors
   typeQuestion: string;
   typeChange: string;
@@ -85,6 +97,17 @@ function normalizeHex(raw: string): string {
   return DEFAULT_ACCENT;
 }
 
+/** Channel-wise blend of two 6-digit hex colors — `ratioB` of `hexB` mixed into `hexA`. */
+function mixHex(hexA: string, hexB: string, ratioB: number): { r: number; g: number; b: number } {
+  const ch = (hex: string, i: number) => parseInt(hex.slice(i, i + 2), 16);
+  const blend = (a: number, b: number) => Math.round(a * (1 - ratioB) + b * ratioB);
+  return {
+    r: blend(ch(hexA, 1), ch(hexB, 1)),
+    g: blend(ch(hexA, 3), ch(hexB, 3)),
+    b: blend(ch(hexA, 5), ch(hexB, 5)),
+  };
+}
+
 /** Darken a hex color by a percentage (0-1). Exported for launcher.ts's detected-selection-color gradient. */
 export function darkenHex(hex: string, amount: number): string {
   const r = Math.max(0, Math.round(parseInt(hex.slice(1, 3), 16) * (1 - amount)));
@@ -133,6 +156,10 @@ export function buildThemeColors(accent: string = DEFAULT_ACCENT, theme?: "light
       glassBgHeavy: "rgba(15, 23, 42, 0.88)",
       glassBorder: "rgba(51, 65, 85, 0.5)",
       glassBorderSubtle: "rgba(51, 65, 85, 0.3)",
+      // Layer surfaces — neutral until applyLayerColor derives the tinted set
+      layerBg: "rgba(15, 23, 42, 0.88)",
+      layerBgHeavy: "rgba(15, 23, 42, 0.94)",
+      layerBorder: "rgba(51, 65, 85, 0.5)",
       // Type colors stay vibrant on dark
       typeQuestion: "#60a5fa",
       typeChange: "#fbbf24",
@@ -176,6 +203,10 @@ export function buildThemeColors(accent: string = DEFAULT_ACCENT, theme?: "light
     glassBgHeavy: "rgba(255, 255, 255, 0.85)",
     glassBorder: "rgba(255, 255, 255, 0.35)",
     glassBorderSubtle: "rgba(255, 255, 255, 0.18)",
+    // Layer surfaces — neutral until applyLayerColor derives the tinted set
+    layerBg: "rgba(255, 255, 255, 0.9)",
+    layerBgHeavy: "rgba(255, 255, 255, 0.96)",
+    layerBorder: "#e2e8f0",
     // Vibrant type colors
     typeQuestion: "#3b82f6",
     typeChange: "#b45309",
@@ -239,6 +270,20 @@ export function applyLayerColor(colors: ThemeColors, hex: string, theme?: "light
   colors.selection = hex;
   colors.selectionLight = hex + lightAlpha;
   colors.selectionGlow = hex + glowAlpha;
+
+  // Layer SURFACES (the dynamic-palette rule extends to backgrounds, not
+  // just accents): tint the floating surfaces with the layer hue — a
+  // white-glass panel over a white host page is invisible as a layer — and
+  // give their edge a clearly layer-toned border. The tint is a blend
+  // toward the theme's base surface so text contrast is untouched.
+  const base = resolved === "dark" ? "#0f172a" : "#ffffff";
+  const tintRatio = resolved === "dark" ? 0.14 : 0.07;
+  const tint = mixHex(base, hex, tintRatio);
+  const surfaceAlpha = resolved === "dark" ? 0.9 : 0.9;
+  const heavyAlpha = resolved === "dark" ? 0.95 : 0.96;
+  colors.layerBg = `rgba(${tint.r}, ${tint.g}, ${tint.b}, ${surfaceAlpha})`;
+  colors.layerBgHeavy = `rgba(${tint.r}, ${tint.g}, ${tint.b}, ${heavyAlpha})`;
+  colors.layerBorder = `${hex}73`;
 }
 
 export function getTypeColor(type: string, colors: ThemeColors): string {
@@ -311,6 +356,9 @@ export function cssVariables(colors: ThemeColors): string {
     --sp-glass-bg-heavy: ${colors.glassBgHeavy};
     --sp-glass-border: ${colors.glassBorder};
     --sp-glass-border-subtle: ${colors.glassBorderSubtle};
+    --sp-layer-bg: ${colors.layerBg};
+    --sp-layer-bg-heavy: ${colors.layerBgHeavy};
+    --sp-layer-border: ${colors.layerBorder};
     --sp-type-question: ${colors.typeQuestion};
     --sp-type-change: ${colors.typeChange};
     --sp-type-bug: ${colors.typeBug};

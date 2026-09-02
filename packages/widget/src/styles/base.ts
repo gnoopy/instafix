@@ -376,6 +376,9 @@ export function buildStyles(colors: ThemeColors): string {
        Panel (Side drawer)
        ============================ */
 
+    /* Layer surface: tinted with the detected layer hue and edged with a
+       layer-toned border, so the panel never dissolves into a host page of
+       the same background color — the surface itself says "overlaid app". */
     .sp-panel {
       position: fixed;
       top: 0;
@@ -384,10 +387,10 @@ export function buildStyles(colors: ThemeColors): string {
       max-width: 100vw;
       height: 100vh;
       height: 100dvh;
-      background: var(--sp-glass-bg);
+      background: var(--sp-layer-bg, var(--sp-glass-bg));
       backdrop-filter: blur(var(--sp-blur-heavy));
       -webkit-backdrop-filter: blur(var(--sp-blur-heavy));
-      border-left: 1px solid var(--sp-glass-border);
+      border-left: 2px solid var(--sp-layer-border, var(--sp-glass-border));
       box-shadow: var(--sp-shadow-xl);
       display: flex;
       flex-direction: column;

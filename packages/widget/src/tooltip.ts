@@ -34,10 +34,10 @@ export class Tooltip {
         max-width: 280px;
         padding: 12px 14px;
         border-radius: 14px;
-        background: ${this.colors.glassBgHeavy};
+        background: ${this.colors.layerBgHeavy};
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
-        border: 1px solid ${this.colors.glassBorder};
+        border: 1px solid ${this.colors.layerBorder};
         box-shadow: 0 8px 32px ${this.colors.shadow}, 0 2px 8px ${this.colors.shadow};
         font-family: ${FONT_STACK};
         pointer-events: auto;
@@ -58,8 +58,8 @@ export class Tooltip {
         position: absolute;
         width: 12px;
         height: 12px;
-        background: ${this.colors.glassBgHeavy};
-        border: 1px solid ${this.colors.glassBorder};
+        background: ${this.colors.layerBgHeavy};
+        border: 1px solid ${this.colors.layerBorder};
         transform: rotate(45deg);
         pointer-events: none;
       `,

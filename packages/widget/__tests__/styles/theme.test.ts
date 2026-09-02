@@ -62,6 +62,30 @@ describe("applyLayerColor", () => {
     expect(colors.accentGlow).toBe("#b4530944");
   });
 
+  it("derives layer SURFACE tokens from the tone (tinted glass + toned edge), not just accents", () => {
+    const colors = buildThemeColors("#0066ff", "light");
+    const neutralBg = colors.layerBg;
+    applyLayerColor(colors, "#b45309", "light");
+
+    // Tinted toward the layer hue — no longer the neutral white glass.
+    expect(colors.layerBg).not.toBe(neutralBg);
+    expect(colors.layerBg).toMatch(/^rgba\(\d+, \d+, \d+, 0.9\)$/);
+    expect(colors.layerBgHeavy).toMatch(/^rgba\(\d+, \d+, \d+, 0.96\)$/);
+    // 7% blend of #b45309 into white: r=255-(255-180)*0.07≈250, stays warm.
+    const m = colors.layerBg.match(/rgba\((\d+), (\d+), (\d+)/);
+    const [r, g, b] = [Number(m![1]), Number(m![2]), Number(m![3])];
+    expect(r).toBeGreaterThan(g);
+    expect(g).toBeGreaterThan(b);
+    // Edge border is the layer tone at 45% alpha.
+    expect(colors.layerBorder).toBe("#b4530973");
+  });
+
+  it("seeds layer surface tokens neutral so no-detection behaves like today", () => {
+    const colors = buildThemeColors("#0066ff", "light");
+    expect(colors.layerBg).toBe("rgba(255, 255, 255, 0.9)");
+    expect(colors.layerBorder).toBe("#e2e8f0");
+  });
+
   it("leaves semantic data colors untouched (rule 3)", () => {
     const colors = buildThemeColors("#0066ff", "light");
     const typeBug = colors.typeBug;

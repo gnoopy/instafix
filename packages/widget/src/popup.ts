@@ -208,6 +208,9 @@ export class Popup {
     private readonly colors: ThemeColors,
     private readonly t: TFunction,
   ) {
+    // Layer surface (see ThemeColors.layerBg): hue-tinted background + a
+    // layer-toned edge, so the popover reads as InstaFix's own floating
+    // surface even over a host background of the same base color.
     this.root = el("div", {
       style: `
         position:fixed;
@@ -215,10 +218,10 @@ export class Popup {
         width:300px;
         padding:16px;
         border-radius:16px;
-        background:${this.colors.glassBg};
+        background:${this.colors.layerBg};
         backdrop-filter:blur(24px);
         -webkit-backdrop-filter:blur(24px);
-        border:1px solid ${this.colors.glassBorder};
+        border:2px solid ${this.colors.layerBorder};
         box-shadow:0 8px 32px ${this.colors.shadow}, 0 2px 8px ${this.colors.shadow};
         font-family:${FONT_STACK};
         opacity:0;

@@ -160,7 +160,7 @@ export class MultiTargetPreview {
       font-family:${FONT_STACK};
       font-size:11px;font-weight:600;
       border:1px solid ${this.colors.border};
-      background:${this.colors.glassBgHeavy};color:${this.colors.textTertiary};
+      background:${this.colors.layerBgHeavy};color:${this.colors.textTertiary};
       pointer-events:auto;cursor:pointer;white-space:nowrap;
     `;
     setText(toggle, this.t("annotator.targetPreviewAlwaysShow"));
@@ -177,7 +177,7 @@ export class MultiTargetPreview {
   private applyAlwaysShowToggleState(toggle: HTMLElement): void {
     toggle.style.color = this.alwaysShow ? this.colors.selection : this.colors.textTertiary;
     toggle.style.borderColor = this.alwaysShow ? this.colors.selection : this.colors.border;
-    toggle.style.background = this.alwaysShow ? this.colors.selectionLight : this.colors.glassBgHeavy;
+    toggle.style.background = this.alwaysShow ? this.colors.selectionLight : this.colors.layerBgHeavy;
   }
 
   /**
@@ -194,7 +194,7 @@ export class MultiTargetPreview {
         left:${anchorRect.left + window.scrollX}px;
         display:flex;border-radius:9999px;padding:2px;gap:2px;
         border:1px solid ${this.colors.border};
-        background:${this.colors.glassBgHeavy};
+        background:${this.colors.layerBgHeavy};
         pointer-events:auto;
       `,
     });

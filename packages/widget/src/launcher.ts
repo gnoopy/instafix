@@ -474,6 +474,9 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
       host.style.setProperty("--sp-selection-light", colors.selectionLight);
       host.style.setProperty("--sp-selection-glow", colors.selectionGlow);
       host.style.setProperty("--sp-selection-gradient", colors.accentGradient);
+      host.style.setProperty("--sp-layer-bg", colors.layerBg);
+      host.style.setProperty("--sp-layer-bg-heavy", colors.layerBgHeavy);
+      host.style.setProperty("--sp-layer-border", colors.layerBorder);
     });
   }
 
