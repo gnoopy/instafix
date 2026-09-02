@@ -58,6 +58,8 @@ const popupMocks = vi.hoisted(() => {
     toggleTargetSizeBeforeSubmit: null as "smallest" | "largest" | null,
     /** Entries from the last `setLegend(...)` call — empty array means "hidden". */
     lastLegend: [] as Array<{ number: number; label: string }>,
+    /** Getter from the last `setPromptContext(...)` call — null means "button hidden". */
+    lastPromptContext: null as (() => readonly unknown[]) | null,
   };
 });
 
@@ -110,6 +112,9 @@ vi.mock(new URL("../../src/popup.js", import.meta.url).pathname, () => ({
       }),
       setLegend: vi.fn().mockImplementation((entries: Array<{ number: number; label: string }>) => {
         popupMocks.lastLegend = entries;
+      }),
+      setPromptContext: vi.fn().mockImplementation((get: (() => readonly unknown[]) | null) => {
+        popupMocks.lastPromptContext = get;
       }),
       get isOpen() {
         return popupMocks.isOpenState;
@@ -200,6 +205,7 @@ describe("Annotator", () => {
     popupMocks.capturedTargetSizeOptions = undefined;
     popupMocks.toggleTargetSizeBeforeSubmit = null;
     popupMocks.lastLegend = [];
+    popupMocks.lastPromptContext = null;
     vi.mocked(findAnchorElement).mockReturnValue(document.body);
     vi.mocked(findLargestAncestor).mockReturnValue(document.body);
     screenshotMocks.captureAnnotatedScreenshot.mockReset();
@@ -1560,6 +1566,15 @@ describe("Annotator", () => {
         expect(rect.y).toBe(207);
         expect(rect.width).toBe(1);
         expect(rect.height).toBe(1);
+      });
+
+      it("hands the popup a live prompt context for the composer's copy button", async () => {
+        await annotator.startInstantAnnotation(100, 100);
+
+        expect(popupMocks.lastPromptContext).not.toBeNull();
+        const annotations = popupMocks.lastPromptContext!();
+        expect(annotations).toHaveLength(1);
+        expect((annotations[0] as { target: unknown }).target).toEqual({ kind: "element" });
       });
 
       it("records the annotation as the element's FULL bounds, never a click-point sub-rect", async () => {

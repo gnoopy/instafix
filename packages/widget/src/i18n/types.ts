@@ -79,6 +79,10 @@ export interface Translations {
   /** Shown when a previous draft is restored into the composer (G7). */
   "popup.draftRestored": string;
   "popup.discardDraft": string;
+  /** Composer's "copy the full context + note as an agent prompt" button. */
+  "popup.copyContext": string;
+  "popup.copyContextCopied": string;
+  "popup.copyContextFailed": string;
 
   // Identity modal
   "identity.title": string;

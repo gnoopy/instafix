@@ -513,9 +513,11 @@ export class Annotator {
     // Submission stays inside the popup so the user gets a visible spinner
     // until the server confirms — see finishDrawing for the rationale.
     const screenshotCache: { value?: AnnotatedScreenshot | null } = {};
-    const result = await this.popup.show(rectBounds, (formResult) =>
+    const keyboardShowPromise = this.popup.show(rectBounds, (formResult) =>
       this.runSubmission([annotation], formResult, rectBounds, screenshotCache),
     );
+    this.popup.setPromptContext(() => [annotation]);
+    const result = await keyboardShowPromise;
 
     this.drawingRect?.remove();
     this.drawingRect = null;
@@ -779,6 +781,9 @@ export class Annotator {
     // before returning the pending promise) — set the real legend on the
     // next line, after that reset, not before it.
     if (showPreview) this.popup.setLegend(this.legendEntriesFromAnnotations(allAnnotations));
+    // Getter, not a snapshot — `allAnnotations` is reassigned when the user
+    // flips the summary/detail resolution.
+    this.popup.setPromptContext(() => allAnnotations);
     const result = await resultPromise;
 
     preview?.destroy();
@@ -1007,7 +1012,7 @@ export class Annotator {
     this.overlay?.appendChild(this.drawingRect);
 
     const screenshotCache: { value?: AnnotatedScreenshot | null } = {};
-    await this.popup.show(
+    const instantShowPromise = this.popup.show(
       pointRect,
       (formResult) => this.runSubmission([annotation], formResult, captureRect, screenshotCache),
       hasSizeChoice
@@ -1034,6 +1039,10 @@ export class Annotator {
           }
         : undefined,
     );
+    // After show() (it resets the context to null synchronously); getter
+    // because `annotation` is reassigned by the Element/Container toggle.
+    this.popup.setPromptContext(() => [annotation]);
+    await instantShowPromise;
 
     // Instant flow: always deactivate on popup close — unlike the draw flow
     // where cancel keeps the session alive so the user can re-draw, there is

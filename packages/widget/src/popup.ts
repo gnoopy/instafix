@@ -1,4 +1,11 @@
-import type { FeedbackType } from "@instafix/core";
+import {
+  type AnnotationPayload,
+  type FeedbackResponse,
+  type FeedbackType,
+  flattenAnnotation,
+  formatFeedbacksForAgent,
+} from "@instafix/core";
+import { copyTextToClipboard, ICON_AGENT_COPY } from "./agent-copy.js";
 import { FONT_STACK, Z_INDEX_MAX } from "./constants.js";
 import { el, parseSvg, setText } from "./dom-utils.js";
 import { clearDraft, loadDraft, saveDraft } from "./draft-storage.js";
@@ -27,6 +34,53 @@ const TYPE_LABEL_KEYS: Record<FeedbackType, keyof Translations> = {
   bug: "type.bug",
   other: "type.other",
 };
+
+/**
+ * Format the IN-COMPOSITION feedback (targets already selected, note as
+ * typed so far) as the same agent-ready Markdown the panel's "Copy Prompt"
+ * produces for stored feedbacks — so the full context can go straight into
+ * a coding agent without submitting first. Synthesizes a draft
+ * `FeedbackResponse` because `formatFeedbacksForAgent` (core) is the single
+ * source of truth for the prompt format; screenshot/diagnostics are
+ * deliberately absent — both are only captured at submit time.
+ * Exported for direct unit testing.
+ */
+export function buildComposePrompt(
+  annotations: readonly AnnotationPayload[],
+  type: FeedbackType,
+  message: string,
+): string {
+  const now = new Date().toISOString();
+  const draft: FeedbackResponse = {
+    id: "draft",
+    projectName: "",
+    type,
+    message,
+    status: "open",
+    url: typeof location !== "undefined" ? location.href : "",
+    viewport: typeof window !== "undefined" ? `${window.innerWidth}x${window.innerHeight}` : "",
+    userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+    authorName: "",
+    authorEmail: "",
+    resolvedAt: null,
+    createdAt: now,
+    updatedAt: now,
+    urlPattern: null,
+    screenshotUrl: null,
+    screenshotRegion: null,
+    diagnostics: null,
+    annotations: annotations.map((ann, i) => ({
+      ...flattenAnnotation(ann),
+      elementId: ann.anchor.elementId ?? null,
+      anchorKey: ann.anchor.anchorKey ?? null,
+      target: ann.target ?? null,
+      id: `draft-${i + 1}`,
+      feedbackId: "draft",
+      createdAt: now,
+    })),
+  };
+  return formatFeedbacksForAgent([draft], { title: "UI change request" });
+}
 
 /**
  * Detect whether the host platform uses ⌘+Enter (macOS) vs Ctrl+Enter.
@@ -131,6 +185,13 @@ export class Popup {
   private legendRow: HTMLElement;
   private legendHeadingEl: HTMLElement;
   private legendListEl: HTMLElement;
+
+  // --- In-composer "copy prompt" (full context + note, agent-ready) ---
+  private readonly copyContextBtn: HTMLButtonElement;
+  private readonly copyContextLabel: HTMLSpanElement;
+  /** Live view of the current session's annotations — set via setPromptContext() by the annotator right after show(); null hides the button. */
+  private getPromptAnnotations: (() => readonly AnnotationPayload[]) | null = null;
+  private copyResetTimer: ReturnType<typeof setTimeout> | null = null;
 
   /**
    * True from `show()` until its promise settles — through typing, the
@@ -309,16 +370,18 @@ export class Popup {
     this.draftLabelEl = draftLabel;
     this.draftDiscardBtn = discardBtn;
 
-    // Textarea
+    // Textarea — auto-grows with content (72→152px, then scrolls), the
+    // modern composer behavior (Linear/Slack style); no manual resize
+    // handle, autogrowTextarea() owns the height.
     this.textarea = document.createElement("textarea");
     this.textarea.style.cssText = `
-      width:100%;min-height:72px;max-height:152px;
+      width:100%;min-height:72px;height:72px;
       padding:10px 12px;border-radius:12px;
       border:1px solid ${this.colors.border};
       background:${this.colors.glassBgHeavy};
       color:${this.colors.text};font-family:${FONT_STACK};
-      font-size:13px;line-height:1.5;resize:vertical;
-      outline:none;transition:all 0.2s ease;
+      font-size:13px;line-height:1.5;resize:none;overflow-y:auto;
+      outline:none;transition:border-color 0.2s ease,box-shadow 0.2s ease,background 0.2s ease;
       box-sizing:border-box;
     `;
     this.textarea.maxLength = 5000;
@@ -409,8 +472,40 @@ export class Popup {
       }
     });
 
-    // Button row
-    const btnRow = el("div", { style: "display:flex;justify-content:flex-end;gap:8px;margin-top:12px;" });
+    // Button row — copy-prompt on the left, cancel/submit on the right.
+    const btnRow = el("div", {
+      style: "display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;",
+    });
+
+    // "Copy prompt" — the exact context an agent needs (page, viewport,
+    // selectors, bounds, the note as typed) without submitting first.
+    // Instant copy + transient ✓ state, no modal — the composer is the
+    // wrong place for a preview dialog (the panel's copy button has one).
+    this.copyContextBtn = document.createElement("button");
+    this.copyContextBtn.type = "button";
+    this.copyContextBtn.style.cssText = `
+      height:34px;padding:0 12px;border-radius:9999px;
+      border:1px solid ${this.colors.border};
+      background:transparent;
+      color:${this.colors.textTertiary};font-family:${FONT_STACK};
+      font-size:12px;font-weight:500;cursor:pointer;
+      display:none;align-items:center;gap:5px;
+      transition:all 0.2s ease;white-space:nowrap;
+    `;
+    const copyIcon = parseSvg(ICON_AGENT_COPY);
+    copyIcon.setAttribute("style", "width:13px;height:13px;flex-shrink:0;");
+    this.copyContextBtn.appendChild(copyIcon);
+    this.copyContextLabel = document.createElement("span");
+    this.copyContextBtn.appendChild(this.copyContextLabel);
+    this.copyContextBtn.addEventListener("click", () => void this.copyComposeContext());
+    this.copyContextBtn.addEventListener("mouseenter", () => {
+      this.copyContextBtn.style.borderColor = this.colors.accent;
+      this.copyContextBtn.style.color = this.colors.accent;
+    });
+    this.copyContextBtn.addEventListener("mouseleave", () => {
+      this.copyContextBtn.style.borderColor = this.colors.border;
+      this.copyContextBtn.style.color = this.colors.textTertiary;
+    });
 
     this.cancelBtn = document.createElement("button");
     this.cancelBtn.style.cssText = `
@@ -451,8 +546,12 @@ export class Popup {
     this.submitBtn.appendChild(this.submitLabel);
     this.submitBtn.addEventListener("click", () => this.submit());
 
-    btnRow.appendChild(this.cancelBtn);
-    btnRow.appendChild(this.submitBtn);
+    btnRow.appendChild(this.copyContextBtn);
+    // Right-aligned even while the copy button is hidden (display:none).
+    const rightBtns = el("div", { style: "display:flex;gap:8px;margin-left:auto;" });
+    rightBtns.appendChild(this.cancelBtn);
+    rightBtns.appendChild(this.submitBtn);
+    btnRow.appendChild(rightBtns);
 
     this.root.appendChild(this.targetSizeRow);
     this.root.appendChild(this.typeRow);
@@ -525,6 +624,47 @@ export class Popup {
     );
 
     setText(this.legendHeadingEl, this.t("popup.legendLabel"));
+
+    setText(this.copyContextLabel, this.t("popup.copyContext"));
+    this.copyContextBtn.setAttribute("aria-label", this.t("popup.copyContext"));
+  }
+
+  /**
+   * Give the composer a live view of the current session's annotations so
+   * its "copy prompt" button can format them on demand — a GETTER (not a
+   * snapshot) because the annotator reassigns the list when the user flips
+   * the Element/Container or summary/detail toggles. Called by the annotator
+   * right after `show()` (which resets it to null); null hides the button.
+   */
+  setPromptContext(getAnnotations: (() => readonly AnnotationPayload[]) | null): void {
+    this.getPromptAnnotations = getAnnotations;
+    this.copyContextBtn.style.display = getAnnotations ? "inline-flex" : "none";
+  }
+
+  /** Instant-copy the in-composition context+note as agent Markdown — transient ✓/✗ label, no modal. */
+  private async copyComposeContext(): Promise<void> {
+    const getAnnotations = this.getPromptAnnotations;
+    if (!getAnnotations || this.copyResetTimer) return; // mid ✓/✗ flash — ignore spam clicks
+
+    const markdown = buildComposePrompt(getAnnotations(), this.selectedType ?? "other", this.textarea.value.trim());
+    const ok = await copyTextToClipboard(markdown);
+
+    setText(this.copyContextLabel, this.t(ok ? "popup.copyContextCopied" : "popup.copyContextFailed"));
+    this.copyContextBtn.style.borderColor = ok ? "#22c55e" : "#ef4444";
+    this.copyContextBtn.style.color = ok ? "#22c55e" : "#ef4444";
+    this.copyResetTimer = setTimeout(() => {
+      this.copyResetTimer = null;
+      setText(this.copyContextLabel, this.t("popup.copyContext"));
+      this.copyContextBtn.style.borderColor = this.colors.border;
+      this.copyContextBtn.style.color = this.colors.textTertiary;
+    }, 1600);
+  }
+
+  /** Auto-grow the note textarea with its content: 72px floor, 152px cap (then it scrolls). */
+  private autogrowTextarea(): void {
+    const ta = this.textarea;
+    ta.style.height = "auto";
+    ta.style.height = `${Math.min(Math.max(ta.scrollHeight, 72), 152)}px`;
   }
 
   /**
@@ -787,6 +927,7 @@ export class Popup {
       this.resetTypeButtons();
       this.hideDraftBanner();
       this.setLegend([]);
+      this.setPromptContext(null);
 
       this.targetSizeOnChange = targetSizeOptions?.onChange ?? null;
       this.targetSizeChoice = targetSizeOptions?.initial ?? "smallest";
@@ -891,6 +1032,10 @@ export class Popup {
   }
 
   private updateSubmitState(): void {
+    // Every path that changes the note's value runs through here (typing,
+    // draft restore, voice transcript, discard) — the one hook point where
+    // the auto-grow can't be forgotten.
+    this.autogrowTextarea();
     if (this.submittingState) return;
     const enabled = this.selectedType !== null && this.textarea.value.trim().length > 0;
     this.submitBtn.disabled = !enabled;
@@ -1085,6 +1230,10 @@ export class Popup {
     if (this.draftSaveTimer) {
       clearTimeout(this.draftSaveTimer);
       this.draftSaveTimer = null;
+    }
+    if (this.copyResetTimer) {
+      clearTimeout(this.copyResetTimer);
+      this.copyResetTimer = null;
     }
     if (this.submittingState) this.exitSubmittingState();
     this.resolve?.(null);

@@ -77,6 +77,9 @@ export const ru: Translations = {
   "popup.submit": "Отправить",
   "popup.draftRestored": "Черновик восстановлен",
   "popup.discardDraft": "Отклонить",
+  "popup.copyContext": "Копировать промпт",
+  "popup.copyContextCopied": "Скопировано",
+  "popup.copyContextFailed": "Не удалось скопировать",
 
   // Identity modal
   "identity.title": "Представьтесь",

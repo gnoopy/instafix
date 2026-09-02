@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 
+import type { AnnotationPayload } from "@instafix/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createT, type TFunction, type Translations } from "../../src/i18n/index.js";
-import { Popup } from "../../src/popup.js";
+import { buildComposePrompt, Popup } from "../../src/popup.js";
 import { buildThemeColors } from "../../src/styles/theme.js";
 
 // jsdom does not implement window.matchMedia — provide a stub
@@ -40,6 +41,29 @@ function makeBounds(overrides: Partial<DOMRect> = {}): DOMRect {
     toJSON: () => {},
     ...overrides,
   } as DOMRect;
+}
+
+function makeAnnotationPayload(overrides: Partial<AnnotationPayload> = {}): AnnotationPayload {
+  return {
+    anchor: {
+      cssSelector: "button.save-btn",
+      xpath: "/html/body/button",
+      textSnippet: "Save changes",
+      elementTag: "BUTTON",
+      textPrefix: "",
+      textSuffix: "",
+      fingerprint: "0:0:0",
+      neighborText: "",
+    },
+    rect: { xPct: 0, yPct: 0, wPct: 1, hPct: 1 },
+    scrollX: 0,
+    scrollY: 0,
+    viewportW: 1024,
+    viewportH: 768,
+    devicePixelRatio: 1,
+    target: { kind: "element" },
+    ...overrides,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -212,6 +236,68 @@ describe("Popup", () => {
 
       const result = await promise;
       expect(result).toBeNull();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Compose-context copy ("copy prompt" from the composer) + auto-grow
+  // -------------------------------------------------------------------------
+
+  describe("compose prompt copy", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("buildComposePrompt renders the note, selectors and bounds as agent Markdown", () => {
+      const md = buildComposePrompt([makeAnnotationPayload()], "bug", "The save button does nothing");
+      expect(md).toContain("# UI change request");
+      expect(md).toContain("> The save button does nothing");
+      expect(md).toContain("button.save-btn");
+      expect(md).toContain("Bounds:");
+      expect(md).toContain("Page:");
+    });
+
+    it("the copy button is hidden after show() until the annotator provides a context", () => {
+      popup.show(makeBounds());
+      const btn = document.querySelector<HTMLButtonElement>(`[aria-label="${t("popup.copyContext")}"]`)!;
+      expect(btn.style.display).toBe("none");
+
+      popup.setPromptContext(() => [makeAnnotationPayload()]);
+      expect(btn.style.display).toBe("inline-flex");
+    });
+
+    it("clicking it copies the current context + note and flashes the copied state", async () => {
+      Object.defineProperty(window, "isSecureContext", { value: true, configurable: true });
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+
+      popup.show(makeBounds());
+      popup.setPromptContext(() => [makeAnnotationPayload()]);
+
+      const textarea = document.querySelector<HTMLTextAreaElement>("textarea")!;
+      textarea.value = "half-typed note";
+
+      const btn = document.querySelector<HTMLButtonElement>(`[aria-label="${t("popup.copyContext")}"]`)!;
+      btn.click();
+      await vi.waitFor(() => {
+        expect(writeText).toHaveBeenCalledOnce();
+      });
+
+      const copied = writeText.mock.calls[0]![0] as string;
+      expect(copied).toContain("half-typed note");
+      expect(copied).toContain("button.save-btn");
+      // The ✓ label lands after the clipboard promise resolves.
+      await vi.waitFor(() => {
+        expect(btn.textContent).toContain(t("popup.copyContextCopied"));
+      });
+    });
+
+    it("auto-grows the textarea on input (72px floor in jsdom's zero-scrollHeight world)", () => {
+      popup.show(makeBounds());
+      const textarea = document.querySelector<HTMLTextAreaElement>("textarea")!;
+      textarea.value = "line1\nline2\nline3";
+      textarea.dispatchEvent(new Event("input"));
+      expect(textarea.style.height).toBe("72px");
     });
   });
 

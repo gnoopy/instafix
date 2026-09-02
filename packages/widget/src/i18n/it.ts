@@ -79,6 +79,9 @@ export const it: Translations = {
   "popup.submit": "Invia",
   "popup.draftRestored": "Bozza ripristinata",
   "popup.discardDraft": "Scarta",
+  "popup.copyContext": "Copia prompt",
+  "popup.copyContextCopied": "Copiato",
+  "popup.copyContextFailed": "Copia non riuscita",
 
   // Identity modal
   "identity.title": "Identificati",

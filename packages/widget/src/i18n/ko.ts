@@ -76,6 +76,9 @@ export const ko: Translations = {
   "popup.submit": "보내기",
   "popup.draftRestored": "임시 저장된 내용을 복원했습니다",
   "popup.discardDraft": "삭제",
+  "popup.copyContext": "프롬프트 복사",
+  "popup.copyContextCopied": "복사됨",
+  "popup.copyContextFailed": "복사 실패",
 
   // Identity modal
   "identity.title": "본인 확인",
