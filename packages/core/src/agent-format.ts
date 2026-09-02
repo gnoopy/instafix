@@ -208,12 +208,13 @@ function diagnosticsLines(fb: FeedbackResponse): string[] {
   return lines;
 }
 
-function itemHeading(fb: FeedbackResponse, index: number): string {
+function itemHeading(fb: FeedbackResponse, index: number, includeIds: boolean): string {
   const ann = fb.annotations[0];
   const snippet = ann?.textSnippet.trim();
   const short = snippet ? truncate(snippet, 40) : (ann?.elementTag.toLowerCase() ?? fb.type);
   const suffix = fb.annotations.length > 1 ? ` (+${fb.annotations.length - 1} more)` : "";
-  return `${index}. ${short}${suffix}`;
+  const idTag = includeIds ? `  (ID: ${quotedLabel(fb.id, 60)})` : "";
+  return `${index}. ${short}${suffix}${idTag}`;
 }
 
 /** Instructions rendered at the top of the document, before any item. */
@@ -222,6 +223,14 @@ export interface AgentMarkdownOptions {
   title?: string;
   /** Bullet list of instructions for the agent — sensible default provided. */
   instructions?: string[];
+  /**
+   * Whether each item heading carries its feedback ID and the document ends
+   * with close-the-loop instructions (how the agent marks items resolved).
+   * Default `true` — the whole point of handing IDs to an agent is that it
+   * can close its own inbox. Set `false` for drafts that have no real ID
+   * yet (the composer's in-flight copy).
+   */
+  includeResolveProtocol?: boolean;
 }
 
 const DEFAULT_INSTRUCTIONS = [
@@ -240,6 +249,7 @@ const DEFAULT_INSTRUCTIONS = [
 export function formatFeedbacksForAgent(feedbacks: FeedbackResponse[], options: AgentMarkdownOptions = {}): string {
   const title = options.title ?? "UI change requests";
   const instructions = options.instructions ?? DEFAULT_INSTRUCTIONS;
+  const includeResolveProtocol = options.includeResolveProtocol !== false;
   const items = feedbacks.slice(0, MAX_ITEMS);
 
   const lines: string[] = [`# ${title}`, ""];
@@ -262,7 +272,7 @@ export function formatFeedbacksForAgent(feedbacks: FeedbackResponse[], options: 
   }
 
   items.forEach((fb, i) => {
-    lines.push(`## ${itemHeading(fb, i + 1)}`);
+    lines.push(`## ${itemHeading(fb, i + 1, includeResolveProtocol)}`);
     if (!sharedPage) {
       lines.push(`Page: ${pageUrl(fb)}`);
       const vp = viewportLabel(fb);
@@ -288,6 +298,21 @@ export function formatFeedbacksForAgent(feedbacks: FeedbackResponse[], options: 
 
   if (feedbacks.length > MAX_ITEMS) {
     lines.push(`(${feedbacks.length - MAX_ITEMS} more item(s) omitted — copy a smaller selection)`);
+    lines.push("");
+  }
+
+  // Close the loop: an agent that fixed an item can mark it resolved itself,
+  // so the human's inbox empties without manual bookkeeping.
+  if (includeResolveProtocol && items.length > 0) {
+    lines.push("---");
+    lines.push("When a request is FIXED and verified, close it by its ID:");
+    // Indented code block, not a fenced one — the escaping invariant of this
+    // document is "no bare fence lines ever appear in the output", which is
+    // what keeps hostile message content from faking document structure.
+    lines.push("");
+    lines.push("    npx @instafix/cli resolve <ID>");
+    lines.push("");
+    lines.push('(or PATCH the feedback API for that ID with {"status":"resolved"})');
     lines.push("");
   }
 

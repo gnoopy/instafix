@@ -105,6 +105,14 @@ export interface InstaFixBaseConfig {
    */
   autoSelectionColor?: boolean | undefined;
   /**
+   * Project-specific instructions injected at the top of every agent prompt
+   * the widget generates (panel "Copy Prompt", composer copy) — e.g.
+   * `["Use shadcn tokens only", "Run vitest after each change"]`. Replaces
+   * the built-in default instruction bullets when set, so a copied prompt
+   * already knows this project's conventions.
+   */
+  agentInstructions?: string[] | undefined;
+  /**
    * Render the widget even when it would normally be skipped — this bypasses
    * BOTH the production-environment guard AND the mobile-viewport guard.
    * It does NOT bypass the SSR guard: without `window`/`document` the widget

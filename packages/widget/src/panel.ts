@@ -16,6 +16,7 @@ import { el, formatRelativeDate, parseSvg, setButtonLoading, setText } from "./d
 import type { EventBus, WidgetEvents } from "./events.js";
 import { ExportButton } from "./export-utils.js";
 import { isWidgetChrome } from "./focus-tracker.js";
+import { getHandedOffAt, markHandedOff } from "./handoff-storage.js";
 import { getStatusLabel, getTypeLabel, type TFunction, tWithParams } from "./i18n/index.js";
 import {
   ICON_BUG,
@@ -36,6 +37,7 @@ import { BulkActions } from "./panel-bulk.js";
 import { DetailView } from "./panel-detail.js";
 import { createPageGroupHeader, groupFeedbacksByPage, PanelSortControls, sortFeedbacks } from "./panel-sort.js";
 import { PanelStats } from "./panel-stats.js";
+import { savePersistedSettings } from "./settings-storage.js";
 import { SettingsView } from "./settings-view.js";
 import { focusCardByIndex, getFocusedCardIndex, KeyboardShortcuts } from "./shortcuts.js";
 import { getStatusBgColor, getStatusColor, getTypeBgColor, getTypeColor, type ThemeColors } from "./styles/theme.js";
@@ -156,6 +158,19 @@ export class Panel {
       {
         getFeedbacks: () => this.getFeedbacksForAgentCopy(),
         getContainer: () => this.shadowRoot,
+        // The copy's coverage, spelled out in the preview — selected items
+        // when a bulk selection is active, open-on-this-page otherwise.
+        getScopeLabel: () =>
+          this.bulk.hasSelection
+            ? tWithParams(this.t, "agent.scopeSelected", { count: this.bulk.selectedIds.length })
+            : this.t("agent.scopeOpenPage"),
+        instructions: this.settingsOptions?.config.agentInstructions,
+        // Successful copy = these items are now "in an agent's hands" —
+        // badge them so nobody hands the same item off twice by accident.
+        onCopied: (ids) => {
+          markHandedOff(ids);
+          this.renderList();
+        },
       },
       this.t,
     );
@@ -178,7 +193,13 @@ export class Panel {
     // tests constructing Panel directly, in which case the "설정" row is
     // simply not rendered).
     this.settings = this.settingsOptions
-      ? new SettingsView(this.t, this.settingsOptions.config, (patch) => this.settingsOptions?.onUpdateConfig(patch))
+      ? new SettingsView(this.t, this.settingsOptions.config, (patch) => {
+          // Global scope, not per-page: a visitor's theme/locale/position/etc.
+          // choice should hold across reloads and other pages of the host app,
+          // not just for the remainder of this mount (see settings-storage.ts).
+          savePersistedSettings(patch);
+          this.settingsOptions?.onUpdateConfig(patch);
+        })
       : null;
 
     // Secondary actions get their own row and wrap freely — safe to keep
@@ -291,6 +312,21 @@ export class Panel {
             this.markers.pinHighlight(fb);
           }
         },
+        // Only offered when the client can reach a server outbox (HTTP mode
+        // with @instafix/adapter-fs) — client-side stores have no terminal
+        // on the other end.
+        ...(this.client.handoffFeedback
+          ? {
+              onHandoff: async (fb: FeedbackResponse) => {
+                const ok = (await this.client.handoffFeedback?.(fb.id)) ?? false;
+                if (ok) {
+                  markHandedOff([fb.id]);
+                  this.renderList();
+                }
+                return ok;
+              },
+            }
+          : {}),
         onEditMessage: async (fb, message) => {
           try {
             const updated = await this.client.updateFeedbackMessage(fb.id, fb.status, message);
@@ -595,6 +631,7 @@ export class Panel {
 
   close(): void {
     if (!this.isOpen) return;
+    this.flushPendingDeletes();
     this.isOpen = false;
     this.root.classList.remove("sp-panel--open");
     this.root.setAttribute("aria-hidden", "true");
@@ -910,6 +947,17 @@ export class Panel {
     header.appendChild(num);
     header.appendChild(badge);
     header.appendChild(statusBadge);
+
+    // "이미 에이전트에 넘긴 항목" 표시 — 같은 건을 두 번 발주하는 사고와
+    // "이거 보냈던가?" 하는 기억 의존을 없앤다 (handoff-storage.ts).
+    const handedOffAt = getHandedOffAt(feedback.id);
+    if (handedOffAt) {
+      const handed = el("span", { class: "sp-card-handed" });
+      setText(handed, `⇥ ${this.t("agent.handedOff")} · ${formatRelativeDate(handedOffAt, this.locale)}`);
+      handed.title = this.t("agent.handedOffTitle");
+      header.appendChild(handed);
+    }
+
     header.appendChild(date);
 
     // Message
@@ -1119,27 +1167,100 @@ export class Panel {
     });
   }
 
-  private async deleteFeedback(feedback: FeedbackResponse, btn: HTMLButtonElement): Promise<void> {
-    // G7 "확인 절차" — see bulkDelete's comment. Confirmation happens before
-    // the button ever enters a loading state, so cancelling is a no-op.
-    const confirmed = await this.showConfirmDialog(
-      this.t("panel.deleteConfirmTitle"),
-      this.t("panel.deleteConfirmMessage"),
-    );
-    if (!confirmed) return;
-
+  /**
+   * Single-card delete: optimistic hide + a 5-second UNDO toast instead of a
+   * confirm dialog — faster than a dialog for the common case, and safer:
+   * a mis-click is reversible for 5s rather than guarded by a prompt people
+   * click through on autopilot. The actual API delete only fires when the
+   * grace period lapses; UNDO cancels it and the card reappears. Bulk
+   * delete and delete-all keep their dialogs (multi-item destruction still
+   * deserves a deliberate stop).
+   */
+  private async deleteFeedback(feedback: FeedbackResponse, _btn: HTMLButtonElement): Promise<void> {
+    if (this.pendingDeletes.has(feedback.id)) return;
     this.pendingMutations.add(feedback.id);
-    const restore = setButtonLoading(btn);
-    try {
-      await this.client.deleteFeedback(feedback.id);
-      this.bus.emit("feedback:deleted", feedback.id);
-      await this.loadFeedbacks();
-    } catch (error) {
-      restore();
-      this.bus.emit("feedback:error", error instanceof Error ? error : new Error(String(error)));
-    } finally {
-      this.pendingMutations.delete(feedback.id);
+
+    const card = this.listContainer.querySelector<HTMLElement>(`[data-feedback-id="${CSS.escape(feedback.id)}"]`);
+    if (card) card.style.display = "none";
+
+    const timer = setTimeout(() => {
+      this.pendingDeletes.delete(feedback.id);
+      this.hideUndoToast();
+      this.client
+        .deleteFeedback(feedback.id)
+        .then(() => {
+          this.bus.emit("feedback:deleted", feedback.id);
+          return this.loadFeedbacks();
+        })
+        .catch((error) => {
+          if (card) card.style.display = "";
+          this.bus.emit("feedback:error", error instanceof Error ? error : new Error(String(error)));
+        })
+        .finally(() => {
+          this.pendingMutations.delete(feedback.id);
+        });
+    }, 5000);
+
+    this.pendingDeletes.set(feedback.id, {
+      timer,
+      undo: () => {
+        clearTimeout(timer);
+        this.pendingDeletes.delete(feedback.id);
+        this.pendingMutations.delete(feedback.id);
+        if (card) card.style.display = "";
+      },
+    });
+    this.showUndoToast();
+  }
+
+  /** Deferred single-card deletes still inside their UNDO window. */
+  private pendingDeletes = new Map<string, { timer: ReturnType<typeof setTimeout>; undo: () => void }>();
+  private undoToast: HTMLElement | null = null;
+
+  private showUndoToast(): void {
+    this.hideUndoToast();
+    const toast = el("div", { class: "sp-undo-toast" });
+    const label = el("span");
+    setText(label, this.t("panel.deletedToast"));
+    const undoBtn = document.createElement("button");
+    undoBtn.className = "sp-undo-toast-btn";
+    setText(undoBtn, this.t("panel.deleteUndo"));
+    undoBtn.addEventListener("click", () => {
+      // Undo the most recent pending delete — the one this toast announced.
+      const last = [...this.pendingDeletes.values()].pop();
+      last?.undo();
+      this.hideUndoToast();
+    });
+    toast.appendChild(label);
+    toast.appendChild(undoBtn);
+    this.root.appendChild(toast);
+    this.undoToast = toast;
+  }
+
+  private hideUndoToast(): void {
+    this.undoToast?.remove();
+    this.undoToast = null;
+  }
+
+  /**
+   * Flush every delete still inside its UNDO window — called on panel close
+   * and destroy, so a deferred delete can never be silently lost when the
+   * UI goes away before its 5 seconds are up.
+   */
+  private flushPendingDeletes(): void {
+    for (const [id, pending] of this.pendingDeletes) {
+      clearTimeout(pending.timer);
+      // Promise.resolve wrapper: this runs during teardown — even a client
+      // that throws synchronously or returns a non-promise must not be able
+      // to break destroy() halfway.
+      Promise.resolve()
+        .then(() => this.client.deleteFeedback(id))
+        .then(() => this.bus.emit("feedback:deleted", id))
+        .catch(() => {});
+      this.pendingMutations.delete(id);
     }
+    this.pendingDeletes.clear();
+    this.hideUndoToast();
   }
 
   private async toggleResolve(feedback: FeedbackResponse, btn: HTMLButtonElement): Promise<void> {
@@ -1468,6 +1589,7 @@ export class Panel {
   }
 
   destroy(): void {
+    this.flushPendingDeletes();
     this.loadController?.abort();
     if (this.searchTimeout) clearTimeout(this.searchTimeout);
     this.listContainer.removeEventListener("click", this.onListClick);

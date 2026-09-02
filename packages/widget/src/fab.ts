@@ -103,6 +103,8 @@ export class Fab {
   private targetingActive = false;
   private readonly unsubTargetingStart: () => void;
   private readonly unsubTargetingEnd: () => void;
+  private readonly unsubAnnotationStart: () => void;
+  private readonly unsubAnnotationEnd: () => void;
   /** Whether the feedback panel (right sidebar) is open — it covers the toolbar, so the discovery shine is pointless (and distracting at the panel's edge) while it is. */
   private panelOpen = false;
   private readonly unsubPanelOpen: () => void;
@@ -150,6 +152,8 @@ export class Fab {
     // session ended via Escape, a successful lock, or the button itself.
     this.unsubTargetingStart = this.bus.on("targeting:start", () => this.setTargetingActive(true));
     this.unsubTargetingEnd = this.bus.on("targeting:end", () => this.setTargetingActive(false));
+    this.unsubAnnotationStart = this.bus.on("annotation:start", () => this.setAnnotateActive(true));
+    this.unsubAnnotationEnd = this.bus.on("annotation:end", () => this.setAnnotateActive(false));
 
     // The panel covers the toolbar while open — pause the discovery shine
     // for that window and pick it back up once the toolbar is visible again.
@@ -217,8 +221,9 @@ export class Fab {
     // Bind every `t()`-derived string into the freshly-built DOM. Kept as a
     // single pass so the constructor and `refreshLabels()` never drift.
     this.applyLabels();
-    // Explicit initial aria-pressed — the button starts inactive.
+    // Explicit initial aria-pressed — the buttons start inactive.
     this.setTargetingActive(false);
+    this.setAnnotateActive(false);
 
     // Global Alt+Shift+<letter> shortcuts — one per toolbar item, advertised
     // in each tooltip's key chip. Document-level so they work without the
@@ -555,6 +560,13 @@ export class Fab {
     btn?.classList.toggle("sp-toolbar-item--active", active);
   }
 
+  /** Same bus-driven pattern as setTargetingActive — the annotate button reflects a live drawing session regardless of which entry path started/ended it. */
+  private setAnnotateActive(active: boolean): void {
+    const btn = this.toolbar.querySelector<HTMLButtonElement>('[data-item-id="annotate"]');
+    btn?.setAttribute("aria-pressed", String(active));
+    btn?.classList.toggle("sp-toolbar-item--active", active);
+  }
+
   destroy(): void {
     window.removeEventListener("scroll", this.onWindowChange);
     window.removeEventListener("resize", this.onWindowChange);
@@ -562,6 +574,8 @@ export class Fab {
     this.stopShineSchedule();
     this.unsubTargetingStart();
     this.unsubTargetingEnd();
+    this.unsubAnnotationStart();
+    this.unsubAnnotationEnd();
     this.unsubPanelOpen();
     this.unsubPanelClose();
     document.removeEventListener("keydown", this.onGlobalKeydown);

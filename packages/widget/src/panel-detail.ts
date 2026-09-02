@@ -489,6 +489,56 @@ export const DETAIL_CSS = /* css */ `
     background: var(--sp-glass-bg-heavy);
   }
 
+  /* ---- 수정 검증 (verify-fix) row under a closed feedback's screenshot ---- */
+
+  .sp-detail-verify-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .sp-detail-verify-label {
+    font-size: 11px;
+    color: var(--sp-text-tertiary);
+    margin-right: auto;
+  }
+
+  .sp-detail-verify-btn {
+    height: 28px;
+    padding: 0 12px;
+    border-radius: var(--sp-radius-full);
+    border: 1px solid var(--sp-border);
+    background: var(--sp-glass-bg);
+    color: var(--sp-text-secondary);
+    font-family: var(--sp-font);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .sp-detail-verify-btn:hover {
+    border-color: var(--sp-accent);
+    color: var(--sp-accent);
+  }
+
+  .sp-detail-verify-btn--keep {
+    border-color: rgba(46, 125, 70, 0.4);
+    color: #2e7d46;
+  }
+
+  .sp-detail-verify-btn--reopen {
+    border-color: rgba(179, 38, 30, 0.35);
+    color: #b3261e;
+  }
+
+  .sp-detail-verify-btn:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
   /* ---- Metadata Section ---- */
 
   .sp-detail-meta {
@@ -1039,6 +1089,8 @@ export interface DetailCallbacks {
   /** Re-point an unresolved/ambiguous target at a freshly picked element (G7 "재연결"). Replaces the whole target set. */
   onReconnect: (feedback: FeedbackResponse, annotations: AnnotationPayload[]) => Promise<void>;
   onGoToAnnotation: (feedback: FeedbackResponse) => void;
+  /** Drop this feedback's agent prompt into the server outbox ("Agent에게" handoff). Absent when the backend has no outbox — the button doesn't render then. */
+  onHandoff?: (feedback: FeedbackResponse) => Promise<boolean>;
 }
 
 // ---------------------------------------------------------------------------
@@ -1173,6 +1225,46 @@ export class DetailView {
       // operators view which feedbacks.
       img.referrerPolicy = "no-referrer";
       screenshotSection.appendChild(img);
+
+      // 수정 검증 (G-v3): a CLOSED feedback with a capture gets a 10-second
+      // human check — "그때 스크린샷" above, one click to the live view, and
+      // an approve/reopen verdict. The verdict buttons reuse onResolve's
+      // binary toggle (closed → reopen).
+      if (isClosedStatus(feedback.status)) {
+        const verifyRow = el("div", { class: "sp-detail-verify-row" });
+
+        const thenLabel = el("span", { class: "sp-detail-verify-label" });
+        setText(thenLabel, this.t("detail.verifyThen"));
+        verifyRow.appendChild(thenLabel);
+
+        const goLiveBtn = document.createElement("button");
+        goLiveBtn.className = "sp-detail-verify-btn";
+        setText(goLiveBtn, this.t("detail.verifyNow"));
+        goLiveBtn.addEventListener("click", () => this.callbacks.onGoToAnnotation(feedback));
+        verifyRow.appendChild(goLiveBtn);
+
+        const keepBtn = document.createElement("button");
+        keepBtn.className = "sp-detail-verify-btn sp-detail-verify-btn--keep";
+        setText(keepBtn, this.t("detail.verifyKeepResolved"));
+        keepBtn.addEventListener("click", () => {
+          verifyRow.remove(); // verdict given — nothing left to ask
+        });
+        verifyRow.appendChild(keepBtn);
+
+        const reopenBtn = document.createElement("button");
+        reopenBtn.className = "sp-detail-verify-btn sp-detail-verify-btn--reopen";
+        setText(reopenBtn, this.t("detail.verifyReopen"));
+        reopenBtn.addEventListener("click", () => {
+          reopenBtn.disabled = true;
+          this.callbacks.onResolve(feedback).catch(() => {
+            reopenBtn.disabled = false;
+          });
+        });
+        verifyRow.appendChild(reopenBtn);
+
+        screenshotSection.appendChild(verifyRow);
+      }
+
       this.content.appendChild(screenshotSection);
     }
 
@@ -1332,6 +1424,28 @@ export class DetailView {
     actions.appendChild(this.deleteBtn);
     container.appendChild(actions);
     container.appendChild(this.agentCopyBtn.element);
+
+    // "Agent에게" — one click drops this feedback's prompt into the server's
+    // outbox for `instafix watch` to deliver into the developer's RUNNING
+    // Claude Code session (mode B handoff). Only rendered when the backend
+    // path exists (HTTP client + adapter-fs); on a 404/failed handoff the
+    // button reports it inline instead of pretending.
+    if (this.callbacks.onHandoff) {
+      const handoffBtn = document.createElement("button");
+      handoffBtn.type = "button";
+      handoffBtn.className = "sp-agent-btn sp-agent-btn--detail";
+      const handoffLabel = document.createElement("span");
+      setText(handoffLabel, `⇥ ${this.t("agent.sendToAgent")}`);
+      handoffBtn.appendChild(handoffLabel);
+      handoffBtn.addEventListener("click", async () => {
+        handoffBtn.disabled = true;
+        const ok = await this.callbacks.onHandoff?.(feedback);
+        handoffBtn.disabled = false;
+        setText(handoffLabel, ok ? `✓ ${this.t("agent.handedOff")}` : this.t("agent.sendToAgentFailed"));
+        setTimeout(() => setText(handoffLabel, `⇥ ${this.t("agent.sendToAgent")}`), 2000);
+      });
+      container.appendChild(handoffBtn);
+    }
   }
 
   /**

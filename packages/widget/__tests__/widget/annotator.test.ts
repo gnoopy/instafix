@@ -116,6 +116,13 @@ vi.mock(new URL("../../src/popup.js", import.meta.url).pathname, () => ({
       setPromptContext: vi.fn().mockImplementation((get: (() => readonly unknown[]) | null) => {
         popupMocks.lastPromptContext = get;
       }),
+      setSourceHint: vi.fn(),
+      cancelOpen: vi.fn().mockImplementation(() => {
+        popupMocks.isOpenState = false;
+      }),
+      get pastedScreenshotDataUrl() {
+        return null;
+      },
       get isOpen() {
         return popupMocks.isOpenState;
       },
@@ -888,6 +895,10 @@ describe("Annotator", () => {
         expect(highlight!.style.width).toBe("100px");
         expect(highlight!.style.height).toBe("40px");
 
+        // First Escape closes the OPEN COMPOSER (cancelOpen) and leaves the
+        // session alive — the orphaned-popup fix; the second exits the mode.
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        expect(highlight!.isConnected).toBe(true);
         document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
         expect(highlight!.isConnected).toBe(false);
       } finally {

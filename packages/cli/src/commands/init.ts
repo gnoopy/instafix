@@ -5,6 +5,7 @@ import { p } from "../prompts.js";
 import { findPrismaSchema } from "../utils/find-schema.js";
 import { readProjectName } from "../utils/read-project-name.js";
 import { runPrismaDbPush } from "../utils/run-prisma-db-push.js";
+import { installSlashCommand } from "./slash-command.js";
 
 export async function initCommand(): Promise<void> {
   p.intro("instafix — Setup");
@@ -223,6 +224,16 @@ export async function initCommand(): Promise<void> {
 
   if (steps.length > 0) {
     p.note(steps.join("\n"), "Next steps");
+  }
+
+  // Agent handoff (mode B): a /instafix slash command in the project lets an
+  // already-running Claude Code session pull queued feedback into its own
+  // context. Best-effort — a read-only FS must not fail the whole init.
+  try {
+    const slashPath = await installSlashCommand(cwd);
+    p.log.success(`Claude Code slash command installed: ${slashPath}`);
+  } catch {
+    p.log.warn("Could not install .claude/commands/instafix.md — run `instafix agent-setup` later.");
   }
 
   p.outro("Setup complete!");

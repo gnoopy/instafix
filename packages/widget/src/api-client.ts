@@ -34,6 +34,14 @@ export interface WidgetClient {
   ): Promise<FeedbackResponse>;
   deleteFeedback(id: string): Promise<void>;
   deleteAllFeedbacks(projectName: string): Promise<void>;
+  /**
+   * Optional: ask the server to drop this feedback's agent prompt into the
+   * FS store's outbox (the "Agent에게" handoff — consumed by
+   * `npx @instafix/cli watch` inside the developer's Claude Code session).
+   * Absent on clients whose backend has no outbox (client-side stores);
+   * resolves false when the server doesn't support it (non-FS adapters).
+   */
+  handoffFeedback?(id: string): Promise<boolean>;
 }
 
 /**
@@ -414,6 +422,22 @@ export class ApiClient implements WidgetClient {
 
     if (!response.ok) {
       throw await errorFromResponse(response, "Failed to delete feedback");
+    }
+  }
+
+  async handoffFeedback(id: string): Promise<boolean> {
+    // Best-effort by design: a backend without the FS outbox extension
+    // answers 404 and the UI reports "not supported" — never an exception
+    // path, since this is an optional enhancement, not core persistence.
+    try {
+      const response = await fetch(this.endpoint, {
+        method: "POST",
+        headers: await buildRequestHeaders(this.auth, true),
+        body: JSON.stringify({ action: "handoff", id }),
+      });
+      return response.ok;
+    } catch {
+      return false;
     }
   }
 

@@ -138,6 +138,8 @@ export class MarkerManager {
   private onDocumentClickForClusters: ((e: MouseEvent) => void) | null = null;
   /** Last `openCount` broadcast via `markers:changed` (-1 = never emitted). */
   private lastOpenCount = -1;
+  /** Until this timestamp, marker tooltips stay suppressed — set when a cluster fans out, so the tooltip doesn't immediately cover the just-revealed neighbors. */
+  private tooltipSuppressedUntil = 0;
 
   get count(): number {
     return this.entries.length;
@@ -554,6 +556,10 @@ export class MarkerManager {
       cluster.expanded = true;
       this.applyFanPositions(cluster);
       this.setBadgesVisible(cluster, false);
+      // The fan just revealed neighbors under/next to the cursor — a tooltip
+      // popping up the same instant would cover exactly what was revealed.
+      this.tooltipSuppressedUntil = Date.now() + 600;
+      this.tooltip.hide();
       return true;
     }
     return false;
@@ -636,7 +642,7 @@ export class MarkerManager {
       marker.style.boxShadow = isResolved
         ? "0 4px 16px rgba(0,0,0,0.1)"
         : `0 4px 20px ${markerColor}59, 0 4px 12px rgba(0,0,0,0.15)`;
-      this.tooltip.show(feedback, marker.getBoundingClientRect());
+      if (Date.now() >= this.tooltipSuppressedUntil) this.tooltip.show(feedback, marker.getBoundingClientRect());
       this.previewHighlight(feedback);
     });
 
@@ -653,7 +659,7 @@ export class MarkerManager {
     // hover. Mirror mouseenter/mouseleave behaviour for focus/blur so a sighted
     // keyboard user gets the same affordance as a mouse user.
     marker.addEventListener("focus", () => {
-      this.tooltip.show(feedback, marker.getBoundingClientRect());
+      if (Date.now() >= this.tooltipSuppressedUntil) this.tooltip.show(feedback, marker.getBoundingClientRect());
       this.previewHighlight(feedback);
     });
 

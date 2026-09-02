@@ -21,6 +21,7 @@ import { getIdentity, type Identity, saveIdentity } from "./identity.js";
 import { MarkerManager } from "./markers.js";
 import { hasSeenOnboarding, Onboarding } from "./onboarding.js";
 import type { Panel as PanelType } from "./panel.js";
+import { loadPersistedSettings } from "./settings-storage.js";
 import { StoreClient } from "./store-client.js";
 import { buildStyles } from "./styles/base.js";
 import { applyLayerColor, buildThemeColors } from "./styles/theme.js";
@@ -195,7 +196,13 @@ export function launch(config: InstaFixConfig): InstaFixInstance {
   }
 
   const listeners = new Map<string, Set<(...args: never[]) => void>>();
-  let currentConfig = config;
+  // Settings the visitor changed via the panel's own settings accordion on a
+  // previous visit win over the host's static defaults for those specific
+  // fields — otherwise every in-widget setting change would silently revert
+  // on the next page load / initInstaFix() call, defeating the point of
+  // exposing the control at all. Fields never touched fall through to
+  // whatever the host configured.
+  let currentConfig = { ...config, ...loadPersistedSettings() };
 
   function updateConfig(partial: Partial<InstaFixConfig>): void {
     // A setting change (theme/locale/accentColor/...) always comes from the
@@ -594,8 +601,13 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
     }
   });
 
-  const annotator = new Annotator(colors, bus, t, config.enableScreenshot ?? false, () =>
-    focusTracker.getLastPageFocus(),
+  const annotator = new Annotator(
+    colors,
+    bus,
+    t,
+    config.enableScreenshot ?? false,
+    () => focusTracker.getLastPageFocus(),
+    config.agentInstructions,
   );
 
   // Once the locale dictionary lands, swap the FAB + popup labels from the

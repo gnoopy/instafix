@@ -108,6 +108,26 @@ describe("formatFeedbacksForAgent", () => {
     expect(out).not.toContain("Context:");
   });
 
+  describe("resolve protocol — the agent can close its own inbox", () => {
+    it("puts each feedback's ID in its heading and appends close-the-loop instructions", () => {
+      const out = formatFeedbacksForAgent([makeFeedback({ id: "fb_x7k2" })]);
+      expect(out).toContain("(ID: fb_x7k2)");
+      expect(out).toContain("npx @instafix/cli resolve <ID>");
+      expect(out).toContain('{"status":"resolved"}');
+    });
+
+    it("omits IDs and the footer when includeResolveProtocol is false (composer drafts)", () => {
+      const out = formatFeedbacksForAgent([makeFeedback({ id: "draft" })], { includeResolveProtocol: false });
+      expect(out).not.toContain("(ID:");
+      expect(out).not.toContain("resolve <ID>");
+    });
+
+    it("no footer on an empty document", () => {
+      const out = formatFeedbacksForAgent([]);
+      expect(out).not.toContain("resolve <ID>");
+    });
+  });
+
   it("reports an unresolved target explicitly instead of guessing", () => {
     const out = formatFeedbacksForAgent([makeFeedback({ annotations: [] })]);
     expect(out).toContain("Target: (no anchor captured)");

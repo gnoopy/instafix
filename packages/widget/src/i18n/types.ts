@@ -190,6 +190,24 @@ export interface Translations {
 
   // Copy for Claude Code (agent-targeted Markdown export)
   "agent.copyButton": string;
+  "agent.scopeSelected": string;
+  "agent.scopeOpenPage": string;
+  "agent.handedOff": string;
+  "agent.handedOffTitle": string;
+  "agent.sendToAgent": string;
+  "agent.sendToAgentFailed": string;
+  "panel.deletedToast": string;
+  "panel.deleteUndo": string;
+  "detail.verifyFix": string;
+  "detail.verifyThen": string;
+  "detail.verifyNow": string;
+  "detail.verifyKeepResolved": string;
+  "detail.verifyReopen": string;
+  "shortcuts.globalSection": string;
+  "shortcuts.globalPanel": string;
+  "shortcuts.globalAnnotate": string;
+  "shortcuts.globalTargeting": string;
+  "shortcuts.globalMarkers": string;
   "agent.previewTitle": string;
   "agent.previewEmpty": string;
   "agent.copyAction": string;

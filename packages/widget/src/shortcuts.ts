@@ -84,6 +84,20 @@ const SHORTCUT_DEFS: ShortcutDef[] = [
   { keys: ["Esc"], label: "shortcuts.close" },
 ];
 
+/** The document-level Alt+Shift toolbar shortcuts (fab.ts) — letter only; the platform prefix is added at render time. */
+const GLOBAL_SHORTCUT_DEFS: ShortcutDef[] = [
+  { keys: ["S"], label: "shortcuts.globalPanel" },
+  { keys: ["A"], label: "shortcuts.globalAnnotate" },
+  { keys: ["T"], label: "shortcuts.globalTargeting" },
+  { keys: ["V"], label: "shortcuts.globalMarkers" },
+];
+
+function globalChord(letter: string): string {
+  const isMac =
+    typeof navigator !== "undefined" && /Mac|iP(hone|ad|od)/.test(navigator.platform || navigator.userAgent);
+  return isMac ? `⌥⇧${letter}` : `Alt+Shift+${letter}`;
+}
+
 // ---------------------------------------------------------------------------
 // CSS
 // ---------------------------------------------------------------------------
@@ -187,6 +201,17 @@ export const SHORTCUTS_CSS = /* css */ `
     display: flex;
     flex-direction: column;
     gap: 10px;
+  }
+
+  .sp-shortcuts-section {
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--sp-border);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sp-text-tertiary);
   }
 
   .sp-shortcuts-row {
@@ -540,6 +565,24 @@ export class KeyboardShortcuts {
       const desc = el("span", { class: "sp-shortcuts-desc" });
       setText(desc, this.t(def.label));
 
+      row.appendChild(keysWrap);
+      row.appendChild(desc);
+      grid.appendChild(row);
+    }
+
+    // Global (page-wide) toolbar shortcuts — same overlay, own section, so
+    // this stays the single place a user learns every key the widget owns.
+    const globalHeading = el("div", { class: "sp-shortcuts-section" });
+    setText(globalHeading, this.t("shortcuts.globalSection"));
+    grid.appendChild(globalHeading);
+    for (const def of GLOBAL_SHORTCUT_DEFS) {
+      const row = el("div", { class: "sp-shortcuts-row" });
+      const keysWrap = el("div", { class: "sp-shortcuts-keys" });
+      const kbd = el("span", { class: "sp-kbd" });
+      setText(kbd, globalChord(def.keys[0] as string));
+      keysWrap.appendChild(kbd);
+      const desc = el("span", { class: "sp-shortcuts-desc" });
+      setText(desc, this.t(def.label));
       row.appendChild(keysWrap);
       row.appendChild(desc);
       grid.appendChild(row);

@@ -800,7 +800,8 @@ describe("Panel", () => {
       });
     });
 
-    it("clicking delete button calls apiClient.deleteFeedback and reloads", async () => {
+    it("clicking delete hides the card, shows an UNDO toast, and fires the API delete after the 5s grace", async () => {
+      vi.useFakeTimers();
       const fb = makeFeedback({ id: "fb-1" });
       apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
       apiClient.deleteFeedback.mockResolvedValue(undefined);
@@ -809,35 +810,52 @@ describe("Panel", () => {
       apiClient.getFeedbacks.mockClear();
       apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [], total: 0 });
 
-      const deleteBtn = shadow.querySelector<HTMLButtonElement>(".sp-btn-delete")!;
-      deleteBtn.click();
-      await confirmDeleteDialog(shadow);
+      shadow.querySelector<HTMLButtonElement>(".sp-btn-delete")!.click();
 
-      await vi.waitFor(() => {
-        expect(apiClient.deleteFeedback).toHaveBeenCalledWith("fb-1");
-      });
+      // Optimistic: card hidden immediately, toast up, no API call yet.
+      const card = shadow.querySelector<HTMLElement>('[data-feedback-id="fb-1"]')!;
+      expect(card.style.display).toBe("none");
+      expect(shadow.querySelector(".sp-undo-toast")).not.toBeNull();
+      expect(apiClient.deleteFeedback).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(apiClient.deleteFeedback).toHaveBeenCalledWith("fb-1");
+      vi.useRealTimers();
     });
 
-    it("cancelling the delete confirmation calls neither deleteFeedback nor reload, and the card stays", async () => {
+    it("UNDO within the grace period cancels the delete and the card reappears", async () => {
+      vi.useFakeTimers();
       const fb = makeFeedback({ id: "fb-1" });
       apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
 
       await panel.open();
+      shadow.querySelector<HTMLButtonElement>(".sp-btn-delete")!.click();
 
-      const deleteBtn = shadow.querySelector<HTMLButtonElement>(".sp-btn-delete")!;
-      deleteBtn.click();
+      shadow.querySelector<HTMLButtonElement>(".sp-undo-toast-btn")!.click();
 
-      await vi.waitFor(() => {
-        expect(shadow.querySelector(".sp-confirm-dialog")).not.toBeNull();
-      });
-      const cancelBtn = Array.from(shadow.querySelectorAll<HTMLButtonElement>(".sp-confirm-actions button")).find(
-        (btn) => btn.textContent === t("panel.cancel"),
-      )!;
-      cancelBtn.click();
+      const card = shadow.querySelector<HTMLElement>('[data-feedback-id="fb-1"]')!;
+      expect(card.style.display).toBe("");
+      expect(shadow.querySelector(".sp-undo-toast")).toBeNull();
 
-      await new Promise((r) => setTimeout(r, 250)); // past the dialog's fade-out
+      await vi.advanceTimersByTimeAsync(6000);
       expect(apiClient.deleteFeedback).not.toHaveBeenCalled();
-      expect(shadow.querySelector('[data-feedback-id="fb-1"]')).not.toBeNull();
+      vi.useRealTimers();
+    });
+
+    it("closing the panel flushes a delete still inside its grace period (never silently lost)", async () => {
+      vi.useFakeTimers();
+      const fb = makeFeedback({ id: "fb-1" });
+      apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
+      apiClient.deleteFeedback.mockResolvedValue(undefined);
+
+      await panel.open();
+      shadow.querySelector<HTMLButtonElement>(".sp-btn-delete")!.click();
+      expect(apiClient.deleteFeedback).not.toHaveBeenCalled();
+
+      panel.close();
+      await vi.advanceTimersByTimeAsync(0); // flush is a microtask, not synchronous
+      expect(apiClient.deleteFeedback).toHaveBeenCalledWith("fb-1");
+      vi.useRealTimers();
     });
 
     it("shows a distinct confirm dialog for bulk delete naming the selected count", async () => {
@@ -1322,7 +1340,8 @@ describe("Panel", () => {
       });
     });
 
-    it("delete failure re-enables button and emits error", async () => {
+    it("delete failure (after the grace period) restores the card and emits error", async () => {
+      vi.useFakeTimers();
       const fb = makeFeedback({ id: "fb-1" });
       apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
       apiClient.deleteFeedback.mockRejectedValue(new Error("delete failed"));
@@ -1332,13 +1351,14 @@ describe("Panel", () => {
 
       await panel.open();
 
-      const deleteBtn = shadow.querySelector<HTMLButtonElement>(".sp-btn-delete")!;
-      deleteBtn.click();
-      await confirmDeleteDialog(shadow);
+      shadow.querySelector<HTMLButtonElement>(".sp-btn-delete")!.click();
+      await vi.advanceTimersByTimeAsync(5000);
+      vi.useRealTimers();
 
       await vi.waitFor(() => {
         expect(errorListener).toHaveBeenCalledWith(expect.any(Error));
-        expect(deleteBtn.disabled).toBe(false);
+        // Optimistically-hidden card comes back — the delete didn't happen.
+        expect(shadow.querySelector<HTMLElement>('[data-feedback-id="fb-1"]')!.style.display).toBe("");
       });
     });
 
@@ -1804,11 +1824,16 @@ describe("Panel", () => {
 
       shadow.dispatchEvent(new KeyboardEvent("keydown", { key: "j", bubbles: true }));
       shadow.dispatchEvent(new KeyboardEvent("keydown", { key: "d", bubbles: true }));
-      await confirmDeleteDialog(shadow);
 
+      // The UNDO-toast flow: card hidden + toast up immediately; the API
+      // call itself waits out the 5s grace (covered by the card-action tests).
       await vi.waitFor(() => {
-        expect(apiClient.deleteFeedback).toHaveBeenCalledWith("fb-1");
+        expect(shadow.querySelector(".sp-undo-toast")).not.toBeNull();
+        expect(shadow.querySelector<HTMLElement>('[data-feedback-id="fb-1"]')!.style.display).toBe("none");
       });
+      panel.close(); // flush so the deferred delete doesn't leak into other tests
+      await Promise.resolve(); // the flush itself is a microtask
+      expect(apiClient.deleteFeedback).toHaveBeenCalledWith("fb-1");
     });
 
     it("F key focuses search input", async () => {
@@ -2451,23 +2476,16 @@ describe("Panel", () => {
       resolveSlow();
     });
 
-    it("clicking delete while a previous mutation is pending is a no-op", async () => {
+    it("clicking delete again while the first is inside its UNDO grace is a no-op", async () => {
+      vi.useFakeTimers();
       const fb = makeFeedback({ id: "fb-1" });
       apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
-
-      let resolveSlow!: () => void;
-      apiClient.deleteFeedback.mockReturnValue(
-        new Promise<void>((resolve) => {
-          resolveSlow = resolve;
-        }),
-      );
+      apiClient.deleteFeedback.mockResolvedValue(undefined);
 
       await panel.open();
 
       const deleteBtn = shadow.querySelector<HTMLButtonElement>(".sp-btn-delete")!;
       deleteBtn.click();
-      await confirmDeleteDialog(shadow);
-      await vi.waitFor(() => expect(apiClient.deleteFeedback).toHaveBeenCalledTimes(1)); // wait past the confirm dialog's 200ms fade-out before pendingMutations.add() runs
 
       // Second click via dispatchEvent (bypasses disabled-button suppression)
       const listContainer = shadow.querySelector<HTMLElement>('[role="list"]')!;
@@ -2475,11 +2493,10 @@ describe("Panel", () => {
       Object.defineProperty(event, "target", { value: deleteBtn });
       listContainer.dispatchEvent(event);
 
-      await new Promise((r) => setTimeout(r, 10));
-
+      await vi.advanceTimersByTimeAsync(6000);
+      // One deferred delete, not two.
       expect(apiClient.deleteFeedback).toHaveBeenCalledTimes(1);
-
-      resolveSlow();
+      vi.useRealTimers();
     });
 
     it("bulk checkbox click on the list does not trigger card or action handlers", async () => {
@@ -3281,6 +3298,7 @@ describe("Panel", () => {
     });
 
     it("deleteFeedback wraps non-Error rejection (line 860)", async () => {
+      vi.useFakeTimers();
       const fb = makeFeedback({ id: "fb-1" });
       apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
       apiClient.deleteFeedback.mockRejectedValue("string error");
@@ -3290,9 +3308,9 @@ describe("Panel", () => {
 
       await panel.open();
 
-      const deleteBtn = shadow.querySelector<HTMLButtonElement>(".sp-btn-delete")!;
-      deleteBtn.click();
-      await confirmDeleteDialog(shadow);
+      shadow.querySelector<HTMLButtonElement>(".sp-btn-delete")!.click();
+      await vi.advanceTimersByTimeAsync(5000);
+      vi.useRealTimers();
 
       await vi.waitFor(() => {
         expect(errorListener).toHaveBeenCalledWith(expect.any(Error));
@@ -3493,33 +3511,23 @@ describe("Panel", () => {
       slowResolve();
     });
 
-    it("D shortcut while a previous delete is pending does NOT trigger another delete (line 235)", async () => {
+    it("D shortcut while a previous delete is inside its UNDO grace does NOT queue another delete (line 235)", async () => {
+      vi.useFakeTimers();
       const fb = makeFeedback({ id: "fb-1" });
       apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
-
-      let slowResolve!: () => void;
-      apiClient.deleteFeedback.mockReturnValue(
-        new Promise<void>((resolve) => {
-          slowResolve = resolve;
-        }),
-      );
+      apiClient.deleteFeedback.mockResolvedValue(undefined);
 
       await panel.open();
       stubScrollOnCards(shadow);
 
       shadow.dispatchEvent(new KeyboardEvent("keydown", { key: "j", bubbles: true }));
       shadow.dispatchEvent(new KeyboardEvent("keydown", { key: "d", bubbles: true }));
-      await confirmDeleteDialog(shadow);
-      await vi.waitFor(() => expect(apiClient.deleteFeedback).toHaveBeenCalledTimes(1)); // wait past the confirm dialog's 200ms fade-out before pendingMutations.add() runs
-
-      // Second D while pending
+      // Second D while the first sits in its grace window
       shadow.dispatchEvent(new KeyboardEvent("keydown", { key: "d", bubbles: true }));
 
-      await new Promise((r) => setTimeout(r, 20));
-
+      await vi.advanceTimersByTimeAsync(6000);
       expect(apiClient.deleteFeedback).toHaveBeenCalledTimes(1);
-
-      slowResolve();
+      vi.useRealTimers();
     });
   });
 

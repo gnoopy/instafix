@@ -4,6 +4,7 @@ import { findAnchorElement, findLargestAncestor, generateAnchor, rectToPercentag
 import { computeAutoScrollDelta } from "./dom/auto-scroll.js";
 import { collectMarqueeElements, collectMarqueeElementsDetailed } from "./dom/marquee.js";
 import { type MotionPauseHandle, pauseMotion } from "./dom/motion-pause.js";
+import { getSourceHint } from "./dom/source-hint.js";
 import { detectTextSelection } from "./dom/text-selection.js";
 import { el, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
@@ -110,8 +111,9 @@ export class Annotator {
     private readonly t: TFunction,
     private readonly enableScreenshot: boolean = false,
     private readonly getFallbackTarget?: () => HTMLElement | null,
+    agentInstructions?: string[],
   ) {
-    this.popup = new Popup(colors, t);
+    this.popup = new Popup(colors, t, agentInstructions);
 
     this.bus.on("annotation:start", () => this.activate());
     this.bus.on("targeting:start", () => this.activateTargeting());
@@ -458,7 +460,16 @@ export class Annotator {
   };
 
   private onKeyDown = (e: KeyboardEvent): void => {
-    if (e.key === "Escape") this.deactivate();
+    if (e.key !== "Escape") return;
+    // An open composer first: without this, Escape tore down the overlay
+    // around the popup and left it orphaned on screen with its show()
+    // promise pending. First Escape closes the composer (resolving null
+    // through the normal cancel path), the next one exits the mode.
+    if (this.popup.isOpen) {
+      this.popup.cancelOpen();
+      return;
+    }
+    this.deactivate();
   };
 
   /**
@@ -517,6 +528,7 @@ export class Annotator {
       this.runSubmission([annotation], formResult, rectBounds, screenshotCache),
     );
     this.popup.setPromptContext(() => [annotation]);
+    this.popup.setSourceHint(getSourceHint(target));
     const result = await keyboardShowPromise;
 
     this.drawingRect?.remove();
@@ -1035,6 +1047,8 @@ export class Annotator {
                 this.drawingRect.style.width = `${anchorBounds.width}px`;
                 this.drawingRect.style.height = `${anchorBounds.height}px`;
               }
+              // The source hint follows the toggle too.
+              this.popup.setSourceHint(getSourceHint(currentElement));
             },
           }
         : undefined,
@@ -1042,6 +1056,9 @@ export class Annotator {
     // After show() (it resets the context to null synchronously); getter
     // because `annotation` is reassigned by the Element/Container toggle.
     this.popup.setPromptContext(() => [annotation]);
+    // Dev-only component source hint for the picked element — null on
+    // production host builds, and the line simply doesn't render then.
+    this.popup.setSourceHint(getSourceHint(currentElement));
     await instantShowPromise;
 
     // Instant flow: always deactivate on popup close — unlike the draw flow
@@ -1077,7 +1094,13 @@ export class Annotator {
     // Screenshot capture is the slow part. Capture once and reuse the
     // cached data URL + region on every retry — re-running html2canvas after
     // each failed submit would punish the user for a network blip.
-    if (screenshotCache.value === undefined) {
+    // A pasted image (⌘V into the note) beats the auto-capture — the user
+    // chose that exact image as the visual reference for this feedback.
+    // Its region covers the whole image (there's no drawn-rect inside it).
+    const pasted = this.popup.pastedScreenshotDataUrl;
+    if (pasted) {
+      screenshotCache.value = { dataUrl: pasted, region: { xPct: 0, yPct: 0, wPct: 1, hPct: 1 } };
+    } else if (screenshotCache.value === undefined) {
       screenshotCache.value = await this.maybeCapture(rectBounds);
     }
     const capture = screenshotCache.value;

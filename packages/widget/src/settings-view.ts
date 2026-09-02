@@ -284,9 +284,12 @@ export class SettingsView {
     grid.appendChild(this.buildField(this.t("settings.theme"), themeControl.element));
 
     const positionControl = new SegmentedControl<InstaFixPosition>({
+      // Left-to-right visual order matches meaning: "왼쪽"(left) sits on the
+      // left, "오른쪽"(right) sits on the right — SegmentedControl renders
+      // options in array order, so the option order IS the spatial order.
       options: [
-        { value: "bottom-right", label: this.t("settings.positionRight") },
         { value: "bottom-left", label: this.t("settings.positionLeft") },
+        { value: "bottom-right", label: this.t("settings.positionRight") },
       ],
       value: initialConfig.position ?? "bottom-right",
       onChange: (value) => this.onChange({ position: value }),

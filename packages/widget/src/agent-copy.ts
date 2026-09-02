@@ -242,6 +242,16 @@ export interface AgentCopyButtonOptions {
   getContainer: () => HTMLElement | ShadowRoot;
   /** `"panel"` (pill, header) or `"detail"` (full-width, matches detail actions). */
   variant?: "panel" | "detail";
+  /**
+   * Human-readable description of WHAT the copy covers ("열림 12건 · 이
+   * 페이지") — shown under the preview title so the copy's scope is never
+   * implicit. Resolved fresh per open, since filters change.
+   */
+  getScopeLabel?: () => string;
+  /** Project instruction bullets replacing the format's defaults (InstaFixConfig.agentInstructions). */
+  instructions?: string[] | undefined;
+  /** Called with the copied feedbacks' ids after a successful clipboard write — drives the "전달됨" tracking. */
+  onCopied?: (ids: string[]) => void;
 }
 
 /**
@@ -284,11 +294,18 @@ export class AgentCopyButton {
       this.element.disabled = false;
     }
 
-    const markdown = formatFeedbacksForAgent(feedbacks);
-    this.showModal(feedbacks.length, markdown);
+    const markdown = formatFeedbacksForAgent(
+      feedbacks,
+      this.options.instructions ? { instructions: this.options.instructions } : undefined,
+    );
+    this.showModal(
+      feedbacks.length,
+      markdown,
+      feedbacks.map((fb) => fb.id),
+    );
   }
 
-  private showModal(count: number, markdown: string): void {
+  private showModal(count: number, markdown: string, ids: string[]): void {
     this.modal?.remove();
 
     const backdrop = el("div", { class: "sp-agent-modal-backdrop" });
@@ -303,6 +320,19 @@ export class AgentCopyButton {
     title.id = titleId;
     setText(title, count > 0 ? tWithParams(this.t, "agent.previewTitle", { count }) : this.t("agent.previewEmpty"));
     dialog.appendChild(title);
+
+    // Scope line — makes the copy's coverage explicit ("열림 12건 · 이
+    // 페이지") instead of leaving "which items?" to the reader's memory of
+    // their current filters.
+    const scopeLabel = this.options.getScopeLabel?.();
+    if (scopeLabel) {
+      const scope = el("div", {
+        style:
+          "font-size:12px;color:var(--sp-text-tertiary);font-family:var(--sp-font);margin:-6px 0 10px;letter-spacing:0.01em;",
+      });
+      setText(scope, scopeLabel);
+      dialog.appendChild(scope);
+    }
 
     const textarea = document.createElement("textarea");
     textarea.className = "sp-agent-modal-textarea";
@@ -345,6 +375,7 @@ export class AgentCopyButton {
       copyBtn.disabled = true;
       const ok = await copyTextToClipboard(markdown);
       if (ok) {
+        this.options.onCopied?.(ids);
         this.showSuccess(dialog, count, close);
       } else {
         copyBtn.disabled = false;

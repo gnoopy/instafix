@@ -37,7 +37,20 @@ export default defineConfig([
     minify: true,
     splitting: true,
     treeshake: "recommended",
-    noExternal: ["@medv/finder", "@instafix/core"],
+    // html2canvas is force-bundled (not left as an external runtime import) so
+    // it code-splits into its own chunk file loaded via a relative path — see
+    // packages/widget/src/screenshot.ts's header comment for why a plain
+    // `await import("html2canvas")` is unsafe: it left a bare specifier in the
+    // ESM/CJS output that only resolves when the *consumer's* bundler
+    // processes @instafix/widget's dist code. Any consumer serving that dist
+    // output directly (no bundler — e.g. a raw `<script type="module">`
+    // embed, exactly what e2e/server.mjs does) hit a hard
+    // `Failed to resolve module specifier 'html2canvas'` and silently lost
+    // every screenshot (confirmed via scripts/e2e/_repro-screenshot.mjs,
+    // 2026-09-01). Bundling it here keeps the lazy-load / bundle-size goal —
+    // it's still a separate chunk, fetched only on first capture — while
+    // making resolution self-contained in every deployment mode.
+    noExternal: ["@medv/finder", "@instafix/core", "html2canvas"],
     esbuildOptions(o) {
       o.pure = [...pureCalls];
       o.define = { ...o.define, ...keepNodeEnvLiteral };
@@ -72,7 +85,9 @@ export default defineConfig([
     minify: true,
     splitting: true,
     treeshake: "recommended",
-    noExternal: ["@medv/finder", "@instafix/core"],
+    // Same reasoning as the main entry above — this entry reaches
+    // screenshot.ts through initInstaFix too.
+    noExternal: ["@medv/finder", "@instafix/core", "html2canvas"],
     external: ["react"],
     esbuildOptions(o) {
       o.pure = [...pureCalls];

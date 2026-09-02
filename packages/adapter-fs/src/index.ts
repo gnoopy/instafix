@@ -3,24 +3,61 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import {
   createCollectionStore,
+  createStoreHandler,
   type FeedbackCreateInput,
   type FeedbackPage,
   type FeedbackQuery,
   type FeedbackRecord,
+  type FeedbackResponse,
   type FeedbackUpdateInput,
+  formatFeedbacksForAgent,
   type InstaFixStore,
 } from "@instafix/core";
 
 export type { InstaFixStore } from "@instafix/core";
-// Re-exported so callers only need one import line, matching every other
-// first-party adapter's `createInstaFixHandler({ store }) ` shape.
-export {
-  createStoreHandler as createInstaFixHandler,
-  isStorePersistence,
-  StoreDuplicateError,
-  StoreNotFoundError,
-  StorePersistenceError,
-} from "@instafix/core";
+export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@instafix/core";
+
+/**
+ * Same shape as core's `createStoreHandler`, plus the FS-only HANDOFF
+ * extension: a widget POST of `{ "action": "handoff", "id": "<feedbackId>" }`
+ * formats that feedback as an agent prompt and drops it into
+ * `<dir>/outbox/<id>.md` — the file `npx @instafix/cli watch` (running as a
+ * background task in the developer's Claude Code session) delivers into the
+ * session. Every other request passes through to the core handler untouched,
+ * so this stays a drop-in replacement. When the store isn't an `FsStore`
+ * (no outbox to write), handoff requests get a 404 and nothing else changes.
+ */
+export function createInstaFixHandler(
+  options: Parameters<typeof createStoreHandler>[0],
+): ReturnType<typeof createStoreHandler> {
+  const base = createStoreHandler(options);
+  const store = options.store;
+  return {
+    ...base,
+    POST: async (request: Request) => {
+      try {
+        const probe = await request.clone().json();
+        if (probe && typeof probe === "object" && (probe as { action?: unknown }).action === "handoff") {
+          const id = (probe as { id?: unknown }).id;
+          if (typeof id !== "string" || !(store instanceof FsStore)) {
+            return new Response(JSON.stringify({ error: "handoff not supported" }), {
+              status: 404,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+          const ok = await store.writeHandoff(id);
+          return new Response(JSON.stringify(ok ? { ok: true } : { error: "feedback not found" }), {
+            status: ok ? 200 : 404,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      } catch {
+        // Not JSON (or unreadable) — the core handler owns the error shape.
+      }
+      return base.POST(request);
+    },
+  };
+}
 
 export interface FsStoreOptions {
   /**
@@ -167,6 +204,26 @@ export class FsStore implements InstaFixStore {
 
   deleteAllFeedbacks(projectName: string): Promise<void> {
     return this.engine.deleteAllFeedbacks(projectName);
+  }
+
+  /**
+   * Write one feedback as an agent-ready prompt file into `<dir>/outbox/` —
+   * the server half of the widget's "Agent에게" handoff button (see
+   * `createInstaFixHandler` above). Returns false when the id is unknown.
+   * `outbox/processed/` is where `instafix watch` moves files it delivered.
+   */
+  async writeHandoff(id: string): Promise<boolean> {
+    const all = await this.loadAll();
+    const record = all.find((r) => r.id === id);
+    if (!record) return false;
+    // Round-trip through JSON to get the serialized (wire) shape the
+    // formatter expects — the same flattening persistAll applies.
+    const serialized = JSON.parse(JSON.stringify(record)) as FeedbackResponse;
+    const outboxDir = join(this.dir, "outbox");
+    await mkdir(outboxDir, { recursive: true });
+    const safeId = SAFE_ID_RE.test(id) ? id : randomUUID();
+    await writeFile(join(outboxDir, `${safeId}.md`), formatFeedbacksForAgent([serialized]), "utf8");
+    return true;
   }
 
   verifyProjectOwnership(id: string, projectName: string): Promise<boolean> {

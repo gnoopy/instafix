@@ -1,0 +1,412 @@
+<title>InstaFix Upgrade v3</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --ground: #FBF9F4;
+    --surface: #FFFFFF;
+    --surface-tint: #FAF7EE;
+    --ink: #231C0E;
+    --ink-2: #5C543F;
+    --ink-3: #8A8168;
+    --line: #E9E3D2;
+    --amber: #B38A0F;
+    --amber-deep: #8A6A0C;
+    --amber-wash: #B38A0F14;
+    --p0: #B3261E;
+    --p0-wash: #B3261E12;
+    --p1: #B38A0F;
+    --p1-wash: #B38A0F14;
+    --p2: #5B6472;
+    --p2-wash: #5B647214;
+    --ok: #2E7D46;
+    --ok-wash: #2E7D4614;
+    --code-bg: #2A2416;
+    --code-ink: #EFE6CB;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #191510;
+      --surface: #211C13;
+      --surface-tint: #262013;
+      --ink: #F0E9D8;
+      --ink-2: #C4BAA0;
+      --ink-3: #8F8668;
+      --line: #383021;
+      --amber: #D9AC28;
+      --amber-deep: #E8BE43;
+      --amber-wash: #D9AC2820;
+      --p0: #E8635B;
+      --p0-wash: #E8635B1e;
+      --p1: #D9AC28;
+      --p1-wash: #D9AC2820;
+      --p2: #9AA3B2;
+      --p2-wash: #9AA3B220;
+      --ok: #5BBF7C;
+      --ok-wash: #5BBF7C1e;
+      --code-bg: #14100A;
+      --code-ink: #E4D9B8;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #191510;
+    --surface: #211C13;
+    --surface-tint: #262013;
+    --ink: #F0E9D8;
+    --ink-2: #C4BAA0;
+    --ink-3: #8F8668;
+    --line: #383021;
+    --amber: #D9AC28;
+    --amber-deep: #E8BE43;
+    --amber-wash: #D9AC2820;
+    --p0: #E8635B;
+    --p0-wash: #E8635B1e;
+    --p1: #D9AC28;
+    --p1-wash: #D9AC2820;
+    --p2: #9AA3B2;
+    --p2-wash: #9AA3B220;
+    --ok: #5BBF7C;
+    --ok-wash: #5BBF7C1e;
+    --code-bg: #14100A;
+    --code-ink: #E4D9B8;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans KR", system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    line-height: 1.65;
+    word-break: keep-all;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 56px 24px 96px; }
+  .mono { font-family: "IBM Plex Mono", "SF Mono", Consolas, monospace; }
+
+  /* ---- header ---- */
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--amber-deep); font-weight: 600; margin-bottom: 10px;
+  }
+  h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; margin: 0 0 14px; text-wrap: balance; }
+  .lede { font-size: 16px; color: var(--ink-2); max-width: 62ch; margin: 0 0 8px; }
+  .meta { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-3); }
+
+  h2 {
+    font-size: 21px; font-weight: 700; letter-spacing: -0.01em;
+    margin: 64px 0 6px; padding-top: 22px; border-top: 2px solid var(--amber);
+    display: flex; align-items: baseline; gap: 10px; text-wrap: balance;
+  }
+  h2 .mono { font-size: 13px; color: var(--amber-deep); font-weight: 600; }
+  .h2-sub { color: var(--ink-2); font-size: 14.5px; margin: 0 0 22px; max-width: 64ch; }
+  h3 { font-size: 16px; font-weight: 600; margin: 28px 0 8px; }
+  p { margin: 0 0 14px; max-width: 68ch; }
+  strong { font-weight: 600; }
+
+  /* ---- loop strip ---- */
+  .loop { display: flex; gap: 0; margin: 26px 0 10px; overflow-x: auto; padding-bottom: 6px; }
+  .loop-step {
+    flex: 1; min-width: 118px; position: relative;
+    background: var(--surface); border: 1px solid var(--line);
+    padding: 12px 12px 12px 14px;
+  }
+  .loop-step + .loop-step { margin-left: -1px; }
+  .loop-step:first-child { border-radius: 10px 0 0 10px; }
+  .loop-step:last-child { border-radius: 0 10px 10px 0; }
+  .loop-k { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-3); letter-spacing: 0.08em; }
+  .loop-t { font-weight: 600; font-size: 14px; margin: 2px 0 6px; }
+  .loop-s { font-size: 12px; line-height: 1.45; color: var(--ink-2); }
+  .st { display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 600; border-radius: 5px; padding: 1px 7px; margin-top: 8px; }
+  .st-ok { color: var(--ok); background: var(--ok-wash); }
+  .st-part { color: var(--p1); background: var(--p1-wash); }
+  .st-gap { color: var(--p0); background: var(--p0-wash); }
+  .loop-note { font-size: 13px; color: var(--ink-2); margin-top: 10px; }
+
+  /* ---- proposal cards ---- */
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px 22px; margin: 0 0 14px; position: relative; overflow: hidden;
+  }
+  .card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+  .card.p0::before { background: var(--p0); }
+  .card.p1::before { background: var(--p1); }
+  .card.p2::before { background: var(--p2); }
+  .card-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .badge {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600;
+    border-radius: 5px; padding: 2px 8px;
+  }
+  .badge.p0 { color: var(--p0); background: var(--p0-wash); }
+  .badge.p1 { color: var(--p1); background: var(--p1-wash); }
+  .badge.p2 { color: var(--p2); background: var(--p2-wash); }
+  .badge.effort { color: var(--ink-3); background: transparent; border: 1px solid var(--line); font-weight: 500; }
+  .card-title { font-weight: 700; font-size: 16.5px; }
+  .card p { font-size: 14.5px; color: var(--ink-2); margin-bottom: 10px; }
+  .card p:last-child { margin-bottom: 0; }
+  .why { font-size: 13.5px; padding: 10px 14px; background: var(--amber-wash); border-radius: 8px; color: var(--ink); margin-top: 4px; }
+  .why b { color: var(--amber-deep); }
+
+  /* ---- mockups ---- */
+  .mock {
+    margin: 14px 0 6px; border: 1px dashed var(--line); border-radius: 12px;
+    padding: 16px; background: var(--surface-tint);
+  }
+  .mock-label { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: 0.1em; color: var(--ink-3); text-transform: uppercase; margin-bottom: 10px; }
+  .m-pop {
+    width: 300px; max-width: 100%; background: var(--surface);
+    border: 2px solid #B38A0F73; border-radius: 14px; padding: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.10); font-size: 12px;
+  }
+  .m-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  .m-chip { border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; color: var(--ink-2); background: var(--surface); }
+  .m-chip.on { border-color: var(--amber); color: var(--amber-deep); background: var(--amber-wash); font-weight: 600; }
+  .m-chip.sev0 { border-color: var(--p0); color: var(--p0); background: var(--p0-wash); font-weight: 600; }
+  .m-src {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--amber-deep);
+    background: var(--amber-wash); border-radius: 7px; padding: 5px 9px; margin-bottom: 8px;
+    display: flex; gap: 6px; align-items: center;
+  }
+  .m-ta { border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; color: var(--ink-3); margin-bottom: 8px; background: var(--surface); }
+  .m-foot { display: flex; justify-content: space-between; align-items: center; }
+  .m-btn { border-radius: 999px; padding: 5px 13px; font-weight: 600; }
+  .m-btn.ghost { border: 1px solid var(--line); color: var(--ink-2); }
+  .m-btn.fill { background: linear-gradient(135deg, #B38A0F, #98750D); color: #fff; }
+  .m-card-item {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 12px; font-size: 12px; max-width: 360px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .m-card-top { display: flex; gap: 8px; align-items: center; }
+  .m-num { font-family: "IBM Plex Mono", monospace; font-weight: 600; color: var(--ink-2); }
+  .m-sent { margin-left: auto; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--amber-deep); background: var(--amber-wash); border-radius: 5px; padding: 2px 7px; }
+
+  /* ---- code ---- */
+  pre.code {
+    background: var(--code-bg); color: var(--code-ink); border-radius: 10px;
+    padding: 14px 16px; font-family: "IBM Plex Mono", monospace; font-size: 12.5px;
+    line-height: 1.6; overflow-x: auto; margin: 12px 0;
+  }
+  pre.code .c { color: #9C8F66; }
+  pre.code .k { color: #E8BE43; }
+  code.inline {
+    font-family: "IBM Plex Mono", monospace; font-size: 0.88em;
+    background: var(--amber-wash); color: var(--amber-deep);
+    border-radius: 5px; padding: 1px 6px;
+  }
+  kbd {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600;
+    border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px;
+    padding: 1px 6px; background: var(--surface); color: var(--ink-2);
+  }
+
+  /* ---- ux list & roadmap ---- */
+  ul.ux { list-style: none; padding: 0; margin: 0 0 8px; }
+  ul.ux li {
+    padding: 12px 2px 12px 0; border-bottom: 1px solid var(--line);
+    font-size: 14.5px; display: flex; gap: 12px; align-items: baseline;
+  }
+  ul.ux li:last-child { border-bottom: none; }
+  ul.ux .tag { flex-shrink: 0; }
+  ul.ux .d { color: var(--ink-2); }
+  ul.ux b { color: var(--ink); font-weight: 600; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; margin: 14px 0; }
+  th { text-align: left; font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; padding: 8px 12px 8px 0; border-bottom: 2px solid var(--line); }
+  td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-2); }
+  td:first-child { color: var(--ink); font-weight: 600; white-space: nowrap; }
+  .tbl-wrap { overflow-x: auto; }
+
+  .closing { margin-top: 56px; padding: 18px 22px; border-radius: 12px; background: var(--surface-tint); border: 1px solid var(--line); font-size: 14.5px; color: var(--ink-2); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">InstaFix · Product Review</div>
+  <h1>마킹에서 에이전트 수정 완료까지, 루프를 닫는 v3 제안</h1>
+  <p class="lede">InstaFix의 존재 이유 — <strong>내 웹앱의 UI/UX 문제를 화면에서 바로 마킹하고, 개발자가 스스로 기록하고, 그 기록을 LLM 에이전트에게 전달할 프롬프트로 만드는 도구</strong> — 관점에서 현재 기능을 전수 점검한 결과와 업그레이드 제안.</p>
+  <p class="meta">2026-09-02 · 기준 빌드: widget-dist @ 0314585</p>
+
+  <!-- ============================================================ -->
+  <h2><span class="mono">01</span>핵심 루프 진단</h2>
+  <p class="h2-sub">도구의 가치는 이 다섯 단계 루프가 얼마나 마찰 없이 도는가로 결정됩니다. 앞의 두 단계는 이번 시즌 작업으로 충분히 강해졌고, 병목은 뒤의 세 단계에 있습니다.</p>
+
+  <div class="loop">
+    <div class="loop-step">
+      <div class="loop-k">STEP 1</div>
+      <div class="loop-t">마킹</div>
+      <div class="loop-s">드래그 다중선택, 자동타겟, 키보드, 영역·텍스트, 단축키</div>
+      <span class="st st-ok">탄탄함</span>
+    </div>
+    <div class="loop-step">
+      <div class="loop-k">STEP 2</div>
+      <div class="loop-t">기록</div>
+      <div class="loop-s">타입·음성·드래프트·스크린샷·진단 캡처</div>
+      <span class="st st-ok">탄탄함</span>
+    </div>
+    <div class="loop-step">
+      <div class="loop-k">STEP 3</div>
+      <div class="loop-t">프롬프트</div>
+      <div class="loop-s">셀렉터·bounds 포함 마크다운. 그러나 <b>소스 파일 힌트 없음</b></div>
+      <span class="st st-part">보강 필요</span>
+    </div>
+    <div class="loop-step">
+      <div class="loop-k">STEP 4</div>
+      <div class="loop-t">에이전트 전달</div>
+      <div class="loop-s">클립보드 복사가 유일한 통로. 파이프·MCP 없음</div>
+      <span class="st st-gap">공백</span>
+    </div>
+    <div class="loop-step">
+      <div class="loop-k">STEP 5</div>
+      <div class="loop-t">완료 회수</div>
+      <div class="loop-s">에이전트가 상태를 닫을 방법이 프롬프트에 없음 → 수동 정리</div>
+      <span class="st st-gap">공백</span>
+    </div>
+  </div>
+  <p class="loop-note">요약: <strong>기록기로서는 완성 단계, 에이전트 도구로서는 절반.</strong> 프롬프트가 클립보드에서 끝나고, 수정이 끝나도 피드백은 열려 있는 채로 남습니다.</p>
+
+  <!-- ============================================================ -->
+  <h2><span class="mono">02</span>기능 제안 — P0 · 루프를 닫는 세 가지</h2>
+  <p class="h2-sub">이 세 개가 들어가면 "마킹하면 에이전트가 고치고 목록이 스스로 정리되는" 도구가 됩니다.</p>
+
+  <div class="card p0">
+    <div class="card-head">
+      <span class="badge p0">P0</span><span class="card-title">프롬프트에 피드백 ID + 완료 처리 지시 포함</span><span class="badge effort">effort S</span>
+    </div>
+    <p>현재 프롬프트의 항목 번호는 그때그때의 목록 순번이라 에이전트가 "3번 고쳤음"이라고 해도 어느 피드백인지 시스템은 모릅니다. 각 항목에 <code class="inline">ID: fb_x7k2</code>를 넣고, 프롬프트 말미에 완료 처리 방법을 지시합니다.</p>
+    <pre class="code"><span class="c">## 1. Save button  (ID: fb_x7k2)</span>
+…
+<span class="c">---</span>
+<span class="k">완료 후:</span> 각 항목을 고치고 검증이 끝나면 아래 명령으로 상태를 닫아라.
+  npx @instafix/cli resolve fb_x7k2 <span class="c"># 또는 PATCH /api/instafix/fb_x7k2</span></pre>
+    <div class="why"><b>왜 P0인가</b> — 코드 몇 줄(agent-format에 ID 라인 + 지시문)로 STEP 5 공백이 메워집니다. 에이전트가 작업을 마치면 인박스가 스스로 비워지는 경험.</div>
+  </div>
+
+  <div class="card p0">
+    <div class="card-head">
+      <span class="badge p0">P0</span><span class="card-title">소스 코드 힌트 — 셀렉터가 아니라 파일:라인</span><span class="badge effort">effort M</span>
+    </div>
+    <p>지금 에이전트는 <code class="inline">.hover\:border-gray-400</code> 같은 셀렉터에서 컴포넌트 파일을 역추적해야 하고, 여기서 오답이 나옵니다. dev 모드에서는 React의 <code class="inline">_debugSource</code>(또는 data-source 주입 플러그인)로 클릭된 요소의 <strong>컴포넌트 파일과 라인</strong>을 읽을 수 있습니다. 캡처해서 주석에 저장하고 프롬프트 최상단에 배치합니다.</p>
+    <h3 style="margin-top:18px;">dev 모드와 상용 빌드에서 각각 어떻게 보이는가</h3>
+    <p>이 힌트의 원천(<code class="inline">_debugSource</code>)은 <strong>개발 빌드에만 존재</strong>합니다. <code class="inline">npm run build → start</code>로 배포된 상용 빌드에서는 번들러가 이 정보를 제거하므로 파일:라인 확인은 동작하지 않습니다 — 이건 한계가 아니라 전제이며, 두 환경의 표시를 다음처럼 나눕니다:</p>
+    <div class="tbl-wrap">
+    <table>
+      <tr><th>환경</th><th>캡처되는 것</th><th>컴포저 표시</th><th>프롬프트</th></tr>
+      <tr><td>npm run dev</td><td>컴포넌트 파일:라인 + 셀렉터·xpath·주변 텍스트</td><td>⌖ 소스 힌트 줄 표시</td><td><span class="mono">Component: ContactForm.tsx:38</span> 최상단 배치</td></tr>
+      <tr><td>build → start<br>(상용)</td><td>셀렉터·xpath·주변 텍스트만<br>(지금과 동일)</td><td>소스 힌트 줄 자체가 <b>조용히 생략</b> — 빈 자리·오류 없음</td><td>오늘의 셀렉터 기반 Target 블록 그대로 (에이전트는 셀렉터로 탐색)</td></tr>
+    </table>
+    </div>
+    <div class="mock">
+      <div class="mock-label">컴포저 목업 — 왼쪽: dev 모드 / 오른쪽: 상용 빌드(힌트 줄 없음)</div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;">
+        <div class="m-pop" style="width:260px;">
+          <div class="m-src">⌖ components/ContactForm.tsx:38 · &lt;EmailField&gt;</div>
+          <div class="m-row"><span class="m-chip">질문</span><span class="m-chip on">버그</span><span class="m-chip">기타</span></div>
+          <div class="m-ta">이메일 입력이 안 돼요…</div>
+          <div class="m-foot"><span class="m-btn ghost">&lt;/&gt; 복사</span><span class="m-btn fill">보내기</span></div>
+        </div>
+        <div class="m-pop" style="width:260px;">
+          <div class="m-row"><span class="m-chip">질문</span><span class="m-chip on">버그</span><span class="m-chip">기타</span></div>
+          <div class="m-ta">이메일 입력이 안 돼요…</div>
+          <div class="m-foot"><span class="m-btn ghost">&lt;/&gt; 복사</span><span class="m-btn fill">보내기</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="why"><b>왜 P0인가</b> — 에이전트 정확도를 좌우하는 단일 최대 변수. InstaFix의 주 사용처가 바로 dev 서버 위의 자기 앱 리뷰이므로 적중 환경이 곧 주력 환경입니다. 상용 빌드에서는 기존 fail-closed 규율대로 조용히 생략되고 셀렉터 체계가 그대로 안전망이 됩니다.</div>
+  </div>
+
+  <div class="card p0">
+    <div class="card-head">
+      <span class="badge p0">P0</span><span class="card-title">클립보드 탈피 — <span class="mono">instafix prompt</span> CLI · MCP 서버</span><span class="badge effort">effort M→L</span>
+    </div>
+    <p>채택 범위는 <strong>개발자가 통제하고 눈으로 확인하는 두 모드</strong>로 확정합니다. (MCP 자동 처리는 검토 후 제외 — §05 참조)</p>
+    <p><strong>모드 A · 발주(새 세션)</strong> — 쌓아둔 항목 전체 또는 <em>선택한 항목만</em>, 별도의 Claude 세션에 배치로 던지는 작업 지시서. 내 작업 흐름과는 의도적으로 분리됩니다(나는 하던 일 계속).</p>
+    <pre class="code">npx @instafix/cli prompt --status open | claude -p       <span class="c"># 전체 발주</span>
+npx @instafix/cli prompt --id fb_x7k2,fb_m3q9 | claude -p <span class="c"># 선택 건만 발주</span></pre>
+    <p><strong>모드 B · 합류(현재 세션)</strong> — 작업 중이던 세션에서 <code class="inline">/instafix</code> 슬래시 커맨드(<code class="inline">instafix init</code>이 설치)로 목록을 확인하거나 열린 항목을 현재 컨텍스트로 끌어와 이어서 개발. 무엇이 들어오는지 개발자가 그 자리에서 봅니다.</p>
+
+    <h3 style="margin-top:20px;">"Agent에게" 버튼 — 위젯에서 현재 세션으로 밀어넣기</h3>
+    <p>브라우저의 위젯이 터미널 세션의 입력에 <em>직접</em> 주입할 수는 없습니다(브라우저↔터미널 경계). 하지만 <strong>outbox 큐 + 세션 측 감시</strong>로 동일한 체감을 만들 수 있습니다:</p>
+    <div class="mock">
+      <div class="mock-label">동작 흐름</div>
+      <div class="loop" style="margin:0;">
+        <div class="loop-step"><div class="loop-k">위젯</div><div class="loop-t" style="font-size:13px;">"⇥ Agent에게" 클릭</div><div class="loop-s">서버가 <span class="mono">.instafix/outbox/</span>에 프롬프트 파일 기록</div></div>
+        <div class="loop-step"><div class="loop-k">터미널</div><div class="loop-t" style="font-size:13px;">감시 태스크 기상</div><div class="loop-s">개발 세션에서 한 번 실행해 둔 <span class="mono">/instafix watch</span>의 백그라운드 감시가 새 파일에 반응</div></div>
+        <div class="loop-step"><div class="loop-k">현재 세션</div><div class="loop-t" style="font-size:13px;">이어서 작업</div><div class="loop-s">에이전트가 항목을 읽어 처리 제안 → 개발자 승인 후 수정</div></div>
+      </div>
+    </div>
+    <p style="font-size:13.5px;">감시를 켜두지 않았다면 버튼은 큐에만 쌓고 위젯 카드에 <strong>"전달 대기"</strong> 배지를 표시 — 개발자가 원할 때 <code class="inline">/instafix</code>로 수거합니다. 어느 쪽이든 <em>세션에 들어오는 순간을 개발자가 보고 승인</em>하므로 통제가 유지됩니다.</p>
+    <div class="why"><b>왜 P0인가</b> — STEP 4가 현재 유일하게 사람 손(복사·붙여넣기)을 강제하는 구간입니다. adapter-fs·CLI 인프라가 이미 있어 모드 A·슬래시 커맨드·outbox 모두 저비용입니다.</div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2><span class="mono">03</span>기능 제안 — P1 · 기록의 밀도</h2>
+
+  <div class="card p1">
+    <div class="card-head"><span class="badge p1">P1</span><span class="card-title">"에이전트에 전달됨" 추적</span><span class="badge effort">effort S</span></div>
+    <p>프롬프트 복사/내보내기 시각을 기록해 카드에 배지로 표시하고, 옵션으로 복사와 동시에 <code class="inline">in_progress</code>로 전환. 같은 건을 두 번 에이전트에 보내는 사고와 "이거 보냈던가?" 하는 기억 의존을 없앱니다.</p>
+    <div class="mock"><div class="mock-label">리스트 카드 목업</div>
+      <div class="m-card-item">
+        <div class="m-card-top"><span class="m-num">#4</span><span class="m-chip sev0" style="font-size:10.5px;">버그</span><span class="m-chip" style="font-size:10.5px;">진행 중</span><span class="m-sent">⇥ 전달됨 · 12분 전</span></div>
+        <div style="color:var(--ink-2);">Vertex SaaS 카드를 클릭해도 아무 일도 없음</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card p1">
+    <div class="card-head"><span class="badge p1">P1</span><span class="card-title">선택 항목만 프롬프트 복사</span><span class="badge effort">effort S</span></div>
+    <p>지금은 "보이는 목록 전체"가 복사 단위입니다. 체크박스 다중선택(bulk bar)에 <strong>선택 N건 프롬프트 복사</strong>를 추가해, 이번 에이전트 세션에 넘길 묶음을 손으로 고를 수 있게 합니다.</p>
+  </div>
+
+  <div class="card p1">
+    <div class="card-head"><span class="badge p1">P1</span><span class="card-title">프로젝트 지침 주입 — <span class="mono">agentInstructions</span></span><span class="badge effort">effort S</span></div>
+    <p>프롬프트 상단 지시문이 고정 3줄입니다. 위젯 config로 프로젝트별 규칙("스타일은 shadcn 토큰만", "수정마다 vitest 실행")을 주입할 수 있게 하면, 붙여넣은 프롬프트가 프로젝트 컨벤션을 이미 알고 시작합니다.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2><span class="mono">04</span>기능 제안 — P2 · 마무리와 검증</h2>
+
+  <div class="card p2">
+    <div class="card-head"><span class="badge p2">P2</span><span class="card-title">수정 검증 뷰 — 그때 스크린샷 vs 지금 화면</span><span class="badge effort">effort M</span></div>
+    <p>에이전트가 resolved로 닫은 항목에 "확인하기": 캡처 당시 스크린샷과 현재 화면(같은 앵커로 재스크롤)을 나란히 보여주고, 개발자가 한 번에 승인 또는 반려(reopen). 루프의 마지막 조각인 <strong>사람의 검수</strong>를 10초짜리로 만듭니다.</p>
+  </div>
+  <div class="card p2">
+    <div class="card-head"><span class="badge p2">P2</span><span class="card-title">클립보드 이미지 첨부</span><span class="badge effort">effort M</span></div>
+    <p>컴포저 텍스트영역에 이미지 붙여넣기(⌘V) 허용 — 디자인 시안·타 앱 레퍼런스를 "이렇게 바꿔줘"의 근거로 첨부. 멀티모달 에이전트에게 그대로 전달됩니다.</p>
+  </div>
+  <div class="card p2">
+    <div class="card-head"><span class="badge p2">P2</span><span class="card-title">전역 단축키를 도움말 오버레이에 통합</span><span class="badge effort">effort S</span></div>
+    <p>패널의 <kbd>?</kbd> 도움말에는 패널 내부 키만 있습니다. <kbd>Alt+Shift+A</kbd> <kbd>T</kbd> <kbd>S</kbd> <kbd>V</kbd> 전역 키를 같은 오버레이에 표기해 발견 가능성을 높입니다.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2><span class="mono">05</span>검토 후 제외한 것들</h2>
+  <p class="h2-sub">제안했다가 논의를 거쳐 의도적으로 빼기로 한 항목 — 이유를 기록으로 남깁니다.</p>
+  <ul class="ux">
+    <li><span class="tag badge p2">제외</span><span class="d"><b>MCP 서버의 자동 처리</b> — 남은 항목을 에이전트가 알아서 소비하는 방식은 개발자 통제 밖에서 토큰을 쓰고, 무엇이 왜 바뀌었는지 추적이 흐려집니다. 모드 A(발주)·모드 B(합류)만으로 "눈으로 확인하며 처리"가 충족되므로 채택하지 않습니다. 필요해지면 후일 재검토.</span></li>
+    <li><span class="tag badge p2">제외</span><span class="d"><b>심각도 필드(P0/P1/P2)</b> — 문제를 발견한 순간의 기록은 빠를수록 좋은데, 필수 입력이 하나 더 늘면 마찰이 커집니다. 급한 정도는 메시지 본문("긴급:")이나 처리 순서 선택(선택 발주)으로 충분히 표현됩니다.</span></li>
+  </ul>
+
+  <!-- ============================================================ -->
+  <h2><span class="mono">06</span>UX 손질 목록 — 지금 있는 것 다듬기</h2>
+  <p class="h2-sub">이번 시즌 라이브 테스트 중 실측으로 확인했거나 구조적으로 확실한 항목만 담았습니다.</p>
+
+  <ul class="ux">
+    <li><span class="tag badge p0">버그</span><span class="d"><b>Escape가 열린 다중선택 팝업을 닫지 못함</b> — 오버레이만 내려가고 컴포저가 고아로 남는 기존 버그. 재현 확인됨, 우선 수정 대상.</span></li>
+    <li><span class="tag badge p1">안전</span><span class="d"><b>삭제 취소(undo) 없음</b> — 확인 다이얼로그는 있지만 실수 삭제는 복구 불가. 5초 undo 토스트가 다이얼로그보다 빠르고 안전합니다.</span></li>
+    <li><span class="tag badge p1">명료</span><span class="d"><b>"프롬프트 복사"의 범위가 암묵적</b> — 현재 필터·검색이 걸린 "보이는 목록"이 복사됨. 미리보기 모달 제목에 "열림 12건 · 이 페이지" 식으로 범위를 명시해야 합니다.</span></li>
+    <li><span class="tag badge p2">밀집</span><span class="d"><b>마커 클러스터 위 툴팁 겹침</b> — 마커가 뭉친 지점에서 툴팁이 이웃 마커를 가림. 클러스터 펼침 중에는 툴팁을 지연시키는 것으로 완화 가능.</span></li>
+    <li><span class="tag badge p2">일관</span><span class="d"><b>위젯의 상태 어휘가 이분법</b> — 대시보드는 4상태(open/in_progress/resolved/wont_fix)인데 위젯 카드는 해결/재열기만 노출. "전달됨 추적"(§03)과 함께 in_progress를 위젯에도 승격시키는 것이 자연스럽습니다.</span></li>
+  </ul>
+
+  <!-- ============================================================ -->
+  <h2><span class="mono">07</span>로드맵 제안</h2>
+  <div class="tbl-wrap">
+  <table>
+    <tr><th>단계</th><th>내용</th><th>기대 효과</th></tr>
+    <tr><td>v3.0</td><td>ID+완료지시(P0) · 전달됨 추적 · Escape 버그 · 복사 범위 명시</td><td>에이전트가 스스로 인박스를 닫기 시작 — 루프 최초 완주</td></tr>
+    <tr><td>v3.1</td><td>소스 코드 힌트(P0, dev 전용) · <span class="mono">instafix prompt</span> CLI(전체/선택 발주) + <span class="mono">/instafix</span> 슬래시 커맨드 · agentInstructions</td><td>프롬프트 정확도 도약, 발주·합류 두 경로 개통</td></tr>
+    <tr><td>v3.2</td><td>"Agent에게" 버튼 + outbox/<span class="mono">watch</span> · 수정 검증 뷰 · 이미지 첨부 · undo</td><td>위젯에서 현재 세션으로 원클릭 합류, 사람은 승인·검수만</td></tr>
+  </table>
+  </div>
+
+  <div class="closing">
+    <strong>한 줄 결론</strong> — 마킹과 기록은 이미 이 도구의 강점입니다. v3의 투자는 전부 "프롬프트 이후"에 몰아야 합니다: 프롬프트가 <em>자기 ID와 완료 방법을 알고</em>, <em>소스 파일을 가리키고</em>, <em>터미널로 직접 흘러가며</em>, 수정되면 <em>목록이 스스로 닫히는</em> 것. 그 순간 InstaFix는 기록 도구가 아니라 에이전트 작업 지시 시스템이 됩니다.
+  </div>
+</div>

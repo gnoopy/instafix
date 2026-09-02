@@ -929,6 +929,19 @@ export function buildStyles(colors: ThemeColors): string {
       letter-spacing: 0.02em;
     }
 
+    /* "이미 에이전트에 전달됨" 배지 — 레이어 톤, 카드 헤더의 날짜 왼쪽. */
+    .sp-card-handed {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--sp-selection, var(--sp-accent));
+      background: var(--sp-selection-light, var(--sp-accent-light));
+      border-radius: 5px;
+      padding: 1px 6px;
+      white-space: nowrap;
+      margin-left: auto;
+    }
+    .sp-card-handed + .sp-card-date { margin-left: 8px; }
+
     .sp-card-date {
       font-size: 11px;
       color: var(--sp-text-tertiary);
@@ -1293,6 +1306,37 @@ export function buildStyles(colors: ThemeColors): string {
 
     .sp-btn-load-more {
       width: 100%;
+    }
+
+    /* ---- Delete UNDO toast (single-card deletes, 5s grace) ---- */
+    .sp-undo-toast {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: var(--sp-radius);
+      background: var(--sp-text);
+      color: var(--sp-bg);
+      font-size: 13px;
+      box-shadow: var(--sp-shadow-lg);
+      z-index: 5;
+    }
+
+    .sp-undo-toast-btn {
+      border: none;
+      background: none;
+      color: var(--sp-selection, var(--sp-accent));
+      font-family: var(--sp-font);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 2px 4px;
+      letter-spacing: 0.01em;
     }
 
     /* ============================

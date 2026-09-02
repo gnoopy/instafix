@@ -209,8 +209,10 @@ describe("KeyboardShortcuts", () => {
 
     it("renders one row per shortcut definition with key badges and description", () => {
       const rows = shortcuts.helpOverlay.querySelectorAll(".sp-shortcuts-row");
-      // 7 shortcuts: navigate, resolve, delete, search, select, help, close
-      expect(rows.length).toBe(7);
+      // 7 panel shortcuts + 4 global Alt+Shift toolbar shortcuts
+      expect(rows.length).toBe(11);
+      // The global section is delimited by its own heading.
+      expect(shortcuts.helpOverlay.querySelector(".sp-shortcuts-section")).not.toBeNull();
 
       // First row (navigate) has 2 keys joined by a separator
       const firstRow = rows[0]!;

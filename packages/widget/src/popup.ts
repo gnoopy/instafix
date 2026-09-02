@@ -45,10 +45,18 @@ const TYPE_LABEL_KEYS: Record<FeedbackType, keyof Translations> = {
  * deliberately absent — both are only captured at submit time.
  * Exported for direct unit testing.
  */
+export interface ComposePromptOptions {
+  /** Project-specific instruction bullets (InstaFixConfig.agentInstructions). */
+  instructions?: string[] | undefined;
+  /** Dev-only component source hint for the selected element (dom/source-hint.ts). */
+  sourceHint?: string | undefined;
+}
+
 export function buildComposePrompt(
   annotations: readonly AnnotationPayload[],
   type: FeedbackType,
   message: string,
+  options: ComposePromptOptions = {},
 ): string {
   const now = new Date().toISOString();
   const draft: FeedbackResponse = {
@@ -79,7 +87,17 @@ export function buildComposePrompt(
       createdAt: now,
     })),
   };
-  return formatFeedbacksForAgent([draft], { title: "UI change request" });
+  let markdown = formatFeedbacksForAgent([draft], {
+    title: "UI change request",
+    // A draft has no real ID — resolve instructions would point nowhere.
+    includeResolveProtocol: false,
+    ...(options.instructions ? { instructions: options.instructions } : {}),
+  });
+  if (options.sourceHint) {
+    // Appended as its own line — the formatter itself stays draft-agnostic.
+    markdown += `\nSource hint (dev): ${options.sourceHint}\n`;
+  }
+  return markdown;
 }
 
 /**
@@ -192,6 +210,19 @@ export class Popup {
   /** Live view of the current session's annotations — set via setPromptContext() by the annotator right after show(); null hides the button. */
   private getPromptAnnotations: (() => readonly AnnotationPayload[]) | null = null;
   private copyResetTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Dev-only component source hint line (⌖ file:line · <Name>) — shown above the type chips, included in the compose copy. */
+  private readonly sourceHintEl: HTMLElement;
+  private sourceHint: string | null = null;
+
+  // --- Pasted image attachment (⌘V into the note) ---
+  private readonly pastedImageRow: HTMLElement;
+  private readonly pastedImageThumb: HTMLImageElement;
+  private pastedImage: string | null = null;
+
+  /** Data URL of an image the user pasted into the composer, if any — the annotator uses it in place of the auto-captured screenshot. */
+  get pastedScreenshotDataUrl(): string | null {
+    return this.pastedImage;
+  }
 
   /**
    * True from `show()` until its promise settles — through typing, the
@@ -207,6 +238,8 @@ export class Popup {
   constructor(
     private readonly colors: ThemeColors,
     private readonly t: TFunction,
+    /** Project instruction bullets injected into compose-copy prompts (InstaFixConfig.agentInstructions). */
+    private readonly agentInstructions?: string[],
   ) {
     // Layer surface (see ThemeColors.layerBg): hue-tinted background + a
     // layer-toned edge, so the popover reads as InstaFix's own floating
@@ -240,6 +273,45 @@ export class Popup {
     this.root.setAttribute("data-instafix-ignore", "true");
     // The dialog `aria-label` is bound by `applyLabels()` at the end of the
     // constructor, alongside every other `t()`-derived string.
+
+    // Dev-only source hint (⌖ components/Foo.tsx:38 · <Name>) — hidden until
+    // the annotator captures one; absent entirely on production builds.
+    this.sourceHintEl = el("div", {
+      style: `
+        display:none;align-items:center;gap:6px;
+        margin-bottom:10px;padding:5px 9px;border-radius:7px;
+        background:${this.colors.accentLight};color:${this.colors.accent};
+        font-family:"IBM Plex Mono","SF Mono",Consolas,monospace;
+        font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+      `,
+    });
+
+    // Pasted-image row — thumbnail + remove, shown after a ⌘V image paste.
+    this.pastedImageRow = el("div", {
+      style: "display:none;align-items:center;gap:8px;margin:8px 0 0;",
+    });
+    this.pastedImageThumb = document.createElement("img");
+    this.pastedImageThumb.style.cssText = `
+      height:40px;max-width:120px;border-radius:7px;object-fit:cover;
+      border:1px solid ${this.colors.border};
+    `;
+    const pastedLabel = el("span", {
+      style: `font-size:11px;color:${this.colors.textTertiary};font-family:${FONT_STACK};`,
+    });
+    setText(pastedLabel, "📎");
+    const pastedRemove = document.createElement("button");
+    pastedRemove.type = "button";
+    pastedRemove.style.cssText = `
+      border:none;background:none;color:${this.colors.textTertiary};
+      font-family:${FONT_STACK};font-size:11px;font-weight:600;
+      text-decoration:underline;cursor:pointer;padding:0;
+    `;
+    setText(pastedRemove, "×");
+    pastedRemove.setAttribute("aria-label", "remove pasted image");
+    pastedRemove.addEventListener("click", () => this.setPastedImage(null));
+    this.pastedImageRow.appendChild(this.pastedImageThumb);
+    this.pastedImageRow.appendChild(pastedLabel);
+    this.pastedImageRow.appendChild(pastedRemove);
 
     // Right-click target-size picker (G8) — hidden by default, shown by
     // `show()` only when the smallest/largest candidates genuinely differ.
@@ -559,14 +631,35 @@ export class Popup {
     rightBtns.appendChild(this.submitBtn);
     btnRow.appendChild(rightBtns);
 
+    this.root.appendChild(this.sourceHintEl);
     this.root.appendChild(this.targetSizeRow);
     this.root.appendChild(this.typeRow);
     this.root.appendChild(this.legendRow);
     if (this.draftBanner) this.root.appendChild(this.draftBanner);
     this.root.appendChild(this.textarea);
+    this.root.appendChild(this.pastedImageRow);
     this.root.appendChild(hintRow);
     this.root.appendChild(btnRow);
     document.body.appendChild(this.root);
+
+    // ⌘V image paste — the pasted image replaces the auto-captured
+    // screenshot for this feedback (design references, other-app examples).
+    this.textarea.addEventListener("paste", (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (!item.type.startsWith("image/")) continue;
+        const file = item.getAsFile();
+        if (!file) continue;
+        e.preventDefault();
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === "string") this.setPastedImage(reader.result);
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+    });
 
     // Bind every `t()`-derived string into the freshly-built DOM. Kept as a
     // single pass so the constructor and `refreshLabels()` never drift.
@@ -647,12 +740,54 @@ export class Popup {
     this.copyContextBtn.style.display = getAnnotations ? "inline-flex" : "none";
   }
 
+  /**
+   * Show (or clear) the dev-only component source hint for the current
+   * selection — a "⌖ file:line · <Name>" line above the type chips, also
+   * appended to the compose copy. Reset to null by show(); absent entirely
+   * on production host builds (dom/source-hint.ts returns null there).
+   */
+  setSourceHint(hint: { location: string; componentName: string } | null): void {
+    this.sourceHint = hint ? `\`${hint.location}\`${hint.componentName ? ` <${hint.componentName}>` : ""}` : null;
+    if (!hint) {
+      this.sourceHintEl.style.display = "none";
+      return;
+    }
+    setText(this.sourceHintEl, `⌖ ${hint.location}${hint.componentName ? ` · <${hint.componentName}>` : ""}`);
+    this.sourceHintEl.title = `${hint.location}${hint.componentName ? ` · <${hint.componentName}>` : ""}`;
+    this.sourceHintEl.style.display = "flex";
+  }
+
+  /** Attach (or clear) a pasted image — used in place of the auto screenshot. */
+  private setPastedImage(dataUrl: string | null): void {
+    this.pastedImage = dataUrl;
+    if (dataUrl) {
+      this.pastedImageThumb.src = dataUrl;
+      this.pastedImageRow.style.display = "flex";
+    } else {
+      this.pastedImageThumb.removeAttribute("src");
+      this.pastedImageRow.style.display = "none";
+    }
+  }
+
+  /**
+   * Cancel an open composer from OUTSIDE (the annotator's document-level
+   * Escape handler) — same path as the cancel button, so the pending
+   * `show()` promise resolves null instead of being orphaned when the
+   * overlay around the popup is torn down.
+   */
+  cancelOpen(): void {
+    if (this.isOpen) this.cancel();
+  }
+
   /** Instant-copy the in-composition context+note as agent Markdown — transient ✓/✗ label, no modal. */
   private async copyComposeContext(): Promise<void> {
     const getAnnotations = this.getPromptAnnotations;
     if (!getAnnotations || this.copyResetTimer) return; // mid ✓/✗ flash — ignore spam clicks
 
-    const markdown = buildComposePrompt(getAnnotations(), this.selectedType ?? "other", this.textarea.value.trim());
+    const markdown = buildComposePrompt(getAnnotations(), this.selectedType ?? "other", this.textarea.value.trim(), {
+      instructions: this.agentInstructions,
+      sourceHint: this.sourceHint ?? undefined,
+    });
     const ok = await copyTextToClipboard(markdown);
 
     setText(this.copyContextLabel, this.t(ok ? "popup.copyContextCopied" : "popup.copyContextFailed"));
@@ -934,6 +1069,8 @@ export class Popup {
       this.hideDraftBanner();
       this.setLegend([]);
       this.setPromptContext(null);
+      this.setSourceHint(null);
+      this.setPastedImage(null);
 
       this.targetSizeOnChange = targetSizeOptions?.onChange ?? null;
       this.targetSizeChoice = targetSizeOptions?.initial ?? "smallest";
