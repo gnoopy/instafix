@@ -8,6 +8,7 @@ import {
   detectSelectionColor,
   hslToHex,
   hslToRgb,
+  LAYER_PALETTES,
   rgbToHsl,
 } from "../../src/dom/selection-color.js";
 import { makeDOMRect } from "../helpers.js";
@@ -128,6 +129,22 @@ describe("detectSelectionColor", () => {
     expect(result).not.toBeNull();
     const { h } = rgbToHsl(hexToRgb(result!.hex).r, hexToRgb(result!.hex).g, hexToRgb(result!.hex).b);
     expect(circularHueDistance(h, 229)).toBeGreaterThan(120);
+  });
+
+  it("snaps the result to one of the curated LAYER_PALETTES hues", () => {
+    const btn = document.createElement("button");
+    btn.style.backgroundColor = "rgb(23, 60, 255)";
+    stubRect(btn, { x: 10, y: 10, width: 80, height: 30 });
+    document.body.appendChild(btn);
+
+    const result = detectSelectionColor();
+    expect(result).not.toBeNull();
+    const { h } = rgbToHsl(hexToRgb(result!.hex).r, hexToRgb(result!.hex).g, hexToRgb(result!.hex).b);
+    // Within 2° of a curated palette hue (hex round-tripping wobbles slightly).
+    const nearest = Math.min(...LAYER_PALETTES.map((p) => circularHueDistance(p.h, h)));
+    expect(nearest).toBeLessThan(2);
+    // The default-blue band (200–260°) is banned outright.
+    expect(h < 200 || h > 260).toBe(true);
   });
 
   it("the returned color clears 3:1 non-text contrast against a light page (yellow gets darkened)", () => {

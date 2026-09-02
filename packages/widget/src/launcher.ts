@@ -23,7 +23,7 @@ import { hasSeenOnboarding, Onboarding } from "./onboarding.js";
 import type { Panel as PanelType } from "./panel.js";
 import { StoreClient } from "./store-client.js";
 import { buildStyles } from "./styles/base.js";
-import { buildThemeColors, darkenHex } from "./styles/theme.js";
+import { applyLayerColor, buildThemeColors } from "./styles/theme.js";
 import { Tooltip } from "./tooltip.js";
 
 /** Raw, single-mount instance shape — everything `InstaFixInstance` has except `updateConfig`, which is facade-level (see `launch`). */
@@ -359,6 +359,26 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
   const networkBuffer = diagnosticsOpts.network ? new NetworkBuffer(diagnosticsOpts.maxNetworkEntries) : null;
 
   const colors = buildThemeColors(config.accentColor, config.theme);
+
+  // ---- Layer identity ----------------------------------------------------
+  // InstaFix must read as ONE overlay layer, visually distinct from the host
+  // app: toolbar, composer popover, panel, and markers all wear the SAME
+  // detected tone (see styles/theme.ts `applyLayerColor` for the full color
+  // rules). Detection runs SYNCHRONOUSLY here — before the stylesheet is
+  // built or any component is constructed — so even surfaces with
+  // constructor-baked inline styles (the composer) are born in the layer
+  // tone. A null result (page not painted yet, or a grayscale host) leaves
+  // the configured accent as the tone; the rAF retry further below covers
+  // the not-yet-painted case for everything CSS-var-driven.
+  let layerColorApplied = false;
+  if (config.autoSelectionColor !== false) {
+    const detected = detectSelectionColor();
+    if (detected) {
+      applyLayerColor(colors, detected.hex, config.theme);
+      layerColorApplied = true;
+    }
+  }
+
   const bus = new EventBus<WidgetEvents>();
   const publicBus = new EventBus<InstaFixPublicEvents>();
 
@@ -428,15 +448,15 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
 
   document.body.appendChild(host);
 
-  // Auto-detect a selection-indicator color distinct from the host app's own
-  // button/link colors, for the on-page selection UI (toolbar active-state,
-  // draw/auto-target highlight, multi-target badges) — deferred one frame,
-  // same reason Fab's own background-contrast sampling is (fab.ts's
-  // updateContrast): the host page needs a frame to have real layout. Runs
-  // once per mount, not re-sampled on scroll/resize like the light/dark
-  // luminance sampler — a host's brand palette is a page-level property, not
-  // a viewport-scroll-position one.
-  if (config.autoSelectionColor !== false) {
+  // Layer-identity retry — only needed when the synchronous pass above found
+  // nothing to sample (the widget mounted before the host page's first
+  // paint). One frame later the page has real layout; on success, mutate the
+  // shared colors in place AND set inline custom properties on the host so
+  // every CSS-var-driven surface (the whole panel stylesheet, FAB/toolbar,
+  // drawing rects, markers) recolors live. The composer's constructor-baked
+  // inline styles keep the configured accent in this rare path — an accepted
+  // limitation, since the sync pass covers every normally-timed mount.
+  if (config.autoSelectionColor !== false && !layerColorApplied) {
     requestAnimationFrame(() => {
       if (destroyed) return;
       // Pass the shadow host so the detector can sample the real page
@@ -444,20 +464,16 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
       // sample) and adjust the color's lightness for contrast against it.
       const detected = detectSelectionColor(host);
       if (!detected) return;
-      colors.selection = detected.hex;
-      colors.selectionLight = `${detected.hex}26`;
-      colors.selectionGlow = `${detected.hex}40`;
+      applyLayerColor(colors, detected.hex, config.theme);
+      host.style.setProperty("--sp-accent", colors.accent);
+      host.style.setProperty("--sp-accent-light", colors.accentLight);
+      host.style.setProperty("--sp-accent-dark", colors.accentDark);
+      host.style.setProperty("--sp-accent-glow", colors.accentGlow);
+      host.style.setProperty("--sp-accent-gradient", colors.accentGradient);
       host.style.setProperty("--sp-selection", colors.selection);
       host.style.setProperty("--sp-selection-light", colors.selectionLight);
       host.style.setProperty("--sp-selection-glow", colors.selectionGlow);
-      // The FAB + toolbar wear the detected color too (styles/base.ts reads
-      // these with an accent fallback) — the whole cluster is "InstaFix's
-      // own UI", and matching the host's primary is exactly the ambiguity
-      // this feature exists to remove.
-      host.style.setProperty(
-        "--sp-selection-gradient",
-        `linear-gradient(135deg, ${detected.hex}, ${darkenHex(detected.hex, 0.15)})`,
-      );
+      host.style.setProperty("--sp-selection-gradient", colors.accentGradient);
     });
   }
 

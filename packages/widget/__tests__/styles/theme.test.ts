@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildThemeColors, getTypeColor } from "../../src/styles/theme.js";
+import { applyLayerColor, buildThemeColors, getTypeColor } from "../../src/styles/theme.js";
 
 describe("buildThemeColors", () => {
   it("uses default accent when none provided", () => {
@@ -36,6 +36,39 @@ describe("buildThemeColors", () => {
   it("falls back to default for empty string", () => {
     const colors = buildThemeColors("");
     expect(colors.accent).toBe("#0066ff");
+  });
+});
+
+describe("applyLayerColor", () => {
+  it("rewrites BOTH the accent and selection families to the same layer tone (rule 1: one tone per mount)", () => {
+    const colors = buildThemeColors("#0066ff", "light");
+    applyLayerColor(colors, "#b45309", "light");
+
+    expect(colors.accent).toBe("#b45309");
+    expect(colors.selection).toBe("#b45309");
+    expect(colors.accentLight).toBe("#b4530914");
+    expect(colors.selectionLight).toBe(colors.accentLight);
+    expect(colors.accentGlow).toBe("#b4530933");
+    expect(colors.selectionGlow).toBe(colors.accentGlow);
+    expect(colors.accentGradient).toContain("#b45309");
+    // Darkened second stop — same construction buildThemeColors uses.
+    expect(colors.accentGradient).toMatch(/linear-gradient\(135deg, #b45309, #[0-9a-f]{6}\)/);
+  });
+
+  it("uses the dark theme's stronger alphas when the resolved theme is dark", () => {
+    const colors = buildThemeColors("#0066ff", "dark");
+    applyLayerColor(colors, "#b45309", "dark");
+    expect(colors.accentLight).toBe("#b4530922");
+    expect(colors.accentGlow).toBe("#b4530944");
+  });
+
+  it("leaves semantic data colors untouched (rule 3)", () => {
+    const colors = buildThemeColors("#0066ff", "light");
+    const typeBug = colors.typeBug;
+    const statusOpen = colors.statusOpen;
+    applyLayerColor(colors, "#b45309", "light");
+    expect(colors.typeBug).toBe(typeBug);
+    expect(colors.statusOpen).toBe(statusOpen);
   });
 });
 

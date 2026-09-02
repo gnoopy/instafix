@@ -198,6 +198,49 @@ export function buildThemeColors(accent: string = DEFAULT_ACCENT, theme?: "light
   };
 }
 
+/**
+ * LAYER COLOR RULES — InstaFix is an overlay laid over the host app, and
+ * must always read as ONE distinct layer, never as part of the host UI.
+ *
+ * 1. ONE tone per mount: the toolbar/FAB, the composer popover, the panel,
+ *    the selection outlines, and the numbered markers ALL wear the same
+ *    layer tone. No surface keeps a different brand color.
+ * 2. The tone comes from `dom/selection-color.ts`: the curated
+ *    LAYER_PALETTES entry farthest (maximin hue distance) from every
+ *    sampled host brand color, lightness-adjusted for contrast against the
+ *    page background. On a fully grayscale host — nothing to clash with —
+ *    the configured `accentColor` is the layer tone.
+ * 3. Semantic data colors are exempt: feedback-type colors (bug red …),
+ *    status colors, and the red error/badge tones mark DATA, not the
+ *    layer, and stay fixed.
+ * 4. Neutrals (text, borders, glass surfaces) are theme-driven, not
+ *    layer-toned — the tone is the identity, not a wash over everything.
+ * 5. `autoSelectionColor: false` opts out entirely: the configured
+ *    `accentColor` becomes the layer tone everywhere (still rule 1 — one
+ *    tone, just a manually chosen one).
+ *
+ * This function is rule 1's enforcement point: it rewrites BOTH the
+ * accent family (panel/popover branding) and the selection family
+ * (on-page indicators) to the same detected tone, in place, so every
+ * consumer of the shared `colors` object — stylesheet vars and
+ * constructor-baked inline styles alike — is born in the layer tone.
+ * Call BEFORE `buildStyles()`/component construction (launcher.ts).
+ */
+export function applyLayerColor(colors: ThemeColors, hex: string, theme?: "light" | "dark" | "auto"): void {
+  const resolved = resolveTheme(theme);
+  const dark = darkenHex(hex, 0.15);
+  const lightAlpha = resolved === "dark" ? "22" : "14";
+  const glowAlpha = resolved === "dark" ? "44" : "33";
+  colors.accent = hex;
+  colors.accentLight = hex + lightAlpha;
+  colors.accentDark = dark;
+  colors.accentGlow = hex + glowAlpha;
+  colors.accentGradient = `linear-gradient(135deg, ${hex}, ${dark})`;
+  colors.selection = hex;
+  colors.selectionLight = hex + lightAlpha;
+  colors.selectionGlow = hex + glowAlpha;
+}
+
 export function getTypeColor(type: string, colors: ThemeColors): string {
   switch (type) {
     case "question":

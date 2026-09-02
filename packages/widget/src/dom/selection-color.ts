@@ -7,15 +7,15 @@
  * is InstaFix's selection indicator or part of the page's own design.
  *
  * Approach: sample the hue of the host page's own interactive elements
- * (buttons/links actually visible in the viewport), then pick a hue from a
- * curated set of vivid "signal" tones — the same visual category browser
- * DevTools/annotation tools use — that maximizes the *minimum* circular
- * distance to every detected host hue (maximin), not just the most frequent
- * one: a single strongly-colored host element (e.g. a red "delete" button)
- * should be able to veto a nearby candidate even if it isn't the host's
- * dominant brand color. Returns null on a fully neutral/grayscale host —
- * there's nothing to contrast against, so callers should keep using
- * `accentColor` as-is.
+ * (buttons/links actually visible in the viewport), then pick the LAYER
+ * PALETTE (curated below — the finite set of tones InstaFix's overlay
+ * layer may wear) that maximizes the *minimum* circular distance to every
+ * detected host hue (maximin), not just the most frequent one: a single
+ * strongly-colored host element (e.g. a red "delete" button) should be
+ * able to veto a nearby candidate even if it isn't the host's dominant
+ * brand color. Returns null on a fully neutral/grayscale host — there's
+ * nothing to contrast against, so callers keep the configured
+ * `accentColor` as the layer tone.
  */
 
 import { isWidgetChrome } from "../focus-tracker.js";
@@ -26,16 +26,45 @@ export interface SelectionColorResult {
 }
 
 const CANDIDATE_SELECTOR = 'button, a[href], input[type="submit"], input[type="button"], [role="button"]';
-/** Evenly spaced around the wheel — fine enough to land close to a true maximin optimum without per-page cost. */
-const CANDIDATE_HUE_COUNT = 12;
-/** Fixed tone for every candidate — vivid and legible over arbitrary host content, deliberately not derived from the host (that's the whole point). */
-const SIGNAL_SATURATION = 0.82;
-const SIGNAL_LIGHTNESS = 0.52;
 /** Below this, a sampled color reads as gray/neutral chrome rather than a host "brand" color — excluded so borders/disabled states don't skew the result. */
 const MIN_HOST_SATURATION = 0.2;
 /** Bounds on a huge page — cheap enough to never be worth optimizing further. */
 const MAX_ELEMENTS_SCANNED = 200;
 const MAX_CHROMATIC_SAMPLES = 40;
+
+/** One tone the InstaFix layer is allowed to wear — a tuned hue/sat/lightness, not a raw wheel position. */
+export interface LayerPalette {
+  name: string;
+  h: number;
+  s: number;
+  l: number;
+}
+
+/**
+ * The curated set of LAYER PALETTES — the only tones InstaFix's overlay
+ * layer may wear. The layer-identity rule (see styles/theme.ts,
+ * `applyLayerColor`): every InstaFix surface shares ONE of these tones, so
+ * the widget always reads as a single overlay laid over the host app.
+ *
+ * Curation rationale (annotation/dev-tool convention research):
+ * - Each entry is a vivid "signal" tone with per-hue tuned saturation and
+ *   lightness — a raw fixed S/L across the wheel makes yellows glaring and
+ *   violets muddy.
+ * - Entries sit in the gaps BETWEEN the web's most common brand hues, so
+ *   the maximin pick below has real separation to work with.
+ * - The 200–260° band (default-blue territory: bootstrap/tailwind blues,
+ *   iOS/Material primaries) is deliberately ABSENT: a blue overlay reads
+ *   as "another default-styled app", never as a distinct tool layer — even
+ *   on a host that uses no blue at all.
+ */
+export const LAYER_PALETTES: readonly LayerPalette[] = [
+  { name: "coral", h: 15, s: 0.8, l: 0.55 },
+  { name: "amber", h: 45, s: 0.85, l: 0.5 },
+  { name: "lime", h: 90, s: 0.6, l: 0.42 },
+  { name: "teal", h: 175, s: 0.7, l: 0.42 },
+  { name: "violet", h: 275, s: 0.65, l: 0.55 },
+  { name: "magenta", h: 320, s: 0.7, l: 0.5 },
+];
 
 /** Exported for direct unit testing — not otherwise part of the module's public surface. */
 export function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
@@ -190,28 +219,31 @@ export function detectSelectionColor(hostToIgnore?: HTMLElement): SelectionColor
 
     if (hostHues.length === 0) return null;
 
-    let bestHue = 0;
+    // Maximin over the curated LAYER_PALETTES (not raw wheel positions):
+    // pick the palette whose hue maximizes the minimum circular distance to
+    // EVERY detected host hue — a single strongly-colored host element can
+    // veto a nearby palette even when it isn't the dominant brand color.
+    let best = LAYER_PALETTES[0] as LayerPalette;
     let bestScore = -1;
-    for (let i = 0; i < CANDIDATE_HUE_COUNT; i++) {
-      const candidateHue = (360 / CANDIDATE_HUE_COUNT) * i;
+    for (const palette of LAYER_PALETTES) {
       let minDistance = Number.POSITIVE_INFINITY;
       for (const hostHue of hostHues) {
-        const d = circularHueDistance(candidateHue, hostHue);
+        const d = circularHueDistance(palette.h, hostHue);
         if (d < minDistance) minDistance = d;
       }
       if (minDistance > bestScore) {
         bestScore = minDistance;
-        bestHue = candidateHue;
+        best = palette;
       }
     }
 
     // Hue distance alone doesn't guarantee visibility — pull the lightness
     // away from the page background until the color actually clears WCAG
     // non-text contrast against it (a light page darkens yellows toward
-    // amber, a dark page lifts deep blues, etc).
+    // amber, a dark page lifts deep violets, etc).
     const backgroundIsLight = samplePageBackgroundIsLight(hostToIgnore);
-    const lightness = adjustLightnessForBackground(bestHue, SIGNAL_SATURATION, SIGNAL_LIGHTNESS, backgroundIsLight);
-    return { hex: hslToHex(bestHue, SIGNAL_SATURATION, lightness) };
+    const lightness = adjustLightnessForBackground(best.h, best.s, best.l, backgroundIsLight);
+    return { hex: hslToHex(best.h, best.s, lightness) };
   } catch {
     return null;
   }
