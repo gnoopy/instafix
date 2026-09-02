@@ -37,12 +37,12 @@ to your clipboard. Paste it into your agent's chat and you're done.
 
 ## Features
 
+- **Point instead of describing** — no more "the second card from the left" or "the gap under that button." Draw a rectangle or click an element, and InstaFix captures an exact CSS/XPath/text-based DOM selector for it automatically
 - **Copy Prompt** — bundles the annotation, exact DOM selectors, a screenshot path, and any console errors into one Markdown prompt, copied to your clipboard — paste it into Claude Code, Cursor, or any coding agent
-- **Local history (`.instafix/` folder)** — no database — a plain-text record of your session (and its screenshots) at your project root, searchable any time (`@instafix/adapter-fs`)
-- **Rectangle annotations** — draw directly on the page, with category + message
-- **DOM-anchored persistence** — annotations tie to elements, not pixels; they survive layout changes
+- **DOM-anchored persistence** — annotations tie to elements, not pixels; they survive the agent reshuffling the layout
+- **Screenshots + diagnostics** — opt-in JPEG of the annotated area (with privacy masking) and console/network capture — hand the agent the actual console log instead of just saying "it's erroring"
 - **Instant right-click comments** — opt-in, and it never hijacks keyboard or modifier-key context menus
-- **Screenshots + diagnostics** — opt-in JPEG of the annotated area (with privacy masking) and console/network capture
+- **Local history (`.instafix/` folder)** — no database — a plain-text record of your session (and its screenshots) at your project root, searchable any time (`@instafix/adapter-fs`)
 - **Triage inbox** — `<InstaFixInbox />` (`@instafix/dashboard`): for when you want to manage feedback as a team — Linear-style, keyboard-first, light/dark, 8 locales
 - **Reliability built in** — retry with backoff plus a localStorage queue; a flaky network never loses a comment
 - **Shadow DOM isolation** — widget CSS never leaks into your site, and your site CSS never breaks the widget
