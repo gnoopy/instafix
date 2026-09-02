@@ -159,6 +159,39 @@ describe("Popup", () => {
       expect(dialog.style.top).toBe("540px");
     });
 
+    it("positions using the REAL rendered height, not the fallback estimate", () => {
+      // A tall composer (target-size row + legend + identity fields) near
+      // the bottom edge: with the old fixed 220px estimate the popup would
+      // stay below and push its Send button under the fold. jsdom reports
+      // offsetHeight 0, so stub the real measurement.
+      const dialog = document.querySelector<HTMLElement>('[role="dialog"]')!;
+      Object.defineProperty(dialog, "offsetHeight", { value: 480, configurable: true });
+      Object.defineProperty(dialog, "offsetWidth", { value: 300, configurable: true });
+
+      popup.show(makeBounds({ top: 500, bottom: 600 }));
+
+      // Below: 608 + 480 > 760 → flip above: 500 - 480 - 8 = 12.
+      expect(dialog.style.top).toBe("12px");
+    });
+
+    it("re-clamps when setLegend grows the popup after show()", () => {
+      const dialog = document.querySelector<HTMLElement>('[role="dialog"]')!;
+      let height = 220;
+      Object.defineProperty(dialog, "offsetHeight", { get: () => height, configurable: true });
+      Object.defineProperty(dialog, "offsetWidth", { value: 300, configurable: true });
+
+      void popup.show(makeBounds({ top: 450, bottom: 500 }));
+      // 220px fits below: 508 + 220 <= 760.
+      expect(dialog.style.top).toBe("508px");
+
+      // The marquee legend lands right after show() and grows the popup.
+      height = 480;
+      popup.setLegend([{ number: 1, label: "a" }]);
+      // Below (988) and above (450 - 488 = -38) both fail → clamp:
+      // 768 - 480 - 8 = 280.
+      expect(dialog.style.top).toBe("280px");
+    });
+
     it("resolves to null when cancelled (via cancel button)", async () => {
       const promise = popup.show(makeBounds());
 

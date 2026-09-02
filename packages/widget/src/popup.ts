@@ -91,6 +91,8 @@ export class Popup {
   private hint: HTMLElement;
   private resolve: ((result: PopupResult | null) => void) | null = null;
   private previouslyFocused: HTMLElement | null = null;
+  /** Selection rect the open popup is anchored to — kept so `positionPopup()` can re-clamp after content changes its height (legend). */
+  private lastAnchorRect: DOMRect | null = null;
   private onKeydownTrap: ((e: KeyboardEvent) => void) | null = null;
   private onSubmit: PopupSubmitHandler | null = null;
   private submittingState = false;
@@ -547,6 +549,50 @@ export class Popup {
       this.legendListEl.appendChild(item);
     }
     this.legendRow.style.display = "flex";
+    // The legend just grew the popup — re-clamp so the Send button can't
+    // slip below the viewport. Called synchronously right after show() in
+    // practice, so this never visibly jumps under the user.
+    if (this.isOpen && this.root.style.display === "block") this.positionPopup();
+  }
+
+  /**
+   * Place the popup near the anchored selection, fully inside the viewport.
+   * Measures the REAL rendered size (display must already be "block") —
+   * fixed size guesses drifted from the actual composer (target-size row,
+   * legend, identity fields all change it), which let the Send button land
+   * below the fold when the selection sat near the bottom edge.
+   * Prefer below the selection; flip above when below doesn't fit; clamp as
+   * the last resort (both, plus the horizontal edges).
+   */
+  private positionPopup(): void {
+    const rectBounds = this.lastAnchorRect;
+    if (!rectBounds) return;
+
+    const popupH = this.root.offsetHeight || 220;
+    const popupW = this.root.offsetWidth || 300;
+    let top = rectBounds.bottom + 8;
+    let left = rectBounds.left;
+
+    // Vertical: prefer below; fall back to above; otherwise clamp inside viewport
+    if (top + popupH > window.innerHeight - 8) {
+      const aboveTop = rectBounds.top - popupH - 8;
+      if (aboveTop >= 8) {
+        top = aboveTop;
+      } else {
+        // Selection is taller than the viewport allows on either side —
+        // clamp to keep the popup (and its Send button) fully visible.
+        top = window.innerHeight - popupH - 8;
+      }
+    }
+    // Collision: flip right if not enough space on left
+    if (left + popupW > window.innerWidth - 8) {
+      left = rectBounds.right - popupW;
+    }
+    left = Math.max(8, left);
+    top = Math.max(8, top);
+
+    this.root.style.top = `${top}px`;
+    this.root.style.left = `${left}px`;
   }
 
   /** Switch the active target-size button and notify the annotator. */
@@ -769,33 +815,9 @@ export class Popup {
       // Save focus to restore on close
       this.previouslyFocused = document.activeElement as HTMLElement | null;
 
-      // Position: bottom-left of rect, 8px below
-      const popupH = 220;
-      const popupW = 300;
-      let top = rectBounds.bottom + 8;
-      let left = rectBounds.left;
-
-      // Vertical: prefer below; fall back to above; otherwise clamp inside viewport
-      if (top + popupH > window.innerHeight) {
-        const aboveTop = rectBounds.top - popupH - 8;
-        if (aboveTop >= 8) {
-          top = aboveTop;
-        } else {
-          // Rect is taller than the viewport allows on either side —
-          // clamp to keep the popup fully visible.
-          top = window.innerHeight - popupH - 8;
-        }
-      }
-      // Collision: flip right if not enough space on left
-      if (left + popupW > window.innerWidth) {
-        left = rectBounds.right - popupW;
-      }
-      left = Math.max(8, left);
-      top = Math.max(8, top);
-
-      this.root.style.top = `${top}px`;
-      this.root.style.left = `${left}px`;
+      this.lastAnchorRect = rectBounds;
       this.root.style.display = "block";
+      this.positionPopup();
 
       // Install focus trap
       this.onKeydownTrap = (e: KeyboardEvent) => {

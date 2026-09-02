@@ -682,7 +682,9 @@ export class Annotator {
 
     if (w < CLICK_THRESHOLD_PX && h < CLICK_THRESHOLD_PX) {
       const pointRect = new DOMRect(clientX, clientY, 1, 1);
-      const { annotation } = this.buildAnnotation(pointRect);
+      // A click (not a drag) picks the element itself — record its full
+      // bounds, not a 1px sub-region of it.
+      const { annotation } = this.buildAnnotation(pointRect, { fullBounds: true });
       await this.finalizeOrAccumulate([annotation], pointRect, shiftKey);
       return;
     }
@@ -982,7 +984,10 @@ export class Annotator {
     };
 
     let currentElement = smallestElement;
-    let { annotation, anchorBounds } = this.annotationForElement(currentElement, pointRect);
+    // Full bounds: the auto-target click selects the COMPONENT — the stored
+    // rect must be the element, not the 20px spot under the cursor, or the
+    // marker-hover outline later re-renders as a dot at the click point.
+    let { annotation, anchorBounds } = this.annotationForElement(currentElement, pointRect, { fullBounds: true });
     let captureRect = captureRectFor(anchorBounds);
 
     // Keep outlining the actual selected COMPONENT (its real bounding box,
@@ -1009,7 +1014,7 @@ export class Annotator {
             initial: "smallest",
             onChange: (choice) => {
               currentElement = choice === "smallest" ? smallestElement : largestElement;
-              const rebuilt = this.annotationForElement(currentElement, pointRect);
+              const rebuilt = this.annotationForElement(currentElement, pointRect, { fullBounds: true });
               annotation = rebuilt.annotation;
               anchorBounds = rebuilt.anchorBounds;
               captureRect = captureRectFor(anchorBounds);
@@ -1108,16 +1113,27 @@ export class Annotator {
   /**
    * Build an AnnotationPayload for an already-resolved element. Pure — no
    * hit-testing — so callers that already know which element they want
-   * (the right-click target-size picker, G8) can build a payload without
+   * (the auto-target picker's size toggle, G8) can build a payload without
    * going through `findAnchorElement` again.
+   *
+   * `fullBounds` records the annotation as covering the WHOLE element
+   * (`{0,0,1,1}`) instead of the caller's rect as a sub-region. Click-style
+   * gestures (auto-target click, draw-mode click) mean "pick this
+   * component", not "this 20px spot inside it" — and the stored rect is
+   * what the marker-hover outline re-renders from later (markers.ts
+   * showHighlight), so a point-sized rect made that outline a dot at the
+   * click point instead of the selected component.
    */
   private annotationForElement(
     anchorElement: Element,
     rectBounds: DOMRect,
+    options?: { fullBounds?: boolean },
   ): { annotation: AnnotationPayload; anchorBounds: DOMRect } {
     const anchor = generateAnchor(anchorElement);
     const anchorBounds = anchorElement.getBoundingClientRect();
-    const rect = rectToPercentages(rectBounds, anchorBounds);
+    const rect = options?.fullBounds
+      ? { xPct: 0, yPct: 0, wPct: 1, hPct: 1 }
+      : rectToPercentages(rectBounds, anchorBounds);
 
     const annotation: AnnotationPayload = {
       anchor,
@@ -1135,14 +1151,18 @@ export class Annotator {
   /**
    * Build an AnnotationPayload from a drawn rectangle.
    * Temporarily hides the overlay to access the real DOM underneath.
+   * `fullBounds` passes through to `annotationForElement` — see there.
    */
-  private buildAnnotation(rectBounds: DOMRect): { annotation: AnnotationPayload; anchorBounds: DOMRect } {
+  private buildAnnotation(
+    rectBounds: DOMRect,
+    options?: { fullBounds?: boolean },
+  ): { annotation: AnnotationPayload; anchorBounds: DOMRect } {
     // Temporarily hide overlay to find the real element underneath
     if (this.overlay) this.overlay.style.pointerEvents = "none";
     const anchorElement = findAnchorElement(rectBounds);
     if (this.overlay) this.overlay.style.pointerEvents = "auto";
 
-    return this.annotationForElement(anchorElement, rectBounds);
+    return this.annotationForElement(anchorElement, rectBounds, options);
   }
   destroy(): void {
     this.deactivate();

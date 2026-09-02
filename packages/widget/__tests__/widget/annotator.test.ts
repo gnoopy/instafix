@@ -152,7 +152,7 @@ vi.mock(new URL("../../src/dom/anchor.js", import.meta.url).pathname, () => ({
 }));
 
 import { Annotator } from "../../src/annotator.js";
-import { findAnchorElement, findLargestAncestor, generateAnchor } from "../../src/dom/anchor.js";
+import { findAnchorElement, findLargestAncestor, generateAnchor, rectToPercentages } from "../../src/dom/anchor.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -1545,6 +1545,24 @@ describe("Annotator", () => {
     // -----------------------------------------------------------------------
 
     describe("post-click outline", () => {
+      it("records the annotation as the element's FULL bounds, never a click-point sub-rect", async () => {
+        // The stored rect is what the marker-hover outline re-renders from
+        // later (markers.ts showHighlight) — a point-sized sub-rect made
+        // that outline a dot at the click point instead of the component.
+        vi.mocked(rectToPercentages).mockClear();
+        const completeListener = vi.fn();
+        bus.on("annotation:complete", completeListener);
+
+        await annotator.startInstantAnnotation(100, 100);
+
+        expect(completeListener).toHaveBeenCalledOnce();
+        const data = completeListener.mock.calls[0]![0];
+        expect(data.annotations[0].rect).toEqual({ xPct: 0, yPct: 0, wPct: 1, hPct: 1 });
+        // The full-bounds branch never converts the click point into
+        // percentages — proves it can't silently regress to the sub-rect path.
+        expect(rectToPercentages).not.toHaveBeenCalled();
+      });
+
       it("outlines the resolved element's real bounding box, not a small fixed square", () => {
         const target = document.createElement("div");
         target.getBoundingClientRect = () => makeDOMRect(40, 60, 220, 90);

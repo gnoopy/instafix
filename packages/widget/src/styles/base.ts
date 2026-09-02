@@ -231,19 +231,19 @@ export function buildStyles(colors: ThemeColors): string {
 
     /* Persistent "mode is on" state for the auto-target picker button —
        distinct from :hover/:focus-visible, which only apply while the
-       pointer/keyboard focus is actually on the button itself. Recessed
-       (inset shadow + darkened fill) rather than just a color swap, so it
-       still reads as visibly "pressed" even when selection === accent
-       (detection off, or nothing chromatic on the host page to contrast
-       against). */
+       pointer/keyboard focus is actually on the button itself. INVERTED
+       relative to the row's filled idle chips (white fill, colored icon,
+       colored ring): a fill-swap or brightness tweak between two shades of
+       the same color was not readable at a glance, and inversion stays
+       readable even when selection === accent (detection off, or nothing
+       chromatic on the host page to contrast against). */
     .sp-toolbar-item--active {
-      background: var(--sp-selection, var(--sp-accent));
-      border-color: rgba(255, 255, 255, 0.5);
-      color: #fff;
-      filter: brightness(0.88);
+      background: #ffffff;
+      border-color: var(--sp-selection, var(--sp-accent));
+      color: var(--sp-selection, var(--sp-accent));
       box-shadow:
-        inset 0 2px 4px rgba(0, 0, 0, 0.25),
-        0 0 0 3px var(--sp-selection-light, var(--sp-accent-light));
+        inset 0 1px 3px rgba(0, 0, 0, 0.12),
+        0 0 0 3px var(--sp-selection-glow, var(--sp-accent-glow));
     }
 
     /* ---- Auto-contrast against the host page's background (G8) ----
@@ -262,11 +262,13 @@ export function buildStyles(colors: ThemeColors): string {
         0 0 0 3px rgba(255, 255, 255, 0.9);
     }
 
+    /* Active chip is white — a white contrast ring would vanish against it,
+       so the on-light/on-dark assist ring stays the selection color here. */
     .sp-fab-root--on-light .sp-toolbar-item--active,
     .sp-fab-root--on-dark .sp-toolbar-item--active {
       box-shadow:
-        inset 0 2px 4px rgba(0, 0, 0, 0.25),
-        0 0 0 3px rgba(255, 255, 255, 0.9);
+        inset 0 1px 3px rgba(0, 0, 0, 0.12),
+        0 0 0 3px var(--sp-selection-glow, var(--sp-accent-glow));
     }
 
     /* A thin light ring around the FAB itself separates its (already
