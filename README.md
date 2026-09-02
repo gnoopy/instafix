@@ -58,24 +58,40 @@ Stop chasing client feedback across Slack threads, email chains, and Notion docs
 
 ## Quickstart
 
+### Hand this to your coding agent
+
+The fastest path — paste this into Claude Code / Cursor / Copilot / etc. and let it do the rest:
+
+> Install and set up InstaFix (a self-hosted feedback widget) in this project:
+>
+> 1. Run `npx github:gnoopy/instafix#cli-dist init` and accept the defaults it suggests at each prompt.
+> 2. `npm install` whichever `github:gnoopy/instafix#*-dist` package(s) it told you to install.
+> 3. It generates `components/instafix-widget.tsx`, exporting a component named `InstaFixWidget` — add `<InstaFixWidget />` once inside `<body>` in this app's root layout (`app/layout.tsx` for Next.js App Router, or the equivalent root layout/root component for whatever framework this project uses), importing from `@/components/instafix-widget` (adjust the import path if this project doesn't use the `@/` alias). It renders nothing itself, so exact placement doesn't matter — don't wrap it in a conditional, it already no-ops outside development unless `forceShow` is set.
+
+That's it — clients can now draw rectangles on the site and leave feedback.
+
+### Prefer to do it by hand?
+
 InstaFix isn't published to the npm registry — that's a deliberate choice, not a "not yet." Every package installs straight from this repo's build output instead, via a disposable `<package>-dist` branch: same install experience, just a GitHub URL instead of a package name.
 
 ```bash
 # 1. Scaffold the API route + a ready-to-use widget component, interactively.
-#    No Prisma schema in your project? init offers SQLite (better-sqlite3,
-#    zero external services) as the default instead of assuming Prisma.
+#    No Prisma schema in your project? init defaults to SQLite (better-sqlite3,
+#    zero external services) instead of assuming Prisma — or pick the
+#    database-free ".instafix/ folder" option if you're working solo.
 npx github:gnoopy/instafix#cli-dist init
 
 # 2. Install whichever packages init referenced — for the SQLite path:
 npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-sqlite-dist
 # Already on Prisma? swap in: github:gnoopy/instafix#adapter-prisma-dist
+# Solo/local history instead? swap in: github:gnoopy/instafix#adapter-fs-dist
 ```
 
 `init` generates `components/instafix-widget.tsx`, but doesn't touch your layout — editing an arbitrary layout file safely needs a human (or an agent) in the loop. Paste this to Claude Code / Cursor / Copilot / etc. once install is done:
 
 > `npx github:gnoopy/instafix#cli-dist init` generated `components/instafix-widget.tsx`, which exports a component named `InstaFixWidget`. Add `<InstaFixWidget />` to my app's root layout — `app/layout.tsx` for Next.js App Router, or the equivalent root layout/root component for whatever framework this project uses. Import it from `@/components/instafix-widget` (adjust the import path if this project doesn't use the `@/` alias). Place the tag once, inside `<body>`, alongside any other global providers — it renders nothing itself (`return null`), so exact position doesn't matter. Don't wrap it in a conditional: it already no-ops outside development unless `forceShow` is set.
 
-Your clients can now draw rectangles on the site and leave feedback. Triage it with one component:
+Triage feedback with one component:
 
 ```tsx
 import { InstaFixInbox } from "@instafix/dashboard";
