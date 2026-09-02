@@ -226,12 +226,12 @@ export function buildStyles(colors: ThemeColors): string {
        distinct from :hover/:focus-visible, which only apply while the
        pointer/keyboard focus is actually on the button itself. */
     .sp-toolbar-item--active {
-      background: var(--sp-accent);
-      border-color: var(--sp-accent);
+      background: var(--sp-selection, var(--sp-accent));
+      border-color: var(--sp-selection, var(--sp-accent));
       color: #fff;
       box-shadow:
         var(--sp-shadow-md),
-        0 0 0 3px var(--sp-accent-light);
+        0 0 0 3px var(--sp-selection-light, var(--sp-accent-light));
     }
 
     /* ---- Auto-contrast against the host page's background (G8) ----
@@ -249,14 +249,22 @@ export function buildStyles(colors: ThemeColors): string {
     }
 
     .sp-fab-root--on-light .sp-toolbar-item:hover,
-    .sp-fab-root--on-light .sp-toolbar-item:focus-visible,
-    .sp-fab-root--on-light .sp-toolbar-item--active {
+    .sp-fab-root--on-light .sp-toolbar-item:focus-visible {
       background: rgba(30, 41, 59, 0.97);
       border-color: var(--sp-accent);
       color: #fff;
       box-shadow:
         0 4px 16px rgba(0, 0, 0, 0.4),
         0 0 0 3px var(--sp-accent-light);
+    }
+
+    .sp-fab-root--on-light .sp-toolbar-item--active {
+      background: rgba(30, 41, 59, 0.97);
+      border-color: var(--sp-selection, var(--sp-accent));
+      color: #fff;
+      box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.4),
+        0 0 0 3px var(--sp-selection-light, var(--sp-accent-light));
     }
 
     .sp-fab-root--on-dark .sp-toolbar-item {
@@ -267,14 +275,22 @@ export function buildStyles(colors: ThemeColors): string {
     }
 
     .sp-fab-root--on-dark .sp-toolbar-item:hover,
-    .sp-fab-root--on-dark .sp-toolbar-item:focus-visible,
-    .sp-fab-root--on-dark .sp-toolbar-item--active {
+    .sp-fab-root--on-dark .sp-toolbar-item:focus-visible {
       background: #ffffff;
       border-color: var(--sp-accent);
       color: var(--sp-accent);
       box-shadow:
         0 4px 16px rgba(0, 0, 0, 0.4),
         0 0 0 3px var(--sp-accent-light);
+    }
+
+    .sp-fab-root--on-dark .sp-toolbar-item--active {
+      background: #ffffff;
+      border-color: var(--sp-selection, var(--sp-accent));
+      color: var(--sp-selection, var(--sp-accent));
+      box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.4),
+        0 0 0 3px var(--sp-selection-light, var(--sp-accent-light));
     }
 
     /* A thin light ring around the FAB itself separates its (already

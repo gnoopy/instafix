@@ -12,6 +12,7 @@ import { ApiClient, flushRetryQueue, type WidgetClient } from "./api-client.js";
 import { MOBILE_BREAKPOINT, PAGE_SIZE, Z_INDEX_MAX } from "./constants.js";
 import { ConsoleBuffer } from "./diagnostics/console-buffer.js";
 import { NetworkBuffer } from "./diagnostics/network-buffer.js";
+import { detectSelectionColor } from "./dom/selection-color.js";
 import { EventBus, type WidgetEvents } from "./events.js";
 import { Fab } from "./fab.js";
 import { createFocusTracker } from "./focus-tracker.js";
@@ -426,6 +427,28 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
   }
 
   document.body.appendChild(host);
+
+  // Auto-detect a selection-indicator color distinct from the host app's own
+  // button/link colors, for the on-page selection UI (toolbar active-state,
+  // draw/auto-target highlight, multi-target badges) — deferred one frame,
+  // same reason Fab's own background-contrast sampling is (fab.ts's
+  // updateContrast): the host page needs a frame to have real layout. Runs
+  // once per mount, not re-sampled on scroll/resize like the light/dark
+  // luminance sampler — a host's brand palette is a page-level property, not
+  // a viewport-scroll-position one.
+  if (config.autoSelectionColor !== false) {
+    requestAnimationFrame(() => {
+      if (destroyed) return;
+      const detected = detectSelectionColor();
+      if (!detected) return;
+      colors.selection = detected.hex;
+      colors.selectionLight = `${detected.hex}26`;
+      colors.selectionGlow = `${detected.hex}40`;
+      host.style.setProperty("--sp-selection", colors.selection);
+      host.style.setProperty("--sp-selection-light", colors.selectionLight);
+      host.style.setProperty("--sp-selection-glow", colors.selectionGlow);
+    });
+  }
 
   // Track the last page element the user focused. FAB-launched annotation
   // moves focus into the shadow root before the annotator activates, so its

@@ -15,8 +15,8 @@ function relativeLuminance(r: number, g: number, b: number): number {
   return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
 }
 
-/** Parses `rgb(...)` / `rgba(...)` from a computed style value — null for anything else ("transparent", a gradient, etc). */
-function parseRgb(value: string): { r: number; g: number; b: number; a: number } | null {
+/** Parses `rgb(...)` / `rgba(...)` from a computed style value — null for anything else ("transparent", a gradient, etc). Exported for `dom/selection-color.ts`, which needs the same parsing but keeps the RGB channels instead of reducing them to a luminance boolean. */
+export function parseRgb(value: string): { r: number; g: number; b: number; a: number } | null {
   const match = value.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)/);
   if (!match) return null;
   const [, r, g, b, a] = match;

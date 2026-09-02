@@ -587,11 +587,11 @@ export class Annotator {
     const rect = el("div", {
       style: `
         position:fixed;
-        border:2px solid ${this.colors.accent};
-        background:${this.colors.accent}12;
+        border:2px solid ${this.colors.selection};
+        background:${this.colors.selection}12;
         pointer-events:none;
         border-radius:8px;
-        box-shadow:0 0 16px ${this.colors.accentGlow};
+        box-shadow:0 0 16px ${this.colors.selectionGlow};
         transition:box-shadow 0.15s ease;
       `,
     });
@@ -985,11 +985,11 @@ export class Annotator {
         top:${y}px;
         width:${INSTANT_ANNOTATION_SIZE}px;
         height:${INSTANT_ANNOTATION_SIZE}px;
-        border:2px solid ${this.colors.accent};
-        background:${this.colors.accent}12;
+        border:2px solid ${this.colors.selection};
+        background:${this.colors.selection}12;
         pointer-events:none;
         border-radius:8px;
-        box-shadow:0 0 16px ${this.colors.accentGlow};
+        box-shadow:0 0 16px ${this.colors.selectionGlow};
       `,
     });
     this.drawingRect.setAttribute("data-instafix-ignore", "true");

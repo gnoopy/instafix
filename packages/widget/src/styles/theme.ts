@@ -5,6 +5,22 @@ export interface ThemeColors {
   accentDark: string;
   accentGlow: string;
   accentGradient: string;
+  /**
+   * Selection-indicator color family — the toolbar's active-state
+   * background, the drag/auto-target highlight outline, and the
+   * multi-target numbered badges all read from this instead of `accent`,
+   * since (unlike `accent`, used for the widget's own panel branding
+   * inside an opaque card) these render directly over the host page and
+   * can visually blend with a host button/link using a similar hue.
+   * Seeded to the same values as `accent`/`accentLight`/`accentGlow` here —
+   * `dom/selection-color.ts`'s host-palette detection (launcher.ts, once
+   * per mount) overwrites these in place when it finds a real host color to
+   * contrast against; until then (or if detection is disabled/fails),
+   * behavior is identical to using `accent` directly.
+   */
+  selection: string;
+  selectionLight: string;
+  selectionGlow: string;
   bg: string;
   bgHover: string;
   text: string;
@@ -100,6 +116,9 @@ export function buildThemeColors(accent: string = DEFAULT_ACCENT, theme?: "light
       accentDark: dark,
       accentGlow: hex + "44",
       accentGradient: `linear-gradient(135deg, ${hex}, ${dark})`,
+      selection: hex,
+      selectionLight: hex + "22",
+      selectionGlow: hex + "44",
       bg: "#0f172a",
       bgHover: "#1e293b",
       text: "#f1f5f9",
@@ -140,6 +159,9 @@ export function buildThemeColors(accent: string = DEFAULT_ACCENT, theme?: "light
     accentDark: dark,
     accentGlow: hex + "33", // 20% opacity
     accentGradient: `linear-gradient(135deg, ${hex}, ${dark})`,
+    selection: hex,
+    selectionLight: hex + "14",
+    selectionGlow: hex + "33",
     bg: "#ffffff",
     bgHover: "#f8f9fb",
     text: "#0f172a",

@@ -128,7 +128,7 @@ export class MultiTargetPreview {
       width:${BADGE_SIZE}px;height:${BADGE_SIZE}px;
       border-radius:9999px;
       display:flex;align-items:center;justify-content:center;
-      background:${this.colors.accent};color:#fff;
+      background:${this.colors.selection};color:#fff;
       font-family:"Inter",system-ui,-apple-system,sans-serif;
       font-size:11px;font-weight:700;
       border:2px solid #fff;
@@ -175,9 +175,9 @@ export class MultiTargetPreview {
   }
 
   private applyAlwaysShowToggleState(toggle: HTMLElement): void {
-    toggle.style.color = this.alwaysShow ? this.colors.accent : this.colors.textTertiary;
-    toggle.style.borderColor = this.alwaysShow ? this.colors.accent : this.colors.border;
-    toggle.style.background = this.alwaysShow ? this.colors.accentLight : this.colors.glassBgHeavy;
+    toggle.style.color = this.alwaysShow ? this.colors.selection : this.colors.textTertiary;
+    toggle.style.borderColor = this.alwaysShow ? this.colors.selection : this.colors.border;
+    toggle.style.background = this.alwaysShow ? this.colors.selectionLight : this.colors.glassBgHeavy;
   }
 
   /**
@@ -243,8 +243,8 @@ export class MultiTargetPreview {
       [detailBtn, "detail"],
     ] as const) {
       const isActive = this.resolution === resolution;
-      btn.style.background = isActive ? this.colors.accentLight : "transparent";
-      btn.style.color = isActive ? this.colors.accent : this.colors.textTertiary;
+      btn.style.background = isActive ? this.colors.selectionLight : "transparent";
+      btn.style.color = isActive ? this.colors.selection : this.colors.textTertiary;
       btn.setAttribute("aria-pressed", String(isActive));
     }
   }
@@ -259,10 +259,10 @@ export class MultiTargetPreview {
         position:absolute;
         top:${rect.top + window.scrollY}px; left:${rect.left + window.scrollX}px;
         width:${rect.width}px; height:${rect.height}px;
-        border:2px solid ${this.colors.accent};
-        background:${this.colors.accent}14;
+        border:2px solid ${this.colors.selection};
+        background:${this.colors.selection}14;
         border-radius:8px;
-        box-shadow:0 0 16px ${this.colors.accentGlow};
+        box-shadow:0 0 16px ${this.colors.selectionGlow};
         pointer-events:none;
       `,
     });

@@ -84,6 +84,27 @@ export interface InstaFixBaseConfig {
   /** Accent color for the widget UI — defaults to '#0066ff' */
   accentColor?: string | undefined;
   /**
+   * Auto-detect a color for InstaFix's own on-page selection UI (the
+   * toolbar's active-state background, the drag/auto-target highlight
+   * outline, and the multi-target numbered badges) that's visibly distinct
+   * from the host app's own button/link colors, instead of always using
+   * `accentColor` for them.
+   *
+   * These elements render directly over the host page — unlike the rest of
+   * the widget's `accentColor`-branded UI, which lives inside the panel's
+   * own opaque card — so a host that happens to use a similar hue for its
+   * own buttons can make InstaFix's selection indicators hard to tell apart
+   * from the page's own design. When detection finds real color(s) among
+   * the host's visible buttons/links, these elements switch to a hue picked
+   * to read as clearly different from all of them; on a fully neutral/
+   * grayscale host (nothing to contrast against) they keep using
+   * `accentColor`, same as today.
+   *
+   * Defaults to `true`. Set to `false` to always use `accentColor` for
+   * these elements too — full manual control, previous behavior.
+   */
+  autoSelectionColor?: boolean | undefined;
+  /**
    * Render the widget even when it would normally be skipped — this bypasses
    * BOTH the production-environment guard AND the mobile-viewport guard.
    * It does NOT bypass the SSR guard: without `window`/`document` the widget
