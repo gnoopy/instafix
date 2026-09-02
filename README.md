@@ -62,11 +62,13 @@ Stop chasing client feedback across Slack threads, email chains, and Notion docs
 
 The fastest path — paste this into Claude Code / Cursor / Copilot / etc. and let it do the rest:
 
-> Install and set up InstaFix (a self-hosted feedback widget) in this project:
->
-> 1. Run `npx github:gnoopy/instafix#cli-dist init` and accept the defaults it suggests at each prompt.
-> 2. `npm install` whichever `github:gnoopy/instafix#*-dist` package(s) it told you to install.
-> 3. It generates `components/instafix-widget.tsx`, exporting a component named `InstaFixWidget` — add `<InstaFixWidget />` once inside `<body>` in this app's root layout (`app/layout.tsx` for Next.js App Router, or the equivalent root layout/root component for whatever framework this project uses), importing from `@/components/instafix-widget` (adjust the import path if this project doesn't use the `@/` alias). It renders nothing itself, so exact placement doesn't matter — don't wrap it in a conditional, it already no-ops outside development unless `forceShow` is set.
+```text
+Install and set up InstaFix (a self-hosted feedback widget) in this project:
+
+1. Run npx github:gnoopy/instafix#cli-dist init and accept the defaults it suggests at each prompt.
+2. npm install whichever github:gnoopy/instafix#*-dist package(s) it told you to install.
+3. It generates components/instafix-widget.tsx, exporting a component named InstaFixWidget — add <InstaFixWidget /> once inside <body> in this app's root layout (app/layout.tsx for Next.js App Router, or the equivalent root layout/root component for whatever framework this project uses), importing from @/components/instafix-widget (adjust the import path if this project doesn't use the @/ alias). It renders nothing itself, so exact placement doesn't matter — don't wrap it in a conditional, it already no-ops outside development unless forceShow is set.
+```
 
 That's it — clients can now draw rectangles on the site and leave feedback.
 
@@ -89,7 +91,9 @@ npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-sq
 
 `init` generates `components/instafix-widget.tsx`, but doesn't touch your layout — editing an arbitrary layout file safely needs a human (or an agent) in the loop. Paste this to Claude Code / Cursor / Copilot / etc. once install is done:
 
-> `npx github:gnoopy/instafix#cli-dist init` generated `components/instafix-widget.tsx`, which exports a component named `InstaFixWidget`. Add `<InstaFixWidget />` to my app's root layout — `app/layout.tsx` for Next.js App Router, or the equivalent root layout/root component for whatever framework this project uses. Import it from `@/components/instafix-widget` (adjust the import path if this project doesn't use the `@/` alias). Place the tag once, inside `<body>`, alongside any other global providers — it renders nothing itself (`return null`), so exact position doesn't matter. Don't wrap it in a conditional: it already no-ops outside development unless `forceShow` is set.
+```text
+npx github:gnoopy/instafix#cli-dist init generated components/instafix-widget.tsx, which exports a component named InstaFixWidget. Add <InstaFixWidget /> to my app's root layout — app/layout.tsx for Next.js App Router, or the equivalent root layout/root component for whatever framework this project uses. Import it from @/components/instafix-widget (adjust the import path if this project doesn't use the @/ alias). Place the tag once, inside <body>, alongside any other global providers — it renders nothing itself (return null), so exact position doesn't matter. Don't wrap it in a conditional: it already no-ops outside development unless forceShow is set.
+```
 
 Triage feedback with one component:
 
