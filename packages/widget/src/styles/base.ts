@@ -334,6 +334,9 @@ export function buildStyles(colors: ThemeColors): string {
       position: absolute;
       bottom: 52px;
       left: 50%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       white-space: nowrap;
       font-size: 12px;
       font-weight: 500;
@@ -349,6 +352,18 @@ export function buildStyles(colors: ThemeColors): string {
       box-shadow: var(--sp-shadow-sm);
       transform: translateX(-50%) translateY(4px);
       transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    /* The item's global shortcut, at the tooltip's right end — a small kbd
+       chip, visually secondary to the name. */
+    .sp-toolbar-label-key {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--sp-text-tertiary);
+      border: 1px solid var(--sp-border);
+      border-radius: 4px;
+      padding: 1px 5px;
+      line-height: 1.4;
     }
 
     .sp-toolbar-item:hover .sp-toolbar-label,

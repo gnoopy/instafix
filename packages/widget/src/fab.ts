@@ -30,6 +30,34 @@ const ITEM_LABEL_KEYS: Record<ToolbarItemId, keyof Translations> = {
   "toggle-annotations": "fab.annotations",
 };
 
+/**
+ * Global keyboard shortcut per toolbar item — `Alt+Shift+<letter>` on
+ * Windows/Linux, `⌥⇧<letter>` on macOS (same physical chord). Chosen to dodge
+ * reserved combos on all three platforms: Ctrl/Cmd combos are browser/OS
+ * territory, bare letters would fire while typing in the host app, Alt+digit
+ * switches tabs on Firefox/Linux, and the panel's own single-key shortcuts
+ * (shortcuts.ts) explicitly ignore anything with Alt held. Matched via
+ * `event.code` (physical key), not `event.key` — on macOS Option+Shift+letter
+ * produces a glyph ("Ï"), never the letter itself.
+ */
+const ITEM_SHORTCUT_CODES: Record<ToolbarItemId, string> = {
+  chat: "KeyF",
+  annotate: "KeyA",
+  "target-picker": "KeyT",
+  "toggle-annotations": "KeyV",
+};
+
+function isMacPlatform(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Mac|iP(hone|ad|od)/.test(navigator.platform || navigator.userAgent);
+}
+
+/** Human-readable form of an item's shortcut for the tooltip ("⌥⇧F" / "Alt+Shift+F"). */
+function shortcutDisplay(code: string): string {
+  const letter = code.replace(/^Key/, "");
+  return isMacPlatform() ? `⌥⇧${letter}` : `Alt+Shift+${letter}`;
+}
+
 const TOOLBAR_HIDDEN_KEY = "instafix_toolbar_hidden";
 
 /** Whether the user has explicitly hidden the toolbar on a previous visit — visible by default otherwise. */
@@ -80,6 +108,9 @@ export class Fab {
   private items: ToolbarItem[];
   /** The shadow host — hidden momentarily during a contrast sample so `elementFromPoint` sees the real page underneath. */
   private readonly host: HTMLElement;
+  /** Kept to read `activeElement` inside the (closed) shadow root — a document-level listener only ever sees the retargeted host. */
+  private readonly shadowRootRef: ShadowRoot;
+  private readonly onGlobalKeydown: (e: KeyboardEvent) => void;
   private contrastDebounce: ReturnType<typeof setTimeout> | null = null;
   private readonly onWindowChange: () => void;
   private shineTimer: ReturnType<typeof setTimeout> | null = null;
@@ -93,6 +124,7 @@ export class Fab {
   ) {
     const position = config.position ?? "bottom-right";
     this.host = shadowRoot.host as HTMLElement;
+    this.shadowRootRef = shadowRoot;
 
     // Horizontal toolbar next to the FAB. Icons:
     // - list    → opens the feedback sidebar (panel of feedbacks).
@@ -158,8 +190,18 @@ export class Fab {
         this.handleItemClick(item.id);
       });
 
+      // Tooltip = name + shortcut chip at its right end. Two child spans so
+      // applyLabels() can rewrite the (localized) name without wiping the
+      // shortcut, and vice versa.
       const label = document.createElement("span");
       label.className = "sp-toolbar-label";
+      const labelText = document.createElement("span");
+      labelText.className = "sp-toolbar-label-text";
+      const labelKey = document.createElement("span");
+      labelKey.className = "sp-toolbar-label-key";
+      labelKey.setAttribute("aria-hidden", "true"); // aria-keyshortcuts on the button carries this for AT
+      label.appendChild(labelText);
+      label.appendChild(labelKey);
       btn.appendChild(label);
 
       this.toolbar.appendChild(btn);
@@ -175,6 +217,37 @@ export class Fab {
     this.applyLabels();
     // Explicit initial aria-pressed — the button starts inactive.
     this.setTargetingActive(false);
+
+    // Global Alt+Shift+<letter> shortcuts — one per toolbar item, advertised
+    // in each tooltip's key chip. Document-level so they work without the
+    // widget having focus; suppressed while the user is typing anywhere
+    // (host inputs, our panel's search box, the composer textarea).
+    this.onGlobalKeydown = (e: KeyboardEvent) => {
+      // Exactly Alt+Shift — a set Ctrl/Meta also excludes AltGr combos
+      // (reported as ctrl+alt), which international layouts type text with.
+      if (!e.altKey || !e.shiftKey || e.ctrlKey || e.metaKey) return;
+      const entry = (Object.entries(ITEM_SHORTCUT_CODES) as Array<[ToolbarItemId, string]>).find(
+        ([, code]) => code === e.code,
+      );
+      if (!entry) return;
+      // Config can remove items (showAnnotationsToggle: false) — a shortcut
+      // must never trigger a button that isn't in the toolbar.
+      const btn = this.toolbar.querySelector<HTMLButtonElement>(`[data-item-id="${entry[0]}"]`);
+      if (!btn) return;
+      // A document listener only sees the retargeted shadow host, so check
+      // the REAL focused element on both sides of the shadow boundary.
+      const active = this.shadowRootRef.activeElement ?? document.activeElement;
+      if (
+        active instanceof HTMLElement &&
+        (active.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName))
+      ) {
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      this.handleItemClick(entry[0]);
+    };
+    document.addEventListener("keydown", this.onGlobalKeydown);
 
     // Escape hides the toolbar — the keyboard equivalent of clicking the FAB
     // to collapse it. Unlike the old transient radial menu, a stray click
@@ -361,8 +434,12 @@ export class Fab {
       if (!key) continue;
       const label = this.t(key);
       btn.setAttribute("aria-label", label);
-      const labelSpan = btn.querySelector<HTMLSpanElement>(".sp-toolbar-label");
-      if (labelSpan) setText(labelSpan, label);
+      const shortcutCode = ITEM_SHORTCUT_CODES[id];
+      btn.setAttribute("aria-keyshortcuts", `Alt+Shift+${shortcutCode.replace(/^Key/, "")}`);
+      const labelTextSpan = btn.querySelector<HTMLSpanElement>(".sp-toolbar-label-text");
+      if (labelTextSpan) setText(labelTextSpan, label);
+      const labelKeySpan = btn.querySelector<HTMLSpanElement>(".sp-toolbar-label-key");
+      if (labelKeySpan) setText(labelKeySpan, shortcutDisplay(shortcutCode));
     }
   }
 
@@ -485,6 +562,7 @@ export class Fab {
     this.unsubTargetingEnd();
     this.unsubPanelOpen();
     this.unsubPanelClose();
+    document.removeEventListener("keydown", this.onGlobalKeydown);
     this.root.remove();
   }
 }

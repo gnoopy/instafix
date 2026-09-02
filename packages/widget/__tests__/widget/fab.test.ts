@@ -723,9 +723,11 @@ describe("Fab", () => {
       expect(annotateItem.getAttribute("aria-label")).toBe("SWAPPED:fab.annotate");
       expect(toggleItem.getAttribute("aria-label")).toBe("SWAPPED:fab.annotations");
 
-      expect(chatItem.querySelector(".sp-toolbar-label")?.textContent).toBe("SWAPPED:fab.messages");
-      expect(annotateItem.querySelector(".sp-toolbar-label")?.textContent).toBe("SWAPPED:fab.annotate");
-      expect(toggleItem.querySelector(".sp-toolbar-label")?.textContent).toBe("SWAPPED:fab.annotations");
+      // The name lives in its own child span (the tooltip also carries a
+      // shortcut chip at its right end — see the "toolbar shortcuts" tests).
+      expect(chatItem.querySelector(".sp-toolbar-label-text")?.textContent).toBe("SWAPPED:fab.messages");
+      expect(annotateItem.querySelector(".sp-toolbar-label-text")?.textContent).toBe("SWAPPED:fab.annotate");
+      expect(toggleItem.querySelector(".sp-toolbar-label-text")?.textContent).toBe("SWAPPED:fab.annotations");
     });
 
     it("reflects the hidden state's label after refresh when the toolbar is hidden", () => {
@@ -786,15 +788,16 @@ describe("Fab", () => {
 
       const toggleBtn = shadow.querySelector<HTMLButtonElement>(toggleBtnSelector)!;
 
-      // Sanity: label span exists with the translated text before any click.
-      const labelBefore = toggleBtn.querySelector<HTMLSpanElement>(".sp-toolbar-label");
+      // Sanity: the name span exists with the translated text before any
+      // click (the label wrapper also carries the shortcut key chip).
+      const labelBefore = toggleBtn.querySelector<HTMLSpanElement>(".sp-toolbar-label-text");
       expect(labelBefore).not.toBeNull();
       expect(labelBefore!.textContent).toBe(expectedLabel);
 
       // First click — was the regression trigger.
       toggleBtn.click();
 
-      const labelAfterFirst = toggleBtn.querySelector<HTMLSpanElement>(".sp-toolbar-label");
+      const labelAfterFirst = toggleBtn.querySelector<HTMLSpanElement>(".sp-toolbar-label-text");
       expect(labelAfterFirst).not.toBeNull();
       expect(labelAfterFirst!.textContent).toBe(expectedLabel);
 
@@ -802,7 +805,7 @@ describe("Fab", () => {
       const toggleAgain = shadow.querySelector<HTMLButtonElement>(toggleBtnSelector)!;
       toggleAgain.click();
 
-      const labelAfterSecond = toggleAgain.querySelector<HTMLSpanElement>(".sp-toolbar-label");
+      const labelAfterSecond = toggleAgain.querySelector<HTMLSpanElement>(".sp-toolbar-label-text");
       expect(labelAfterSecond).not.toBeNull();
       expect(labelAfterSecond!.textContent).toBe(expectedLabel);
     });
@@ -1164,6 +1167,112 @@ describe("Fab", () => {
       vi.advanceTimersByTime(5000);
 
       expect(rafSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Global toolbar shortcuts — Alt+Shift+<letter>, one per item
+  // -------------------------------------------------------------------------
+
+  describe("toolbar shortcuts", () => {
+    function pressShortcut(code: string, init: KeyboardEventInit = {}): void {
+      document.dispatchEvent(
+        new KeyboardEvent("keydown", { code, altKey: true, shiftKey: true, bubbles: true, cancelable: true, ...init }),
+      );
+    }
+
+    it("Alt+Shift+F opens the feedback panel", () => {
+      const listener = vi.fn();
+      bus.on("panel:toggle", listener);
+      pressShortcut("KeyF");
+      expect(listener).toHaveBeenCalledWith(true);
+    });
+
+    it("Alt+Shift+A starts an annotation", () => {
+      const listener = vi.fn();
+      bus.on("annotation:start", listener);
+      pressShortcut("KeyA");
+      expect(listener).toHaveBeenCalled();
+    });
+
+    it("Alt+Shift+T toggles targeting mode on, then off", () => {
+      const start = vi.fn();
+      const end = vi.fn();
+      bus.on("targeting:start", start);
+      bus.on("targeting:end", end);
+
+      pressShortcut("KeyT");
+      expect(start).toHaveBeenCalledTimes(1);
+      // The Fab tracks its own state via the bus event it just emitted.
+      pressShortcut("KeyT");
+      expect(end).toHaveBeenCalledTimes(1);
+    });
+
+    it("Alt+Shift+V toggles marker visibility", () => {
+      const listener = vi.fn();
+      bus.on("annotations:toggle", listener);
+      pressShortcut("KeyV");
+      expect(listener).toHaveBeenCalledWith(false);
+    });
+
+    it("requires exactly Alt+Shift — bare keys and AltGr-style Ctrl+Alt combos are ignored", () => {
+      const listener = vi.fn();
+      bus.on("panel:toggle", listener);
+
+      document.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyF", bubbles: true }));
+      document.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyF", altKey: true, bubbles: true }));
+      pressShortcut("KeyF", { ctrlKey: true }); // AltGr reports ctrl+alt
+      pressShortcut("KeyF", { metaKey: true });
+
+      expect(listener).not.toHaveBeenCalled();
+    });
+
+    it("is suppressed while the user is typing in an editable element", () => {
+      const input = document.createElement("input");
+      document.body.appendChild(input);
+      input.focus();
+
+      const listener = vi.fn();
+      bus.on("panel:toggle", listener);
+      pressShortcut("KeyF");
+
+      expect(listener).not.toHaveBeenCalled();
+      input.remove();
+    });
+
+    it("Alt+Shift+V is inert when the annotations toggle is configured away", () => {
+      fab.destroy();
+      shadow.host.remove();
+      shadow = createShadowRoot();
+      bus = new EventBus<WidgetEvents>();
+      fab = new Fab(shadow, { ...defaultConfig(), showAnnotationsToggle: false }, bus, createT("fr"));
+
+      const listener = vi.fn();
+      bus.on("annotations:toggle", listener);
+      pressShortcut("KeyV");
+
+      expect(listener).not.toHaveBeenCalled();
+    });
+
+    it("shows the shortcut in each tooltip's key chip and as aria-keyshortcuts", () => {
+      const items = getToolbarItems(shadow);
+      const chat = items.find((b) => b.dataset.itemId === "chat")!;
+      // jsdom is not macOS — the Windows/Linux form is expected here.
+      expect(chat.querySelector(".sp-toolbar-label-key")?.textContent).toBe("Alt+Shift+F");
+      expect(chat.getAttribute("aria-keyshortcuts")).toBe("Alt+Shift+F");
+
+      const target = items.find((b) => b.dataset.itemId === "target-picker")!;
+      expect(target.querySelector(".sp-toolbar-label-key")?.textContent).toBe("Alt+Shift+T");
+    });
+
+    it("destroy() removes the document listener", () => {
+      const listener = vi.fn();
+      bus.on("panel:toggle", listener);
+      fab.destroy();
+
+      pressShortcut("KeyF");
+
+      expect(listener).not.toHaveBeenCalled();
     });
   });
 });

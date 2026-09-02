@@ -1528,10 +1528,11 @@ describe("launcher — annotation:complete integration", () => {
         expect(mockAnnotatorRefreshLabels).toHaveBeenCalled();
       });
 
-      // Toolbar item labels are German too
+      // Toolbar item labels are German too (the name lives in the -text
+      // child span; the label wrapper also carries the shortcut key chip)
       const chatItem = shadow.querySelector<HTMLButtonElement>('[data-item-id="chat"]')!;
       expect(chatItem.getAttribute("aria-label")).toBe("Seitenleiste anzeigen");
-      expect(chatItem.querySelector(".sp-toolbar-label")?.textContent).toBe("Seitenleiste anzeigen");
+      expect(chatItem.querySelector(".sp-toolbar-label-text")?.textContent).toBe("Seitenleiste anzeigen");
 
       instance.destroy();
     });
