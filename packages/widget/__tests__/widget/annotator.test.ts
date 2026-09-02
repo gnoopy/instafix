@@ -1792,6 +1792,108 @@ describe("Annotator", () => {
   });
 
   // -------------------------------------------------------------------------
+  // Unified popover — the drag flow's popover offers the SAME
+  // Element/Container ("의견 대상") toggle as the auto-target flow.
+  // -------------------------------------------------------------------------
+
+  describe("drag-flow Element/Container toggle (popover parity)", () => {
+    it("a below-threshold click in draw mode offers the smallest/largest choice", async () => {
+      const card = document.createElement("section");
+      const heading = document.createElement("h3");
+      card.appendChild(heading);
+      document.body.appendChild(card);
+      vi.mocked(findAnchorElement).mockReturnValue(heading);
+      vi.mocked(findLargestAncestor).mockReturnValue(card);
+
+      bus.emit("annotation:start");
+      const overlay = findOverlay()!;
+      overlay.dispatchEvent(new MouseEvent("mousedown", { clientX: 100, clientY: 100, bubbles: true }));
+      overlay.dispatchEvent(new MouseEvent("mouseup", { clientX: 101, clientY: 101, bubbles: true }));
+      await new Promise((r) => setTimeout(r, 20));
+
+      expect(popupMocks.capturedTargetSizeOptions).toBeDefined();
+      expect(popupMocks.capturedTargetSizeOptions?.initial).toBe("smallest");
+      card.remove();
+    });
+
+    it("toggling the click path to 'largest' anchors the container, like the auto-target flow", async () => {
+      const card = document.createElement("section");
+      const heading = document.createElement("h3");
+      card.appendChild(heading);
+      document.body.appendChild(card);
+      vi.mocked(findAnchorElement).mockReturnValue(heading);
+      vi.mocked(findLargestAncestor).mockReturnValue(card);
+      popupMocks.toggleTargetSizeBeforeSubmit = "largest";
+
+      const completeListener = vi.fn();
+      bus.on("annotation:complete", completeListener);
+
+      bus.emit("annotation:start");
+      const overlay = findOverlay()!;
+      overlay.dispatchEvent(new MouseEvent("mousedown", { clientX: 100, clientY: 100, bubbles: true }));
+      overlay.dispatchEvent(new MouseEvent("mouseup", { clientX: 101, clientY: 101, bubbles: true }));
+
+      await vi.waitFor(() => {
+        expect(completeListener).toHaveBeenCalledOnce();
+      });
+      const data = completeListener.mock.calls[0]![0];
+      expect(data.annotations[0].anchor.elementTag).toBe("SECTION");
+      card.remove();
+    });
+
+    it("a drag landing on exactly one element offers the choice too (drawn-region semantics)", async () => {
+      const container = document.createElement("article");
+      const elA = document.createElement("div");
+      container.appendChild(elA);
+      elA.getBoundingClientRect = () => new DOMRect(40, 40, 300, 200);
+      document.body.appendChild(container);
+
+      const originalEFP = document.elementFromPoint;
+      (document as { elementFromPoint: unknown }).elementFromPoint = () => elA;
+      vi.mocked(findAnchorElement).mockReturnValue(elA);
+      vi.mocked(findLargestAncestor).mockReturnValue(container);
+
+      try {
+        bus.emit("annotation:start");
+        const overlay = findOverlay()!;
+        overlay.dispatchEvent(new MouseEvent("mousedown", { clientX: 50, clientY: 50, bubbles: true }));
+        overlay.dispatchEvent(new MouseEvent("mouseup", { clientX: 200, clientY: 150, bubbles: true }));
+        await new Promise((r) => setTimeout(r, 20));
+
+        expect(popupMocks.capturedTargetSizeOptions).toBeDefined();
+      } finally {
+        (document as { elementFromPoint: unknown }).elementFromPoint = originalEFP;
+        container.remove();
+      }
+    });
+
+    it("a multi-element marquee does NOT offer the element choice (it has the summary/detail toggle instead)", async () => {
+      const elA = document.createElement("div");
+      const elB = document.createElement("div");
+      elA.getBoundingClientRect = () => new DOMRect(50, 50, 70, 100);
+      elB.getBoundingClientRect = () => new DOMRect(130, 50, 70, 100);
+      document.body.appendChild(elA);
+      document.body.appendChild(elB);
+      const originalEFP = document.elementFromPoint;
+      (document as { elementFromPoint: unknown }).elementFromPoint = (x: number) => (x < 125 ? elA : elB);
+
+      try {
+        bus.emit("annotation:start");
+        const overlay = findOverlay()!;
+        overlay.dispatchEvent(new MouseEvent("mousedown", { clientX: 50, clientY: 50, bubbles: true }));
+        overlay.dispatchEvent(new MouseEvent("mouseup", { clientX: 200, clientY: 150, bubbles: true }));
+        await new Promise((r) => setTimeout(r, 20));
+
+        expect(popupMocks.capturedTargetSizeOptions).toBeUndefined();
+      } finally {
+        (document as { elementFromPoint: unknown }).elementFromPoint = originalEFP;
+        elA.remove();
+        elB.remove();
+      }
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // Multi-target preview (G8) — numbered on-page badges while composing a
   // multi-element marquee drag, before submission.
   // -------------------------------------------------------------------------
@@ -2087,13 +2189,24 @@ describe("Annotator", () => {
       expect(popupMocks.showCount).toBe(0);
     });
 
-    it("is a no-op while a draw/instant session is already active", () => {
+    it("cancels an active draw session (mutually exclusive, not a no-op)", () => {
       bus.emit("annotation:start");
       expect(findOverlay()).not.toBeNull();
 
       bus.emit("targeting:start");
 
+      expect(findOverlay()).toBeNull();
+      expect(findTargetingHighlight()).not.toBeNull();
+    });
+
+    it("the reverse direction: starting a draw session cancels active targeting", () => {
+      bus.emit("targeting:start");
+      expect(findTargetingHighlight()).not.toBeNull();
+
+      bus.emit("annotation:start");
+
       expect(findTargetingHighlight()).toBeNull();
+      expect(findOverlay()).not.toBeNull();
     });
 
     it("destroy() while targeting is active removes the highlight and listeners without throwing", () => {

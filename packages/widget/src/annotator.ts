@@ -59,6 +59,9 @@ export class Annotator {
   private drawingRect: HTMLElement | null = null;
   private startX = 0;
   private startY = 0;
+  /** `window.scrollX`/`scrollY` at the moment `startX`/`startY` were captured — see `effectiveDragStart()`. */
+  private startScrollX = 0;
+  private startScrollY = 0;
   private isDrawing = false;
   private isActive = false;
   /**
@@ -95,11 +98,14 @@ export class Annotator {
   /** Toolbar instruction span — updated live to show the accumulated count. */
   private instructionEl: HTMLElement | null = null;
 
-  // --- Targeting mode (Mode 2) — hover-and-click "auto-target" picker,
-  // deliberately independent of isActive/activate()/deactivate(): no page
-  // dim/lock, no scroll-lock, just a live-tracking highlight until the user
-  // clicks (which hands off to startInstantAnnotation, the SAME hit-testing
-  // and popup wiring right-click used to drive) or presses Escape. ---
+  // --- Targeting mode (Mode 2) — hover-and-click "auto-target" picker. Its
+  // own session tracking (no page dim/lock, no scroll-lock, just a
+  // live-tracking highlight until the user clicks — which hands off to
+  // startInstantAnnotation, the SAME hit-testing and popup wiring
+  // right-click used to drive — or presses Escape) is independent of
+  // isActive/activate()/deactivate(), but the two ARE mutually exclusive:
+  // activate() and activateTargeting() each cancel the other mode first if
+  // it's live (see both methods). ---
   private targetingModeActive = false;
   private targetingHighlight: HTMLElement | null = null;
   private targetingRafId: number | null = null;
@@ -155,6 +161,13 @@ export class Annotator {
 
   private activate(): void {
     if (this.isActive) return;
+    // Mutually exclusive with targeting mode (Mode 2) — starting a draw
+    // session while the auto-target picker is live must cancel picking, not
+    // run both at once (their document-level mousemove/click/keydown
+    // listeners would otherwise fight over the same input). Routed through
+    // the bus (not a direct deactivateTargeting() call) so the FAB's
+    // target-picker button resets too — see fab.ts's targeting:end listener.
+    if (this.targetingModeActive) this.bus.emit("targeting:end");
     this.isActive = true;
     const drawMode = !this.instantMode;
 
@@ -296,8 +309,13 @@ export class Annotator {
     // Allow tab-through so keyboard users can reach underlying elements
     this.overlay.setAttribute("tabindex", "0");
 
-    // Escape to cancel
-    document.addEventListener("keydown", this.onKeyDown);
+    // Escape to cancel — capture phase so an active session always wins over
+    // the FAB's own "Escape collapses the toolbar" shortcut (fab.ts's
+    // handleEscape, attached on the FAB/toolbar elements in bubble phase):
+    // deactivate() below can restore focus to the FAB, and without capture
+    // that bubble-phase listener would stopPropagation() first and the
+    // session would never see the Escape at all.
+    document.addEventListener("keydown", this.onKeyDown, true);
 
     document.body.appendChild(this.overlay);
     if (this.toolbar) document.body.appendChild(this.toolbar);
@@ -334,7 +352,7 @@ export class Annotator {
     this.instructionEl = null;
 
     document.body.style.overflow = this.savedOverflow;
-    document.removeEventListener("keydown", this.onKeyDown);
+    document.removeEventListener("keydown", this.onKeyDown, true);
 
     this.overlay?.remove();
     this.toolbar?.remove();
@@ -355,12 +373,16 @@ export class Annotator {
   }
 
   /**
-   * Start the hover-and-click "auto-target" picker (Mode 2). No-ops while a
-   * draw/instant session is already active, or targeting is already on
-   * (idempotent — the constructor's bus subscription can fire redundantly).
+   * Start the hover-and-click "auto-target" picker (Mode 2). Idempotent
+   * while targeting is already on (the constructor's bus subscription can
+   * fire redundantly). Mutually exclusive with a draw/instant session —
+   * see `activate()`'s matching guard — so an active one is cancelled
+   * first (via `deactivate()`, which emits `annotation:end` and resets the
+   * FAB's annotate button) rather than silently rejecting the switch.
    */
   private activateTargeting(): void {
-    if (this.isActive || this.targetingModeActive) return;
+    if (this.targetingModeActive) return;
+    if (this.isActive) this.deactivate();
     this.targetingModeActive = true;
 
     // Reuses the exact same accent-colored outline used for drag-drawing and
@@ -384,7 +406,11 @@ export class Annotator {
     // the cursor must not navigate/submit before the popup opens, and a host
     // page's own stopPropagation() on that element must not shadow us.
     document.addEventListener("click", this.onTargetingClick, true);
-    document.addEventListener("keydown", this.onTargetingKeyDown);
+    // Capture phase here too — same reasoning as onKeyDown above: targeting
+    // mode can be entered by cancelling an active draw session, which
+    // restores focus to the FAB, so the FAB's own bubble-phase "Escape
+    // collapses the toolbar" handler must not get first refusal.
+    document.addEventListener("keydown", this.onTargetingKeyDown, true);
   }
 
   /** Idempotent — safe to call from the click/Escape handlers below AND redundantly via the `targeting:end` bus subscription. */
@@ -400,7 +426,7 @@ export class Annotator {
 
     document.removeEventListener("mousemove", this.onTargetingMouseMove);
     document.removeEventListener("click", this.onTargetingClick, true);
-    document.removeEventListener("keydown", this.onTargetingKeyDown);
+    document.removeEventListener("keydown", this.onTargetingKeyDown, true);
 
     this.targetingHighlight?.remove();
     this.targetingHighlight = null;
@@ -509,23 +535,40 @@ export class Annotator {
     this.drawingRect = highlight;
     this.overlay?.appendChild(highlight);
 
-    const anchor = generateAnchor(target);
-    const annotation: AnnotationPayload = {
-      anchor,
-      rect: { xPct: 0, yPct: 0, wPct: 1, hPct: 1 },
-      scrollX: window.scrollX,
-      scrollY: window.scrollY,
-      viewportW: window.innerWidth,
-      viewportH: window.innerHeight,
-      devicePixelRatio: window.devicePixelRatio,
-      target: { kind: "element" },
-    };
+    let currentElement: Element = target;
+    let { annotation, anchorBounds } = this.annotationForElement(currentElement, rectBounds, { fullBounds: true });
+    let captureRect = rectBounds;
+    // Same Element/Container toggle as the pointer flows — all three
+    // popovers (auto-target, drag, keyboard) stay identical.
+    const largestElement = findLargestAncestor(target);
+    const hasSizeChoice = largestElement !== target;
 
     // Submission stays inside the popup so the user gets a visible spinner
     // until the server confirms — see finishDrawing for the rationale.
     const screenshotCache: { value?: AnnotatedScreenshot | null } = {};
-    const keyboardShowPromise = this.popup.show(rectBounds, (formResult) =>
-      this.runSubmission([annotation], formResult, rectBounds, screenshotCache),
+    const keyboardShowPromise = this.popup.show(
+      rectBounds,
+      (formResult) => this.runSubmission([annotation], formResult, captureRect, screenshotCache),
+      hasSizeChoice
+        ? {
+            initial: "smallest",
+            onChange: (choice) => {
+              currentElement = choice === "smallest" ? target : largestElement;
+              const rebuilt = this.annotationForElement(currentElement, rectBounds, { fullBounds: true });
+              annotation = rebuilt.annotation;
+              anchorBounds = rebuilt.anchorBounds;
+              captureRect = this.clampRectToViewport(anchorBounds);
+              delete screenshotCache.value;
+              if (this.drawingRect) {
+                this.drawingRect.style.left = `${anchorBounds.left}px`;
+                this.drawingRect.style.top = `${anchorBounds.top}px`;
+                this.drawingRect.style.width = `${anchorBounds.width}px`;
+                this.drawingRect.style.height = `${anchorBounds.height}px`;
+              }
+              this.popup.setSourceHint(getSourceHint(currentElement));
+            },
+          }
+        : undefined,
     );
     this.popup.setPromptContext(() => [annotation]);
     this.popup.setSourceHint(getSourceHint(target));
@@ -697,9 +740,25 @@ export class Annotator {
     if (w < CLICK_THRESHOLD_PX && h < CLICK_THRESHOLD_PX) {
       const pointRect = new DOMRect(clientX, clientY, 1, 1);
       // A click (not a drag) picks the element itself — record its full
-      // bounds, not a 1px sub-region of it.
-      const { annotation } = this.buildAnnotation(pointRect, { fullBounds: true });
-      await this.finalizeOrAccumulate([annotation], pointRect, shiftKey);
+      // bounds, not a 1px sub-region of it. Same smallest/largest-ancestor
+      // resolution as the auto-target flow (startInstantAnnotation) so both
+      // popovers offer the same "의견 대상: 요소/컨테이너" choice — a plain
+      // click has exactly one ancestor chain to disambiguate, same as an
+      // auto-target click.
+      if (this.overlay) this.overlay.style.pointerEvents = "none";
+      const smallestElement = findAnchorElement(pointRect);
+      const largestElement = findLargestAncestor(smallestElement);
+      if (this.overlay) this.overlay.style.pointerEvents = "auto";
+      const { annotation } = this.annotationForElement(smallestElement, pointRect, { fullBounds: true });
+      await this.finalizeOrAccumulate(
+        [annotation],
+        pointRect,
+        shiftKey,
+        undefined,
+        largestElement !== smallestElement
+          ? { rectBounds: pointRect, smallest: smallestElement, largest: largestElement, fullBounds: true }
+          : undefined,
+      );
       return;
     }
 
@@ -711,6 +770,7 @@ export class Annotator {
     // meaningful for the multi-target preview (G8) / summary-detail toggle
     // below.
     let marquee: MarqueeSelection | undefined;
+    let sizeChoice: { rectBounds: DOMRect; smallest: Element; largest: Element; fullBounds: boolean } | undefined;
     if (altKey) {
       annotations = [this.buildAreaAnnotation(rectBounds)];
     } else {
@@ -725,10 +785,19 @@ export class Annotator {
           detailElements: result.detailElements,
           detailAnnotations: result.detailAnnotations,
         };
+        // A drag that landed on exactly ONE element gets the same
+        // Element/Container toggle as the auto-target popover — with
+        // drawn-region semantics (see finalizeOrAccumulate's onChange).
+        if (result.singleAnchor && !shiftKey) {
+          const largest = findLargestAncestor(result.singleAnchor);
+          if (largest !== result.singleAnchor) {
+            sizeChoice = { rectBounds, smallest: result.singleAnchor, largest, fullBounds: false };
+          }
+        }
       }
     }
 
-    await this.finalizeOrAccumulate(annotations, rectBounds, shiftKey, marquee);
+    await this.finalizeOrAccumulate(annotations, rectBounds, shiftKey, marquee, sizeChoice);
   };
 
   /**
@@ -741,6 +810,16 @@ export class Annotator {
     captureRect: DOMRect,
     shiftKey: boolean,
     marquee?: MarqueeSelection,
+    /**
+     * The Element/Container ("요소/컨테이너") choice — set by `finishDrawing`
+     * for a plain click (fullBounds: the whole picked element) and for a
+     * drag that landed on exactly one element (fullBounds false: the DRAWN
+     * region stays the annotation, only its anchor re-parents). This is the
+     * same popover toggle `startInstantAnnotation` shows — the two flows'
+     * popovers are deliberately identical. Mutually exclusive with
+     * `marquee`'s multi-target preview.
+     */
+    elementSizeChoice?: { rectBounds: DOMRect; smallest: Element; largest: Element; fullBounds: boolean },
   ): Promise<void> {
     if (shiftKey) {
       this.accumulated.push(...newAnnotations);
@@ -786,8 +865,41 @@ export class Annotator {
     // can see what they're sending feedback about — including while the
     // submit-spinner is running. We only remove it after the popup closes.
     const screenshotCache: { value?: AnnotatedScreenshot | null } = {};
-    const resultPromise = this.popup.show(captureRect, (formResult) =>
-      this.runSubmission(allAnnotations, formResult, captureRect, screenshotCache),
+    const resultPromise = this.popup.show(
+      captureRect,
+      (formResult) => this.runSubmission(allAnnotations, formResult, captureRect, screenshotCache),
+      elementSizeChoice
+        ? {
+            initial: "smallest",
+            onChange: (choice) => {
+              const chosen = choice === "smallest" ? elementSizeChoice.smallest : elementSizeChoice.largest;
+              const rebuilt = this.annotationForElement(chosen, elementSizeChoice.rectBounds, {
+                fullBounds: elementSizeChoice.fullBounds,
+              });
+              allAnnotations = [rebuilt.annotation];
+              if (elementSizeChoice.fullBounds) {
+                // Click semantics: the annotation IS the chosen element, so
+                // the capture region and the on-page outline both re-track
+                // it — matching startInstantAnnotation's identical onChange.
+                captureRect = this.clampRectToViewport(rebuilt.anchorBounds);
+                // Bounds changed — a cached screenshot from the previous
+                // choice would no longer match what's being reported.
+                delete screenshotCache.value;
+                if (this.drawingRect) {
+                  this.drawingRect.style.left = `${rebuilt.anchorBounds.left}px`;
+                  this.drawingRect.style.top = `${rebuilt.anchorBounds.top}px`;
+                  this.drawingRect.style.width = `${rebuilt.anchorBounds.width}px`;
+                  this.drawingRect.style.height = `${rebuilt.anchorBounds.height}px`;
+                }
+              }
+              // Drawn-region semantics (fullBounds false): the DRAWN rect
+              // stays both the annotation region and the outline — the
+              // toggle only re-parents its anchor, so capture/outline are
+              // untouched and the cached screenshot stays valid.
+              this.popup.setSourceHint(getSourceHint(chosen));
+            },
+          }
+        : undefined,
     );
     // show()'s executor runs synchronously (it resets the legend to hidden
     // before returning the pending promise) — set the real legend on the
@@ -796,6 +908,9 @@ export class Annotator {
     // Getter, not a snapshot — `allAnnotations` is reassigned when the user
     // flips the summary/detail resolution.
     this.popup.setPromptContext(() => allAnnotations);
+    // Same dev-only source hint the auto-target popover shows — part of
+    // keeping the two popovers identical.
+    if (elementSizeChoice) this.popup.setSourceHint(getSourceHint(elementSizeChoice.smallest));
     const result = await resultPromise;
 
     preview?.destroy();
@@ -904,7 +1019,9 @@ export class Annotator {
    * in a real page (there's always at least a background element) and would
    * make marquee behavior depend on hit-testing quirks instead of intent.
    */
-  private buildMarqueeAnnotations(rectBounds: DOMRect): MarqueeSelection & { annotations: AnnotationPayload[] } {
+  private buildMarqueeAnnotations(
+    rectBounds: DOMRect,
+  ): MarqueeSelection & { annotations: AnnotationPayload[]; singleAnchor?: Element } {
     if (this.overlay) this.overlay.style.pointerEvents = "none";
     const elements = collectMarqueeElements(rectBounds);
     // Detail (uncollapsed nested-chain) resolution is only worth computing
@@ -913,8 +1030,18 @@ export class Annotator {
     if (this.overlay) this.overlay.style.pointerEvents = "auto";
 
     if (elements.length <= 1) {
-      const { annotation } = this.buildAnnotation(rectBounds);
-      return { annotations: [annotation], elements: [], detailElements: [], detailAnnotations: [] };
+      const { annotation, anchorElement } = this.buildAnnotation(rectBounds);
+      // Surface the anchor so `finishDrawing` can offer the same
+      // Element/Container toggle the auto-target popover has — with drawn-
+      // region semantics (the rect stays the annotation; only the anchor
+      // re-parents).
+      return {
+        annotations: [annotation],
+        elements: [],
+        detailElements: [],
+        detailAnnotations: [],
+        singleAnchor: anchorElement,
+      };
     }
     const annotations = this.annotationsForElements(elements);
     const detailAnnotations = detailElements.length > 0 ? this.annotationsForElements(detailElements) : [];
@@ -990,23 +1117,12 @@ export class Annotator {
     // We also derive the capture rect from the anchor element's bounding box
     // (clamped to the viewport) so enableScreenshot produces a useful image
     // instead of a postage stamp.
-    const captureRectFor = (bounds: DOMRect): DOMRect => {
-      const left = Math.max(0, bounds.left);
-      const top = Math.max(0, bounds.top);
-      return new DOMRect(
-        left,
-        top,
-        Math.max(0, Math.min(bounds.right, window.innerWidth) - left),
-        Math.max(0, Math.min(bounds.bottom, window.innerHeight) - top),
-      );
-    };
-
     let currentElement = smallestElement;
     // Full bounds: the auto-target click selects the COMPONENT — the stored
     // rect must be the element, not the 20px spot under the cursor, or the
     // marker-hover outline later re-renders as a dot at the click point.
     let { annotation, anchorBounds } = this.annotationForElement(currentElement, pointRect, { fullBounds: true });
-    let captureRect = captureRectFor(anchorBounds);
+    let captureRect = this.clampRectToViewport(anchorBounds);
 
     // Keep outlining the actual selected COMPONENT (its real bounding box,
     // matching what `targetingHighlight` showed while hovering) rather than
@@ -1035,7 +1151,7 @@ export class Annotator {
               const rebuilt = this.annotationForElement(currentElement, pointRect, { fullBounds: true });
               annotation = rebuilt.annotation;
               anchorBounds = rebuilt.anchorBounds;
-              captureRect = captureRectFor(anchorBounds);
+              captureRect = this.clampRectToViewport(anchorBounds);
               // Bounds changed — a cached screenshot from the previous
               // choice would no longer match what's being reported.
               delete screenshotCache.value;
@@ -1157,6 +1273,18 @@ export class Annotator {
    * showHighlight), so a point-sized rect made that outline a dot at the
    * click point instead of the selected component.
    */
+  /** Clamp a bounding box to the viewport so a capture/highlight rect never spills into blank off-screen margin. */
+  private clampRectToViewport(bounds: DOMRect): DOMRect {
+    const left = Math.max(0, bounds.left);
+    const top = Math.max(0, bounds.top);
+    return new DOMRect(
+      left,
+      top,
+      Math.max(0, Math.min(bounds.right, window.innerWidth) - left),
+      Math.max(0, Math.min(bounds.bottom, window.innerHeight) - top),
+    );
+  }
+
   private annotationForElement(
     anchorElement: Element,
     rectBounds: DOMRect,
@@ -1189,13 +1317,13 @@ export class Annotator {
   private buildAnnotation(
     rectBounds: DOMRect,
     options?: { fullBounds?: boolean },
-  ): { annotation: AnnotationPayload; anchorBounds: DOMRect } {
+  ): { annotation: AnnotationPayload; anchorBounds: DOMRect; anchorElement: Element } {
     // Temporarily hide overlay to find the real element underneath
     if (this.overlay) this.overlay.style.pointerEvents = "none";
     const anchorElement = findAnchorElement(rectBounds);
     if (this.overlay) this.overlay.style.pointerEvents = "auto";
 
-    return this.annotationForElement(anchorElement, rectBounds, options);
+    return { ...this.annotationForElement(anchorElement, rectBounds, options), anchorElement };
   }
   destroy(): void {
     this.deactivate();
