@@ -41,7 +41,9 @@ const ITEM_LABEL_KEYS: Record<ToolbarItemId, keyof Translations> = {
  * produces a glyph ("Ï"), never the letter itself.
  */
 const ITEM_SHORTCUT_CODES: Record<ToolbarItemId, string> = {
-  chat: "KeyF",
+  // S for Sidebar — F clashed with Awesome Screenshot's full-page capture
+  // (Alt+Shift+F), a popular extension among exactly this widget's users.
+  chat: "KeyS",
   annotate: "KeyA",
   "target-picker": "KeyT",
   "toggle-annotations": "KeyV",

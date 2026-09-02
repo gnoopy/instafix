@@ -1181,10 +1181,10 @@ describe("Fab", () => {
       );
     }
 
-    it("Alt+Shift+F opens the feedback panel", () => {
+    it("Alt+Shift+S opens the feedback panel (S for Sidebar — F clashes with Awesome Screenshot)", () => {
       const listener = vi.fn();
       bus.on("panel:toggle", listener);
-      pressShortcut("KeyF");
+      pressShortcut("KeyS");
       expect(listener).toHaveBeenCalledWith(true);
     });
 
@@ -1219,10 +1219,10 @@ describe("Fab", () => {
       const listener = vi.fn();
       bus.on("panel:toggle", listener);
 
-      document.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyF", bubbles: true }));
-      document.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyF", altKey: true, bubbles: true }));
-      pressShortcut("KeyF", { ctrlKey: true }); // AltGr reports ctrl+alt
-      pressShortcut("KeyF", { metaKey: true });
+      document.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyS", bubbles: true }));
+      document.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyS", altKey: true, bubbles: true }));
+      pressShortcut("KeyS", { ctrlKey: true }); // AltGr reports ctrl+alt
+      pressShortcut("KeyS", { metaKey: true });
 
       expect(listener).not.toHaveBeenCalled();
     });
@@ -1234,7 +1234,7 @@ describe("Fab", () => {
 
       const listener = vi.fn();
       bus.on("panel:toggle", listener);
-      pressShortcut("KeyF");
+      pressShortcut("KeyS");
 
       expect(listener).not.toHaveBeenCalled();
       input.remove();
@@ -1258,8 +1258,8 @@ describe("Fab", () => {
       const items = getToolbarItems(shadow);
       const chat = items.find((b) => b.dataset.itemId === "chat")!;
       // jsdom is not macOS — the Windows/Linux form is expected here.
-      expect(chat.querySelector(".sp-toolbar-label-key")?.textContent).toBe("Alt+Shift+F");
-      expect(chat.getAttribute("aria-keyshortcuts")).toBe("Alt+Shift+F");
+      expect(chat.querySelector(".sp-toolbar-label-key")?.textContent).toBe("Alt+Shift+S");
+      expect(chat.getAttribute("aria-keyshortcuts")).toBe("Alt+Shift+S");
 
       const target = items.find((b) => b.dataset.itemId === "target-picker")!;
       expect(target.querySelector(".sp-toolbar-label-key")?.textContent).toBe("Alt+Shift+T");
@@ -1270,7 +1270,7 @@ describe("Fab", () => {
       bus.on("panel:toggle", listener);
       fab.destroy();
 
-      pressShortcut("KeyF");
+      pressShortcut("KeyS");
 
       expect(listener).not.toHaveBeenCalled();
     });
