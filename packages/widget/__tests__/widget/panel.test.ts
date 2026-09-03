@@ -938,6 +938,92 @@ describe("Panel", () => {
   });
 
   // -------------------------------------------------------------------------
+  // Handoff to agent ("Agent에게") — only wired when the client supports it
+  // -------------------------------------------------------------------------
+
+  describe("handoff to agent", () => {
+    function handoffButton(root: ShadowRoot): HTMLButtonElement {
+      // Disambiguate from the Copy Prompt button, which shares the same
+      // sp-agent-btn--detail class — only the handoff button's label is
+      // prefixed with the ⇥ glyph.
+      const candidates = Array.from(root.querySelectorAll<HTMLButtonElement>(".sp-agent-btn--detail"));
+      return candidates.find((b) => b.textContent?.includes("⇥"))!;
+    }
+
+    it("is not rendered when the client has no handoffFeedback method", async () => {
+      const fb = makeFeedback({ id: "fb-1" });
+      apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
+      await panel.open();
+      shadow.querySelector<HTMLElement>('[data-feedback-id="fb-1"]')!.click();
+
+      expect(handoffButton(shadow)).toBeUndefined();
+    });
+
+    it("marks the feedback handed off and refreshes the list on success", async () => {
+      const enShadow = createShadowRoot();
+      const enBus = new EventBus<WidgetEvents>();
+      const fb = makeFeedback({ id: "fb-1" });
+      const enClient = { ...createMockApiClient(), handoffFeedback: vi.fn().mockResolvedValue(true) };
+      enClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
+      const enMarkers = createMockMarkers();
+      const enPanel = new Panel(
+        enShadow,
+        colors,
+        enBus,
+        enClient as never,
+        "test-project",
+        enMarkers as never,
+        createT("en"),
+        "en",
+      );
+
+      await enPanel.open();
+      enShadow.querySelector<HTMLElement>('[data-feedback-id="fb-1"]')!.click();
+      const btn = handoffButton(enShadow);
+      expect(btn).not.toBeUndefined();
+
+      btn.click();
+      await vi.waitFor(() => expect(btn.textContent).toContain("✓"));
+
+      expect(enClient.handoffFeedback).toHaveBeenCalledWith("fb-1");
+
+      enPanel.destroy();
+      enShadow.host.remove();
+    });
+
+    it("shows a notice toast and leaves the label unchanged when the handoff fails", async () => {
+      const enShadow = createShadowRoot();
+      const enBus = new EventBus<WidgetEvents>();
+      const fb = makeFeedback({ id: "fb-1" });
+      const enClient = { ...createMockApiClient(), handoffFeedback: vi.fn().mockResolvedValue(false) };
+      enClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
+      const enMarkers = createMockMarkers();
+      const enT = createT("en");
+      const enPanel = new Panel(
+        enShadow,
+        colors,
+        enBus,
+        enClient as never,
+        "test-project",
+        enMarkers as never,
+        enT,
+        "en",
+      );
+
+      await enPanel.open();
+      enShadow.querySelector<HTMLElement>('[data-feedback-id="fb-1"]')!.click();
+      const btn = handoffButton(enShadow);
+
+      btn.click();
+      await vi.waitFor(() => expect(enShadow.textContent).toContain(enT("agent.sendToAgentFailed")));
+      expect(btn.textContent).not.toContain("✓");
+
+      enPanel.destroy();
+      enShadow.host.remove();
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // Keyboard navigation on cards
   // -------------------------------------------------------------------------
 

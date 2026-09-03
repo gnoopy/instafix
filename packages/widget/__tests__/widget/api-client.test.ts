@@ -455,6 +455,106 @@ describe("ApiClient", () => {
   });
 
   // -----------------------------------------------------------------------
+  // updateFeedbackMessage
+  // -----------------------------------------------------------------------
+
+  describe("updateFeedbackMessage", () => {
+    it("sends PATCH with id, status, and message", async () => {
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ id: "fb-1", status: "resolved" })));
+
+      const result = await client.updateFeedbackMessage("fb-1", "resolved", "Fixed it");
+      expect(result.status).toBe("resolved");
+
+      expect(fetch).toHaveBeenCalledWith(
+        endpoint,
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({ id: "fb-1", projectName: "test", status: "resolved", message: "Fixed it" }),
+        }),
+      );
+    });
+
+    it("throws on non-ok response", async () => {
+      vi.mocked(fetch).mockResolvedValue(new Response("Bad Request", { status: 400 }));
+      await expect(client.updateFeedbackMessage("fb-1", "open", "x")).rejects.toThrow("Failed to update feedback: 400");
+    });
+
+    it("maps a thrown network exception to InstaFixNetworkError", async () => {
+      vi.useFakeTimers();
+      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
+      const promise = client.updateFeedbackMessage("fb-1", "open", "x").catch((e: InstaFixError) => e);
+      await vi.advanceTimersByTimeAsync(1500);
+      await vi.advanceTimersByTimeAsync(2500);
+      await vi.advanceTimersByTimeAsync(4500);
+      expect(await promise).toBeInstanceOf(InstaFixNetworkError);
+      vi.useRealTimers();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // updateFeedbackAnnotations
+  // -----------------------------------------------------------------------
+
+  describe("updateFeedbackAnnotations", () => {
+    it("sends PATCH with id, status, and annotations", async () => {
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ id: "fb-1", status: "open" })));
+
+      await client.updateFeedbackAnnotations("fb-1", "open", []);
+
+      expect(fetch).toHaveBeenCalledWith(
+        endpoint,
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({ id: "fb-1", projectName: "test", status: "open", annotations: [] }),
+        }),
+      );
+    });
+
+    it("throws on non-ok response", async () => {
+      vi.mocked(fetch).mockResolvedValue(new Response("Bad Request", { status: 400 }));
+      await expect(client.updateFeedbackAnnotations("fb-1", "open", [])).rejects.toThrow(
+        "Failed to update feedback: 400",
+      );
+    });
+
+    it("maps a thrown network exception to InstaFixNetworkError", async () => {
+      vi.useFakeTimers();
+      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
+      const promise = client.updateFeedbackAnnotations("fb-1", "open", []).catch((e: InstaFixError) => e);
+      await vi.advanceTimersByTimeAsync(1500);
+      await vi.advanceTimersByTimeAsync(2500);
+      await vi.advanceTimersByTimeAsync(4500);
+      expect(await promise).toBeInstanceOf(InstaFixNetworkError);
+      vi.useRealTimers();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // handoffFeedback — best-effort, never throws
+  // -----------------------------------------------------------------------
+
+  describe("handoffFeedback", () => {
+    it("returns true on a successful handoff", async () => {
+      vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ ok: true })));
+      await expect(client.handoffFeedback("fb-1")).resolves.toBe(true);
+      expect(fetch).toHaveBeenCalledWith(
+        endpoint,
+        expect.objectContaining({ method: "POST", body: JSON.stringify({ action: "handoff", id: "fb-1" }) }),
+      );
+    });
+
+    it("returns false (not an exception) when the backend answers non-ok", async () => {
+      vi.mocked(fetch).mockResolvedValue(new Response("Not Found", { status: 404 }));
+      await expect(client.handoffFeedback("fb-1")).resolves.toBe(false);
+    });
+
+    it("returns false (not an exception) when fetch itself throws", async () => {
+      vi.mocked(fetch).mockRejectedValue(new TypeError("Failed to fetch"));
+      await expect(client.handoffFeedback("fb-1")).resolves.toBe(false);
+    });
+  });
+
+  // -----------------------------------------------------------------------
   // deleteFeedback
   // -----------------------------------------------------------------------
 

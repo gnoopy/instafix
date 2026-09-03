@@ -187,6 +187,16 @@ describe("dispatchWebhook", () => {
     expect(abortReason).toBeDefined();
   });
 
+  it("wraps a non-Error rejection (e.g. a thrown string) into a real Error before reporting", async () => {
+    fetchSpy.mockRejectedValueOnce("network died");
+    const onError = vi.fn();
+    await dispatchWebhook({ url: "https://hooks.example.com", onError }, FEEDBACK);
+    expect(onError).toHaveBeenCalledOnce();
+    const reported = onError.mock.calls[0]?.[0];
+    expect(reported).toBeInstanceOf(Error);
+    expect((reported as Error).message).toBe("network died");
+  });
+
   it("does not throw when the user-supplied onError itself throws", async () => {
     fetchSpy.mockRejectedValueOnce(new Error("boom"));
     const onError = vi.fn(() => {

@@ -84,6 +84,24 @@ describe("Onboarding", () => {
     expect(ONBOARDING_CSS).toContain(".sp-onboarding");
   });
 
+  it("positions the card above the anchor when there is enough room", async () => {
+    vi.spyOn(anchor, "getBoundingClientRect").mockReturnValue({
+      top: 500,
+      bottom: 530,
+      left: 0,
+      right: 0,
+      width: 0,
+      height: 30,
+      x: 0,
+      y: 500,
+      toJSON: () => ({}),
+    });
+    const tour = new Onboarding(shadow, t, anchor, true);
+    await nextFrame();
+    // Above the anchor: card top < anchor top, not anchor.bottom + gap.
+    expect(Number.parseFloat(tour.element.style.top)).toBeLessThan(500);
+  });
+
   it("renders step 1 with role=dialog and the step-1 title as aria-label", async () => {
     const tour = new Onboarding(shadow, t, anchor, true);
     await nextFrame();

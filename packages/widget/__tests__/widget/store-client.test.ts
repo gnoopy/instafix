@@ -352,6 +352,50 @@ describe("StoreClient", () => {
   });
 
   // -----------------------------------------------------------------------
+  // updateFeedbackMessage
+  // -----------------------------------------------------------------------
+
+  describe("updateFeedbackMessage", () => {
+    it("calls store.updateFeedback with the new status and message", async () => {
+      vi.mocked(store.updateFeedback).mockResolvedValue(makeFeedbackRecord({ message: "Fixed the layout" }));
+
+      const response = await client.updateFeedbackMessage("fb-1", "resolved", "Fixed the layout");
+
+      expect(store.updateFeedback).toHaveBeenCalledWith(
+        "fb-1",
+        expect.objectContaining({ status: "resolved", message: "Fixed the layout", resolvedAt: expect.any(Date) }),
+      );
+      expect(response.message).toBe("Fixed the layout");
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // updateFeedbackAnnotations
+  // -----------------------------------------------------------------------
+
+  describe("updateFeedbackAnnotations", () => {
+    it("flattens annotations before calling store.updateFeedback", async () => {
+      vi.mocked(store.updateFeedback).mockResolvedValue(makeFeedbackRecord());
+
+      await client.updateFeedbackAnnotations("fb-1", "open", [sampleAnnotation]);
+
+      expect(store.updateFeedback).toHaveBeenCalledOnce();
+      const [id, update] = vi.mocked(store.updateFeedback).mock.calls[0]!;
+      expect(id).toBe("fb-1");
+      expect((update as { status: string }).status).toBe("open");
+      const annotations = (update as { annotations: Array<{ cssSelector: string }> }).annotations;
+      expect(annotations[0]!.cssSelector).toBe("div.hero");
+      expect("anchor" in annotations[0]!).toBe(false);
+    });
+
+    it("returns the serialized response", async () => {
+      vi.mocked(store.updateFeedback).mockResolvedValue(makeFeedbackRecord({ status: "resolved" }));
+      const response = await client.updateFeedbackAnnotations("fb-1", "resolved", [sampleAnnotation]);
+      expect(response.status).toBe("resolved");
+    });
+  });
+
+  // -----------------------------------------------------------------------
   // deleteFeedback
   // -----------------------------------------------------------------------
 

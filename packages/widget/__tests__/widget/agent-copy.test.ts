@@ -228,4 +228,158 @@ describe("AgentCopyButton", () => {
 
     btn.destroy();
   });
+
+  it("passes custom instructions through to the formatted Markdown", async () => {
+    const btn = new AgentCopyButton(
+      buildThemeColors(),
+      { getFeedbacks: () => [makeFeedback()], getContainer: () => root, instructions: ["Reply with DONE."] },
+      t,
+    );
+    root.appendChild(btn.element);
+    btn.element.click();
+    await Promise.resolve();
+    await raf();
+
+    const textarea = root.querySelector<HTMLTextAreaElement>(".sp-agent-modal-textarea");
+    expect(textarea?.value).toContain("Reply with DONE.");
+    btn.destroy();
+  });
+
+  it("shows the scope label under the title when getScopeLabel is provided", async () => {
+    const btn = new AgentCopyButton(
+      buildThemeColors(),
+      { getFeedbacks: () => [makeFeedback()], getContainer: () => root, getScopeLabel: () => "Open · this page" },
+      t,
+    );
+    root.appendChild(btn.element);
+    btn.element.click();
+    await Promise.resolve();
+    await raf();
+
+    expect(root.querySelector('[role="dialog"]')?.textContent).toContain("Open · this page");
+    btn.destroy();
+  });
+
+  it("calls onCopied with the copied feedback ids on success", async () => {
+    Object.defineProperty(window, "isSecureContext", { value: true, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: vi.fn().mockResolvedValue(undefined) },
+      configurable: true,
+    });
+    const onCopied = vi.fn();
+
+    const btn = new AgentCopyButton(
+      buildThemeColors(),
+      { getFeedbacks: () => [makeFeedback({ id: "fb-42" })], getContainer: () => root, onCopied },
+      t,
+    );
+    root.appendChild(btn.element);
+    btn.element.click();
+    await Promise.resolve();
+    await raf();
+
+    const copyBtn = Array.from(root.querySelectorAll("button")).find((b) => b.textContent === "Copy");
+    copyBtn?.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(onCopied).toHaveBeenCalledWith(["fb-42"]);
+    btn.destroy();
+  });
+
+  it("cancel closes the dialog without copying, and closing twice is a no-op", async () => {
+    const btn = new AgentCopyButton(
+      buildThemeColors(),
+      { getFeedbacks: () => [makeFeedback()], getContainer: () => root },
+      t,
+    );
+    root.appendChild(btn.element);
+    btn.element.click();
+    await Promise.resolve();
+    await raf();
+
+    const cancelBtn = Array.from(root.querySelectorAll("button")).find(
+      (b) => b.textContent === "Cancel",
+    ) as HTMLButtonElement;
+    cancelBtn.click();
+    cancelBtn.click(); // second close() call — guarded no-op, must not throw
+    expect(root.querySelector(".sp-agent-modal-backdrop")).not.toBeNull(); // still in DOM mid-fade-out
+
+    btn.destroy();
+  });
+
+  it("clicking the backdrop closes the dialog, clicking inside the dialog does not", async () => {
+    const btn = new AgentCopyButton(
+      buildThemeColors(),
+      { getFeedbacks: () => [makeFeedback()], getContainer: () => root },
+      t,
+    );
+    root.appendChild(btn.element);
+    btn.element.click();
+    await Promise.resolve();
+    await raf();
+
+    const backdrop = root.querySelector(".sp-agent-modal-backdrop") as HTMLElement;
+    const dialog = root.querySelector('[role="dialog"]') as HTMLElement;
+
+    dialog.dispatchEvent(new Event("click", { bubbles: true }));
+    expect(backdrop.style.opacity).not.toBe("0");
+
+    backdrop.dispatchEvent(new Event("click", { bubbles: true }));
+    expect(backdrop.style.opacity).toBe("0");
+
+    btn.destroy();
+  });
+
+  it("Escape closes the dialog", async () => {
+    const btn = new AgentCopyButton(
+      buildThemeColors(),
+      { getFeedbacks: () => [makeFeedback()], getContainer: () => root },
+      t,
+    );
+    root.appendChild(btn.element);
+    btn.element.click();
+    await Promise.resolve();
+    await raf();
+
+    const backdrop = root.querySelector(".sp-agent-modal-backdrop") as HTMLElement;
+    backdrop.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    expect(backdrop.style.opacity).toBe("0");
+
+    btn.destroy();
+  });
+
+  it("Tab wraps focus from the last focusable back to the first, and Shift+Tab wraps backward", async () => {
+    Object.defineProperty(window, "isSecureContext", { value: true, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: vi.fn().mockResolvedValue(undefined) },
+      configurable: true,
+    });
+
+    const btn = new AgentCopyButton(
+      buildThemeColors(),
+      { getFeedbacks: () => [makeFeedback()], getContainer: () => root },
+      t,
+    );
+    root.appendChild(btn.element);
+    btn.element.click();
+    await Promise.resolve();
+    await raf();
+
+    const backdrop = root.querySelector(".sp-agent-modal-backdrop") as HTMLElement;
+    const textarea = root.querySelector<HTMLTextAreaElement>(".sp-agent-modal-textarea") as HTMLTextAreaElement;
+    const copyBtn = Array.from(root.querySelectorAll("button")).find(
+      (b) => b.textContent === "Copy",
+    ) as HTMLButtonElement;
+
+    copyBtn.focus();
+    backdrop.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }));
+    expect(root.activeElement).toBe(textarea);
+
+    textarea.focus();
+    backdrop.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true }));
+    expect(root.activeElement).toBe(copyBtn);
+
+    btn.destroy();
+  });
 });

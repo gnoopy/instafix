@@ -191,6 +191,15 @@ describe("useInstaFix", () => {
     expect(onAnnotationEnd).toHaveBeenCalledTimes(1);
   });
 
+  it("forwards onSkip through the live wrapper", () => {
+    const onSkip = vi.fn();
+    render(<Probe config={{ endpoint: "/api/x", projectName: "p", onSkip }} />);
+    act(() => {
+      wiredConfig().onSkip?.("production");
+    });
+    expect(onSkip).toHaveBeenCalledWith("production");
+  });
+
   it("keeps onError fresh across rerenders (was frozen at mount before)", () => {
     const e1 = vi.fn();
     const e2 = vi.fn();

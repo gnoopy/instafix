@@ -27,4 +27,18 @@ describe("handoff-storage", () => {
     expect(() => markHandedOff(["fb-1"])).not.toThrow();
     expect(getHandedOffAt("fb-1")).not.toBeNull();
   });
+
+  it("caps the stored map at 500 entries, keeping the newest", () => {
+    const seed: Record<string, string> = {};
+    for (let i = 0; i < 500; i++) {
+      seed[`fb-${i}`] = new Date(2026, 0, 1, 0, 0, i).toISOString();
+    }
+    localStorage.setItem("instafix_handed_off", JSON.stringify(seed));
+
+    markHandedOff(["fb-new"]);
+
+    expect(getHandedOffAt("fb-new")).not.toBeNull();
+    // Over the 500 cap — the oldest entry must have been trimmed.
+    expect(getHandedOffAt("fb-0")).toBeNull();
+  });
 });

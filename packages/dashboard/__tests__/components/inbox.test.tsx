@@ -2,7 +2,7 @@
 
 import type { FeedbackRecord } from "@instafix/core";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { InstaFixInbox } from "../../src/components/inbox.js";
 import type { InboxCustomSourceOptions, InstaFixInboxPresentationProps } from "../../src/types.js";
 import { makeDiagnostics, makeRecord, makeSource, REGION } from "../helpers.js";
@@ -243,6 +243,104 @@ describe("InstaFixInbox — keyboard", () => {
     expect(await screen.findByText("Marked as resolved")).toBeTruthy();
     await waitFor(() => expect(listRows()).toHaveLength(2)); // o1 left the open list
   });
+
+  it("x marks the focused row won't-fix and it leaves the open tab", async () => {
+    renderInbox();
+    const listbox = await ready();
+    fireEvent.keyDown(listbox, { key: "j" });
+    fireEvent.keyDown(listbox, { key: "x" });
+    expect(await screen.findByText("Marked as won't fix")).toBeTruthy();
+    await waitFor(() => expect(listRows()).toHaveLength(2));
+  });
+
+  it("pressing the same status key again toggles the row back to open", async () => {
+    renderInbox();
+    const listbox = await ready();
+    fireEvent.keyDown(listbox, { key: "j" });
+    fireEvent.keyDown(listbox, { key: "e" });
+    await waitFor(() => expect(listRows()).toHaveLength(2));
+    fireEvent.keyDown(listbox, { key: "1" }); // "all" tab, so the resolved row is visible again
+    await waitFor(() => expect(listRows()).toHaveLength(4));
+    const resolvedRow = listRows().find((row) => row.getAttribute("data-status") === "resolved") as HTMLElement;
+    fireEvent.click(resolvedRow); // focus it (roving tabindex follows selection in this list)
+    fireEvent.keyDown(listbox, { key: "e" });
+    expect(await screen.findByText("Marked as open")).toBeTruthy();
+  });
+
+  it("r refreshes the list", async () => {
+    const { source } = renderInbox();
+    const listbox = await ready();
+    const callsBefore = source.list.mock.calls.length;
+    fireEvent.keyDown(listbox, { key: "r" });
+    await waitFor(() => expect(source.list.mock.calls.length).toBeGreaterThan(callsBefore));
+  });
+
+  it("1 switches to the all-status tab", async () => {
+    renderInbox();
+    const listbox = await ready();
+    fireEvent.keyDown(listbox, { key: "1" });
+    await waitFor(() => expect(listRows()).toHaveLength(4));
+  });
+
+  it("o opens the drawer for the focused row (same as Enter)", async () => {
+    renderInbox();
+    const listbox = await ready();
+    fireEvent.keyDown(listbox, { key: "j" });
+    fireEvent.keyDown(listbox, { key: "o" });
+    expect(await screen.findByRole("dialog", { name: /Fix note details/ })).toBeTruthy();
+  });
+
+  it("u does nothing when there is no pending undo", async () => {
+    renderInbox();
+    const listbox = await ready();
+    fireEvent.keyDown(listbox, { key: "u" });
+    expect(screen.queryByText(/undo/i)).toBeNull();
+  });
+
+  it("ignores shortcut keys held with Ctrl, Meta, or Alt", async () => {
+    renderInbox();
+    const listbox = await ready();
+    fireEvent.keyDown(listbox, { key: "e", ctrlKey: true });
+    fireEvent.keyDown(listbox, { key: "e", metaKey: true });
+    fireEvent.keyDown(listbox, { key: "e", altKey: true });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(listRows()).toHaveLength(3); // still all three open rows — nothing resolved
+  });
+
+  it("Enter on a native control activates it instead of opening the drawer", async () => {
+    const { container } = renderInbox();
+    await ready();
+    const refreshBtn = container.querySelector<HTMLButtonElement>(".ifd-refresh") as HTMLButtonElement;
+    fireEvent.keyDown(refreshBtn, { key: "Enter" });
+    expect(screen.queryByRole("dialog", { name: /Fix note details/ })).toBeNull();
+  });
+
+  it("Enter on an already-opened row jumps to the page instead of reopening it", async () => {
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    renderInbox();
+    const listbox = await ready();
+    fireEvent.keyDown(listbox, { key: "j" });
+    fireEvent.keyDown(listbox, { key: "Enter" }); // opens the drawer
+    await screen.findByRole("dialog", { name: /Fix note details/ });
+    fireEvent.keyDown(listbox, { key: "Enter" }); // same record, drawer already open
+    expect(openSpy).toHaveBeenCalledWith(
+      expect.stringContaining("https://demo.instafix.realstory.blog/pricing"),
+      "_blank",
+      "noopener",
+    );
+    openSpy.mockRestore();
+  });
+
+  it("Escape closes an open drawer and returns focus to the list", async () => {
+    renderInbox();
+    const listbox = await ready();
+    fireEvent.keyDown(listbox, { key: "j" });
+    fireEvent.keyDown(listbox, { key: "Enter" });
+    await screen.findByRole("dialog", { name: /Fix note details/ });
+    fireEvent.keyDown(listbox, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: /Fix note details/ })).toBeNull());
+    expect(document.activeElement).toBe(screen.getByRole("listbox"));
+  });
 });
 
 describe("InstaFixInbox — search & live regions", () => {
@@ -400,12 +498,17 @@ describe("InstaFixInbox — empty & error states", () => {
     expect(await screen.findByText("Nothing to triage yet")).toBeTruthy();
   });
 
-  it("shows the error state with a retry button when the list fails", async () => {
+  it("shows the error state with a retry button when the list fails, and retry re-fetches", async () => {
     const source = makeSource(seed());
     source.list.mockRejectedValue(new Error("boom"));
     render(<InstaFixInbox source={source} projects="demo" theme="dark" locale="en" />);
     expect(await screen.findByText("Failed to load fix notes")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
+    const callsBefore = source.list.mock.calls.length;
+
+    source.list.mockResolvedValue({ feedbacks: seed().filter((f) => f.status === "open"), total: 3 });
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    await waitFor(() => expect(source.list.mock.calls.length).toBeGreaterThan(callsBefore));
+    expect(await screen.findByText("Header overlaps the logo")).toBeTruthy();
   });
 });
 
