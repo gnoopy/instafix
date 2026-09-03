@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/gnoopy/instafix/compare/adapter-fs-v1.0.0...adapter-fs-v1.0.1) (2026-09-03)
+
+
+### Bug Fixes
+
+* **ci:** repair CI regressions surfaced by the adapter-kit/prisma removal ([abba41c](https://github.com/gnoopy/instafix/commit/abba41ce26026a80eb8454a10a4c9a69215eaa42))
+
 ## 1.0.0 (2026-09-03)
 
 

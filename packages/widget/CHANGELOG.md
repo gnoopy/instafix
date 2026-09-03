@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.9](https://github.com/gnoopy/instafix/compare/widget-v0.10.8...widget-v0.10.9) (2026-09-03)
+
+
+### Bug Fixes
+
+* **ci:** repair CI regressions surfaced by the adapter-kit/prisma removal ([abba41c](https://github.com/gnoopy/instafix/commit/abba41ce26026a80eb8454a10a4c9a69215eaa42))
+
 ## [0.10.8](https://github.com/gnoopy/instafix/compare/widget-v0.10.7...widget-v0.10.8) (2026-09-03)
 
 

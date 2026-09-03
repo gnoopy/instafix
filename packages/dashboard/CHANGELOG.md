@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.7](https://github.com/gnoopy/instafix/compare/dashboard-v0.2.6...dashboard-v0.2.7) (2026-09-03)
+
+
+### Bug Fixes
+
+* **ci:** repair CI regressions surfaced by the adapter-kit/prisma removal ([abba41c](https://github.com/gnoopy/instafix/commit/abba41ce26026a80eb8454a10a4c9a69215eaa42))
+
 ## [0.2.6](https://github.com/gnoopy/instafix/compare/dashboard-v0.2.5...dashboard-v0.2.6) (2026-09-03)
 
 
