@@ -38,16 +38,16 @@ Every note you leave this way is recorded as a **fix note**.
 
 ## Features
 
-- **Point instead of describing** — no more "the second card from the left" or "the gap under that button." Pick a component with the hover-and-click auto-target picker, or drag a rectangle to grab several elements at once — InstaFix captures exact CSS/XPath/text-based DOM selectors automatically. On a dev server it also captures the **name of the React component that rendered the element**, so the agent finds the file in one grep
-- **Copy Prompt** — bundles the annotation, exact DOM selectors, a screenshot path, and any console errors into one Markdown prompt, copied to your clipboard — paste it into Claude Code, Cursor, or any coding agent. Every fix note carries its ID plus close-out instructions, so **the agent marks fixed items resolved itself**
-- **Straight into the terminal (`instafix prompt` · `/instafix` · "To agent")** — pipe your open fix notes wholesale into a fresh agent session with `npx @instafix/cli prompt | claude -p`, pull it into your CURRENT Claude Code session with `/instafix`, or push one item from the panel's "To agent" button to a session running `instafix watch` — the loop runs without copy/paste
+- **Point at it instead of describing it** — no more "the second card from the left" or "the gap under that button." Hover over an element and click to auto-select it, or drag a rectangle to grab several at once. InstaFix records an exact CSS/XPath/text-based DOM selector for whatever you picked. On a dev server it also records the **name of the React component that rendered the element**, so the agent can find the right file in one grep
+- **Copy Prompt** — bundles your note, the exact DOM selectors, a screenshot path, and any console errors into one Markdown prompt, copied to your clipboard. Paste it into Claude Code, Cursor, or any coding agent. Each item (a "fix note") carries its own ID plus instructions on how to mark it done, so **the agent can resolve the ones it actually fixed, on its own**
+- **Send it straight to the terminal, no copy/paste** (`instafix prompt` · `/instafix` · "To agent") — dispatch your open fix notes wholesale into a fresh agent session with one command (`npx @instafix/cli prompt | claude -p`), pull them into the Claude Code session you're already in by typing `/instafix`, or click the panel's "To agent" button to hand one off to a session running `instafix watch`
 - **DOM-anchored persistence** — annotations tie to elements, not pixels; they survive the agent reshuffling the layout
-- **Screenshots + diagnostics** — opt-in JPEG of the annotated area (with privacy masking) and console/network capture — hand the agent the actual console log instead of just saying "it's erroring". Want to show a design reference instead? Paste an image straight into the note with ⌘V
-- **A layer color your app can never be confused with** — InstaFix samples the page's own brand colors and dresses its toolbar, popover, panel, and markers in one tone picked to stand apart from all of them (`autoSelectionColor: false` falls back to your `accentColor`)
+- **Screenshots + diagnostics** — opt-in JPEG of the annotated area (with privacy masking), plus console/network capture — hand the agent the actual console log instead of just saying "it's erroring". Want to show a design reference instead? Paste an image straight into the note box with ⌘V
+- **A widget color your app can never be mistaken for** — InstaFix reads your page's own brand colors and dresses its toolbar, popover, panel, and markers in one tone chosen to stand clearly apart from them (`autoSelectionColor: false` falls back to your `accentColor`)
 - **Local history (`.instafix/` folder)** — no database — a plain-text record of your session (and its screenshots) at your project root, searchable any time (`@instafix/adapter-fs`)
-- **Triage inbox** — `<InstaFixInbox />` (`@instafix/dashboard`): for when you want to manage fix notes as a team — Linear-style, keyboard-first, light/dark, 8 locales
+- **A screen for managing fix notes as a team (triage inbox)** — `<InstaFixInbox />` (`@instafix/dashboard`): for when several people need to review and organize fix notes together — Linear-style, keyboard-first, light/dark, 8 locales
 - **Reliability built in** — retry with backoff plus a localStorage queue; a flaky network never loses a comment
-- **Shadow DOM isolation + always on top** — widget CSS never leaks into your site, and your site CSS never breaks the widget. Uses the maximum CSS z-index and keeps repositioning itself last in `<body>`, so it stays visible even alongside other floating dev tools (Vercel Toolbar, etc.)
+- **Shadow DOM isolation + doesn't collide with other floating widgets** — widget CSS never leaks into your site, and your site CSS never breaks the widget. Uses the maximum CSS z-index so nothing else covers it, and if something's already anchored in the corner it would use — a deploy-preview toolbar (Vercel Toolbar, etc.), a chat bubble — it automatically moves to the other bottom corner instead (`avoidOverlays: false` to disable)
 - **Dev-only by default** — auto-hides in production builds unless `forceShow: true`
 - **Lightweight** — ~30 KB gzipped (ESM); the panel, screenshot engine, and non-English locales load on demand
 
@@ -58,7 +58,7 @@ Every note you leave this way is recorded as a **fix note**.
 The fastest path — paste this into Claude Code / Cursor / Copilot / etc. and let it do the rest:
 
 ```text
-Install and set up InstaFix (a self-hosted feedback widget) in this project:
+Install and set up InstaFix (a self-hosted widget for leaving fix notes) in this project:
 
 1. Run npx github:gnoopy/instafix#cli-dist init and accept the defaults it suggests at each prompt.
 2. npm install whichever github:gnoopy/instafix#*-dist package(s) it told you to install.
@@ -102,7 +102,7 @@ npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-sq
 npx github:gnoopy/instafix#cli-dist init generated components/instafix-widget.tsx, which exports a component named InstaFixWidget. Add <InstaFixWidget /> to my app's root layout — app/layout.tsx for Next.js App Router, or the equivalent root layout/root component for whatever framework this project uses. Import it from @/components/instafix-widget (adjust the import path if this project doesn't use the @/ alias). Place the tag once, inside <body>, alongside any other global providers — it renders nothing itself (return null), so exact position doesn't matter. Don't wrap it in a conditional: it already no-ops outside development unless forceShow is set.
 ```
 
-Triage fix notes with one component:
+Drop in this one component and your team can review and organize fix notes on a single screen:
 
 ```tsx
 import { InstaFixInbox } from "@instafix/dashboard";
@@ -112,17 +112,15 @@ import { InstaFixInbox } from "@instafix/dashboard";
 
 (install it the same way: `npm install github:gnoopy/instafix#dashboard-dist`)
 
-No server? The widget also runs fully client-side with `store: new LocalStorageStore()` (`github:gnoopy/instafix#adapter-localstorage-dist`).
-
 **To remove InstaFix**: revert your lockfile and `package.json` (`git checkout -- package.json package-lock.json`, or your lockfile), delete `app/api/instafix/` and `components/instafix-widget.tsx`, then reinstall.
 
 ## Documentation
 
-The full documentation lives at **[instafix.realstory.blog/docs](https://instafix.realstory.blog/docs)** (English and French) — every option, default, and behavior on these pages is verified against the source code.
+The full documentation lives at **[instafix.realstory.blog/docs](https://instafix.realstory.blog/docs)** (English, French, and Korean) — every option, default, and behavior on these pages is verified against the source code.
 
 | Package | | Docs |
 |---|---|---|
-| [`@instafix/widget`](./packages/widget) | The feedback widget (framework-agnostic + React hook) | [Widget](https://instafix.realstory.blog/docs/widget) · [Configuration](https://instafix.realstory.blog/docs/widget/configuration) · [Screenshots](https://instafix.realstory.blog/docs/widget/screenshots) |
+| [`@instafix/widget`](./packages/widget) | The fix note widget (framework-agnostic + React hook) | [Widget](https://instafix.realstory.blog/docs/widget) · [Configuration](https://instafix.realstory.blog/docs/widget/configuration) · [Screenshots](https://instafix.realstory.blog/docs/widget/screenshots) |
 | [`@instafix/dashboard`](./packages/dashboard) | Triage inbox component + headless hook | [Dashboard](https://instafix.realstory.blog/docs/dashboard) · [Theming](https://instafix.realstory.blog/docs/dashboard/theming) |
 | [`@instafix/adapter-prisma`](./packages/adapter-prisma) | Production server adapter (auth, CORS, webhooks) | [Prisma adapter](https://instafix.realstory.blog/docs/adapters/prisma) |
 | [`@instafix/adapter-sqlite`](./packages/adapter-sqlite) | Production server adapter, zero external services | [SQLite adapter](https://instafix.realstory.blog/docs/adapters/sqlite) |
@@ -135,7 +133,7 @@ The full documentation lives at **[instafix.realstory.blog/docs](https://instafi
 
 Bug reports, locale translations, docs fixes, features — everything counts, and locale additions are the friendliest first PR. Start with [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-Maintaining a fork with extra features (semantic anchors, screenshot storage backends, positioning fixes have all come from forks)? An upstream PR — or even an issue describing what you built — lets everyone benefit.
+Semantic anchors, screenshot storage backends, and positioning fixes have all come from forks so far. Maintaining a fork with extra features like that? An upstream PR — or even just an issue describing what you built — lets everyone benefit.
 
 ## Contributors
 

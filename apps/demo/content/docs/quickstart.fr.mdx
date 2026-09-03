@@ -67,9 +67,11 @@ import { InstaFixInbox } from "@instafix/dashboard";
 
 La boucle est complète. Pour aller plus loin : [options du widget](/fr/docs/widget/configuration) · [captures d'écran](/fr/docs/widget/screenshots) · [auth et sécurité](/fr/docs/adapters/prisma#le-modèle-de-sécurité-franchement).
 
-## Sans serveur
+## Référence : mode sans serveur (local)
 
-Pas de backend, pas de base — le feedback vit dans le navigateur du visiteur. Parfait pour les prototypes et démos :
+Tout ce qui précède suppose un store côté serveur — c'est ce qui alimente la boucle agent : `instafix prompt`, `/instafix` et le bouton « To agent » lisent les fix notes depuis le serveur (par exemple [le dossier `.instafix/`](/fr/docs/adapters/fs)), donc un store qui ne vit que dans le navigateur ne peut pas les servir.
+
+Le mode local existe pour le cas où il n'y a aucun serveur : un site statique, une maquette, un prototype jetable. Les fix notes restent dans le navigateur du visiteur (localStorage) et n'en sortent jamais :
 
 ```bash
 npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-localstorage-dist
@@ -86,4 +88,4 @@ initInstaFix({
 });
 ```
 
-Ce site de documentation tourne exactement avec cette configuration — essayez le widget ici même.
+Ce site de documentation tourne exactement avec cette configuration — essayez le widget ici même. Options et limites : [adaptateur localStorage](/fr/docs/adapters/localstorage).

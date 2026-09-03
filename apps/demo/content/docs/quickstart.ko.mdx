@@ -67,9 +67,11 @@ import { InstaFixInbox } from "@instafix/dashboard";
 
 전체 흐름은 이게 전부입니다. 여기서 더 살펴볼 것들: [위젯 옵션](/ko/docs/widget/configuration) · [스크린샷](/ko/docs/widget/screenshots) · [인증과 보안](/ko/docs/adapters/prisma#the-security-model-honestly).
 
-## 서버 없이 시작하기
+## 참고: 서버 없는 (로컬) 모드
 
-백엔드도, 데이터베이스도 필요 없습니다 — 피드백은 방문자의 브라우저 안에 저장됩니다. 프로토타입과 데모에 안성맞춤입니다:
+위 내용은 모두 서버 사이드 스토어를 전제로 합니다 — 에이전트 루프가 그 위에서 돕니다: `instafix prompt`, `/instafix`, "Agent에게" 버튼은 전부 서버(예: [`.instafix/` 폴더](/ko/docs/adapters/fs))에서 픽스노트를 읽으므로, 브라우저 안에만 있는 스토어로는 이 워크플로우를 쓸 수 없습니다.
+
+로컬 모드는 서버가 아예 없는 경우를 위한 것입니다: 정적 사이트, 디자인 목업, 일회성 프로토타입. 픽스노트는 방문자 자신의 브라우저(localStorage)에만 저장되고 밖으로 나가지 않습니다:
 
 ```bash
 npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-localstorage-dist
@@ -86,4 +88,4 @@ initInstaFix({
 });
 ```
 
-이 문서 사이트도 정확히 이 설정으로 동작합니다 — 바로 여기서 위젯을 직접 사용해 보세요.
+이 문서 사이트도 정확히 이 설정으로 동작합니다 — 바로 여기서 위젯을 직접 사용해 보세요. 전체 옵션과 한계: [localStorage 어댑터](/ko/docs/adapters/localstorage).

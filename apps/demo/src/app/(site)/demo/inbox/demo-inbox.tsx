@@ -1,20 +1,14 @@
 "use client";
 
-import { LocalStorageStore } from "@instafix/adapter-localstorage";
-import { createStoreSource, InstaFixInbox } from "@instafix/dashboard";
+import { InstaFixInbox } from "@instafix/dashboard";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { type ReactNode, useMemo } from "react";
+import type { ReactNode } from "react";
 
-// Same key the /demo playground writes to in local mode.
-const LOCAL_STORE_KEY = "instafix_demo_local";
-
-/** In-copy link back to /demo — keeps ?mode=local so local-mode visitors stay on their store. */
+/** In-copy link back to /demo. */
 export function DemoSiteLink({ children }: { children: ReactNode }) {
-  const params = useSearchParams();
-  const href = params.get("mode") === "local" ? "/demo?mode=local" : "/demo";
   return (
-    <Link href={href} className="text-gray-200 underline underline-offset-2 hover:text-white">
+    <Link href="/demo" className="text-gray-200 underline underline-offset-2 hover:text-white">
       {children}
     </Link>
   );
@@ -71,20 +65,14 @@ function SelectControl({ label, id, value, defaultValue, queryKey, options }: Se
 }
 
 export function DemoInbox() {
-  // ?theme=, ?density=, ?locale= and ?mode=local — the URL is the source of
-  // truth so any configuration stays shareable as a link.
+  // ?theme=, ?density= and ?locale= — the URL is the source of truth so any
+  // configuration stays shareable as a link.
   const params = useSearchParams();
   const themeParam = params.get("theme");
   const theme = themeParam === "light" || themeParam === "auto" ? themeParam : "dark";
   const density = params.get("density") === "compact" ? "compact" : "comfortable";
   const localeParam = params.get("locale");
   const locale = LOCALES.some(([code]) => code === localeParam) ? (localeParam as LocaleCode) : "en";
-  const localMode = params.get("mode") === "local";
-
-  const source = useMemo(
-    () => (localMode ? createStoreSource(new LocalStorageStore({ key: LOCAL_STORE_KEY })) : null),
-    [localMode],
-  );
 
   const shared = {
     theme,
@@ -128,18 +116,9 @@ export function DemoInbox() {
           queryKey="locale"
           options={LOCALES}
         />
-        {localMode ? (
-          <p className="text-xs text-gray-500">
-            Viewing feedbacks stored in this browser by the demo&apos;s local mode.
-          </p>
-        ) : null}
       </div>
       <div className="min-h-0 flex-1">
-        {source ? (
-          <InstaFixInbox source={source} projects={["demo"]} {...shared} />
-        ) : (
-          <InstaFixInbox endpoint="/api/instafix" projects={["demo", "landing"]} {...shared} />
-        )}
+        <InstaFixInbox endpoint="/api/instafix" projects={["demo", "landing"]} {...shared} />
       </div>
     </div>
   );

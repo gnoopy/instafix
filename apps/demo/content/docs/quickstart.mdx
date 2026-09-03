@@ -1,13 +1,15 @@
 ---
 title: Quickstart
-description: From GitHub install to your first pinned feedback in about three minutes.
+description: From GitHub install to your first fix note, handed to your agent, in about three minutes.
 ---
 
 InstaFix isn't published to the npm registry — that's a deliberate choice, not a "not yet." Every package installs straight from this repo's build output, via a disposable `<package>-dist` branch: same install experience, just a GitHub URL instead of a package name.
 
-Two paths: the **full setup** (Next.js + a real database — the production shape) or the **zero-server** one (60 seconds, everything in the browser).
+Three paths, pick one: **solo, no database** (the default — `init` suggests this first), **working with a team** (a real, shared store behind the dashboard), or **zero-server** (60 seconds, everything in the browser).
 
-## Full setup — Next.js + Prisma or SQLite
+## Solo, no database
+
+Feedback lives as plain files under `.instafix/` at your project root — nothing to run, nothing to configure, and it's what the [agent workflow](/docs/agent-workflow) (`instafix prompt`/`resolve`/`watch`) reads and writes directly.
 
 ### 1. Scaffold
 
@@ -15,9 +17,51 @@ Two paths: the **full setup** (Next.js + a real database — the production shap
 npx github:gnoopy/instafix#cli-dist init
 ```
 
-If a Prisma schema is found, `init` offers to add the InstaFix models and generate a Prisma-backed API route. **No Prisma schema?** It offers **SQLite** instead (`better-sqlite3`, zero external services — no database server, no separate migration step) rather than assuming Prisma. Either way, it also generates a ready-to-use `components/instafix-widget.tsx`.
+No Prisma schema in your project? `init` asks how to store feedback and lists **"Local history (`.instafix/` folder)"** — pick it. It also generates a ready-to-use `components/instafix-widget.tsx` and installs the `/instafix` slash command.
 
 ### 2. Install what `init` referenced
+
+```bash
+npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-fs-dist
+```
+
+### 3. Mount the widget
+
+`init` already generated the component — drop it into your root layout:
+
+```tsx
+// app/layout.tsx
+import { InstaFixWidget } from "@/components/instafix-widget";
+
+// ...inside <body>, alongside your other providers:
+<InstaFixWidget />
+```
+
+(Not using the generated component? The same thing, by hand: `useInstaFix({ endpoint: "/api/instafix", projectName: "my-project" })` from `@instafix/widget/react` in any client component.)
+
+Run your dev server and look bottom-right: the InstaFix button is there. Draw a rectangle on anything, type a note, hit Send — it lands in `.instafix/history.jsonl`.
+
+By default the widget shows in development but **never in production builds** — it's a tool for the people actively building the app, not something a real visitor should ever see. For a staging environment that builds in production mode, pass `forceShow: true`.
+
+### 4. Hand it to your agent
+
+```bash
+npx github:gnoopy/instafix#cli-dist prompt --status open | claude -p
+```
+
+Or copy a single note from the panel ("Copy Prompt"), or type `/instafix` in a Claude Code session already running here. Once fixed, the agent closes it itself — see [Agent workflow](/docs/agent-workflow) for all three handoff paths and how `resolve` closes the loop.
+
+## Working with a team
+
+More than one person needs to see the same list? Swap `adapter-fs` for a real server-backed store and add the dashboard:
+
+### 1. Scaffold, install, push
+
+```bash
+npx github:gnoopy/instafix#cli-dist init
+```
+
+A Prisma schema in your project gets a Prisma-backed route automatically; no schema prompts you to pick **SQLite** (`better-sqlite3`, zero external services) instead.
 
 ```bash
 # Prisma path
@@ -39,25 +83,11 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 ```
 
-### 3. Mount the widget
+### 2. Mount the widget
 
-`init` already generated the component — drop it into your root layout:
+Same as the solo path above — `init` generated `components/instafix-widget.tsx`; drop `<InstaFixWidget />` into your root layout.
 
-```tsx
-// app/layout.tsx
-import { InstaFixWidget } from "@/components/instafix-widget";
-
-// ...inside <body>, alongside your other providers:
-<InstaFixWidget />
-```
-
-(Not using the generated component? The same thing, by hand: `useInstaFix({ endpoint: "/api/instafix", projectName: "my-project" })` from `@instafix/widget/react` in any client component.)
-
-Run your dev server and look bottom-right: the InstaFix button is there. Draw a rectangle on anything, type a comment, hit Send.
-
-By default the widget shows in development but **never in production builds** — that's the point: clients review on dev/staging URLs. For a staging environment that builds in production mode, pass `forceShow: true`.
-
-### 4. Triage what comes in
+### 3. Add the dashboard
 
 ```tsx
 import { InstaFixInbox } from "@instafix/dashboard";
@@ -65,11 +95,13 @@ import { InstaFixInbox } from "@instafix/dashboard";
 <InstaFixInbox projects="my-project" endpoint="/api/instafix" theme="auto" />
 ```
 
-That's the whole loop. From here: [widget options](/docs/widget/configuration) · [screenshots](/docs/widget/screenshots) · [auth & security](/docs/adapters/prisma#the-security-model-honestly).
+From here: [widget options](/docs/widget/configuration) · [screenshots](/docs/widget/screenshots) · [auth & security](/docs/adapters/prisma#the-security-model-honestly).
 
-## Zero-server setup
+## Reference: zero-server (local) mode
 
-No backend, no database — feedback lives in the visitor's browser. Perfect for prototypes and demos:
+Everything above assumes a server-side store — that's what the agent loop runs on: `instafix prompt`, `/instafix`, and the "To agent" button all read fix notes from the server (e.g. [the `.instafix/` folder](/docs/adapters/fs)), so a store that lives only in the browser can't feed them.
+
+Local mode exists for the case where there is no server at all: a static site, a design mockup, a throwaway prototype. Fix notes stay in the visitor's own browser (localStorage) and never leave it:
 
 ```bash
 npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-localstorage-dist
@@ -86,4 +118,4 @@ initInstaFix({
 });
 ```
 
-This documentation site runs exactly this setup — try the widget right here.
+This documentation site runs exactly this setup — try the widget right here. Full options and limits: [localStorage adapter](/docs/adapters/localstorage).

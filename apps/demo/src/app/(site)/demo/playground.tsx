@@ -12,8 +12,9 @@ import { DiagnosticsTriggers } from "./diagnostics-triggers";
 // State model — the URL query is the single source of truth. The visible
 // controls that used to write it are gone (everything they duplicated lives
 // in the widget's own settings section now), but the params stay honored so
-// shared links like /demo?theme=dark&mode=local keep working, and the widget
-// itself is the demo of those settings.
+// shared links like /demo?theme=dark keep working, and the widget itself is
+// the demo of those settings. Local mode left the demo entirely — it's a
+// zero-server reference path, documented at the end of the quickstart.
 // ---------------------------------------------------------------------------
 
 const LOCALE_CODES = ["ko", "en", "fr", "de", "es", "it", "pt", "ru"] as const;
@@ -21,7 +22,6 @@ const LOCALE_CODES = ["ko", "en", "fr", "de", "es", "it", "pt", "ru"] as const;
 type LocaleCode = (typeof LOCALE_CODES)[number];
 
 interface PlaygroundState {
-  mode: "server" | "local";
   theme: "light" | "dark" | "auto";
   locale: LocaleCode;
   position: "bottom-right" | "bottom-left";
@@ -32,7 +32,6 @@ interface PlaygroundState {
 }
 
 const DEFAULTS: PlaygroundState = {
-  mode: "server",
   theme: "light",
   locale: "ko",
   position: "bottom-right",
@@ -48,8 +47,6 @@ const HEX_RE = /^([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 /** The widget's own default accent — options matching widget defaults drop out of the snippet. */
 const WIDGET_DEFAULT_ACCENT = "#0066ff";
 
-const LOCAL_STORE_KEY = "instafix_demo_local";
-
 const DEMO_IDENTITY = { name: "Alex Client", email: "alex@client.example" };
 
 interface ParamsLike {
@@ -61,7 +58,6 @@ function parseState(params: ParamsLike): PlaygroundState {
   const locale = params.get("locale");
   const accent = params.get("accent");
   return {
-    mode: params.get("mode") === "local" ? "local" : "server",
     theme: theme === "dark" || theme === "auto" ? theme : "light",
     locale: LOCALE_CODES.includes(locale as LocaleCode) ? (locale as LocaleCode) : DEFAULTS.locale,
     position: params.get("position") === "bottom-left" ? "bottom-left" : "bottom-right",
@@ -121,22 +117,7 @@ function importLine(name: string, pkg: string): RawToken[] {
  */
 function buildOptionLines(state: PlaygroundState): { key: string; tokens: RawToken[] }[] {
   const lines: { key: string; tokens: RawToken[] }[] = [];
-  if (state.mode === "local") {
-    lines.push({
-      key: "store",
-      tokens: [
-        { text: "new ", cls: KEYWORD },
-        { text: "LocalStorageStore", cls: IDENT },
-        punct("({ "),
-        { text: "key", cls: PROP },
-        punct(": "),
-        str(LOCAL_STORE_KEY),
-        punct(" })"),
-      ],
-    });
-  } else {
-    lines.push({ key: "endpoint", tokens: [str("/api/instafix")] });
-  }
+  lines.push({ key: "endpoint", tokens: [str("/api/instafix")] });
   lines.push({ key: "projectName", tokens: [str("demo")] });
   if (state.theme !== "light") lines.push({ key: "theme", tokens: [str(state.theme)] });
   if (state.locale !== DEFAULTS.locale) lines.push({ key: "locale", tokens: [str(state.locale)] });
@@ -169,9 +150,6 @@ function buildOptionLines(state: PlaygroundState): { key: string; tokens: RawTok
 function buildSnippet(state: PlaygroundState): { lines: SnippetLine[]; text: string } {
   const raw: { key: string; tokens: RawToken[] }[] = [];
   raw.push({ key: "import-widget", tokens: importLine("initInstaFix", "@instafix/widget") });
-  if (state.mode === "local") {
-    raw.push({ key: "import-store", tokens: importLine("LocalStorageStore", "@instafix/adapter-localstorage") });
-  }
   raw.push({ key: "blank", tokens: [] });
   raw.push({
     key: "open",
@@ -211,7 +189,7 @@ export function Playground({ siteLocale }: { siteLocale: SiteLocale }) {
   const t = playgroundContent[siteLocale];
   const params = useSearchParams();
   const state = useMemo(() => parseState(params), [params]);
-  const { mode, theme, locale, position, accent, screenshot, diagnostics, identity } = state;
+  const { theme, locale, position, accent, screenshot, diagnostics, identity } = state;
 
   const [open, setOpen] = useState(false);
   const tabRef = useRef<HTMLButtonElement>(null);
@@ -235,10 +213,7 @@ export function Playground({ siteLocale }: { siteLocale: SiteLocale }) {
     let instance: InstaFixInstance | null = null;
 
     (async () => {
-      const [{ initInstaFix }, storeModule] = await Promise.all([
-        import("@instafix/widget"),
-        mode === "local" ? import("@instafix/adapter-localstorage") : Promise.resolve(null),
-      ]);
+      const { initInstaFix } = await import("@instafix/widget");
       if (cancelled) return;
       instance = initInstaFix({
         projectName: "demo",
@@ -252,9 +227,7 @@ export function Playground({ siteLocale }: { siteLocale: SiteLocale }) {
         enableScreenshot: screenshot,
         captureDiagnostics: diagnostics,
         ...(identity ? { identity: DEMO_IDENTITY } : {}),
-        ...(storeModule
-          ? { store: new storeModule.LocalStorageStore({ key: LOCAL_STORE_KEY }) }
-          : { endpoint: "/api/instafix" }),
+        endpoint: "/api/instafix",
       });
       firstInitRef.current = false;
     })();
@@ -263,7 +236,7 @@ export function Playground({ siteLocale }: { siteLocale: SiteLocale }) {
       cancelled = true;
       instance?.destroy();
     };
-  }, [mode, theme, locale, position, accent, screenshot, diagnostics, identity]);
+  }, [theme, locale, position, accent, screenshot, diagnostics, identity]);
 
   function toggleOpen(next: boolean) {
     toggledRef.current = true;
@@ -309,9 +282,7 @@ export function Playground({ siteLocale }: { siteLocale: SiteLocale }) {
           </div>
 
           <div className="flex-1 space-y-4 overflow-y-auto p-4">
-            <p className="text-xs leading-snug text-gray-500">
-              {mode === "local" ? t.modeLocalCaption : t.modeServerCaption}
-            </p>
+            <p className="text-xs leading-snug text-gray-500">{t.modeServerCaption}</p>
 
             <p className="text-xs leading-snug text-gray-500">{t.settingsHint}</p>
 

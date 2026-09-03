@@ -37,16 +37,16 @@ Claude Code, Cursor 같은 AI 코딩 에이전트와 함께 개발할 때 쓰는
 
 ## 기능
 
-- **말로 설명할 필요 없이, 클릭 한 번으로 정확한 대상 지정** — "왼쪽에서 두 번째 카드", "그 버튼 아래 여백" 같은 애매한 표현 대신, 요소 자동 선택 픽커(호버 → 클릭)로 컴포넌트를 집거나 사각형 드래그로 여러 요소를 한 번에 지정 — CSS/XPath/텍스트 기반의 정확한 DOM 셀렉터가 자동으로 캡처됨. dev 서버에서는 클릭한 요소를 렌더링한 **React 컴포넌트 이름까지 힌트로 캡처**되어 에이전트가 파일을 바로 찾음
-- **프롬프트 복사(Copy Prompt)** — 주석·정확한 DOM 셀렉터·스크린샷 경로·콘솔 에러를 하나의 마크다운 프롬프트로 정리해 클립보드에 복사 — Claude Code, Cursor 등 어떤 코딩 에이전트에도 바로 붙여넣기 가능. 픽스노트마다 ID가 붙고 완료 처리 방법까지 명시되어, **에이전트가 고친 항목을 스스로 닫음**
-- **터미널 직결 (`instafix prompt` · `/instafix` · "Agent에게")** — 쌓인 픽스노트를 `npx @instafix/cli prompt | claude -p`로 새 에이전트 세션에 통째로 발주하거나, 작업 중이던 Claude Code 세션에서 `/instafix`로 끌어오거나, 패널의 "Agent에게" 버튼 → `instafix watch`로 현재 세션에 밀어넣기 — 복사/붙여넣기 없이도 루프가 돔
+- **말로 설명할 필요 없이, 클릭 한 번으로 정확한 대상 지정** — "왼쪽에서 두 번째 카드", "그 버튼 아래 여백" 같은 애매한 표현 대신 마우스로 직접 짚습니다. 요소 위에 마우스를 올렸다가 클릭하면 그 요소가 자동으로 선택되고, 사각형으로 드래그하면 여러 요소를 한 번에 선택할 수 있습니다. 이렇게 선택한 요소는 CSS/XPath/텍스트 기반의 정확한 DOM 셀렉터로 자동 기록됩니다. 개발 서버에서는 그 요소를 렌더링한 **React 컴포넌트 이름까지 함께 기록**되어, 에이전트가 관련 파일을 바로 찾을 수 있습니다
+- **프롬프트 복사(Copy Prompt)** — 남긴 메모·정확한 DOM 셀렉터·스크린샷 경로·콘솔 에러를 마크다운 프롬프트 하나로 정리해 클립보드에 복사합니다. Claude Code, Cursor 등 어떤 코딩 에이전트에도 바로 붙여넣을 수 있습니다. 각 항목(픽스노트)마다 고유 ID와 "다 고치면 이렇게 표시해줘"라는 안내가 함께 담겨서, **에이전트가 수정을 마친 항목을 스스로 완료 처리**합니다
+- **복사·붙여넣기 없이 터미널로 바로 전달** (`instafix prompt` · `/instafix` · "Agent에게") — 쌓인 픽스노트를 `npx @instafix/cli prompt | claude -p` 명령 하나로 새 에이전트 세션에 통째로 넘기거나, 지금 작업 중인 Claude Code 세션에 `/instafix`라고 입력해서 그대로 가져오거나, 패널의 "Agent에게" 버튼을 눌러 `instafix watch`가 켜진 세션으로 바로 보낼 수 있습니다
 - **DOM 기반 영속성** — 주석이 픽셀이 아니라 요소에 결속되어, 에이전트가 레이아웃을 바꿔도 주석이 유지됨
-- **스크린샷 + 진단 정보** — 주석 영역의 JPEG 캡처(프라이버시 마스킹 포함)와 콘솔/네트워크 캡처, 둘 다 옵트인 — "에러가 난다"는 말 대신 실제 콘솔 로그를 그대로 프롬프트에 담을 수 있음. 디자인 시안을 보여주고 싶다면 메모장에 이미지를 ⌘V로 붙여넣으면 됨
-- **숙주 앱과 절대 헷갈리지 않는 레이어 색** — 페이지의 브랜드 색을 자동 감지해, 툴바·팝오버·패널·마커 전부가 숙주 앱 팔레트와 뚜렷이 구분되는 하나의 톤을 입음 (`autoSelectionColor: false`로 끄면 `accentColor` 사용)
+- **스크린샷 + 진단 정보** — 주석 영역을 JPEG로 캡처하고(민감한 부분은 자동으로 가림 처리) 콘솔/네트워크 로그도 함께 담을 수 있습니다 (둘 다 켜고 끌 수 있음) — "에러가 난다"고 말로 설명하는 대신 실제 콘솔 로그를 그대로 프롬프트에 넣을 수 있습니다. 디자인 시안을 보여주고 싶다면 메모 입력창에 이미지를 ⌘V로 바로 붙여넣으면 됩니다
+- **내 앱 색상과 절대 헷갈리지 않는 위젯 색** — 페이지에 이미 쓰이고 있는 브랜드 색을 자동으로 읽어서, 툴바·팝오버·패널·마커를 그 색과 뚜렷이 구분되는 색 하나로 통일해서 보여줍니다 (`autoSelectionColor: false`로 끄면 직접 지정한 `accentColor`를 씀)
 - **로컬 히스토리 (`.instafix/` 폴더)** — DB 없이 프로젝트 폴더에 작업 이력(과 스크린샷)을 평문으로 남기고 언제든 검색 가능 (`@instafix/adapter-fs`)
-- **트리아지 인박스** — `<InstaFixInbox />`(`@instafix/dashboard`): 팀 단위로 픽스노트를 관리하고 싶을 때, Linear 스타일 키보드 우선 UI, 라이트/다크, 8개 로케일
+- **팀용 관리 화면 (트리아지 인박스)** — `<InstaFixInbox />`(`@instafix/dashboard`): 여러 명이 함께 픽스노트를 검토하고 정리하고 싶을 때 쓰는 화면입니다. Linear 스타일의 키보드 중심 UI, 라이트/다크 테마, 8개 언어 지원
 - **기본 내장된 안정성** — 백오프 재시도 + localStorage 큐로, 불안정한 네트워크에서도 코멘트를 잃지 않음
-- **Shadow DOM 격리 + 항상 맨 위에 표시** — 위젯 CSS가 사이트로 새어나가지 않고, 사이트 CSS가 위젯을 깨뜨리지도 않음. 다른 플로팅 위젯(Vercel 툴바 등)과 함께 써도 최댓값 z-index와 자체 위치 재조정으로 InstaFix가 가려지지 않음
+- **Shadow DOM 격리 + 다른 플로팅 위젯과 겹치지 않음** — 위젯 CSS가 사이트로 새어나가지 않고, 사이트 CSS가 위젯을 깨뜨리지도 않음. 최댓값 z-index를 써서 다른 요소에 가려지지 않고, 배포 미리보기 툴바(Vercel 툴바 등)나 채팅 버블처럼 같은 자리에 이미 뭔가 떠 있으면 반대쪽 하단 모서리로 자동으로 옮겨감 (`avoidOverlays: false`로 끌 수 있음)
 - **기본적으로 개발 환경 전용** — `forceShow: true`를 주지 않는 한 프로덕션 빌드에서는 자동으로 숨겨짐
 - **가벼움** — gzip 기준 ~30KB(ESM); 패널·스크린샷 엔진·비영어 로케일은 필요할 때만 로드됨
 
@@ -58,7 +58,7 @@ Claude Code, Cursor 같은 AI 코딩 에이전트와 함께 개발할 때 쓰는
 가장 빠른 방법 — 아래를 Claude Code / Cursor / Copilot 등에 붙여넣고 나머지는 맡기세요:
 
 ```text
-이 프로젝트에 InstaFix(셀프 호스팅 피드백 위젯)를 설치하고 설정해줘:
+이 프로젝트에 InstaFix(셀프 호스팅 픽스노트 위젯)를 설치하고 설정해줘:
 
 1. npx github:gnoopy/instafix#cli-dist init 을 실행하고, 각 질문에서 제안하는 기본값을 그대로 선택해.
 2. 이 명령이 설치하라고 알려주는 github:gnoopy/instafix#*-dist 패키지를 npm install로 설치해.
@@ -67,17 +67,17 @@ Claude Code, Cursor 같은 AI 코딩 에이전트와 함께 개발할 때 쓰는
 
 이게 전부입니다 — 이제 화면에 사각형을 그리고 메모를 남기면, 에이전트에게 바로 줄 프롬프트로 복사할 수 있습니다.
 
-쌓인 픽스노트를 에이전트에게 넘기는 방법은 취향대로 고르세요:
+쌓인 픽스노트를 에이전트에게 넘기는 방법은 아래 중 편한 걸 고르세요:
 
 ```bash
-# 열린 픽스노트 전체(또는 --id로 고른 것만)를 새 에이전트 세션에 발주
+# 열려 있는 픽스노트 전체(또는 --id로 고른 것만)를 새 에이전트 세션으로 전달
 npx github:gnoopy/instafix#cli-dist prompt --status open | claude -p
 
-# 에이전트가 고친 항목은 스스로 닫습니다 (프롬프트에 방법이 적혀 있음)
+# 에이전트가 고친 항목은 스스로 완료 처리합니다 (방법은 프롬프트 안에 적혀 있음)
 npx github:gnoopy/instafix#cli-dist resolve <ID>
 ```
 
-작업 중이던 Claude Code 세션에 이어서 처리하고 싶다면 그 세션에서 `/instafix`를 입력하세요(`init`이 슬래시 커맨드를 설치해 둡니다). 브라우저를 벗어나기 싫다면 픽스노트 카드나 상세의 **"Agent에게"** 버튼 — `instafix watch`를 백그라운드로 켜 둔 세션이 즉시 이어받습니다.
+지금 작업 중인 Claude Code 세션에서 바로 이어서 처리하고 싶다면, 그 세션에 `/instafix`라고 입력하세요(`init`을 실행하면 이 슬래시 커맨드도 함께 설치됩니다). 브라우저를 벗어나고 싶지 않다면, 픽스노트 카드나 상세 화면에 있는 **"Agent에게"** 버튼을 누르세요 — 백그라운드에서 `instafix watch`를 켜둔 세션이 그 내용을 바로 이어받아 처리합니다.
 
 ### 직접 설치하고 싶다면?
 
@@ -102,7 +102,7 @@ npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-sq
 npx github:gnoopy/instafix#cli-dist init 명령이 components/instafix-widget.tsx 를 생성했고, 여기서 InstaFixWidget이라는 컴포넌트를 내보내. 내 앱의 루트 레이아웃 — Next.js App Router라면 app/layout.tsx, 다른 프레임워크라면 그에 해당하는 루트 레이아웃/루트 컴포넌트 — 에 <InstaFixWidget /> 을 추가해줘. @/components/instafix-widget 에서 import하면 되고(이 프로젝트가 @/ 별칭을 안 쓴다면 import 경로를 알맞게 조정해), 다른 전역 프로바이더들과 함께 <body> 안 어딘가에 한 번만 넣어줘 — 이 컴포넌트는 아무것도 렌더링하지 않으니(return null) 정확한 위치는 중요하지 않아. 조건문으로 감싸지 마: forceShow가 설정되지 않는 한 개발 환경 밖에서는 이미 자동으로 아무 동작도 하지 않게 되어 있어.
 ```
 
-픽스노트는 컴포넌트 하나로 트리아지할 수 있습니다:
+쌓인 픽스노트는 아래 컴포넌트 하나만 붙이면 한 화면에서 확인하고 정리할 수 있습니다:
 
 ```tsx
 import { InstaFixInbox } from "@instafix/dashboard";
@@ -112,8 +112,6 @@ import { InstaFixInbox } from "@instafix/dashboard";
 
 (설치 방법은 동일합니다: `npm install github:gnoopy/instafix#dashboard-dist`)
 
-서버가 없다면? 위젯은 `store: new LocalStorageStore()`(`github:gnoopy/instafix#adapter-localstorage-dist`)로 완전히 클라이언트 사이드에서도 동작합니다.
-
 **InstaFix 제거하기**: 락파일과 `package.json`을 되돌리고(`git checkout -- package.json package-lock.json` 또는 사용 중인 락파일), `app/api/instafix/`와 `components/instafix-widget.tsx`를 삭제한 뒤 다시 설치하세요.
 
 ## 문서
@@ -122,7 +120,7 @@ import { InstaFixInbox } from "@instafix/dashboard";
 
 | 패키지 | | 문서 |
 |---|---|---|
-| [`@instafix/widget`](./packages/widget) | 피드백 위젯 (프레임워크 무관 + React 훅) | [위젯](https://instafix.realstory.blog/docs/widget) · [설정](https://instafix.realstory.blog/docs/widget/configuration) · [스크린샷](https://instafix.realstory.blog/docs/widget/screenshots) |
+| [`@instafix/widget`](./packages/widget) | 픽스노트 위젯 (프레임워크 무관 + React 훅) | [위젯](https://instafix.realstory.blog/docs/widget) · [설정](https://instafix.realstory.blog/docs/widget/configuration) · [스크린샷](https://instafix.realstory.blog/docs/widget/screenshots) |
 | [`@instafix/dashboard`](./packages/dashboard) | 트리아지 인박스 컴포넌트 + 헤드리스 훅 | [대시보드](https://instafix.realstory.blog/docs/dashboard) · [테마](https://instafix.realstory.blog/docs/dashboard/theming) |
 | [`@instafix/adapter-prisma`](./packages/adapter-prisma) | 프로덕션용 서버 어댑터 (인증, CORS, webhook) | [Prisma 어댑터](https://instafix.realstory.blog/docs/adapters/prisma) |
 | [`@instafix/adapter-sqlite`](./packages/adapter-sqlite) | 프로덕션용 서버 어댑터, 외부 서비스 불필요 | [SQLite 어댑터](https://instafix.realstory.blog/docs/adapters/sqlite) |
@@ -135,7 +133,7 @@ import { InstaFixInbox } from "@instafix/dashboard";
 
 버그 리포트, 로케일 번역, 문서 수정, 기능 추가 — 무엇이든 도움이 됩니다. 로케일 추가는 첫 PR로 가장 부담 없는 항목입니다. [CONTRIBUTING.md](./CONTRIBUTING.md)에서 시작하세요.
 
-추가 기능(시맨틱 앵커, 스크린샷 저장소 백엔드, 포지셔닝 수정 등은 전부 포크에서 나왔습니다)을 담은 포크를 유지 중이신가요? 업스트림 PR — 혹은 무엇을 만들었는지 설명하는 이슈만이라도 — 을 남겨주시면 모두에게 도움이 됩니다.
+시맨틱 앵커, 스크린샷 저장소 백엔드, 포지셔닝 수정처럼 지금까지 여러 유용한 기능이 포크에서 먼저 나왔습니다. 이런 추가 기능을 담은 포크를 유지하고 계신가요? 업스트림에 PR을 보내주시거나, 여의치 않다면 무엇을 만들었는지 설명하는 이슈만 남겨주셔도 모두에게 도움이 됩니다.
 
 <a id="contributors"></a>
 ## 기여자 (Contributors)
