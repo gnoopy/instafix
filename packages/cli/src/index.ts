@@ -11,7 +11,7 @@ import { watchCommand } from "./commands/watch.js";
 const program = new Command()
   .name("instafix")
   .description("CLI to configure @instafix/* in your project")
-  .version("0.5.4"); // x-release-please-version
+  .version("0.5.5"); // x-release-please-version
 
 program
   .command("init")

@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.5.5](https://github.com/gnoopy/instafix/compare/cli-v0.5.4...cli-v0.5.5) (2026-09-03)
+
+
+### Features
+
+* add a filesystem adapter for a single-developer local history ([ec276a3](https://github.com/gnoopy/instafix/commit/ec276a3de88cc550bb1c26f9c75cc16bb2c014d0))
+* add a zero-ORM SQLite adapter, fix cross-package store errors, and stop the CLI from assuming Prisma ([8d9ff25](https://github.com/gnoopy/instafix/commit/8d9ff251bf24f2a2a3343c3673b7fbe35d259862))
+* **cli:** auto-run prisma db push and scaffold the widget component ([3e04d09](https://github.com/gnoopy/instafix/commit/3e04d09a817d1ba6667fcc79c185e9a1e6e43715))
+* close the mark→record→prompt→agent loop (upgrade-v3) ([7f02284](https://github.com/gnoopy/instafix/commit/7f0228428bd458193de6c1fdd31773739ca3b5f3))
+* **i18n:** add Korean (ko) as the default widget/dashboard locale ([c840dc6](https://github.com/gnoopy/instafix/commit/c840dc674b51ad69032ce1b8eef1325edfcc4df0))
+* name the recorded item — fix note (픽스노트) — and put "Agent에게" on list cards ([77112c2](https://github.com/gnoopy/instafix/commit/77112c269abb696b794be54f155e8a55f53bd276))
+
+
+### Bug Fixes
+
+* **cli:** update init's --help description for the SQLite backend choice ([b391a1f](https://github.com/gnoopy/instafix/commit/b391a1f61189f356d5e5bd6fd5fe9c0b287ef019))
+
+
+### Refactoring
+
+* rebrand SitePing → InstaFix across codebase ([b9e0872](https://github.com/gnoopy/instafix/commit/b9e0872ce04136561b1c26130d46d9922c9500c6))
+
+
+### Tests
+
+* close the coverage gap left by recent features (unblocks release-please) ([42a31fc](https://github.com/gnoopy/instafix/commit/42a31fc021d5aab27879e77e56d4f2be4cc49645))
+
+
+### Documentation
+
+* mark i18n and contact/admin work complete in rebranding plan ([d25dcf5](https://github.com/gnoopy/instafix/commit/d25dcf5d4297547ba79bf0364d5576fa37e5c1ed))
+* record language switcher, Korean docs, and production bug fixes in rebranding plan ([fcc3d63](https://github.com/gnoopy/instafix/commit/fcc3d63620d556a9410c4536c2ed0eb31af6a838))
+* replace every npm-registry install reference with the GitHub dist-branch method ([7c59881](https://github.com/gnoopy/instafix/commit/7c59881a1dae9360cc7460603fefa9f87902e5af))
+* rewrite rebranding plan in Korean, track progress checklist ([0be081a](https://github.com/gnoopy/instafix/commit/0be081a85f7dff30ea6a8b1e00af216ea183e03b))
+
+
+### Miscellaneous
+
+* snapshot before InstaFix rebrand ([465768c](https://github.com/gnoopy/instafix/commit/465768c631f2dd3f126b4cc8bd7af803466c53d7))
+
 ## [0.5.4](https://github.com/gnoopy/instafix/compare/cli-v0.5.3...cli-v0.5.4) (2026-07-28)
 
 

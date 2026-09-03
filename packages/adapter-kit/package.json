@@ -1,6 +1,6 @@
 {
   "name": "@instafix/adapter-kit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Everything needed to build and conformance-test a custom InstaFix store adapter",
   "type": "module",
   "sideEffects": false,
