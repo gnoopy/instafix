@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.7](https://github.com/gnoopy/instafix/compare/cli-v0.5.6...cli-v0.5.7) (2026-09-03)
+
+
+### Bug Fixes
+
+* **cli:** stop init from generating a route that imports the deleted adapter-prisma ([89127e1](https://github.com/gnoopy/instafix/commit/89127e1195c7742a749209a9d301d7b81e269708))
+
 ## [0.5.6](https://github.com/gnoopy/instafix/compare/cli-v0.5.5...cli-v0.5.6) (2026-09-03)
 
 
