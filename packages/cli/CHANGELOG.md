@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.6](https://github.com/gnoopy/instafix/compare/cli-v0.5.5...cli-v0.5.6) (2026-09-03)
+
+
+### Documentation
+
+* **readme,cli:** make npm install the primary quick start, GitHub dist branches nightly-only ([340808f](https://github.com/gnoopy/instafix/commit/340808f6e5c89a8a2168df00cc8743a2005a0c2d))
+
 ## [0.5.5](https://github.com/gnoopy/instafix/compare/cli-v0.5.4...cli-v0.5.5) (2026-09-03)
 
 
