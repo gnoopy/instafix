@@ -27,7 +27,7 @@
       "dependencies": {
         "@instafix/adapter-localstorage": "workspace:*",
         "@instafix/adapter-memory": "workspace:*",
-        "@instafix/adapter-prisma": "workspace:*",
+        "@instafix/adapter-sqlite": "workspace:*",
         "@instafix/dashboard": "workspace:*",
         "@instafix/widget": "workspace:*",
         "fumadocs-core": "^16.12.1",
@@ -49,57 +49,28 @@
     },
     "packages/adapter-fs": {
       "name": "@instafix/adapter-fs",
-      "version": "0.0.0",
+      "version": "1.0.0",
       "devDependencies": {
         "@instafix/core": "workspace:*",
       },
-    },
-    "packages/adapter-kit": {
-      "name": "@instafix/adapter-kit",
-      "version": "0.1.0",
-      "devDependencies": {
-        "@instafix/core": "workspace:*",
-      },
-      "peerDependencies": {
-        "vitest": ">=3",
-      },
-      "optionalPeers": [
-        "vitest",
-      ],
     },
     "packages/adapter-localstorage": {
       "name": "@instafix/adapter-localstorage",
-      "version": "0.5.3",
+      "version": "0.5.4",
       "devDependencies": {
         "@instafix/core": "workspace:*",
       },
     },
     "packages/adapter-memory": {
       "name": "@instafix/adapter-memory",
-      "version": "0.5.3",
+      "version": "0.5.4",
       "devDependencies": {
         "@instafix/core": "workspace:*",
       },
-    },
-    "packages/adapter-prisma": {
-      "name": "@instafix/adapter-prisma",
-      "version": "0.6.4",
-      "dependencies": {
-        "zod": "^4.4.3",
-      },
-      "devDependencies": {
-        "@instafix/core": "workspace:*",
-      },
-      "peerDependencies": {
-        "@prisma/client": "^5.0.0 || ^6.0.0 || ^7.0.0",
-      },
-      "optionalPeers": [
-        "@prisma/client",
-      ],
     },
     "packages/adapter-sqlite": {
       "name": "@instafix/adapter-sqlite",
-      "version": "0.0.0",
+      "version": "1.0.0",
       "dependencies": {
         "better-sqlite3": "^11.10.0",
         "zod": "^4.4.3",
@@ -111,7 +82,7 @@
     },
     "packages/cli": {
       "name": "@instafix/cli",
-      "version": "0.5.4",
+      "version": "0.5.5",
       "bin": {
         "instafix": "./dist/index.js",
       },
@@ -131,7 +102,7 @@
     },
     "packages/dashboard": {
       "name": "@instafix/dashboard",
-      "version": "0.2.5",
+      "version": "0.2.6",
       "devDependencies": {
         "@instafix/core": "workspace:*",
         "@size-limit/preset-small-lib": "^12.1.0",
@@ -147,7 +118,7 @@
     },
     "packages/widget": {
       "name": "@instafix/widget",
-      "version": "0.10.7",
+      "version": "0.10.8",
       "dependencies": {
         "@medv/finder": "^4.0.2",
         "exceljs": "4.4.0",
@@ -412,13 +383,9 @@
 
     "@instafix/adapter-fs": ["@instafix/adapter-fs@workspace:packages/adapter-fs"],
 
-    "@instafix/adapter-kit": ["@instafix/adapter-kit@workspace:packages/adapter-kit"],
-
     "@instafix/adapter-localstorage": ["@instafix/adapter-localstorage@workspace:packages/adapter-localstorage"],
 
     "@instafix/adapter-memory": ["@instafix/adapter-memory@workspace:packages/adapter-memory"],
-
-    "@instafix/adapter-prisma": ["@instafix/adapter-prisma@workspace:packages/adapter-prisma"],
 
     "@instafix/adapter-sqlite": ["@instafix/adapter-sqlite@workspace:packages/adapter-sqlite"],
 

@@ -1,7 +1,8 @@
 {
   "name": "@instafix/adapter-localstorage",
   "version": "0.5.4",
-  "description": "localStorage adapter for InstaFix — client-side feedback persistence without a server",
+  "private": true,
+  "description": "localStorage adapter for InstaFix — client-side feedback persistence without a server. Internal: powers the docs site's own embedded widget instance; not a supported install target for consumers.",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -47,9 +48,6 @@
   },
   "bugs": {
     "url": "https://github.com/gnoopy/instafix/issues"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "engines": {
     "node": ">=20"

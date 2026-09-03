@@ -2,14 +2,14 @@
 * @gnoopy
 
 # Packages
-packages/widget/    @gnoopy
-packages/dashboard/ @gnoopy
-packages/adapter-prisma/ @gnoopy
-packages/adapter-memory/ @gnoopy
+packages/widget/            @gnoopy
+packages/dashboard/         @gnoopy
+packages/adapter-fs/        @gnoopy
+packages/adapter-sqlite/    @gnoopy
+packages/adapter-memory/    @gnoopy
 packages/adapter-localstorage/ @gnoopy
-packages/adapter-kit/ @gnoopy
-packages/cli/       @gnoopy
-packages/core/      @gnoopy
+packages/cli/               @gnoopy
+packages/core/               @gnoopy
 
 # CI/CD & config
 .github/            @gnoopy

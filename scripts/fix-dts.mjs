@@ -45,8 +45,7 @@ if (!existsSync(coreDist)) {
 const toCjsSpecifiers = (content) => content.replace(/(["'])\.\/([^"']+)\.js\1/g, "$1./$2.cjs$1");
 
 // The consumer's declarations decide whether the testing subpath is needed
-// (only @instafix/adapter-kit re-exports it today) — scan before copying so
-// packages that never touch it don't ship a dead file.
+// — scan before copying so packages that never touch it don't ship a dead file.
 const ownDts = readdirSync(targetDir).filter((f) => f.endsWith(".d.ts") || f.endsWith(".d.cts"));
 const needsTesting = ownDts.some((f) => readFileSync(join(targetDir, f), "utf8").includes("@instafix/core/testing"));
 

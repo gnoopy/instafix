@@ -8,8 +8,11 @@
 // manifest (version bumps + CHANGELOG only — release.yml doesn't publish
 // anywhere; see the README's Quickstart for how packages are distributed).
 //
-// Third-party adapters (outside this repo) should depend on
-// @instafix/adapter-kit instead — see docs/adapters/writing-an-adapter.
+// Third-party adapters (outside this repo) have no published conformance
+// toolkit to depend on anymore (@instafix/adapter-kit was removed — no
+// external adopters, and the two in-scope backends, fs and sqlite, cover
+// this repo's own needs). Model a new first-party adapter on
+// packages/adapter-sqlite instead.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

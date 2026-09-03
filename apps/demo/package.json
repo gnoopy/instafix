@@ -15,7 +15,7 @@
   "dependencies": {
     "@instafix/adapter-localstorage": "workspace:*",
     "@instafix/adapter-memory": "workspace:*",
-    "@instafix/adapter-prisma": "workspace:*",
+    "@instafix/adapter-sqlite": "workspace:*",
     "@instafix/dashboard": "workspace:*",
     "@instafix/widget": "workspace:*",
     "gsap": "^3.15.0",

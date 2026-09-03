@@ -65,10 +65,8 @@ body:
       options:
         - "@instafix/widget"
         - "@instafix/dashboard"
-        - "@instafix/adapter-prisma"
-        - "@instafix/adapter-memory"
-        - "@instafix/adapter-localstorage"
-        - "@instafix/adapter-kit"
+        - "@instafix/adapter-fs"
+        - "@instafix/adapter-sqlite"
         - "@instafix/cli"
         - "instafix.realstory.blog (site / docs / demo)"
         - "Not sure"

@@ -1,4 +1,4 @@
-import { createInstaFixHandler } from "@instafix/adapter-prisma";
+import { createInstaFixHandler } from "@instafix/adapter-sqlite";
 import { memoryStore } from "@/lib/memory-store";
 
 // Webhook notifications — uncomment to ping Slack/Discord on each new feedback.

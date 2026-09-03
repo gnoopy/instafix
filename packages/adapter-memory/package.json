@@ -1,7 +1,8 @@
 {
   "name": "@instafix/adapter-memory",
   "version": "0.5.4",
-  "description": "In-memory adapter for InstaFix — zero dependencies, works everywhere",
+  "private": true,
+  "description": "In-memory adapter for InstaFix — zero dependencies, works everywhere. Internal: powers apps/demo's live public /demo backend (auto-resets every 10 minutes); not a supported install target for consumers.",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -46,9 +47,6 @@
   },
   "bugs": {
     "url": "https://github.com/gnoopy/instafix/issues"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "engines": {
     "node": ">=20"

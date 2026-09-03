@@ -39,26 +39,6 @@
       "component": "widget",
       "bump-minor-pre-major": true
     },
-    "packages/adapter-prisma": {
-      "release-type": "node",
-      "component": "adapter-prisma",
-      "bump-minor-pre-major": true
-    },
-    "packages/adapter-memory": {
-      "release-type": "node",
-      "component": "adapter-memory",
-      "bump-minor-pre-major": true
-    },
-    "packages/adapter-localstorage": {
-      "release-type": "node",
-      "component": "adapter-localstorage",
-      "bump-minor-pre-major": true
-    },
-    "packages/adapter-kit": {
-      "release-type": "node",
-      "component": "adapter-kit",
-      "bump-minor-pre-major": true
-    },
     "packages/dashboard": {
       "release-type": "node",
       "component": "dashboard",
