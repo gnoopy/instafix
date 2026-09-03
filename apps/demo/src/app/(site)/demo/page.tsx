@@ -23,7 +23,7 @@ export default async function DemoPage() {
       <Suspense fallback={null}>
         <Playground siteLocale={siteLocale} />
       </Suspense>
-      <DemoSite />
+      <DemoSite locale={siteLocale} />
     </>
   );
 }
