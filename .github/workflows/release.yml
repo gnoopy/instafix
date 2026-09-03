@@ -21,12 +21,11 @@ jobs:
     uses: ./.github/workflows/ci.yml
 
   # Version bumps, CHANGELOGs, git tags, and GitHub Releases from Conventional
-  # Commits — nothing here publishes anywhere. InstaFix isn't on the npm
-  # registry (deliberate; see the README's Quickstart); the actual
-  # distribution mechanism is `bun run release:dist`, which force-pushes each
-  # package's build output to a disposable `<package>-dist` branch. That's a
-  # separate, manually-run step (scripts/release-dist-branch.mjs) — not wired
-  # into this workflow.
+  # Commits. Two independent distribution channels read this job's output:
+  # `publish` below (npm registry, stable — one release per package version)
+  # and `bun run release:dist` (GitHub `<package>-dist` branches, nightly —
+  # scripts/release-dist-branch.mjs, run manually, always tracks the tip of
+  # main regardless of whether a release was just cut).
   release-please:
     needs: ci
     runs-on: ubuntu-latest
@@ -37,9 +36,64 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      paths_released: ${{ steps.release.outputs.paths_released }}
     steps:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: release
         with:
           token: ${{ secrets.RELEASE_PAT }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  # npm registry, stable channel. Runs once per package that actually got a
+  # new version this push (release-please's paths_released — a JSON array of
+  # manifest keys, e.g. ["packages/widget"] — becomes the matrix directly, so
+  # a merged-but-versionless commit publishes nothing). `--provenance` needs
+  # `id-token: write`; NPM_TOKEN must be an npm Automation token with publish
+  # rights on the @instafix scope (see package-install-guide.md).
+  publish:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.releases_created == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJson(needs.release-please.outputs.paths_released) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+
+      - name: Cache bun install
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-install-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-install-${{ runner.os }}-
+
+      - run: bun install --frozen-lockfile
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Build
+        run: bun run build --filter="./${{ matrix.package }}"
+
+      - name: Publish to npm
+        working-directory: ${{ matrix.package }}
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
