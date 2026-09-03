@@ -87,14 +87,13 @@ npx @instafix/cli resolve <ID>
 
 ```bash
 # 1. API 라우트 + 바로 쓸 수 있는 위젯 컴포넌트를 대화형으로 만들어줍니다.
-#    프로젝트에 Prisma 스키마가 없다면 Prisma를 가정하는 대신 SQLite
-#    (better-sqlite3, 외부 서비스 불필요)를 기본값으로 제안하거나,
-#    혼자 작업 중이라면 DB 없는 ".instafix/ 폴더" 옵션을 고를 수 있습니다.
+#    InstaFix 자체 저장소는 이 프로젝트의 다른 DB와 무관합니다 — SQLite
+#    (better-sqlite3, 외부 서비스 불필요)가 기본 제안이고, 혼자 작업 중이라면
+#    DB 없는 ".instafix/ 폴더" 옵션을 고를 수 있습니다.
 npx @instafix/cli@latest init
 
 # 2. init이 알려준 패키지를 설치하세요 — SQLite를 선택한 경우:
 npm install @instafix/widget @instafix/adapter-sqlite
-# 이미 Prisma를 쓴다면: @instafix/adapter-prisma
 # 혼자 쓰는 로컬 히스토리를 원한다면: @instafix/adapter-fs
 ```
 
@@ -135,11 +134,8 @@ npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-sq
 |---|---|---|
 | [`@instafix/widget`](./packages/widget) | 픽스노트 위젯 (프레임워크 무관 + React 훅) | [위젯](https://instafix.realstory.blog/docs/widget) · [설정](https://instafix.realstory.blog/docs/widget/configuration) · [스크린샷](https://instafix.realstory.blog/docs/widget/screenshots) |
 | [`@instafix/dashboard`](./packages/dashboard) | 트리아지 인박스 컴포넌트 + 헤드리스 훅 | [대시보드](https://instafix.realstory.blog/docs/dashboard) · [테마](https://instafix.realstory.blog/docs/dashboard/theming) |
-| [`@instafix/adapter-prisma`](./packages/adapter-prisma) | 프로덕션용 서버 어댑터 (인증, CORS, webhook) | [Prisma 어댑터](https://instafix.realstory.blog/docs/adapters/prisma) |
 | [`@instafix/adapter-sqlite`](./packages/adapter-sqlite) | 프로덕션용 서버 어댑터, 외부 서비스 불필요 | [SQLite 어댑터](https://instafix.realstory.blog/docs/adapters/sqlite) |
 | [`@instafix/adapter-fs`](./packages/adapter-fs) | DB 없음 — `.instafix/` 아래 평문 파일, 혼자 개발하는 경우용 | [파일시스템 어댑터](https://instafix.realstory.blog/docs/adapters/fs) |
-| [`@instafix/adapter-memory`](./packages/adapter-memory) | 인메모리 스토어 (테스트, 데모용) | [메모리 어댑터](https://instafix.realstory.blog/docs/adapters/memory) |
-| [`@instafix/adapter-localstorage`](./packages/adapter-localstorage) | 클라이언트 사이드 스토어 (서버 불필요) | [localStorage 어댑터](https://instafix.realstory.blog/docs/adapters/localstorage) |
 | [`@instafix/cli`](./packages/cli) | `init` / `prompt` / `resolve` / `watch` / `sync` / `status` / `doctor` | [CLI](https://instafix.realstory.blog/docs/cli) |
 
 ## 기여하기

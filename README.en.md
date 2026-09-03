@@ -87,14 +87,14 @@ To continue in the Claude Code session you're already working in, type `/instafi
 
 ```bash
 # 1. Scaffold the API route + a ready-to-use widget component, interactively.
-#    No Prisma schema in your project? init defaults to SQLite (better-sqlite3,
-#    zero external services) instead of assuming Prisma — or pick the
-#    database-free ".instafix/ folder" option if you're working solo.
+#    InstaFix's own storage is independent of whatever DB your project already
+#    uses — SQLite (better-sqlite3, zero external services) is the default
+#    suggestion, or pick the database-free ".instafix/ folder" option if
+#    you're working solo.
 npx @instafix/cli@latest init
 
 # 2. Install whichever packages init referenced — for the SQLite path:
 npm install @instafix/widget @instafix/adapter-sqlite
-# Already on Prisma? swap in: @instafix/adapter-prisma
 # Solo/local history instead? swap in: @instafix/adapter-fs
 ```
 
@@ -135,11 +135,8 @@ The full documentation lives at **[instafix.realstory.blog/docs](https://instafi
 |---|---|---|
 | [`@instafix/widget`](./packages/widget) | The fix note widget (framework-agnostic + React hook) | [Widget](https://instafix.realstory.blog/docs/widget) · [Configuration](https://instafix.realstory.blog/docs/widget/configuration) · [Screenshots](https://instafix.realstory.blog/docs/widget/screenshots) |
 | [`@instafix/dashboard`](./packages/dashboard) | Triage inbox component + headless hook | [Dashboard](https://instafix.realstory.blog/docs/dashboard) · [Theming](https://instafix.realstory.blog/docs/dashboard/theming) |
-| [`@instafix/adapter-prisma`](./packages/adapter-prisma) | Production server adapter (auth, CORS, webhooks) | [Prisma adapter](https://instafix.realstory.blog/docs/adapters/prisma) |
 | [`@instafix/adapter-sqlite`](./packages/adapter-sqlite) | Production server adapter, zero external services | [SQLite adapter](https://instafix.realstory.blog/docs/adapters/sqlite) |
 | [`@instafix/adapter-fs`](./packages/adapter-fs) | No database — plain files under `.instafix/`, for a single developer working locally | [Filesystem adapter](https://instafix.realstory.blog/docs/adapters/fs) |
-| [`@instafix/adapter-memory`](./packages/adapter-memory) | In-memory store (tests, demos) | [Memory adapter](https://instafix.realstory.blog/docs/adapters/memory) |
-| [`@instafix/adapter-localstorage`](./packages/adapter-localstorage) | Client-side store (zero server) | [localStorage adapter](https://instafix.realstory.blog/docs/adapters/localstorage) |
 | [`@instafix/cli`](./packages/cli) | `init` / `prompt` / `resolve` / `watch` / `sync` / `status` / `doctor` | [CLI](https://instafix.realstory.blog/docs/cli) |
 
 ## Contributing
