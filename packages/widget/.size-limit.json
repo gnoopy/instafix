@@ -7,9 +7,9 @@
     "disablePlugins": ["@size-limit/esbuild"]
   },
   {
-    "name": "IIFE script bundle (dist/index.global.js, gzip)",
+    "name": "IIFE script bundle (dist/index.global.js, gzip) — inlines html2canvas-pro, which the ESM build keeps as a separate lazy chunk; IIFE can't code-split (tsup.config.ts), so this budget is inherently much larger than the ESM entry above",
     "path": "dist/index.global.js",
-    "limit": "120 KB",
+    "limit": "465 KB",
     "gzip": true,
     "disablePlugins": ["@size-limit/esbuild"]
   }

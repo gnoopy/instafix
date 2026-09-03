@@ -622,7 +622,7 @@ test.describe("Default locale is Korean", () => {
     const toggleLabel = await s.attr('[data-item-id="toggle-annotations"]', "aria-label");
 
     expect(chatLabel).toBe("사이드바 표시");
-    expect(annotateLabel).toBe("영역 지정");
+    expect(annotateLabel).toBe("새 주석 만들기");
     expect(toggleLabel).toBe("마커 표시/숨기기");
   });
 
