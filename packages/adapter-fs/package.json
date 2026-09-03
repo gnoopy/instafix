@@ -1,6 +1,6 @@
 {
   "name": "@instafix/adapter-fs",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "FsStore adapter for InstaFix",
   "type": "module",
   "sideEffects": false,

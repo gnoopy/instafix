@@ -1,5 +1,78 @@
 # Changelog
 
+## [0.10.8](https://github.com/gnoopy/instafix/compare/widget-v0.10.7...widget-v0.10.8) (2026-09-03)
+
+
+### Features
+
+* add a filesystem adapter for a single-developer local history ([ec276a3](https://github.com/gnoopy/instafix/commit/ec276a3de88cc550bb1c26f9c75cc16bb2c014d0))
+* close the mark→record→prompt→agent loop (upgrade-v3) ([7f02284](https://github.com/gnoopy/instafix/commit/7f0228428bd458193de6c1fdd31773739ca3b5f3))
+* **i18n:** add Korean (ko) as the default widget/dashboard locale ([c840dc6](https://github.com/gnoopy/instafix/commit/c840dc674b51ad69032ce1b8eef1325edfcc4df0))
+* name the recorded item — fix note (픽스노트) — and put "Agent에게" on list cards ([77112c2](https://github.com/gnoopy/instafix/commit/77112c269abb696b794be54f155e8a55f53bd276))
+* **widget:** add an in-panel Settings view for runtime config ([1186a9b](https://github.com/gnoopy/instafix/commit/1186a9bc1077816816f18a52a7aea9ea8333c0b8))
+* **widget:** auto-avoid other floating overlays anchored in the same corner ([8a486af](https://github.com/gnoopy/instafix/commit/8a486af3bdb4760c9bd1bbea0c7192819672b10e))
+* **widget:** auto-contrast toolbar and periodic discovery shine ([d83cdcd](https://github.com/gnoopy/instafix/commit/d83cdcd531523aefbf1d2cd88f6268bba1583925))
+* **widget:** auto-detect a selection color distinct from the host palette ([4846a70](https://github.com/gnoopy/instafix/commit/4846a7049dc6c17cf1e7e9459cd7b14304275345))
+* **widget:** auto-target hover-and-click picker, drop demo/docs right-click refs ([e514a1a](https://github.com/gnoopy/instafix/commit/e514a1acbe65c4fb195a00af68fd07da1b19b800))
+* **widget:** compact panel & detail — toast for handoff errors, hover-reveal card actions, de-bordered chrome ([3527ae6](https://github.com/gnoopy/instafix/commit/3527ae68f27a8fe7c3cfadacf39d0574e5c2ec5d))
+* **widget:** contrast-aware selection color, selection-colored FAB/toolbar, filled markers, reveal-on-select ([57b831b](https://github.com/gnoopy/instafix/commit/57b831bc491d5b6a5e1a297befd18b2c8ee4b848))
+* **widget:** detail view — status pill joins the header, all commands on one row, annotation section flattened ([baddfe0](https://github.com/gnoopy/instafix/commit/baddfe07f2189fae258cf9e7cb2cb8e9f9277233))
+* **widget:** drag-select summary/detail numbering, remove right-click select ([3d972a2](https://github.com/gnoopy/instafix/commit/3d972a2b77ecf03ed6ebc7b9aa44a7f476ae8155))
+* **widget:** global Alt+Shift toolbar shortcuts, shown as key chips in the tooltips ([9004a9b](https://github.com/gnoopy/instafix/commit/9004a9b2fb171159b406992039aa53a8612e79e7))
+* **widget:** in-composer "copy prompt" (full context, agent-ready) + auto-growing note field ([ee87532](https://github.com/gnoopy/instafix/commit/ee87532e10baaa155c7ac62c701f9b536f9467d8))
+* **widget:** layer SURFACE tokens — dynamic palette rule now covers backgrounds, not just accents ([2baf276](https://github.com/gnoopy/instafix/commit/2baf276b5f837036df45cfba1467d18d30df451d))
+* **widget:** marker click scrolls+selects its list card, shine pauses under the open panel ([6b04cfb](https://github.com/gnoopy/instafix/commit/6b04cfb36ae1b489d809f744c104cfc597a666e6))
+* **widget:** select-all + search share one toolbar row; card checkboxes visible at rest ([efa1878](https://github.com/gnoopy/instafix/commit/efa18785b6eb68bda9e513f8d560548424836019))
+* **widget:** unified layer identity — curated LAYER_PALETTES, one tone across every InstaFix surface ([827ae36](https://github.com/gnoopy/instafix/commit/827ae3632cac117095e76ca403befada8e97afae))
+* **widget:** unify the drag and auto-target popovers — Element/Container toggle everywhere ([d00e8e5](https://github.com/gnoopy/instafix/commit/d00e8e5cb6f1b1c1c5901f1a29eb0e00509e9a8c))
+* **widget:** unify toolbar color, fix auto-target outline persistence, selection-colored markers ([340d8a1](https://github.com/gnoopy/instafix/commit/340d8a18abfd7b965a5c5c4436ee2cb3ab2c7af5))
+* **widget:** win max-z-index stacking ties against other floating overlays ([92c03b3](https://github.com/gnoopy/instafix/commit/92c03b35022807f9308779cdc3ef84122e40943f))
+
+
+### Bug Fixes
+
+* **lint:** clear biome errors/warnings blocking CI on main ([d558c4d](https://github.com/gnoopy/instafix/commit/d558c4d047e44de540b0f367fa34dc9aebd71239))
+* **size,e2e:** correct IIFE bundle budget, sync test to committed i18n string ([d133cbf](https://github.com/gnoopy/instafix/commit/d133cbf2e685159fae1b1cf17ca3189efb68406e))
+* **widget:** container toggle re-tracks the host-page outline; targeting highlight wins z-index wars ([c9f3bff](https://github.com/gnoopy/instafix/commit/c9f3bffdf5c899ccb0a0aa55a4b5bb92c29d96bc))
+* **widget:** filter Next error-boundary wrappers out of the source-hint path ([9f32502](https://github.com/gnoopy/instafix/commit/9f32502f3a73c4354b3e326e47083e5a9b03a78b))
+* **widget:** full-bounds click annotations, measured popup clamping, inverted active toolbar state ([4d19819](https://github.com/gnoopy/instafix/commit/4d19819fe0c809472df0f898807621ad7f8d90f2))
+* **widget:** hit-test auto-target clicks at the exact cursor hotspot ([167dc1e](https://github.com/gnoopy/instafix/commit/167dc1e9a694d0fedb2652f1790f54843dc91e60))
+* **widget:** never line-break inside the Ctrl+Enter chord in the composer hint ([0314585](https://github.com/gnoopy/instafix/commit/03145854b39473e6efb58991318d41728fa36b1e))
+* **widget:** one FONT_STACK constant, system-ui first — identical panel typography on every host ([d8e175c](https://github.com/gnoopy/instafix/commit/d8e175c00261e17fecee721d303e3d643cad78e1))
+* **widget:** panel shortcut Alt+Shift+F → Alt+Shift+S ([6ca1928](https://github.com/gnoopy/instafix/commit/6ca1928953907414cb96d17fbf9bad57be131262))
+* **widget:** screenshots work again (html2canvas-pro); bug pre-selected; sort controls join the action bar ([6d262a0](https://github.com/gnoopy/instafix/commit/6d262a056afa26b2bb3cfe15c005ff33c7d19d8d))
+* **widget:** settings segmented controls fill their pill evenly ([b6d3467](https://github.com/gnoopy/instafix/commit/b6d3467a465df62e86c4a83ac6f9cbe7b90d199d))
+* **widget:** shave detail command-row button sizes so all four commands fit one line ([54dce98](https://github.com/gnoopy/instafix/commit/54dce9847c26aaee11405a4d845e83cb2060c0d3))
+* **widget:** sort + group-by-page controls move into the filter bar's last row, right end ([91b65e1](https://github.com/gnoopy/instafix/commit/91b65e1a448bcd71caa5345a25ad63b4e57beba7))
+* **widget:** source hint survives React 19 — owner-chain component path fallback ([f21b1ed](https://github.com/gnoopy/instafix/commit/f21b1ed4dfc1315c1fdfa3f2b9a9e40a5ca58ab0))
+* **widget:** text selections get the Element/Container toggle; source hint decoupled from it ([1a54486](https://github.com/gnoopy/instafix/commit/1a54486e1ed5030eb0d9529ccef7fc8d20ae6a3c))
+
+
+### Refactoring
+
+* rebrand SitePing → InstaFix across codebase ([b9e0872](https://github.com/gnoopy/instafix/commit/b9e0872ce04136561b1c26130d46d9922c9500c6))
+* **widget:** fold Settings into an inline accordion, fix panel closing on every change ([731c411](https://github.com/gnoopy/instafix/commit/731c4116da5e67b6eae8f9c6fcbb453ba1b3644f))
+
+
+### Tests
+
+* close the coverage gap left by recent features (unblocks release-please) ([42a31fc](https://github.com/gnoopy/instafix/commit/42a31fc021d5aab27879e77e56d4f2be4cc49645))
+
+
+### Documentation
+
+* mark i18n and contact/admin work complete in rebranding plan ([d25dcf5](https://github.com/gnoopy/instafix/commit/d25dcf5d4297547ba79bf0364d5576fa37e5c1ed))
+* **readme:** drop the 'Why InstaFix?' section (verbose, and its ([92c03b3](https://github.com/gnoopy/instafix/commit/92c03b35022807f9308779cdc3ef84122e40943f))
+* record language switcher, Korean docs, and production bug fixes in rebranding plan ([fcc3d63](https://github.com/gnoopy/instafix/commit/fcc3d63620d556a9410c4536c2ed0eb31af6a838))
+* replace every npm-registry install reference with the GitHub dist-branch method ([7c59881](https://github.com/gnoopy/instafix/commit/7c59881a1dae9360cc7460603fefa9f87902e5af))
+* rewrite rebranding plan in Korean, track progress checklist ([0be081a](https://github.com/gnoopy/instafix/commit/0be081a85f7dff30ea6a8b1e00af216ea183e03b))
+
+
+### Miscellaneous
+
+* **deps-dev:** bump the dev-dependencies group with 2 updates ([#1](https://github.com/gnoopy/instafix/issues/1)) ([8d71356](https://github.com/gnoopy/instafix/commit/8d713566fbb56646173af42245d9bf2288baacfc))
+* snapshot before InstaFix rebrand ([465768c](https://github.com/gnoopy/instafix/commit/465768c631f2dd3f126b4cc8bd7af803466c53d7))
+
 ## [0.10.7](https://github.com/gnoopy/instafix/compare/widget-v0.10.6...widget-v0.10.7) (2026-07-28)
 
 
