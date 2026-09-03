@@ -249,8 +249,19 @@ export const DETAIL_CSS = /* css */ `
   .sp-detail-status {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 0;
+  }
+
+  /* Copy Prompt / Agent에게 render inline in the command row — undo the
+     full-width detail variant. */
+  .sp-detail-status .sp-agent-btn--detail {
+    width: auto;
+    height: 30px;
+    margin-top: 0;
+    padding: 0 10px;
+    border-radius: var(--sp-radius);
   }
 
   .sp-detail-status-pill {
@@ -380,18 +391,6 @@ export const DETAIL_CSS = /* css */ `
     box-shadow: none;
   }
 
-  /* Copy Prompt + "Agent에게" as one half-and-half row. */
-  .sp-detail-agent-row {
-    display: flex;
-    gap: 8px;
-  }
-
-  .sp-detail-agent-row .sp-agent-btn--detail {
-    flex: 1;
-    width: auto;
-    height: 32px;
-    margin-top: 0;
-  }
 
   /* ---- Message Section ---- */
 
@@ -666,8 +665,48 @@ export const DETAIL_CSS = /* css */ `
   }
 
   .sp-detail-reconnect-btn {
-    width: 100%;
-    height: 36px;
+    width: auto;
+    height: 34px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+
+  /* Annotation section header — title left, resolution badge right, one line. */
+  .sp-detail-ann-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .sp-detail-ann-header .sp-detail-section-title {
+    margin-bottom: 0;
+  }
+
+  .sp-detail-ann-header .sp-detail-resolution-badge {
+    align-self: center;
+    padding: 3px 10px;
+    font-size: 11px;
+  }
+
+  /* Go-to + reconnect side by side. */
+  .sp-detail-ann-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .sp-detail-ann-actions .sp-detail-btn-goto {
+    flex: 1.4;
+    width: auto;
+    height: 34px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+
+  .sp-detail-ann-actions .sp-detail-reconnect-btn,
+  .sp-detail-ann-actions .sp-detail-reconnect-picking {
+    flex: 1;
   }
 
   .sp-detail-reconnect-picking {
@@ -1215,6 +1254,27 @@ export class DetailView {
     setText(badge, feedback.type);
     header.appendChild(badge);
 
+    // Status pill sits right after the type chip — both are "what is this
+    // record" facts, and pulling it up here frees the first content row
+    // for actions only.
+    const statusModifier = feedback.status.replace(/_/g, "-");
+    const dotColors: Record<FeedbackStatus, string> = {
+      open: "#22c55e",
+      in_progress: "#f59e0b",
+      resolved: "#9ca3af",
+      wont_fix: "#94a3b8",
+    };
+    const pill = el("span", {
+      class: `sp-detail-status-pill sp-detail-status-pill--${statusModifier}`,
+    });
+    const dot = el("span", { class: "sp-detail-status-dot" });
+    dot.style.background = dotColors[feedback.status] ?? dotColors.open;
+    pill.appendChild(dot);
+    const pillLabel = el("span");
+    setText(pillLabel, getStatusLabel(feedback.status, this.t));
+    pill.appendChild(pillLabel);
+    header.appendChild(pill);
+
     // ---- Build content sections ----
     this.content.replaceChildren();
 
@@ -1387,29 +1447,10 @@ export class DetailView {
     // always renders the record's actual status.
     const isClosed = isClosedStatus(feedback.status);
 
-    // No section title here — the pill announces itself, and this section
-    // leads the view, so the label row was pure vertical cost.
-
-    // Status pill — one modifier class per status (open, in-progress,
-    // resolved, wont-fix), each with its own dot colour.
-    const statusModifier = feedback.status.replace(/_/g, "-");
-    const dotColors: Record<FeedbackStatus, string> = {
-      open: "#22c55e",
-      in_progress: "#f59e0b",
-      resolved: "#9ca3af",
-      wont_fix: "#94a3b8",
-    };
+    // No section title and no pill here — the status pill lives in the
+    // header next to the type chip, so this section is a single command
+    // row: Copy Prompt + Agent에게 on the left, resolve/delete on the right.
     const statusRow = el("div", { class: "sp-detail-status" });
-    const pill = el("span", {
-      class: `sp-detail-status-pill sp-detail-status-pill--${statusModifier}`,
-    });
-    const dot = el("span", { class: "sp-detail-status-dot" });
-    dot.style.background = dotColors[feedback.status] ?? dotColors.open;
-    pill.appendChild(dot);
-    const pillLabel = el("span");
-    setText(pillLabel, getStatusLabel(feedback.status, this.t));
-    pill.appendChild(pillLabel);
-    statusRow.appendChild(pill);
     container.appendChild(statusRow);
 
     // Action buttons
@@ -1443,17 +1484,12 @@ export class DetailView {
     this.deleteBtn.appendChild(deleteSpan);
     this.deleteBtn.addEventListener("click", () => this.handleDelete());
 
-    // Resolve/delete share the status row (pill left, actions right) —
-    // one line instead of two, and the pairing "state ↔ state-changing
-    // actions" reads naturally.
     actions.appendChild(this.resolveBtn);
     actions.appendChild(this.deleteBtn);
-    statusRow.appendChild(actions);
 
-    // Copy Prompt + "Agent에게" side by side — the two "hand it to the
-    // agent" verbs belong on one line.
-    const agentRow = el("div", { class: "sp-detail-agent-row" });
-    agentRow.appendChild(this.agentCopyBtn.element);
+    // Copy Prompt + "Agent에게" take the spot the pill vacated — every
+    // command on this record shares one row.
+    statusRow.appendChild(this.agentCopyBtn.element);
 
     // "Agent에게" — one click drops this feedback's prompt into the server's
     // outbox for `instafix watch` to deliver into the developer's RUNNING
@@ -1476,9 +1512,11 @@ export class DetailView {
           setTimeout(() => setText(handoffLabel, `⇥ ${this.t("agent.sendToAgent")}`), 2000);
         }
       });
-      agentRow.appendChild(handoffBtn);
+      statusRow.appendChild(handoffBtn);
     }
-    container.appendChild(agentRow);
+
+    // Resolve/delete hold the right edge of the same row.
+    statusRow.appendChild(actions);
   }
 
   /**
@@ -1664,17 +1702,20 @@ export class DetailView {
     const titleText = el("span");
     setText(titleText, this.t("detail.annotation"));
     title.appendChild(titleText);
-    container.appendChild(title);
-
-    const wrapper = el("div", { class: "sp-detail-annotation" });
 
     // Target kind \u2014 `area` has no DOM element to resolve/reconnect at all.
     const targetKind = (ann as { target?: { kind: string } | null }).target?.kind ?? "element";
     const isReconnectable = targetKind !== "area";
 
+    // Section title (left) and resolution badge (right) share one line.
+    const annHeader = el("div", { class: "sp-detail-ann-header" });
+    annHeader.appendChild(title);
     if (isReconnectable) {
-      wrapper.appendChild(this.buildResolutionStatus(ann));
+      annHeader.appendChild(this.buildResolutionStatus(ann));
     }
+    container.appendChild(annHeader);
+
+    const wrapper = el("div", { class: "sp-detail-annotation" });
 
     // Info card
     const info = el("div", { class: "sp-detail-annotation-info" });
@@ -1721,11 +1762,14 @@ export class DetailView {
         this.callbacks.onGoToAnnotation(this.currentFeedback);
       }
     });
-    wrapper.appendChild(gotoBtn);
-
+    // Go-to + reconnect side by side — two stacked full-width buttons
+    // were a whole extra row of chrome.
+    const annActions = el("div", { class: "sp-detail-ann-actions" });
+    annActions.appendChild(gotoBtn);
     if (isReconnectable) {
-      wrapper.appendChild(this.buildReconnectButton(feedback));
+      annActions.appendChild(this.buildReconnectButton(feedback));
     }
+    wrapper.appendChild(annActions);
 
     container.appendChild(wrapper);
   }
