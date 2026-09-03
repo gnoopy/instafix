@@ -108,6 +108,8 @@ export class Annotator {
   // it's live (see both methods). ---
   private targetingModeActive = false;
   private targetingHighlight: HTMLElement | null = null;
+  /** The element the highlight currently outlines — re-used by `onTargetingScroll` to re-measure `getBoundingClientRect()` without a fresh `elementFromPoint` (the cursor hasn't moved, so re-hit-testing at the same client coordinates on a scrolled page would find a different element). */
+  private targetingHoveredElement: Element | null = null;
   private targetingRafId: number | null = null;
   private pendingTargetingMoveEvent: MouseEvent | null = null;
 
@@ -411,6 +413,12 @@ export class Annotator {
     // restores focus to the FAB, so the FAB's own bubble-phase "Escape
     // collapses the toolbar" handler must not get first refusal.
     document.addEventListener("keydown", this.onTargetingKeyDown, true);
+    // A page scroll (mouse wheel, or a hovered element bigger than the
+    // viewport that the user scrolls to see more of) never fires mousemove
+    // by itself — without this, the highlight freezes at its pre-scroll
+    // getBoundingClientRect() and visibly detaches from the element it's
+    // supposed to be outlining. { passive: true }: never blocks the scroll.
+    window.addEventListener("scroll", this.onTargetingScroll, { passive: true, capture: true });
   }
 
   /** Idempotent — safe to call from the click/Escape handlers below AND redundantly via the `targeting:end` bus subscription. */
@@ -423,13 +431,25 @@ export class Annotator {
       this.targetingRafId = null;
     }
     this.pendingTargetingMoveEvent = null;
+    this.targetingHoveredElement = null;
 
     document.removeEventListener("mousemove", this.onTargetingMouseMove);
     document.removeEventListener("click", this.onTargetingClick, true);
     document.removeEventListener("keydown", this.onTargetingKeyDown, true);
+    window.removeEventListener("scroll", this.onTargetingScroll, true);
 
     this.targetingHighlight?.remove();
     this.targetingHighlight = null;
+  }
+
+  /** Applies `targetingHoveredElement`'s current `getBoundingClientRect()` to the highlight — shared by the mousemove hit-test below and the scroll re-measure. */
+  private renderTargetingHighlight(el: Element): void {
+    if (!this.targetingHighlight) return;
+    const rect = el.getBoundingClientRect();
+    this.targetingHighlight.style.left = `${rect.left}px`;
+    this.targetingHighlight.style.top = `${rect.top}px`;
+    this.targetingHighlight.style.width = `${rect.width}px`;
+    this.targetingHighlight.style.height = `${rect.height}px`;
   }
 
   private onTargetingMouseMove = (e: MouseEvent): void => {
@@ -445,17 +465,25 @@ export class Annotator {
       if (!hovered || hovered === document.body || hovered === document.documentElement || isWidgetChrome(hovered)) {
         // Nothing selectable under the cursor right now — tuck the
         // highlight away rather than leaving it on the last real target.
+        this.targetingHoveredElement = null;
         this.targetingHighlight.style.width = "0px";
         this.targetingHighlight.style.height = "0px";
         return;
       }
 
-      const rect = hovered.getBoundingClientRect();
-      this.targetingHighlight.style.left = `${rect.left}px`;
-      this.targetingHighlight.style.top = `${rect.top}px`;
-      this.targetingHighlight.style.width = `${rect.width}px`;
-      this.targetingHighlight.style.height = `${rect.height}px`;
+      this.targetingHoveredElement = hovered;
+      this.renderTargetingHighlight(hovered);
     });
+  };
+
+  /**
+   * Re-measure the currently-hovered element on scroll — NOT a fresh
+   * `elementFromPoint` at the same client coordinates, which on a scrolled
+   * page would silently swap to whatever now sits under the (unmoved)
+   * cursor instead of tracking the element the user is actually looking at.
+   */
+  private onTargetingScroll = (): void => {
+    if (this.targetingHoveredElement) this.renderTargetingHighlight(this.targetingHoveredElement);
   };
 
   private onTargetingClick = (e: MouseEvent): void => {
@@ -599,6 +627,8 @@ export class Annotator {
     this.isDrawing = true;
     this.startX = clientX;
     this.startY = clientY;
+    this.startScrollX = window.scrollX;
+    this.startScrollY = window.scrollY;
     this.lastPointerClient = { x: clientX, y: clientY };
     this.startAutoScroll();
 
@@ -608,11 +638,44 @@ export class Annotator {
   }
 
   /**
+   * `startX`/`startY` are captured once in client (viewport-relative)
+   * coordinates at mousedown. If the page scrolls DURING the drag — auto-scroll
+   * near an edge (below), or a manual wheel scroll — the viewport moves under
+   * that fixed anchor, so reusing startX/startY as-is would leave the
+   * rendered rect (and, worse, the annotation bounds actually submitted)
+   * pinned to the wrong spot on the page. Re-deriving the start corner from
+   * the scroll delta since drag start keeps it locked to the same DOCUMENT
+   * position regardless of how much scrolling happened meanwhile.
+   */
+  private effectiveDragStart(): { x: number; y: number } {
+    return {
+      x: this.startX - (window.scrollX - this.startScrollX),
+      y: this.startY - (window.scrollY - this.startScrollY),
+    };
+  }
+
+  /** Shared by the mousemove/touchmove rAF and the auto-scroll tick below — the one place that turns a "current pointer" point into the rendered (scroll-corrected) rect. */
+  private renderDrawingRect(currentX: number, currentY: number): void {
+    if (!this.drawingRect) return;
+    const start = this.effectiveDragStart();
+    const x = Math.min(currentX, start.x);
+    const y = Math.min(currentY, start.y);
+    const w = Math.abs(currentX - start.x);
+    const h = Math.abs(currentY - start.y);
+    this.drawingRect.style.left = `${x}px`;
+    this.drawingRect.style.top = `${y}px`;
+    this.drawingRect.style.width = `${w}px`;
+    this.drawingRect.style.height = `${h}px`;
+  }
+
+  /**
    * Viewport-edge auto-scroll during a drag (G3) — runs on a timer (not just
    * on mousemove) so holding the pointer still near an edge keeps scrolling.
-   * The drawn rectangle is entirely in client (viewport-relative) coordinates
-   * already, so it stays visually pinned to the pointer as the page scrolls
-   * underneath — no extra rect recomputation needed here.
+   * Also re-renders the rect on every tick, scroll or not: auto-scroll moves
+   * the page without ever firing a mousemove, so nothing else would trigger
+   * `renderDrawingRect()` while it's happening — the rect would otherwise
+   * sit frozen while the content grows out from under the fixed pointer
+   * corner, instead of visibly expanding to track it.
    */
   private startAutoScroll(): void {
     this.stopAutoScroll();
@@ -625,6 +688,7 @@ export class Annotator {
         window.innerHeight,
       );
       if (dx !== 0 || dy !== 0) window.scrollBy(dx, dy);
+      this.renderDrawingRect(this.lastPointerClient.x, this.lastPointerClient.y);
     }, 16);
   }
 
@@ -685,16 +749,7 @@ export class Annotator {
       const evt = this.pendingMoveEvent;
       if (!evt || !this.drawingRect) return;
       this.lastPointerClient = { x: evt.clientX, y: evt.clientY };
-
-      const x = Math.min(evt.clientX, this.startX);
-      const y = Math.min(evt.clientY, this.startY);
-      const w = Math.abs(evt.clientX - this.startX);
-      const h = Math.abs(evt.clientY - this.startY);
-
-      this.drawingRect.style.left = `${x}px`;
-      this.drawingRect.style.top = `${y}px`;
-      this.drawingRect.style.width = `${w}px`;
-      this.drawingRect.style.height = `${h}px`;
+      this.renderDrawingRect(evt.clientX, evt.clientY);
     });
   }
 
@@ -732,10 +787,15 @@ export class Annotator {
     this.isDrawing = false;
     this.stopAutoScroll();
 
-    const x = Math.min(clientX, this.startX);
-    const y = Math.min(clientY, this.startY);
-    const w = Math.abs(clientX - this.startX);
-    const h = Math.abs(clientY - this.startY);
+    // Scroll-corrected, not raw startX/startY — see effectiveDragStart(): if
+    // the page scrolled mid-drag, the raw mousedown point no longer lines up
+    // with the same content, and this rect feeds the SUBMITTED annotation's
+    // bounds, not just the visual preview.
+    const start = this.effectiveDragStart();
+    const x = Math.min(clientX, start.x);
+    const y = Math.min(clientY, start.y);
+    const w = Math.abs(clientX - start.x);
+    const h = Math.abs(clientY - start.y);
 
     if (w < CLICK_THRESHOLD_PX && h < CLICK_THRESHOLD_PX) {
       const pointRect = new DOMRect(clientX, clientY, 1, 1);
@@ -750,15 +810,14 @@ export class Annotator {
       const largestElement = findLargestAncestor(smallestElement);
       if (this.overlay) this.overlay.style.pointerEvents = "auto";
       const { annotation } = this.annotationForElement(smallestElement, pointRect, { fullBounds: true });
-      await this.finalizeOrAccumulate(
-        [annotation],
-        pointRect,
-        shiftKey,
-        undefined,
-        largestElement !== smallestElement
-          ? { rectBounds: pointRect, smallest: smallestElement, largest: largestElement, fullBounds: true }
-          : undefined,
-      );
+      // Always passed (even when smallest === largest, where the toggle
+      // collapses) — the source-hint line rides on this context too.
+      await this.finalizeOrAccumulate([annotation], pointRect, shiftKey, undefined, {
+        smallest: smallestElement,
+        largest: largestElement,
+        rebuild: (chosen) => this.annotationForElement(chosen, pointRect, { fullBounds: true }),
+        retrack: true,
+      });
       return;
     }
 
@@ -770,13 +829,27 @@ export class Annotator {
     // meaningful for the multi-target preview (G8) / summary-detail toggle
     // below.
     let marquee: MarqueeSelection | undefined;
-    let sizeChoice: { rectBounds: DOMRect; smallest: Element; largest: Element; fullBounds: boolean } | undefined;
+    let sizeChoice: Parameters<Annotator["finalizeOrAccumulate"]>[4];
     if (altKey) {
       annotations = [this.buildAreaAnnotation(rectBounds)];
     } else {
       const text = this.tryBuildTextAnnotation(clientX, clientY);
       if (text) {
-        annotations = [text];
+        annotations = [text.annotation];
+        // A text selection has a single container too — same
+        // Element/Container toggle + source hint as every other
+        // single-anchor popover. Its rebuild preserves the quoted text and
+        // only re-parents the anchor (re-expressing the same on-screen
+        // range relative to the chosen ancestor's box).
+        sizeChoice = {
+          smallest: text.detected.container,
+          largest: findLargestAncestor(text.detected.container),
+          rebuild: (chosen) => ({
+            annotation: this.buildTextAnnotationFor(text.detected, chosen),
+            anchorBounds: chosen.getBoundingClientRect(),
+          }),
+          retrack: false,
+        };
       } else {
         const result = this.buildMarqueeAnnotations(rectBounds);
         annotations = result.annotations;
@@ -788,11 +861,14 @@ export class Annotator {
         // A drag that landed on exactly ONE element gets the same
         // Element/Container toggle as the auto-target popover — with
         // drawn-region semantics (see finalizeOrAccumulate's onChange).
-        if (result.singleAnchor && !shiftKey) {
-          const largest = findLargestAncestor(result.singleAnchor);
-          if (largest !== result.singleAnchor) {
-            sizeChoice = { rectBounds, smallest: result.singleAnchor, largest, fullBounds: false };
-          }
+        if (result.singleAnchor) {
+          const anchor = result.singleAnchor;
+          sizeChoice = {
+            smallest: anchor,
+            largest: findLargestAncestor(anchor),
+            rebuild: (chosen) => this.annotationForElement(chosen, rectBounds),
+            retrack: false,
+          };
         }
       }
     }
@@ -811,15 +887,32 @@ export class Annotator {
     shiftKey: boolean,
     marquee?: MarqueeSelection,
     /**
-     * The Element/Container ("요소/컨테이너") choice — set by `finishDrawing`
-     * for a plain click (fullBounds: the whole picked element) and for a
-     * drag that landed on exactly one element (fullBounds false: the DRAWN
-     * region stays the annotation, only its anchor re-parents). This is the
-     * same popover toggle `startInstantAnnotation` shows — the two flows'
-     * popovers are deliberately identical. Mutually exclusive with
-     * `marquee`'s multi-target preview.
+     * The single-anchor context behind this drag — set by `finishDrawing`
+     * whenever the selection resolved to exactly one anchor element (a
+     * plain click, a drag landing on one element, or a TEXT selection whose
+     * range lives in one container). Drives two things, independently:
+     *
+     * - the Element/Container ("요소/컨테이너") toggle — the same popover
+     *   toggle `startInstantAnnotation` shows — offered only when
+     *   `smallest !== largest` (a container capped at the viewport-area
+     *   limit collapses the choice, see `findLargestAncestor`);
+     * - the dev-only source hint line, shown for the anchor regardless of
+     *   whether the toggle has two distinct options.
+     *
+     * `rebuild` re-derives the annotation for the chosen anchor — each
+     * caller supplies its own semantics (full element bounds for a click,
+     * drawn-region re-parenting for a drag, quote-preserving re-anchoring
+     * for a text selection). `retrack` marks click semantics: the outline
+     * and capture region follow the chosen element and the cached
+     * screenshot is invalidated. Mutually exclusive with `marquee`'s
+     * multi-target preview.
      */
-    elementSizeChoice?: { rectBounds: DOMRect; smallest: Element; largest: Element; fullBounds: boolean },
+    elementSizeChoice?: {
+      smallest: Element;
+      largest: Element;
+      rebuild: (chosen: Element) => { annotation: AnnotationPayload; anchorBounds: DOMRect };
+      retrack: boolean;
+    },
   ): Promise<void> {
     if (shiftKey) {
       this.accumulated.push(...newAnnotations);
@@ -868,16 +961,14 @@ export class Annotator {
     const resultPromise = this.popup.show(
       captureRect,
       (formResult) => this.runSubmission(allAnnotations, formResult, captureRect, screenshotCache),
-      elementSizeChoice
+      elementSizeChoice && elementSizeChoice.smallest !== elementSizeChoice.largest
         ? {
             initial: "smallest",
             onChange: (choice) => {
               const chosen = choice === "smallest" ? elementSizeChoice.smallest : elementSizeChoice.largest;
-              const rebuilt = this.annotationForElement(chosen, elementSizeChoice.rectBounds, {
-                fullBounds: elementSizeChoice.fullBounds,
-              });
+              const rebuilt = elementSizeChoice.rebuild(chosen);
               allAnnotations = [rebuilt.annotation];
-              if (elementSizeChoice.fullBounds) {
+              if (elementSizeChoice.retrack) {
                 // Click semantics: the annotation IS the chosen element, so
                 // the capture region and the on-page outline both re-track
                 // it — matching startInstantAnnotation's identical onChange.
@@ -892,7 +983,7 @@ export class Annotator {
                   this.drawingRect.style.height = `${rebuilt.anchorBounds.height}px`;
                 }
               }
-              // Drawn-region semantics (fullBounds false): the DRAWN rect
+              // Drawn-region/text semantics (retrack false): the drawn rect
               // stays both the annotation region and the outline — the
               // toggle only re-parents its anchor, so capture/outline are
               // untouched and the cached screenshot stays valid.
@@ -946,12 +1037,28 @@ export class Annotator {
    * through to marquee/element handling) when the drag doesn't land on
    * selectable prose.
    */
-  private tryBuildTextAnnotation(endX: number, endY: number): AnnotationPayload | null {
-    const detected = detectTextSelection(this.startX, this.startY, endX, endY);
+  private tryBuildTextAnnotation(
+    endX: number,
+    endY: number,
+  ): { annotation: AnnotationPayload; detected: ReturnType<typeof detectTextSelection> & object } | null {
+    const start = this.effectiveDragStart();
+    const detected = detectTextSelection(start.x, start.y, endX, endY);
     if (!detected) return null;
+    return { annotation: this.buildTextAnnotationFor(detected, detected.container), detected };
+  }
 
-    const anchor = generateAnchor(detected.container);
-    const anchorBounds = detected.container.getBoundingClientRect();
+  /**
+   * Build the text-kind payload for a given anchor element — split out so
+   * the popover's Element/Container toggle can re-anchor the SAME detected
+   * range (quote and all) to a chosen ancestor without re-running the
+   * selection detection.
+   */
+  private buildTextAnnotationFor(
+    detected: NonNullable<ReturnType<typeof detectTextSelection>>,
+    anchorElement: Element,
+  ): AnnotationPayload {
+    const anchor = generateAnchor(anchorElement);
+    const anchorBounds = anchorElement.getBoundingClientRect();
     const rect = rectToPercentages(detected.rect, anchorBounds);
     return {
       anchor,

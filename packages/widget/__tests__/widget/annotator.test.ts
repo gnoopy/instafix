@@ -60,6 +60,8 @@ const popupMocks = vi.hoisted(() => {
     lastLegend: [] as Array<{ number: number; label: string }>,
     /** Getter from the last `setPromptContext(...)` call — null means "button hidden". */
     lastPromptContext: null as (() => readonly unknown[]) | null,
+    /** Argument of the last `setSourceHint(...)` call — null means "hint hidden". */
+    lastSourceHint: null as { location: string | null; componentPath: string } | null,
   };
 });
 
@@ -116,7 +118,9 @@ vi.mock(new URL("../../src/popup.js", import.meta.url).pathname, () => ({
       setPromptContext: vi.fn().mockImplementation((get: (() => readonly unknown[]) | null) => {
         popupMocks.lastPromptContext = get;
       }),
-      setSourceHint: vi.fn(),
+      setSourceHint: vi.fn().mockImplementation((hint: { location: string | null; componentPath: string } | null) => {
+        popupMocks.lastSourceHint = hint;
+      }),
       cancelOpen: vi.fn().mockImplementation(() => {
         popupMocks.isOpenState = false;
       }),
@@ -139,6 +143,12 @@ const screenshotMocks = vi.hoisted(() => ({
 
 vi.mock(new URL("../../src/screenshot.js", import.meta.url).pathname, () => ({
   captureAnnotatedScreenshot: screenshotMocks.captureAnnotatedScreenshot,
+}));
+
+// Text-selection detection needs caret APIs jsdom lacks — mocked off (null)
+// by default; the text-path popover tests override the return value.
+vi.mock(new URL("../../src/dom/text-selection.js", import.meta.url).pathname, () => ({
+  detectTextSelection: vi.fn().mockReturnValue(null),
 }));
 
 // Mock anchor helpers to avoid @medv/finder dependency in jsdom
@@ -165,6 +175,7 @@ vi.mock(new URL("../../src/dom/anchor.js", import.meta.url).pathname, () => ({
 
 import { Annotator } from "../../src/annotator.js";
 import { findAnchorElement, findLargestAncestor, generateAnchor, rectToPercentages } from "../../src/dom/anchor.js";
+import { detectTextSelection } from "../../src/dom/text-selection.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -213,8 +224,10 @@ describe("Annotator", () => {
     popupMocks.toggleTargetSizeBeforeSubmit = null;
     popupMocks.lastLegend = [];
     popupMocks.lastPromptContext = null;
+    popupMocks.lastSourceHint = null;
     vi.mocked(findAnchorElement).mockReturnValue(document.body);
     vi.mocked(findLargestAncestor).mockReturnValue(document.body);
+    vi.mocked(detectTextSelection).mockReturnValue(null);
     screenshotMocks.captureAnnotatedScreenshot.mockReset();
     screenshotMocks.captureAnnotatedScreenshot.mockResolvedValue(null);
     ({ annotator, bus } = createAnnotator());
@@ -1865,6 +1878,71 @@ describe("Annotator", () => {
         (document as { elementFromPoint: unknown }).elementFromPoint = originalEFP;
         container.remove();
       }
+    });
+
+    it("a TEXT selection offers the choice too, and toggling preserves the quote while re-anchoring", async () => {
+      const container = document.createElement("p");
+      const section = document.createElement("section");
+      section.appendChild(container);
+      document.body.appendChild(section);
+      container.getBoundingClientRect = () => new DOMRect(40, 40, 300, 60);
+      section.getBoundingClientRect = () => new DOMRect(20, 20, 400, 200);
+      vi.mocked(detectTextSelection).mockReturnValue({
+        container,
+        quote: "handle every pixel",
+        quotePrefix: "we ",
+        quoteSuffix: ".",
+        rect: new DOMRect(60, 50, 180, 20),
+      });
+      vi.mocked(findLargestAncestor).mockReturnValue(section);
+      popupMocks.toggleTargetSizeBeforeSubmit = "largest";
+
+      const completeListener = vi.fn();
+      bus.on("annotation:complete", completeListener);
+
+      bus.emit("annotation:start");
+      const overlay = findOverlay()!;
+      overlay.dispatchEvent(new MouseEvent("mousedown", { clientX: 60, clientY: 50, bubbles: true }));
+      overlay.dispatchEvent(new MouseEvent("mouseup", { clientX: 240, clientY: 70, bubbles: true }));
+
+      await vi.waitFor(() => {
+        expect(completeListener).toHaveBeenCalledOnce();
+      });
+      expect(popupMocks.capturedTargetSizeOptions).toBeDefined();
+      const ann = completeListener.mock.calls[0]![0].annotations[0];
+      // Re-anchored to the container choice, quote intact.
+      expect(ann.anchor.elementTag).toBe("SECTION");
+      expect(ann.target).toEqual({
+        kind: "text",
+        quote: "handle every pixel",
+        quotePrefix: "we ",
+        quoteSuffix: ".",
+      });
+      section.remove();
+    });
+
+    it("shows the source hint even when the toggle collapses (largest === smallest)", async () => {
+      // A card whose only ancestor exceeds the viewport-area cap: the
+      // Element/Container toggle has nothing to offer, but the source hint
+      // must still ride along — it was wrongly coupled to the toggle once.
+      const card = document.createElement("section");
+      document.body.appendChild(card);
+      // Fake dev-build React fiber so getSourceHint has something to read.
+      (card as unknown as Record<string, object>).__reactFiber$test = {
+        type: function PricingCard() {},
+      };
+      vi.mocked(findAnchorElement).mockReturnValue(card);
+      vi.mocked(findLargestAncestor).mockReturnValue(card); // collapsed choice
+
+      bus.emit("annotation:start");
+      const overlay = findOverlay()!;
+      overlay.dispatchEvent(new MouseEvent("mousedown", { clientX: 100, clientY: 100, bubbles: true }));
+      overlay.dispatchEvent(new MouseEvent("mouseup", { clientX: 101, clientY: 101, bubbles: true }));
+      await new Promise((r) => setTimeout(r, 20));
+
+      expect(popupMocks.capturedTargetSizeOptions).toBeUndefined();
+      expect(popupMocks.lastSourceHint?.componentPath).toBe("PricingCard");
+      card.remove();
     });
 
     it("a multi-element marquee does NOT offer the element choice (it has the summary/detail toggle instead)", async () => {
