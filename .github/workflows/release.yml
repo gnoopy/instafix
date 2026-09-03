@@ -3,17 +3,7 @@ name: Release
 on:
   push:
     branches: [main]
-  workflow_dispatch:
-    inputs:
-      packages:
-        description: >-
-          JSON array of package paths to (re-)publish to npm, e.g.
-          ["packages/widget"]. Leave empty for the normal flow (publish only
-          what release-please just released). Use this to retry a publish
-          that failed after the release/tag was already created — no new
-          release-please run is needed, since a version tag isn't reusable.
-        required: false
-        type: string
+  workflow_dispatch: {}
 
 # Read-only floor. release-please re-declares its own scope, which replaces
 # this block rather than adding to it — so the default stays least-privilege
@@ -58,28 +48,25 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-  # npm registry, stable channel. Runs once per package that actually got a
-  # new version this push (release-please's paths_released — a JSON array of
-  # manifest keys, e.g. ["packages/widget"] — becomes the matrix directly, so
-  # a merged-but-versionless commit publishes nothing). `--provenance` needs
-  # `id-token: write`; NPM_TOKEN must be an npm Automation token with publish
-  # rights on the @instafix scope (see package-install-guide.md).
+  # npm registry, stable channel. Idempotent by design: every push to main
+  # walks release-please-config.json's package list and publishes only the
+  # versions missing from the registry (checked via `npm view`), instead of
+  # gating on release-please's one-shot releases_created/paths_released
+  # output. That output is only true on the exact run that cuts the release,
+  # so a publish failure on that run (bad token, registry outage, ...)
+  # previously had no retry short of a new release — now the very next push,
+  # or a manual workflow_dispatch, just picks up whatever didn't land.
+  # `--provenance` needs `id-token: write`; NPM_TOKEN must be an npm
+  # Automation token with publish rights on the @instafix scope (see
+  # package-install-guide.md).
   publish:
     needs: release-please
-    if: >-
-      ${{
-        needs.release-please.outputs.releases_created == 'true' ||
-        inputs.packages != ''
-      }}
+    if: ${{ always() && needs.release-please.result == 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     permissions:
       contents: read
       id-token: write
-    strategy:
-      fail-fast: false
-      matrix:
-        package: ${{ fromJson(inputs.packages || needs.release-please.outputs.paths_released || '[]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -105,12 +92,20 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - name: Build
-        env:
-          PACKAGE_PATH: ${{ matrix.package }}
-        run: bun run build --filter="./$PACKAGE_PATH"
+        run: bun run build
 
-      - name: Publish to npm
-        working-directory: ${{ matrix.package }}
-        run: npm publish --access public --provenance
+      - name: Publish versions missing from the npm registry
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          for pkg in $(jq -r '.packages | keys[]' release-please-config.json); do
+            name=$(node -p "require('./$pkg/package.json').name")
+            version=$(node -p "require('./$pkg/package.json').version")
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "skip: $name@$version already on npm"
+              continue
+            fi
+            echo "publishing: $name@$version"
+            (cd "$pkg" && npm publish --access public --provenance)
+          done
