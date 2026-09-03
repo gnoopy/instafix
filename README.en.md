@@ -17,6 +17,7 @@ Every note you leave this way is recorded as a **fix note**.
 
 ![Demo](./demo.en.gif)
 
+[![npm](https://img.shields.io/npm/v/%40instafix%2Fwidget?style=flat&colorA=000000&colorB=000000&label=npm)](https://www.npmjs.com/package/@instafix/widget)
 [![Website](https://img.shields.io/badge/website-instafix.realstory.blog-000000?style=flat&colorA=000000&colorB=000000)](https://instafix.realstory.blog)
 [![Live Demo](https://img.shields.io/badge/demo-try%20it%20live-22c55e?style=flat&colorA=000000)](https://instafix.realstory.blog/demo)
 [![Docs](https://img.shields.io/badge/docs-instafix.realstory.blog%2Fdocs-0066ff?style=flat&colorA=000000)](https://instafix.realstory.blog/docs)
@@ -63,8 +64,8 @@ The fastest path — paste this into Claude Code / Cursor / Copilot / etc. and l
 ```text
 Install and set up InstaFix (a self-hosted widget for leaving fix notes) in this project:
 
-1. Run npx github:gnoopy/instafix#cli-dist init and accept the defaults it suggests at each prompt.
-2. npm install whichever github:gnoopy/instafix#*-dist package(s) it told you to install.
+1. Run npx @instafix/cli@latest init and accept the defaults it suggests at each prompt.
+2. npm install whichever @instafix/* package(s) it told you to install.
 3. It generates components/instafix-widget.tsx, exporting a component named InstaFixWidget — add <InstaFixWidget /> once inside <body> in this app's root layout (app/layout.tsx for Next.js App Router, or the equivalent root layout/root component for whatever framework this project uses), importing from @/components/instafix-widget (adjust the import path if this project doesn't use the @/ alias). It renders nothing itself, so exact placement doesn't matter — don't wrap it in a conditional, it already no-ops outside development unless forceShow is set.
 ```
 
@@ -74,35 +75,33 @@ Hand the accumulated fix notes to an agent whichever way suits the moment:
 
 ```bash
 # Dispatch everything open (or just --id picks) to a fresh agent session
-npx github:gnoopy/instafix#cli-dist prompt --status open | claude -p
+npx @instafix/cli prompt --status open | claude -p
 
 # Agents close what they fixed themselves (the prompt tells them how)
-npx github:gnoopy/instafix#cli-dist resolve <ID>
+npx @instafix/cli resolve <ID>
 ```
 
 To continue in the Claude Code session you're already working in, type `/instafix` there (`init` installs the slash command). Don't want to leave the browser? The **"To agent"** button on a fix note card or its detail view hands it to any session running `instafix watch` in the background.
 
 ### Prefer to do it by hand?
 
-InstaFix isn't published to the npm registry — that's a deliberate choice, not a "not yet." Every package installs straight from this repo's build output instead, via a disposable `<package>-dist` branch: same install experience, just a GitHub URL instead of a package name.
-
 ```bash
 # 1. Scaffold the API route + a ready-to-use widget component, interactively.
 #    No Prisma schema in your project? init defaults to SQLite (better-sqlite3,
 #    zero external services) instead of assuming Prisma — or pick the
 #    database-free ".instafix/ folder" option if you're working solo.
-npx github:gnoopy/instafix#cli-dist init
+npx @instafix/cli@latest init
 
 # 2. Install whichever packages init referenced — for the SQLite path:
-npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-sqlite-dist
-# Already on Prisma? swap in: github:gnoopy/instafix#adapter-prisma-dist
-# Solo/local history instead? swap in: github:gnoopy/instafix#adapter-fs-dist
+npm install @instafix/widget @instafix/adapter-sqlite
+# Already on Prisma? swap in: @instafix/adapter-prisma
+# Solo/local history instead? swap in: @instafix/adapter-fs
 ```
 
 `init` generates `components/instafix-widget.tsx`, but doesn't touch your layout — editing an arbitrary layout file safely needs a human (or an agent) in the loop. Paste this to Claude Code / Cursor / Copilot / etc. once install is done:
 
 ```text
-npx github:gnoopy/instafix#cli-dist init generated components/instafix-widget.tsx, which exports a component named InstaFixWidget. Add <InstaFixWidget /> to my app's root layout — app/layout.tsx for Next.js App Router, or the equivalent root layout/root component for whatever framework this project uses. Import it from @/components/instafix-widget (adjust the import path if this project doesn't use the @/ alias). Place the tag once, inside <body>, alongside any other global providers — it renders nothing itself (return null), so exact position doesn't matter. Don't wrap it in a conditional: it already no-ops outside development unless forceShow is set.
+npx @instafix/cli@latest init generated components/instafix-widget.tsx, which exports a component named InstaFixWidget. Add <InstaFixWidget /> to my app's root layout — app/layout.tsx for Next.js App Router, or the equivalent root layout/root component for whatever framework this project uses. Import it from @/components/instafix-widget (adjust the import path if this project doesn't use the @/ alias). Place the tag once, inside <body>, alongside any other global providers — it renders nothing itself (return null), so exact position doesn't matter. Don't wrap it in a conditional: it already no-ops outside development unless forceShow is set.
 ```
 
 Drop in this one component and your team can review and organize fix notes on a single screen:
@@ -113,9 +112,20 @@ import { InstaFixInbox } from "@instafix/dashboard";
 <InstaFixInbox projects="my-app" endpoint="/api/instafix" theme="auto" />
 ```
 
-(install it the same way: `npm install github:gnoopy/instafix#dashboard-dist`)
+(install it: `npm install @instafix/dashboard`)
 
 **To remove InstaFix**: revert your lockfile and `package.json` (`git checkout -- package.json package-lock.json`, or your lockfile), delete `app/api/instafix/` and `components/instafix-widget.tsx`, then reinstall.
+
+### Want unreleased features before they hit npm? (Nightly)
+
+npm only ever gets versions release-please has actually tagged from Conventional Commits. A set of `<package>-dist` GitHub branches also track the tip of `main`, so if you want to try something before it's released, install from a GitHub URL instead of a package name — same install experience either way:
+
+```bash
+npx github:gnoopy/instafix#cli-dist init
+npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-sqlite-dist
+```
+
+Use the npm install above for normal use — the nightly branches move on every push and carry no version guarantees or backward compatibility.
 
 ## Documentation
 

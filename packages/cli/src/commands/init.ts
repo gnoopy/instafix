@@ -193,7 +193,7 @@ export async function initCommand(): Promise<void> {
   if (fsBackendChosen) {
     steps.push(
       `${steps.length + 1}. Install the adapter:`,
-      "   npm install github:gnoopy/instafix#adapter-fs-dist",
+      "   npm install @instafix/adapter-fs",
       "",
       "   Feedback (and screenshots) will be written to .instafix/ at your",
       "   project root — nothing to run, nothing to configure. Whether to",

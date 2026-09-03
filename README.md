@@ -16,6 +16,7 @@ Claude Code, Cursor 같은 AI 코딩 에이전트와 함께 개발할 때 쓰는
 
 ![Demo](./demo.gif)
 
+[![npm](https://img.shields.io/npm/v/%40instafix%2Fwidget?style=flat&colorA=000000&colorB=000000&label=npm)](https://www.npmjs.com/package/@instafix/widget)
 [![Website](https://img.shields.io/badge/website-instafix.realstory.blog-000000?style=flat&colorA=000000&colorB=000000)](https://instafix.realstory.blog)
 [![Live Demo](https://img.shields.io/badge/demo-try%20it%20live-22c55e?style=flat&colorA=000000)](https://instafix.realstory.blog/demo)
 [![Docs](https://img.shields.io/badge/docs-instafix.realstory.blog%2Fdocs-0066ff?style=flat&colorA=000000)](https://instafix.realstory.blog/docs)
@@ -63,8 +64,8 @@ Claude Code, Cursor 같은 AI 코딩 에이전트와 함께 개발할 때 쓰는
 ```text
 이 프로젝트에 InstaFix(셀프 호스팅 픽스노트 위젯)를 설치하고 설정해줘:
 
-1. npx github:gnoopy/instafix#cli-dist init 을 실행하고, 각 질문에서 제안하는 기본값을 그대로 선택해.
-2. 이 명령이 설치하라고 알려주는 github:gnoopy/instafix#*-dist 패키지를 npm install로 설치해.
+1. npx @instafix/cli@latest init 을 실행하고, 각 질문에서 제안하는 기본값을 그대로 선택해.
+2. 이 명령이 설치하라고 알려주는 @instafix/* 패키지를 npm install로 설치해.
 3. 이 명령은 components/instafix-widget.tsx 를 생성하는데, 여기서 InstaFixWidget이라는 컴포넌트를 내보내. 이 프로젝트의 루트 레이아웃(Next.js App Router라면 app/layout.tsx, 다른 프레임워크라면 그에 해당하는 루트 레이아웃/루트 컴포넌트) <body> 안에 <InstaFixWidget /> 을 한 번만 추가해줘. @/components/instafix-widget 에서 import하면 되고(이 프로젝트가 @/ 별칭을 안 쓴다면 import 경로를 알맞게 조정해), 이 컴포넌트는 아무것도 렌더링하지 않으니(return null) 정확한 위치는 중요하지 않아. 조건문으로 감싸지 마 — forceShow가 설정되지 않는 한 개발 환경 밖에서는 이미 자동으로 아무 동작도 하지 않게 되어 있어.
 ```
 
@@ -74,35 +75,33 @@ Claude Code, Cursor 같은 AI 코딩 에이전트와 함께 개발할 때 쓰는
 
 ```bash
 # 열려 있는 픽스노트 전체(또는 --id로 고른 것만)를 새 에이전트 세션으로 전달
-npx github:gnoopy/instafix#cli-dist prompt --status open | claude -p
+npx @instafix/cli prompt --status open | claude -p
 
 # 에이전트가 고친 항목은 스스로 완료 처리합니다 (방법은 프롬프트 안에 적혀 있음)
-npx github:gnoopy/instafix#cli-dist resolve <ID>
+npx @instafix/cli resolve <ID>
 ```
 
 지금 작업 중인 Claude Code 세션에서 바로 이어서 처리하고 싶다면, 그 세션에 `/instafix`라고 입력하세요(`init`을 실행하면 이 슬래시 커맨드도 함께 설치됩니다). 브라우저를 벗어나고 싶지 않다면, 픽스노트 카드나 상세 화면에 있는 **"Agent에게"** 버튼을 누르세요 — 백그라운드에서 `instafix watch`를 켜둔 세션이 그 내용을 바로 이어받아 처리합니다.
 
 ### 직접 설치하고 싶다면?
 
-InstaFix는 npm 레지스트리에 배포되어 있지 않습니다 — 이건 "아직 안 했다"가 아니라 의도된 선택입니다. 모든 패키지는 대신 이 저장소의 빌드 결과물에서 바로 설치됩니다. 일회성 `<package>-dist` 브랜치를 통해서요: 설치 경험은 동일하고, 패키지 이름 대신 GitHub URL을 쓴다는 점만 다릅니다.
-
 ```bash
 # 1. API 라우트 + 바로 쓸 수 있는 위젯 컴포넌트를 대화형으로 만들어줍니다.
 #    프로젝트에 Prisma 스키마가 없다면 Prisma를 가정하는 대신 SQLite
 #    (better-sqlite3, 외부 서비스 불필요)를 기본값으로 제안하거나,
 #    혼자 작업 중이라면 DB 없는 ".instafix/ 폴더" 옵션을 고를 수 있습니다.
-npx github:gnoopy/instafix#cli-dist init
+npx @instafix/cli@latest init
 
 # 2. init이 알려준 패키지를 설치하세요 — SQLite를 선택한 경우:
-npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-sqlite-dist
-# 이미 Prisma를 쓴다면: github:gnoopy/instafix#adapter-prisma-dist
-# 혼자 쓰는 로컬 히스토리를 원한다면: github:gnoopy/instafix#adapter-fs-dist
+npm install @instafix/widget @instafix/adapter-sqlite
+# 이미 Prisma를 쓴다면: @instafix/adapter-prisma
+# 혼자 쓰는 로컬 히스토리를 원한다면: @instafix/adapter-fs
 ```
 
 `init`은 `components/instafix-widget.tsx`를 생성하지만 레이아웃 파일은 건드리지 않습니다 — 임의의 레이아웃 파일을 안전하게 수정하려면 사람(혹은 에이전트)이 직접 확인하는 편이 낫기 때문입니다. 설치가 끝나면 아래를 Claude Code / Cursor / Copilot 등에 붙여넣으세요:
 
 ```text
-npx github:gnoopy/instafix#cli-dist init 명령이 components/instafix-widget.tsx 를 생성했고, 여기서 InstaFixWidget이라는 컴포넌트를 내보내. 내 앱의 루트 레이아웃 — Next.js App Router라면 app/layout.tsx, 다른 프레임워크라면 그에 해당하는 루트 레이아웃/루트 컴포넌트 — 에 <InstaFixWidget /> 을 추가해줘. @/components/instafix-widget 에서 import하면 되고(이 프로젝트가 @/ 별칭을 안 쓴다면 import 경로를 알맞게 조정해), 다른 전역 프로바이더들과 함께 <body> 안 어딘가에 한 번만 넣어줘 — 이 컴포넌트는 아무것도 렌더링하지 않으니(return null) 정확한 위치는 중요하지 않아. 조건문으로 감싸지 마: forceShow가 설정되지 않는 한 개발 환경 밖에서는 이미 자동으로 아무 동작도 하지 않게 되어 있어.
+npx @instafix/cli@latest init 명령이 components/instafix-widget.tsx 를 생성했고, 여기서 InstaFixWidget이라는 컴포넌트를 내보내. 내 앱의 루트 레이아웃 — Next.js App Router라면 app/layout.tsx, 다른 프레임워크라면 그에 해당하는 루트 레이아웃/루트 컴포넌트 — 에 <InstaFixWidget /> 을 추가해줘. @/components/instafix-widget 에서 import하면 되고(이 프로젝트가 @/ 별칭을 안 쓴다면 import 경로를 알맞게 조정해), 다른 전역 프로바이더들과 함께 <body> 안 어딘가에 한 번만 넣어줘 — 이 컴포넌트는 아무것도 렌더링하지 않으니(return null) 정확한 위치는 중요하지 않아. 조건문으로 감싸지 마: forceShow가 설정되지 않는 한 개발 환경 밖에서는 이미 자동으로 아무 동작도 하지 않게 되어 있어.
 ```
 
 쌓인 픽스노트는 아래 컴포넌트 하나만 붙이면 한 화면에서 확인하고 정리할 수 있습니다:
@@ -113,9 +112,20 @@ import { InstaFixInbox } from "@instafix/dashboard";
 <InstaFixInbox projects="my-app" endpoint="/api/instafix" theme="auto" />
 ```
 
-(설치 방법은 동일합니다: `npm install github:gnoopy/instafix#dashboard-dist`)
+(설치: `npm install @instafix/dashboard`)
 
 **InstaFix 제거하기**: 락파일과 `package.json`을 되돌리고(`git checkout -- package.json package-lock.json` 또는 사용 중인 락파일), `app/api/instafix/`와 `components/instafix-widget.tsx`를 삭제한 뒤 다시 설치하세요.
+
+### 아직 릴리스되지 않은 최신 기능을 먼저 써보고 싶다면 (Nightly)
+
+npm에는 release-please가 커밋 규칙에 따라 정식으로 태그를 찍은 버전만 올라갑니다. main 브랜치 tip을 그대로 따라가는 `<package>-dist` GitHub 브랜치도 계속 유지되므로, 아직 릴리스 전인 기능을 먼저 써보고 싶다면 패키지 이름 대신 GitHub URL로 설치하면 됩니다 — 설치 경험은 동일합니다:
+
+```bash
+npx github:gnoopy/instafix#cli-dist init
+npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-sqlite-dist
+```
+
+일반적인 용도로는 위쪽의 npm 설치를 쓰세요 — nightly 브랜치는 매 push마다 갱신되고 버전이 고정되지 않아 하위 호환이 보장되지 않습니다.
 
 ## 문서
 
