@@ -58,7 +58,8 @@ function componentNameOf(fiber: FiberLike): string {
 }
 
 /** Framework-internal wrappers that would only add noise to the path. */
-const FRAMEWORK_NAME_RE = /^(Inner|Outer)?(LayoutRouter|RenderFromTemplateContext|ScrollAndFocusHandler|Router|Head)/;
+const FRAMEWORK_NAME_RE =
+  /^(Inner|Outer)?(LayoutRouter|RenderFromTemplateContext|ScrollAndFocusHandler|Router|Head)|ErrorBoundary$|^(Loading|Template|Segment)Boundary/;
 const MAX_PATH_NAMES = 2;
 
 /**
