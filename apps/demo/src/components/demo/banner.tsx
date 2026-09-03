@@ -32,12 +32,12 @@ function BannerContent({ onInbox, localMode }: { onInbox: boolean; localMode: bo
   let message: string;
   if (onInbox) {
     message = localMode
-      ? "You're the freelancer now — feedbacks from the demo's local mode stay in this browser."
-      : "You're the freelancer now — feedback drawn on the demo site lands here. Data resets every 10 minutes.";
+      ? "You're the freelancer now — fix notes from the demo's local mode stay in this browser."
+      : "You're the freelancer now — fix notes drawn on the demo site land here. Data resets every 10 minutes.";
   } else {
     message = localMode
-      ? "Live demo, local mode — feedbacks stay in this browser. Every option in the playground is live — change it and the widget rebuilds."
-      : "Live demo — data resets every 10 minutes and is not persisted to any database. Every option in the playground is live — change it and the widget rebuilds.";
+      ? "Live demo, local mode — fix notes stay in this browser. Widget settings live in the widget's own Settings section."
+      : "Live demo — data resets every 10 minutes and is not persisted to any database. Widget settings live in the widget's own Settings section.";
   }
 
   return (

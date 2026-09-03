@@ -9,23 +9,16 @@ import { playgroundContent } from "@/lib/site-i18n/content/playground";
 import { DiagnosticsTriggers } from "./diagnostics-triggers";
 
 // ---------------------------------------------------------------------------
-// State model — the URL query is the single source of truth. Controls write
-// non-default values via history.replaceState (Next.js syncs useSearchParams),
-// so any configuration is shareable as a link, e.g. /demo?theme=dark&mode=local.
+// State model — the URL query is the single source of truth. The visible
+// controls that used to write it are gone (everything they duplicated lives
+// in the widget's own settings section now), but the params stay honored so
+// shared links like /demo?theme=dark&mode=local keep working, and the widget
+// itself is the demo of those settings.
 // ---------------------------------------------------------------------------
 
-const LOCALES = [
-  { code: "ko", label: "한국어" },
-  { code: "en", label: "English" },
-  { code: "fr", label: "Français" },
-  { code: "de", label: "Deutsch" },
-  { code: "es", label: "Español" },
-  { code: "it", label: "Italiano" },
-  { code: "pt", label: "Português" },
-  { code: "ru", label: "Русский" },
-] as const;
+const LOCALE_CODES = ["ko", "en", "fr", "de", "es", "it", "pt", "ru"] as const;
 
-type LocaleCode = (typeof LOCALES)[number]["code"];
+type LocaleCode = (typeof LOCALE_CODES)[number];
 
 interface PlaygroundState {
   mode: "server" | "local";
@@ -49,8 +42,6 @@ const DEFAULTS: PlaygroundState = {
   identity: true,
 };
 
-const OWN_PARAMS = ["mode", "theme", "locale", "position", "accent", "screenshot", "diagnostics", "identity"] as const;
-
 /** Hex forms the widget accepts: #RGB, #RRGGBB, #RRGGBBAA (stored without the #). */
 const HEX_RE = /^([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
@@ -60,14 +51,6 @@ const WIDGET_DEFAULT_ACCENT = "#0066ff";
 const LOCAL_STORE_KEY = "instafix_demo_local";
 
 const DEMO_IDENTITY = { name: "Alex Client", email: "alex@client.example" };
-
-const SWATCHES = [
-  { hex: "#173CFF", name: "product blue" },
-  { hex: "#7C3AED", name: "violet" },
-  { hex: "#059669", name: "emerald" },
-  { hex: "#E11D48", name: "rose" },
-  { hex: "#EA580C", name: "orange" },
-] as const;
 
 interface ParamsLike {
   get(name: string): string | null;
@@ -80,38 +63,13 @@ function parseState(params: ParamsLike): PlaygroundState {
   return {
     mode: params.get("mode") === "local" ? "local" : "server",
     theme: theme === "dark" || theme === "auto" ? theme : "light",
-    locale: LOCALES.some((l) => l.code === locale) ? (locale as LocaleCode) : DEFAULTS.locale,
+    locale: LOCALE_CODES.includes(locale as LocaleCode) ? (locale as LocaleCode) : DEFAULTS.locale,
     position: params.get("position") === "bottom-left" ? "bottom-left" : "bottom-right",
     accent: accent && HEX_RE.test(accent) ? `#${accent}` : DEFAULTS.accent,
     screenshot: params.get("screenshot") !== "off",
     diagnostics: params.get("diagnostics") !== "off",
     identity: params.get("identity") !== "off",
   };
-}
-
-/** Serialize non-default state into the query, preserving params we don't own (e.g. ?instafix=). */
-function writeState(next: PlaygroundState): void {
-  const sp = new URLSearchParams(window.location.search);
-  for (const key of OWN_PARAMS) sp.delete(key);
-  if (next.mode !== DEFAULTS.mode) sp.set("mode", next.mode);
-  if (next.theme !== DEFAULTS.theme) sp.set("theme", next.theme);
-  if (next.locale !== DEFAULTS.locale) sp.set("locale", next.locale);
-  if (next.position !== DEFAULTS.position) sp.set("position", next.position);
-  if (next.accent.toLowerCase() !== DEFAULTS.accent.toLowerCase()) sp.set("accent", next.accent.slice(1));
-  if (!next.screenshot) sp.set("screenshot", "off");
-  if (!next.diagnostics) sp.set("diagnostics", "off");
-  if (!next.identity) sp.set("identity", "off");
-  const qs = sp.toString();
-  window.history.replaceState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
-}
-
-/** <input type="color"> only accepts #rrggbb — expand #RGB, truncate #RRGGBBAA. */
-function toColorInputValue(hex: string): string {
-  const raw = hex.slice(1);
-  if (raw.length === 3) {
-    return `#${raw[0]}${raw[0]}${raw[1]}${raw[1]}${raw[2]}${raw[2]}`.toLowerCase();
-  }
-  return `#${raw.slice(0, 6)}`.toLowerCase();
 }
 
 // ---------------------------------------------------------------------------
@@ -242,69 +200,9 @@ function buildSnippet(state: PlaygroundState): { lines: SnippetLine[]; text: str
 }
 
 // ---------------------------------------------------------------------------
-// Controls
-// ---------------------------------------------------------------------------
-
-interface RadioRowProps<T extends string> {
-  legend: string;
-  name: string;
-  value: T;
-  options: readonly { value: T; label: string }[];
-  onChange: (value: T) => void;
-}
-
-function RadioRow<T extends string>({ legend, name, value, options, onChange }: RadioRowProps<T>) {
-  return (
-    <fieldset>
-      <legend className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">{legend}</legend>
-      <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-0.5">
-        {options.map((option) => (
-          <label
-            key={option.value}
-            className="flex-1 cursor-pointer rounded-md px-2 py-1.5 text-center text-xs font-medium text-gray-600 transition-colors hover:text-gray-900 has-[:checked]:bg-white has-[:checked]:text-gray-900 has-[:checked]:shadow-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent motion-reduce:transition-none"
-          >
-            <input
-              type="radio"
-              name={name}
-              value={option.value}
-              checked={value === option.value}
-              onChange={() => onChange(option.value)}
-              className="sr-only"
-            />
-            {option.label}
-          </label>
-        ))}
-      </div>
-    </fieldset>
-  );
-}
-
-interface ToggleRowProps {
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  caption?: string;
-}
-
-function ToggleRow({ label, checked, onChange, caption }: ToggleRowProps) {
-  return (
-    <div>
-      <label className="flex cursor-pointer items-center justify-between gap-3 text-sm text-gray-700">
-        {label}
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(event) => onChange(event.target.checked)}
-          className="h-4 w-4 rounded border-gray-300 accent-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        />
-      </label>
-      {caption ? <p className="mt-0.5 text-xs leading-snug text-gray-500">{caption}</p> : null}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Playground panel
+// Playground panel — deliberately small: only what the widget can't demo
+// itself (fake diagnostics events + the live config snippet). Collapsed by
+// default so the demo site and the widget get the visitor's full attention.
 // ---------------------------------------------------------------------------
 
 const PANEL_ID = "instafix-playground";
@@ -315,9 +213,7 @@ export function Playground({ siteLocale }: { siteLocale: SiteLocale }) {
   const state = useMemo(() => parseState(params), [params]);
   const { mode, theme, locale, position, accent, screenshot, diagnostics, identity } = state;
 
-  const [open, setOpen] = useState(true);
-  const [draftAccent, setDraftAccent] = useState<string | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [open, setOpen] = useState(false);
   const tabRef = useRef<HTMLButtonElement>(null);
   const collapseRef = useRef<HTMLButtonElement>(null);
   const toggledRef = useRef(false);
@@ -325,24 +221,12 @@ export function Playground({ siteLocale }: { siteLocale: SiteLocale }) {
   // playground rebuilds must not re-scroll the visitor back to it on every toggle.
   const firstInitRef = useRef(true);
 
-  // Start collapsed on narrow viewports so the panel doesn't cover the demo site.
-  useEffect(() => {
-    if (window.matchMedia("(max-width: 640px)").matches) setOpen(false);
-  }, []);
-
   // Keep keyboard focus on the visible toggle after expanding/collapsing.
   useEffect(() => {
     if (!toggledRef.current) return;
     toggledRef.current = false;
     (open ? collapseRef : tabRef).current?.focus();
   }, [open]);
-
-  useEffect(
-    () => () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    },
-    [],
-  );
 
   // Any config change tears the widget down and rebuilds it — the singleton
   // guard requires destroy() before re-init.
@@ -380,43 +264,6 @@ export function Playground({ siteLocale }: { siteLocale: SiteLocale }) {
       instance?.destroy();
     };
   }, [mode, theme, locale, position, accent, screenshot, diagnostics, identity]);
-
-  const patch = (partial: Partial<PlaygroundState>) => {
-    // Fold in (and disarm) any pending debounced accent commit so it can't
-    // fire later with a stale snapshot and revert this change.
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-      debounceRef.current = null;
-    }
-    const pending = draftAccent && HEX_RE.test(draftAccent.slice(1)) ? { accent: draftAccent } : {};
-    setDraftAccent(null);
-    writeState({ ...state, ...pending, ...partial });
-  };
-
-  const shownAccent = draftAccent ?? accent;
-
-  function handleAccentSelect(hex: string) {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    setDraftAccent(null);
-    patch({ accent: hex });
-  }
-
-  function handleAccentInput(hex: string) {
-    setDraftAccent(hex);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    // Color pickers fire on every drag tick — commit (and rebuild the widget)
-    // only once the value settles.
-    debounceRef.current = setTimeout(() => {
-      setDraftAccent(null);
-      writeState({ ...state, accent: hex });
-    }, 150);
-  }
-
-  function handleReset() {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    setDraftAccent(null);
-    writeState(DEFAULTS);
-  }
 
   function toggleOpen(next: boolean) {
     toggledRef.current = true;
@@ -461,133 +308,19 @@ export function Playground({ siteLocale }: { siteLocale: SiteLocale }) {
             </button>
           </div>
 
-          <div className="flex-1 space-y-5 overflow-y-auto p-4">
-            <div>
-              <RadioRow
-                legend={t.modeLegend}
-                name="pg-mode"
-                value={mode}
-                options={[
-                  { value: "server", label: t.modeServerLabel },
-                  { value: "local", label: t.modeLocalLabel },
-                ]}
-                onChange={(value) => patch({ mode: value })}
-              />
-              <p className="mt-1.5 text-xs leading-snug text-gray-500">
-                {mode === "local" ? t.modeLocalCaption : t.modeServerCaption}
-              </p>
-            </div>
+          <div className="flex-1 space-y-4 overflow-y-auto p-4">
+            <p className="text-xs leading-snug text-gray-500">
+              {mode === "local" ? t.modeLocalCaption : t.modeServerCaption}
+            </p>
 
-            <RadioRow
-              legend={t.themeLegend}
-              name="pg-theme"
-              value={theme}
-              options={[
-                { value: "light", label: t.themeLightLabel },
-                { value: "dark", label: t.themeDarkLabel },
-                { value: "auto", label: t.themeAutoLabel },
-              ]}
-              onChange={(value) => patch({ theme: value })}
-            />
+            <p className="text-xs leading-snug text-gray-500">{t.settingsHint}</p>
 
-            <div>
-              <label
-                htmlFor="pg-locale"
-                className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500"
-              >
-                {t.localeLabel}
-              </label>
-              <select
-                id="pg-locale"
-                value={locale}
-                onChange={(event) => patch({ locale: event.target.value as LocaleCode })}
-                className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-              >
-                {LOCALES.map((entry) => (
-                  <option key={entry.code} value={entry.code}>
-                    {entry.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <RadioRow
-              legend={t.positionLegend}
-              name="pg-position"
-              value={position}
-              options={[
-                { value: "bottom-right", label: t.positionRightLabel },
-                { value: "bottom-left", label: t.positionLeftLabel },
-              ]}
-              onChange={(value) => patch({ position: value })}
-            />
-
-            <fieldset>
-              <legend className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                {t.accentLegend}
-              </legend>
-              <div className="flex items-center gap-2">
-                {SWATCHES.map((swatch) => (
-                  <button
-                    key={swatch.hex}
-                    type="button"
-                    onClick={() => handleAccentSelect(swatch.hex)}
-                    aria-label={t.swatchAriaLabels[swatch.hex]}
-                    aria-pressed={shownAccent.toLowerCase() === swatch.hex.toLowerCase()}
-                    style={{ backgroundColor: swatch.hex }}
-                    className="h-7 w-7 rounded-full border border-black/10 transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 aria-pressed:ring-2 aria-pressed:ring-gray-900 aria-pressed:ring-offset-2 motion-reduce:transition-none motion-reduce:hover:scale-100"
-                  />
-                ))}
-                <label className="ml-1 flex cursor-pointer items-center gap-1.5 text-xs text-gray-600">
-                  <input
-                    type="color"
-                    value={toColorInputValue(shownAccent)}
-                    onChange={(event) => handleAccentInput(event.target.value)}
-                    aria-label={t.customColorAriaLabel}
-                    className="h-7 w-8 cursor-pointer rounded border border-gray-200 bg-white p-0.5"
-                  />
-                  {t.customLabel}
-                </label>
+            {diagnostics ? (
+              <div className="rounded-lg border border-gray-100 bg-gray-50 p-2.5">
+                <p className="mb-2 text-xs leading-snug text-gray-500">{t.diagnosticsCaption}</p>
+                <DiagnosticsTriggers />
               </div>
-            </fieldset>
-
-            <fieldset className="space-y-2.5">
-              <legend className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                {t.optionsLegend}
-              </legend>
-              <ToggleRow
-                label={t.screenshotsLabel}
-                checked={screenshot}
-                onChange={(value) => patch({ screenshot: value })}
-              />
-              <div>
-                <ToggleRow
-                  label={t.diagnosticsLabel}
-                  checked={diagnostics}
-                  onChange={(value) => patch({ diagnostics: value })}
-                />
-                {diagnostics ? (
-                  <div className="mt-2 rounded-lg border border-gray-100 bg-gray-50 p-2.5">
-                    <p className="mb-2 text-xs leading-snug text-gray-500">{t.diagnosticsCaption}</p>
-                    <DiagnosticsTriggers />
-                  </div>
-                ) : null}
-              </div>
-              <ToggleRow
-                label={t.identityLabel}
-                checked={identity}
-                onChange={(value) => patch({ identity: value })}
-                caption={t.identityCaption}
-              />
-            </fieldset>
-
-            <button
-              type="button"
-              onClick={handleReset}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:transition-none"
-            >
-              {t.resetButtonLabel}
-            </button>
+            ) : null}
 
             <section aria-label={t.codeSectionAriaLabel}>
               <div className="overflow-hidden rounded-lg border border-gray-800 bg-gray-950">
