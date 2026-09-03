@@ -380,6 +380,22 @@ export const SORT_CSS = `
     border-top: 1px solid var(--sp-border);
   }
 
+  /* Inline variant — sitting in the header action bar's spare space
+     (panel.ts) instead of its own bordered row under the filters. */
+  .sp-sort-controls--inline {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    margin-left: auto;
+  }
+
+  /* Near the panel's right edge, a left-aligned 170px menu would overflow —
+     hang it from the button's right edge instead. */
+  .sp-sort-controls--inline .sp-sort-menu {
+    left: auto;
+    right: 0;
+  }
+
   /* ============================
      Sort Dropdown Button
      ============================ */

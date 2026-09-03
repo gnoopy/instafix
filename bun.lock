@@ -13,6 +13,7 @@
         "fast-check": "^4.9.0",
         "jsdom": "29.1.1",
         "knip": "^6.32.2",
+        "playwright-core": "1.62.1",
         "publint": "0.3.24",
         "tsup": "^8.5.1",
         "turbo": "^2.10.11",
@@ -150,7 +151,7 @@
       "dependencies": {
         "@medv/finder": "^4.0.2",
         "exceljs": "4.4.0",
-        "html2canvas": "^1.4.1",
+        "html2canvas-pro": "^2.4.1",
       },
       "devDependencies": {
         "@instafix/core": "workspace:*",
@@ -1123,7 +1124,7 @@
 
     "html-void-elements": ["html-void-elements@3.0.0", "", {}, "sha512-bEqo66MRXsUGxWHV5IP0PUiAWwoEjba4VCzg0LjFJBpchPaTfyfCKTG6bc5F8ucKec3q5y6qOdGyYTSBEvhCrg=="],
 
-    "html2canvas": ["html2canvas@1.4.1", "", { "dependencies": { "css-line-break": "^2.1.0", "text-segmentation": "^1.0.3" } }, "sha512-fPU6BHNpsyIhr8yyMpTLLxAbkaK8ArIBcmZIRiBLiDhjeqvXolaEmDGmELFuX9I4xDcaKKcJl+TKZLqruBbmWA=="],
+    "html2canvas-pro": ["html2canvas-pro@2.4.1", "", { "dependencies": { "css-line-break": "^2.1.0", "text-segmentation": "^1.0.3" } }, "sha512-yjArt1NPIduV9aN6oK+FOQHb7INT46XMOu7Ue5YcKvlxpkEwmg+QpkCV3Bmfb+LzdltLy45kSYjHM/xyS3ukqw=="],
 
     "ieee754": ["ieee754@1.2.1", "", {}, "sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA=="],
 

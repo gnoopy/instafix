@@ -243,12 +243,15 @@ export class Panel {
     filterBar.appendChild(this.buildStatusSegmented());
     filterBar.appendChild(this.buildScopeSegmented());
 
-    // Sort controls
+    // Sort + group-by-page controls — they live in the header ACTION BAR's
+    // spare right-hand space (next to copy/export/delete-all), not on their
+    // own row under the filters: one less row of chrome above the list.
     this.sortControls = new PanelSortControls(colors, () => this.renderList(), this.t);
+    this.sortControls.element.classList.add("sp-sort-controls--inline");
+    headerActions.appendChild(this.sortControls.element);
 
     filters.appendChild(searchWrap);
     filters.appendChild(filterBar);
-    filters.appendChild(this.sortControls.element);
 
     // --- List ---
     this.listContainer = el("div", { class: "sp-list" });

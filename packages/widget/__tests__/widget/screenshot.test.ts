@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // reference is defined when the factory runs.
 const { mockHtml2Canvas } = vi.hoisted(() => ({ mockHtml2Canvas: vi.fn() }));
 
-vi.mock("html2canvas", () => ({
+vi.mock("html2canvas-pro", () => ({
   default: mockHtml2Canvas,
 }));
 

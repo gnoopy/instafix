@@ -1,7 +1,10 @@
 /**
- * Screenshot capture via html2canvas.
+ * Screenshot capture via html2canvas-pro (the maintained html2canvas fork
+ * that parses modern CSS color functions — color(), lab(), oklch() — which
+ * the original chokes on, silently killing every capture on Tailwind v4-era
+ * hosts).
  *
- * `html2canvas` is a regular `dependency` of `@instafix/widget` — every
+ * `html2canvas-pro` is a regular `dependency` of `@instafix/widget` — every
  * install gets it. We dynamic-import it so bundlers emit a separate chunk
  * loaded only when `enableScreenshot: true` triggers the first capture;
  * hosts that never enable screenshots pay only the disk-space cost.
@@ -35,11 +38,11 @@ async function loadHtml2Canvas(): Promise<Html2CanvasFn | null> {
   try {
     // Static dynamic import — bundlers (Vite, webpack, esbuild) resolve this
     // at build time and emit a separate chunk loaded only on first capture.
-    // html2canvas ships as a regular dependency so this resolves on every
+    // html2canvas-pro ships as a regular dependency so this resolves on every
     // install. Earlier attempts to dodge static resolution via magic comments
     // silently broke production: bare specifiers can't be resolved at runtime
     // in browsers without import maps.
-    const mod = (await import("html2canvas")) as { default?: Html2CanvasFn } & Html2CanvasFn;
+    const mod = (await import("html2canvas-pro")) as unknown as { default?: Html2CanvasFn } & Html2CanvasFn;
     cachedHtml2Canvas = (mod.default ?? mod) as Html2CanvasFn;
     return cachedHtml2Canvas;
   } catch (err) {

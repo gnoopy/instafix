@@ -163,8 +163,13 @@ export class Popup {
   private hint: HTMLElement;
   private resolve: ((result: PopupResult | null) => void) | null = null;
   private previouslyFocused: HTMLElement | null = null;
-  /** Selection rect the open popup is anchored to — kept so `positionPopup()` can re-clamp after content changes its height (legend). */
+  /** Selection rect the open popup is anchored to — kept so `positionPopup()` can re-clamp after content changes its height (legend). Viewport-relative at the moment `show()` captured it — see `lastAnchorScrollX/Y` for why `positionPopup()` never uses it raw. */
   private lastAnchorRect: DOMRect | null = null;
+  /** `window.scrollX`/`scrollY` when `lastAnchorRect` was captured — lets `positionPopup()` re-project it into CURRENT viewport coordinates after a scroll (`position:fixed` doesn't do this on its own). */
+  private lastAnchorScrollX = 0;
+  private lastAnchorScrollY = 0;
+  /** Re-positions on scroll/resize while open — installed in `show()`, torn down in `hideElement()`. Without it the popup (and the drawn-selection rect kept visible alongside it) stay pinned to their pre-scroll screen position while the actual content scrolls away underneath, same bug class as the drag/targeting rects — see annotator.ts's `effectiveDragStart()`. */
+  private onWindowChange: (() => void) | null = null;
   private onKeydownTrap: ((e: KeyboardEvent) => void) | null = null;
   private onSubmit: PopupSubmitHandler | null = null;
   private submittingState = false;
@@ -851,8 +856,28 @@ export class Popup {
    * the last resort (both, plus the horizontal edges).
    */
   private positionPopup(): void {
-    const rectBounds = this.lastAnchorRect;
-    if (!rectBounds) return;
+    const anchor = this.lastAnchorRect;
+    if (!anchor) return;
+
+    // Re-project the anchor into CURRENT viewport coordinates — it was
+    // captured once in show(), so a scroll since then (this method re-runs
+    // on every scroll/resize tick while open, see the listener in show())
+    // must be compensated the same way annotator.ts's effectiveDragStart()
+    // does, or the popup would clamp itself against where the selection USED
+    // to be on screen rather than where it actually is now. Offsets the
+    // exact top/bottom/left/right fields used below — NOT reconstructed via
+    // `new DOMRect(x, y, w, h)`, which silently drops top/bottom/left/right
+    // when they were set independently of x/y/width/height (a real
+    // getBoundingClientRect() keeps both in sync, but Popup only ever reads
+    // these four fields, so that's the only invariant this needs to honor).
+    const dx = window.scrollX - this.lastAnchorScrollX;
+    const dy = window.scrollY - this.lastAnchorScrollY;
+    const rectBounds = {
+      top: anchor.top - dy,
+      bottom: anchor.bottom - dy,
+      left: anchor.left - dx,
+      right: anchor.right - dx,
+    };
 
     const popupH = this.root.offsetHeight || 220;
     const popupW = this.root.offsetWidth || 300;
@@ -1092,6 +1117,11 @@ export class Popup {
         if (draft.type) this.selectType(draft.type, this.typeRow);
         this.showDraftBanner();
       }
+      // Default type: "버그" pre-selected — most feedbacks during a
+      // debugging session ARE bugs, so the common path is "just type the
+      // note and send" with zero extra clicks. A restored draft's own type
+      // wins above; picking another chip stays one click away.
+      if (!this.selectedType) this.selectType("bug", this.typeRow);
       this.updateSubmitState();
 
       // Fresh composer session — stop any lingering listening from a
@@ -1105,8 +1135,17 @@ export class Popup {
       this.previouslyFocused = document.activeElement as HTMLElement | null;
 
       this.lastAnchorRect = rectBounds;
+      this.lastAnchorScrollX = window.scrollX;
+      this.lastAnchorScrollY = window.scrollY;
       this.root.style.display = "block";
       this.positionPopup();
+
+      // Keep the popup anchored while the visitor scrolls (or resizes) with
+      // it open — e.g. scrolling to re-read context before finishing the
+      // comment. { passive: true }: never blocks the scroll itself.
+      this.onWindowChange = () => this.positionPopup();
+      window.addEventListener("scroll", this.onWindowChange, { passive: true, capture: true });
+      window.addEventListener("resize", this.onWindowChange, { passive: true });
 
       // Install focus trap
       this.onKeydownTrap = (e: KeyboardEvent) => {
@@ -1351,6 +1390,11 @@ export class Popup {
     if (this.onKeydownTrap) {
       this.root.removeEventListener("keydown", this.onKeydownTrap);
       this.onKeydownTrap = null;
+    }
+    if (this.onWindowChange) {
+      window.removeEventListener("scroll", this.onWindowChange, true);
+      window.removeEventListener("resize", this.onWindowChange);
+      this.onWindowChange = null;
     }
     // Never leave the microphone listening after the composer closes.
     if (this.voiceController?.currentState === "listening") this.voiceController.stop();

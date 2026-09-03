@@ -377,8 +377,11 @@ describe("Popup", () => {
       expect(submitBtn.style.pointerEvents).toBe("none");
     });
 
-    it("does not enable submit with only message (no type selected)", () => {
+    it("pre-selects 버그 so a message alone enables submit (zero extra clicks on the common path)", () => {
       popup.show(makeBounds());
+
+      const bugBtn = document.querySelector<HTMLButtonElement>('[data-type="bug"]')!;
+      expect(bugBtn.getAttribute("aria-pressed")).toBe("true");
 
       const textarea = document.querySelector<HTMLTextAreaElement>("textarea")!;
       textarea.value = "Some message";
@@ -386,7 +389,7 @@ describe("Popup", () => {
 
       const buttons = document.querySelectorAll<HTMLButtonElement>("button");
       const submitBtn = Array.from(buttons).find((btn) => btn.textContent === t("popup.submit"))!;
-      expect(submitBtn.style.pointerEvents).toBe("none");
+      expect(submitBtn.style.pointerEvents).toBe("auto");
     });
 
     it("resolves with type and message on submit", async () => {
@@ -539,13 +542,13 @@ describe("Popup", () => {
       expect(textarea2.value).toBe("");
     });
 
-    it("resets type selection on each show()", async () => {
+    it("resets type selection back to the 버그 default on each show()", async () => {
       const dialog = document.querySelector<HTMLElement>('[role="dialog"]')!;
       const promise1 = popup.show(makeBounds());
 
-      const bugBtn = dialog.querySelector<HTMLButtonElement>('[data-type="bug"]')!;
-      bugBtn.click();
-      expect(bugBtn.getAttribute("aria-pressed")).toBe("true");
+      const questionBtn = dialog.querySelector<HTMLButtonElement>('[data-type="question"]')!;
+      questionBtn.click();
+      expect(questionBtn.getAttribute("aria-pressed")).toBe("true");
 
       // Cancel
       const cancelBtn = Array.from(dialog.querySelectorAll<HTMLButtonElement>("button")).find(
@@ -554,13 +557,13 @@ describe("Popup", () => {
       cancelBtn.click();
       await promise1;
 
-      // Re-show
+      // Re-show — the previous session's pick must not stick; the fresh
+      // session starts at the 버그 default again.
       popup.show(makeBounds());
 
-      // All type buttons should be reset
       const allTypeButtons = dialog.querySelectorAll<HTMLButtonElement>("[data-type]");
       for (const btn of allTypeButtons) {
-        expect(btn.getAttribute("aria-pressed")).toBe("false");
+        expect(btn.getAttribute("aria-pressed")).toBe(btn.dataset.type === "bug" ? "true" : "false");
       }
     });
   });
@@ -659,16 +662,18 @@ describe("Popup", () => {
       expect(bugBtn.style.background).not.toBe(colors.glassBg);
     });
 
-    it("mouseleave on type button restores background", () => {
+    it("mouseleave on an unselected type button restores background", () => {
       popup.show(makeBounds());
 
-      const bugBtn = document.querySelector<HTMLButtonElement>('[data-type="bug"]')!;
-      bugBtn.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
-      const hoverBg = bugBtn.style.background;
+      // bug is the pre-selected default (hover is a no-op on the selected
+      // chip) — exercise hover/leave on an unselected one instead.
+      const questionBtn = document.querySelector<HTMLButtonElement>('[data-type="question"]')!;
+      questionBtn.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+      const hoverBg = questionBtn.style.background;
 
-      bugBtn.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+      questionBtn.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
       // After mouseleave, background should differ from hover state
-      expect(bugBtn.style.background).not.toBe(hoverBg);
+      expect(questionBtn.style.background).not.toBe(hoverBg);
     });
   });
 
