@@ -255,13 +255,21 @@ export const DETAIL_CSS = /* css */ `
   }
 
   /* Copy Prompt / Agent에게 render inline in the command row — undo the
-     full-width detail variant. */
+     full-width detail variant. Sizes are shaved so all four commands fit
+     the panel width on one line (ko labels; wordier locales may wrap). */
   .sp-detail-status .sp-agent-btn--detail {
     width: auto;
-    height: 30px;
+    height: 28px;
     margin-top: 0;
-    padding: 0 10px;
+    padding: 0 8px;
+    font-size: 11px;
+    gap: 4px;
     border-radius: var(--sp-radius);
+  }
+
+  .sp-detail-status .sp-agent-btn--detail svg {
+    width: 13px;
+    height: 13px;
   }
 
   .sp-detail-status-pill {
@@ -308,16 +316,16 @@ export const DETAIL_CSS = /* css */ `
 
   .sp-detail-actions {
     display: flex;
-    gap: 6px;
+    gap: 4px;
     margin-left: auto;
   }
 
   .sp-detail-actions button {
-    height: 30px;
-    padding: 0 12px;
+    height: 28px;
+    padding: 0 8px;
     border-radius: var(--sp-radius);
     font-family: var(--sp-font);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     cursor: pointer;
     display: flex;
@@ -328,8 +336,8 @@ export const DETAIL_CSS = /* css */ `
   }
 
   .sp-detail-actions button svg {
-    width: 15px;
-    height: 15px;
+    width: 13px;
+    height: 13px;
   }
 
   .sp-detail-btn-resolve {
