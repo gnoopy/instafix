@@ -105,28 +105,22 @@ test.describe("Widget injection", () => {
   });
 });
 
-test.describe("FAB radial menu", () => {
-  test("opens on click and shows 3 items", async ({ page }) => {
+test.describe("FAB toolbar", () => {
+  test("is visible by default and shows the toolbar items", async ({ page }) => {
     const s = shadow(page);
-    await s.click(".sp-fab");
-    await s.waitFor(".sp-radial-item--open");
-    expect(await s.count(".sp-radial-item--open")).toBe(3);
+    await s.waitFor(".sp-toolbar.sp-toolbar--visible");
+    expect(await s.count(".sp-toolbar-item")).toBe(4);
+    expect(await s.attr(".sp-fab", "aria-expanded")).toBe("true");
   });
 
-  test("closes on second click", async ({ page }) => {
+  test("closes on click, reopens on second click", async ({ page }) => {
     const s = shadow(page);
+    await s.waitFor(".sp-toolbar.sp-toolbar--visible");
     await s.click(".sp-fab");
-    await s.waitFor(".sp-radial-item--open");
-    await s.click(".sp-fab");
-    await s.waitForHidden(".sp-radial-item--open");
-    expect(await s.count(".sp-radial-item--open")).toBe(0);
-  });
-
-  test("sets aria-expanded correctly", async ({ page }) => {
-    const s = shadow(page);
+    await s.waitForHidden(".sp-toolbar.sp-toolbar--visible");
     expect(await s.attr(".sp-fab", "aria-expanded")).toBe("false");
     await s.click(".sp-fab");
-    await s.waitFor(".sp-radial-item--open");
+    await s.waitFor(".sp-toolbar.sp-toolbar--visible");
     expect(await s.attr(".sp-fab", "aria-expanded")).toBe("true");
   });
 });
@@ -149,7 +143,7 @@ test.describe("Panel", () => {
     await s.waitFor(".sp-panel--open");
     await s.waitFor(".sp-empty-text", { timeout: 10000 });
     const text = await s.text(".sp-empty-text");
-    expect(text).toContain("No feedback yet");
+    expect(text).toContain("아직 픽스노트가 없습니다");
   });
 
   test("renders type dropdown and 3-segment status filter", async ({ page }) => {
@@ -198,11 +192,11 @@ test.describe("Annotation mode", () => {
 
     await page.waitForFunction(() => {
       const btns = document.querySelectorAll("button");
-      return Array.from(btns).some((b) => b.textContent === "Cancel");
+      return Array.from(btns).some((b) => b.textContent === "취소");
     });
     const hasCancel = await page.evaluate(() => {
       const btns = document.querySelectorAll("button");
-      return Array.from(btns).some((b) => b.textContent === "Cancel");
+      return Array.from(btns).some((b) => b.textContent === "취소");
     });
     expect(hasCancel).toBe(true);
   });
@@ -251,9 +245,7 @@ test.describe("Annotation mode", () => {
 });
 
 test.describe("Keyboard-only annotation", () => {
-  test("FAB-launched Enter annotation targets the last focused page element", async ({ page }) => {
-    const s = shadow(page);
-
+  test("Alt+Shift+A shortcut targets the last focused page element", async ({ page }) => {
     // 1. Focus a real page element — the fixture has no native button, so
     //    inject one (the focus tracker needs a focusin from page content).
     await page.evaluate(() => {
@@ -264,36 +256,20 @@ test.describe("Keyboard-only annotation", () => {
       btn.focus();
     });
 
-    // 2. Open the FAB via keyboard (Enter on the focused button = click).
-    await page.evaluate(() => {
-      const host = document.querySelector("instafix-widget");
-      (host?.shadowRoot?.querySelector(".sp-fab") as HTMLElement)?.focus();
-    });
-    await page.keyboard.press("Enter");
-    await s.waitFor(".sp-radial-item--open");
+    // 2. Trigger annotate mode via its global shortcut (fab.ts's
+    //    ITEM_SHORTCUT_CODES.annotate = "KeyA") — a document-level listener,
+    //    works without the widget having focus and never moves focus itself.
+    await page.keyboard.press("Alt+Shift+A");
 
-    // 3. The first radial item (chat) receives focus after the open animation
-    //    — ArrowDown to the annotate item, then Enter to activate it.
-    await page.waitForFunction(() => {
-      const host = document.querySelector("instafix-widget");
-      return host?.shadowRoot?.activeElement?.classList.contains("sp-radial-item") ?? false;
-    });
-    await page.keyboard.press("ArrowDown");
-    await page.waitForFunction(() => {
-      const host = document.querySelector("instafix-widget");
-      return host?.shadowRoot?.activeElement?.getAttribute("data-item-id") === "annotate";
-    });
-    await page.keyboard.press("Enter");
-
-    // 4. The overlay is up and focused — Enter annotates the tracked button
-    //    (the FAB stole focus, so only the tracker knows the real target).
+    // 3. The overlay is up — focus never left the tracked button, so Enter
+    //    annotates it (only the focus tracker knows the real target).
     await page.waitForFunction(() => !!document.querySelector("div[style*='crosshair']"));
     await page.keyboard.press("Enter");
 
-    // 5. The feedback popup appears...
+    // 4. The feedback popup appears...
     await page.waitForSelector("button[data-type='bug']");
 
-    // ...and the keyboard highlight rect (fixed-position, screenshot-ignored)
+    // 5. ...and the keyboard highlight rect (fixed-position, screenshot-ignored)
     // covers the target element.
     const hasHighlight = await page.evaluate(() => {
       const overlay = document.querySelector("div[style*='crosshair']");
@@ -333,7 +309,7 @@ test.describe("Full annotation flow", () => {
     await page.evaluate(() => {
       const btns = document.querySelectorAll("button");
       for (const b of btns) {
-        if (b.textContent === "Send") {
+        if (b.textContent === "보내기") {
           b.click();
           return;
         }
@@ -628,50 +604,44 @@ test.describe("Event delegation", () => {
   });
 });
 
-test.describe("Default locale is English", () => {
-  test("FAB aria-label uses English text", async ({ page }) => {
+test.describe("Default locale is Korean", () => {
+  test("FAB aria-label uses Korean text", async ({ page }) => {
     const s = shadow(page);
+    await s.waitFor(".sp-toolbar.sp-toolbar--visible");
+    // Toolbar starts open, so the FAB's label is the "hide" phrasing.
     const ariaLabel = await s.attr(".sp-fab", "aria-label");
-    // English: "InstaFix — Feedback menu"
-    expect(ariaLabel).toBe("InstaFix \u2014 Feedback menu");
+    expect(ariaLabel).toBe("도구 숨기기");
   });
 
-  test("radial menu items use English labels", async ({ page }) => {
+  test("toolbar items use Korean labels", async ({ page }) => {
     const s = shadow(page);
-    await s.click(".sp-fab");
-    await s.waitFor(".sp-radial-item--open");
+    await s.waitFor(".sp-toolbar.sp-toolbar--visible");
 
-    // Check the aria-labels on radial items
     const chatLabel = await s.attr('[data-item-id="chat"]', "aria-label");
     const annotateLabel = await s.attr('[data-item-id="annotate"]', "aria-label");
     const toggleLabel = await s.attr('[data-item-id="toggle-annotations"]', "aria-label");
 
-    expect(chatLabel).toBe("Show sidebar");
-    expect(annotateLabel).toBe("Create new annotation");
-    expect(toggleLabel).toBe("Show or hide markers");
+    expect(chatLabel).toBe("사이드바 표시");
+    expect(annotateLabel).toBe("영역 지정");
+    expect(toggleLabel).toBe("마커 표시/숨기기");
   });
 
-  test("panel header and empty state use English text", async ({ page }) => {
+  test("panel header and empty state use Korean text", async ({ page }) => {
     const s = shadow(page);
-    await s.click(".sp-fab");
-    await s.waitFor('[data-item-id="chat"]');
     await s.click('[data-item-id="chat"]');
     await s.waitFor(".sp-panel--open");
 
-    // Panel title should be "Feedbacks" (same in both locales, but verifying)
+    // Panel title is "픽스노트" ("fix note") in both locales' terminology.
     const title = await s.text(".sp-panel-title");
-    expect(title).toBe("Feedbacks");
+    expect(title).toBe("픽스노트");
 
-    // Empty state should use English
     await s.waitFor(".sp-empty-text");
     const emptyText = await s.text(".sp-empty-text");
-    expect(emptyText).toContain("No feedback yet");
+    expect(emptyText).toContain("아직 픽스노트가 없습니다");
   });
 
-  test("search placeholder uses English text", async ({ page }) => {
+  test("search placeholder uses Korean text", async ({ page }) => {
     const s = shadow(page);
-    await s.click(".sp-fab");
-    await s.waitFor('[data-item-id="chat"]');
     await s.click('[data-item-id="chat"]');
     await s.waitFor(".sp-panel--open");
 
@@ -680,22 +650,20 @@ test.describe("Default locale is English", () => {
       const input = host?.shadowRoot?.querySelector(".sp-search") as HTMLInputElement;
       return input?.placeholder ?? null;
     });
-    expect(placeholder).toBe("Search...");
+    expect(placeholder).toBe("검색...");
   });
 
-  test("annotation mode cancel button uses English text", async ({ page }) => {
+  test("annotation mode cancel button uses Korean text", async ({ page }) => {
     const s = shadow(page);
-    await s.click(".sp-fab");
-    await s.waitFor('[data-item-id="annotate"]');
     await s.click('[data-item-id="annotate"]');
 
     await page.waitForFunction(() => {
       const btns = document.querySelectorAll("button");
-      return Array.from(btns).some((b) => b.textContent === "Cancel");
+      return Array.from(btns).some((b) => b.textContent === "취소");
     });
     const hasCancel = await page.evaluate(() => {
       const btns = document.querySelectorAll("button");
-      return Array.from(btns).some((b) => b.textContent === "Cancel");
+      return Array.from(btns).some((b) => b.textContent === "취소");
     });
     expect(hasCancel).toBe(true);
   });
@@ -895,7 +863,7 @@ test.describe("Panel search", () => {
     // Should show empty state
     await s.waitFor(".sp-empty-text", { timeout: 5000 });
     const emptyText = await s.text(".sp-empty-text");
-    expect(emptyText).toContain("No feedback yet");
+    expect(emptyText).toContain("아직 픽스노트가 없습니다");
   });
 });
 
