@@ -12,7 +12,7 @@ InstaFix turns it into a prompt with the exact DOM target, a screenshot, and any
 to your clipboard. Paste it into your agent's chat and you're done.
 Every note you leave this way is recorded as a **fix note**.
 
-![Demo](./demo.gif)
+![Demo](./demo.en.gif)
 
 [![Website](https://img.shields.io/badge/website-instafix.realstory.blog-000000?style=flat&colorA=000000&colorB=000000)](https://instafix.realstory.blog)
 [![Live Demo](https://img.shields.io/badge/demo-try%20it%20live-22c55e?style=flat&colorA=000000)](https://instafix.realstory.blog/demo)
