@@ -1880,7 +1880,7 @@ describe("Annotator", () => {
       }
     });
 
-    it("a TEXT selection offers the choice too, and toggling preserves the quote while re-anchoring", async () => {
+    it("a TEXT selection offers the choice: 컨테이너 targets the component, 요소 restores the quoted range", async () => {
       const container = document.createElement("p");
       const section = document.createElement("section");
       section.appendChild(container);
@@ -1895,29 +1895,42 @@ describe("Annotator", () => {
         rect: new DOMRect(60, 50, 180, 20),
       });
       vi.mocked(findLargestAncestor).mockReturnValue(section);
-      popupMocks.toggleTargetSizeBeforeSubmit = "largest";
-
-      const completeListener = vi.fn();
-      bus.on("annotation:complete", completeListener);
+      popupMocks.keepShowPending = true;
+      popupMocks.nextResult = null;
 
       bus.emit("annotation:start");
       const overlay = findOverlay()!;
       overlay.dispatchEvent(new MouseEvent("mousedown", { clientX: 60, clientY: 50, bubbles: true }));
       overlay.dispatchEvent(new MouseEvent("mouseup", { clientX: 240, clientY: 70, bubbles: true }));
+      await new Promise((r) => setTimeout(r, 20));
 
-      await vi.waitFor(() => {
-        expect(completeListener).toHaveBeenCalledOnce();
-      });
-      expect(popupMocks.capturedTargetSizeOptions).toBeDefined();
-      const ann = completeListener.mock.calls[0]![0].annotations[0];
-      // Re-anchored to the container choice, quote intact.
+      const options = popupMocks.capturedTargetSizeOptions;
+      expect(options).toBeDefined();
+
+      // 컨테이너: the target becomes the containing component itself —
+      // element kind, and the prompt context reflects it live.
+      options!.onChange("largest");
+      let ann = popupMocks.lastPromptContext!()[0] as {
+        anchor: { elementTag: string };
+        target: { kind: string };
+        rect: { wPct: number };
+      };
       expect(ann.anchor.elementTag).toBe("SECTION");
-      expect(ann.target).toEqual({
+      expect(ann.target).toEqual({ kind: "element" });
+      expect(ann.rect).toEqual({ xPct: 0, yPct: 0, wPct: 1, hPct: 1 });
+
+      // 요소: RESTORES the original quoted-text annotation exactly.
+      options!.onChange("smallest");
+      ann = popupMocks.lastPromptContext!()[0] as never;
+      expect((ann as { anchor: { elementTag: string } }).anchor.elementTag).toBe("P");
+      expect((ann as { target: { kind: string; quote?: string } }).target).toEqual({
         kind: "text",
         quote: "handle every pixel",
         quotePrefix: "we ",
         quoteSuffix: ".",
       });
+
+      annotator.destroy();
       section.remove();
     });
 

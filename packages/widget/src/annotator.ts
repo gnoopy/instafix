@@ -704,6 +704,27 @@ export class Annotator {
    * the keyboard (Enter) highlight so the two paths can't drift visually.
    * Excluded from screenshot capture (see overlay creation in activate()).
    */
+  /** Move the live outline to the given viewport rect — no-op when no outline is up. */
+  private applyDrawingRectBounds(bounds: { left: number; top: number; width: number; height: number }): void {
+    if (!this.drawingRect) return;
+    this.drawingRect.style.left = `${bounds.left}px`;
+    this.drawingRect.style.top = `${bounds.top}px`;
+    this.drawingRect.style.width = `${bounds.width}px`;
+    this.drawingRect.style.height = `${bounds.height}px`;
+  }
+
+  /** The live outline's current geometry (parsed back from its inline style), or null when none is up. */
+  private currentDrawingRectBounds(): { left: number; top: number; width: number; height: number } | null {
+    const rect = this.drawingRect;
+    if (!rect) return null;
+    return {
+      left: Number.parseFloat(rect.style.left) || 0,
+      top: Number.parseFloat(rect.style.top) || 0,
+      width: Number.parseFloat(rect.style.width) || 0,
+      height: Number.parseFloat(rect.style.height) || 0,
+    };
+  }
+
   private createDrawingRect(): HTMLElement {
     // The white inner+outer halo rings keep the colored border legible over
     // ANY local background — the detected selection color is
@@ -711,9 +732,15 @@ export class Annotator {
     // (dom/selection-color.ts), but the specific element under the outline
     // can still be a similar mid-tone; the halo is the guarantee (same
     // trick browser DevTools' element highlighter uses).
+    // z-index: the targeting-mode highlight is appended to document.body
+    // directly (not inside the max-z overlay), where z-index:auto loses to
+    // any host element with its own positive z-index — a sticky editor
+    // toolbar (z-40 and the like) painted OVER the outline made hover
+    // "show nothing" on exactly the components users most want to pick.
     const rect = el("div", {
       style: `
         position:fixed;
+        z-index:${Z_INDEX_MAX};
         border:2px solid ${this.colors.selection};
         background:${this.colors.selection}12;
         pointer-events:none;
@@ -809,14 +836,16 @@ export class Annotator {
       const smallestElement = findAnchorElement(pointRect);
       const largestElement = findLargestAncestor(smallestElement);
       if (this.overlay) this.overlay.style.pointerEvents = "auto";
-      const { annotation } = this.annotationForElement(smallestElement, pointRect, { fullBounds: true });
+      const { annotation, anchorBounds } = this.annotationForElement(smallestElement, pointRect, { fullBounds: true });
+      // The annotation is the element's full bounds — show that as the
+      // outline too (a sub-threshold drawn rect is a near-invisible dot),
+      // mirroring the auto-target flow's persistent element outline.
+      this.applyDrawingRectBounds(anchorBounds);
       // Always passed (even when smallest === largest, where the toggle
       // collapses) — the source-hint line rides on this context too.
-      await this.finalizeOrAccumulate([annotation], pointRect, shiftKey, undefined, {
+      await this.finalizeOrAccumulate([annotation], this.clampRectToViewport(anchorBounds), shiftKey, undefined, {
         smallest: smallestElement,
         largest: largestElement,
-        rebuild: (chosen) => this.annotationForElement(chosen, pointRect, { fullBounds: true }),
-        retrack: true,
       });
       return;
     }
@@ -838,17 +867,12 @@ export class Annotator {
         annotations = [text.annotation];
         // A text selection has a single container too — same
         // Element/Container toggle + source hint as every other
-        // single-anchor popover. Its rebuild preserves the quoted text and
-        // only re-parents the anchor (re-expressing the same on-screen
-        // range relative to the chosen ancestor's box).
+        // single-anchor popover. 컨테이너 switches the target to the
+        // containing component; 요소 restores this exact quoted range
+        // (finalizeOrAccumulate keeps the original annotation for that).
         sizeChoice = {
           smallest: text.detected.container,
           largest: findLargestAncestor(text.detected.container),
-          rebuild: (chosen) => ({
-            annotation: this.buildTextAnnotationFor(text.detected, chosen),
-            anchorBounds: chosen.getBoundingClientRect(),
-          }),
-          retrack: false,
         };
       } else {
         const result = this.buildMarqueeAnnotations(rectBounds);
@@ -859,15 +883,12 @@ export class Annotator {
           detailAnnotations: result.detailAnnotations,
         };
         // A drag that landed on exactly ONE element gets the same
-        // Element/Container toggle as the auto-target popover — with
-        // drawn-region semantics (see finalizeOrAccumulate's onChange).
+        // Element/Container toggle as the auto-target popover — 요소 keeps
+        // the drawn sub-region, 컨테이너 targets the containing component.
         if (result.singleAnchor) {
-          const anchor = result.singleAnchor;
           sizeChoice = {
-            smallest: anchor,
-            largest: findLargestAncestor(anchor),
-            rebuild: (chosen) => this.annotationForElement(chosen, rectBounds),
-            retrack: false,
+            smallest: result.singleAnchor,
+            largest: findLargestAncestor(result.singleAnchor),
           };
         }
       }
@@ -899,20 +920,15 @@ export class Annotator {
      * - the dev-only source hint line, shown for the anchor regardless of
      *   whether the toggle has two distinct options.
      *
-     * `rebuild` re-derives the annotation for the chosen anchor — each
-     * caller supplies its own semantics (full element bounds for a click,
-     * drawn-region re-parenting for a drag, quote-preserving re-anchoring
-     * for a text selection). `retrack` marks click semantics: the outline
-     * and capture region follow the chosen element and the cached
-     * screenshot is invalidated. Mutually exclusive with `marquee`'s
+     * Toggle semantics: "요소" IS the original selection exactly as made
+     * (the drawn sub-region, the quoted text range, the clicked element) —
+     * choosing it back RESTORES that annotation and its outline. "컨테이너"
+     * switches the target to the containing component's full bounds, and
+     * the on-page outline re-tracks it — what you see outlined is always
+     * what will be reported. Mutually exclusive with `marquee`'s
      * multi-target preview.
      */
-    elementSizeChoice?: {
-      smallest: Element;
-      largest: Element;
-      rebuild: (chosen: Element) => { annotation: AnnotationPayload; anchorBounds: DOMRect };
-      retrack: boolean;
-    },
+    elementSizeChoice?: { smallest: Element; largest: Element },
   ): Promise<void> {
     if (shiftKey) {
       this.accumulated.push(...newAnnotations);
@@ -958,6 +974,13 @@ export class Annotator {
     // can see what they're sending feedback about — including while the
     // submit-spinner is running. We only remove it after the popup closes.
     const screenshotCache: { value?: AnnotatedScreenshot | null } = {};
+    // Snapshot of the ORIGINAL selection so the 요소 side of the toggle can
+    // restore it after a 컨테이너 excursion — annotation, capture region,
+    // and the outline's current geometry (read from the live element, since
+    // click paths preset it to the anchor's bounds before reaching here).
+    const originalAnnotations = allAnnotations;
+    const originalCaptureRect = captureRect;
+    const originalOutline = this.currentDrawingRectBounds() ?? captureRect;
     const resultPromise = this.popup.show(
       captureRect,
       (formResult) => this.runSubmission(allAnnotations, formResult, captureRect, screenshotCache),
@@ -965,29 +988,30 @@ export class Annotator {
         ? {
             initial: "smallest",
             onChange: (choice) => {
-              const chosen = choice === "smallest" ? elementSizeChoice.smallest : elementSizeChoice.largest;
-              const rebuilt = elementSizeChoice.rebuild(chosen);
-              allAnnotations = [rebuilt.annotation];
-              if (elementSizeChoice.retrack) {
-                // Click semantics: the annotation IS the chosen element, so
-                // the capture region and the on-page outline both re-track
-                // it — matching startInstantAnnotation's identical onChange.
+              if (choice === "largest") {
+                // 컨테이너: the target becomes the containing component
+                // itself, and the on-page outline re-tracks it — the
+                // selected area on the host page must visibly CHANGE with
+                // the toggle, exactly like the auto-target popover.
+                const rebuilt = this.annotationForElement(elementSizeChoice.largest, captureRect, {
+                  fullBounds: true,
+                });
+                allAnnotations = [rebuilt.annotation];
                 captureRect = this.clampRectToViewport(rebuilt.anchorBounds);
-                // Bounds changed — a cached screenshot from the previous
-                // choice would no longer match what's being reported.
-                delete screenshotCache.value;
-                if (this.drawingRect) {
-                  this.drawingRect.style.left = `${rebuilt.anchorBounds.left}px`;
-                  this.drawingRect.style.top = `${rebuilt.anchorBounds.top}px`;
-                  this.drawingRect.style.width = `${rebuilt.anchorBounds.width}px`;
-                  this.drawingRect.style.height = `${rebuilt.anchorBounds.height}px`;
-                }
+                this.applyDrawingRectBounds(rebuilt.anchorBounds);
+                this.popup.setSourceHint(getSourceHint(elementSizeChoice.largest));
+              } else {
+                // 요소: RESTORE the original selection exactly as made —
+                // annotation (drawn sub-region / quoted text / clicked
+                // element), capture region, and outline all come back.
+                allAnnotations = originalAnnotations;
+                captureRect = originalCaptureRect;
+                this.applyDrawingRectBounds(originalOutline);
+                this.popup.setSourceHint(getSourceHint(elementSizeChoice.smallest));
               }
-              // Drawn-region/text semantics (retrack false): the drawn rect
-              // stays both the annotation region and the outline — the
-              // toggle only re-parents its anchor, so capture/outline are
-              // untouched and the cached screenshot stays valid.
-              this.popup.setSourceHint(getSourceHint(chosen));
+              // Either direction changes what's being reported — a cached
+              // screenshot from the other choice no longer matches.
+              delete screenshotCache.value;
             },
           }
         : undefined,
@@ -1047,12 +1071,7 @@ export class Annotator {
     return { annotation: this.buildTextAnnotationFor(detected, detected.container), detected };
   }
 
-  /**
-   * Build the text-kind payload for a given anchor element — split out so
-   * the popover's Element/Container toggle can re-anchor the SAME detected
-   * range (quote and all) to a chosen ancestor without re-running the
-   * selection detection.
-   */
+  /** Build the text-kind payload for a given anchor element. */
   private buildTextAnnotationFor(
     detected: NonNullable<ReturnType<typeof detectTextSelection>>,
     anchorElement: Element,
