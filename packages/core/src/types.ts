@@ -105,6 +105,24 @@ export interface InstaFixBaseConfig {
    */
   autoSelectionColor?: boolean | undefined;
   /**
+   * Steer clear of another floating corner overlay the host page already
+   * has — a chat bubble, a deploy-preview toolbar, a cookie banner, any
+   * other feedback widget — instead of rendering the FAB directly on top of
+   * it. This only ever asks "is something sizeable already anchored at the
+   * spot I'd use" (a generic fixed/sticky-element-at-that-point check); it
+   * never inspects, names, or targets any specific tool. When the preferred
+   * corner (from {@link position}, default `'bottom-right'`) looks occupied
+   * at mount and the opposite bottom corner looks free, InstaFix uses that
+   * corner instead; a second check shortly after mount catches overlays
+   * that inject asynchronously. Once you (or a visitor, via the settings
+   * panel) set `position` explicitly, that choice is permanent and this
+   * check no longer runs.
+   *
+   * Defaults to `true`. Set to `false` to always render at `position`
+   * (or its default), previous behavior.
+   */
+  avoidOverlays?: boolean | undefined;
+  /**
    * Project-specific instructions injected at the top of every agent prompt
    * the widget generates (panel "Copy Prompt", composer copy) — e.g.
    * `["Use shadcn tokens only", "Run vitest after each change"]`. Replaces

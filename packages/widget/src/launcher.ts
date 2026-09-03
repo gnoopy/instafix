@@ -12,6 +12,7 @@ import { ApiClient, flushRetryQueue, type WidgetClient } from "./api-client.js";
 import { FONT_STACK, MOBILE_BREAKPOINT, PAGE_SIZE, Z_INDEX_MAX } from "./constants.js";
 import { ConsoleBuffer } from "./diagnostics/console-buffer.js";
 import { NetworkBuffer } from "./diagnostics/network-buffer.js";
+import { pickAvoidingPosition } from "./dom/overlay-collision.js";
 import { detectSelectionColor } from "./dom/selection-color.js";
 import { EventBus, type WidgetEvents } from "./events.js";
 import { Fab } from "./fab.js";
@@ -454,6 +455,29 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
   }
 
   document.body.appendChild(host);
+
+  // Corner-collision avoidance: only kicks in when nobody — not the host
+  // app, not a visitor via the settings panel — has ever picked a side, so
+  // it never overrides an explicit `position`. Checks once now (catches an
+  // overlay already on the page) and once more shortly after mount (catches
+  // one injected asynchronously by its own script, e.g. a deploy-preview
+  // toolbar or consent banner); after either check picks a side, `config`
+  // carries an explicit `position` and this stops rechecking — flipping
+  // corners once someone's already using the widget would be disruptive.
+  // `pickAvoidingPosition` only asks "is something sizeable already sitting
+  // at this exact spot" — it never inspects, names, or targets any specific
+  // tool.
+  if (config.avoidOverlays !== false && !config.position) {
+    const avoided = pickAvoidingPosition("bottom-right", host);
+    if (avoided !== "bottom-right") config = { ...config, position: avoided };
+  }
+  if (config.avoidOverlays !== false && !config.position) {
+    setTimeout(() => {
+      if (destroyed) return;
+      const avoidedLate = pickAvoidingPosition("bottom-right", host);
+      if (avoidedLate !== "bottom-right") onUpdateConfig({ position: avoidedLate });
+    }, 1000);
+  }
 
   // Z_INDEX_MAX is already the highest value CSS accepts, so the widget wins
   // a stacking fight against virtually anything — except another fixed

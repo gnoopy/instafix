@@ -423,6 +423,62 @@ describe("launch", () => {
     });
   });
 
+  describe("overlay-collision avoidance", () => {
+    function stubOccupiedRight(): HTMLElement {
+      const intruder = document.createElement("div");
+      intruder.style.position = "fixed";
+      intruder.getBoundingClientRect = () =>
+        ({ x: 0, y: 0, width: 48, height: 48, top: 0, left: 0, right: 48, bottom: 48, toJSON: () => ({}) }) as DOMRect;
+      document.body.appendChild(intruder);
+      // Real elementsFromPoint answers depend on x/y — only "hit" the right
+      // half of the viewport, matching where a bottom-right intruder sits.
+      document.elementsFromPoint = (x: number) => (x > window.innerWidth / 2 ? [intruder] : []);
+      return intruder;
+    }
+
+    afterEach(() => {
+      // @ts-expect-error — restore jsdom's (missing) default between tests
+      document.elementsFromPoint = undefined;
+    });
+
+    it("switches the FAB to the free corner when the default corner is already occupied", () => {
+      const intruder = stubOccupiedRight();
+      const instance = launch(defaultConfig());
+
+      const widget = document.querySelector("instafix-widget")!;
+      const fabEl = widget.shadowRoot!.querySelector(".sp-fab")!;
+      expect(fabEl.classList.contains("sp-fab--bottom-left")).toBe(true);
+      expect(fabEl.classList.contains("sp-fab--bottom-right")).toBe(false);
+
+      instance.destroy();
+      intruder.remove();
+    });
+
+    it("does not override an explicitly configured position", () => {
+      const intruder = stubOccupiedRight();
+      const instance = launch(defaultConfig({ position: "bottom-right" }));
+
+      const widget = document.querySelector("instafix-widget")!;
+      const fabEl = widget.shadowRoot!.querySelector(".sp-fab")!;
+      expect(fabEl.classList.contains("sp-fab--bottom-right")).toBe(true);
+
+      instance.destroy();
+      intruder.remove();
+    });
+
+    it("does nothing when avoidOverlays is disabled", () => {
+      const intruder = stubOccupiedRight();
+      const instance = launch(defaultConfig({ avoidOverlays: false }));
+
+      const widget = document.querySelector("instafix-widget")!;
+      const fabEl = widget.shadowRoot!.querySelector(".sp-fab")!;
+      expect(fabEl.classList.contains("sp-fab--bottom-right")).toBe(true);
+
+      instance.destroy();
+      intruder.remove();
+    });
+  });
+
   // -------------------------------------------------------------------------
   // Destroy
   // -------------------------------------------------------------------------
