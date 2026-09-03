@@ -3,7 +3,17 @@ name: Release
 on:
   push:
     branches: [main]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: >-
+          JSON array of package paths to (re-)publish to npm, e.g.
+          ["packages/widget"]. Leave empty for the normal flow (publish only
+          what release-please just released). Use this to retry a publish
+          that failed after the release/tag was already created — no new
+          release-please run is needed, since a version tag isn't reusable.
+        required: false
+        type: string
 
 # Read-only floor. release-please re-declares its own scope, which replaces
 # this block rather than adding to it — so the default stays least-privilege
@@ -56,7 +66,11 @@ jobs:
   # rights on the @instafix scope (see package-install-guide.md).
   publish:
     needs: release-please
-    if: ${{ needs.release-please.outputs.releases_created == 'true' }}
+    if: >-
+      ${{
+        needs.release-please.outputs.releases_created == 'true' ||
+        inputs.packages != ''
+      }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -65,7 +79,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: ${{ fromJson(needs.release-please.outputs.paths_released) }}
+        package: ${{ fromJson(inputs.packages || needs.release-please.outputs.paths_released || '[]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
