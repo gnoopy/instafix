@@ -73,6 +73,22 @@ export interface FsStoreOptions {
    * HTTP for the widget's `<img src>`. Defaults to `/api/instafix/screenshots`.
    */
   screenshotUrlPrefix?: string;
+  /**
+   * `FsStore` writes to the local filesystem of whatever process constructs
+   * it — the right place in development (same machine, same project folder
+   * a coding agent already has open), the wrong place almost everywhere
+   * else: most production hosts run each request in a fresh, ephemeral
+   * container with no persistent disk (writes vanish silently), and even a
+   * host with a real persistent disk puts `.instafix/` on a *server* the
+   * developer's agent isn't running on, defeating the point of it being a
+   * plain project folder. To catch a route accidentally deployed with this
+   * adapter before it silently loses feedback, the constructor throws when
+   * `NODE_ENV === "production"`. If you're certain you want it anyway (e.g.
+   * a self-hosted single-instance server with a real persistent volume),
+   * set this to `true`. For real production feedback collection, reach for
+   * `@instafix/adapter-prisma` or `@instafix/adapter-sqlite` instead.
+   */
+  allowProduction?: boolean;
 }
 
 const DATA_URL_RE = /^data:image\/(\w+);base64,(.+)$/;
@@ -111,6 +127,16 @@ export class FsStore implements InstaFixStore {
   });
 
   constructor(options: FsStoreOptions = {}) {
+    if (process.env.NODE_ENV === "production" && !options.allowProduction) {
+      throw new Error(
+        "[instafix] FsStore refuses to run with NODE_ENV=production: most hosts give each request a " +
+          "fresh, ephemeral filesystem, so writes to .instafix/ would silently vanish, and even a " +
+          "persistent-disk host puts the folder on a server your coding agent isn't running on. Use " +
+          "@instafix/adapter-prisma or @instafix/adapter-sqlite for real production feedback collection, " +
+          "or pass `allowProduction: true` if you've verified this host has a persistent, single-instance " +
+          "filesystem and you still want it.",
+      );
+    }
     this.dir = options.dir ?? join(process.cwd(), ".instafix");
     this.screenshotsDir = join(this.dir, "screenshots");
     this.screenshotUrlPrefix = options.screenshotUrlPrefix ?? "/api/instafix/screenshots";

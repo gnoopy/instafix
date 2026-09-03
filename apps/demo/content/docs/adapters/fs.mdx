@@ -52,6 +52,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ fil
   history.jsonl        # one JSON object per line, newest last — grep/jq friendly
   screenshots/
     <clientId>.jpg      # only present for feedback that captured a screenshot
+  outbox/
+    <id>.md              # written when someone clicks "Agent에게" on a fix note
+    processed/            # ...and moved here once `instafix watch` delivers it
 ```
 
 Screenshots are named after the widget's client-generated id (available before the server assigns a record id), sanitized to a safe filename — anything that doesn't look like a plain id falls back to a random one.
@@ -62,16 +65,17 @@ Screenshots are named after the widget's client-generated id (available before t
 |---|---|---|---|
 | `dir` | `string` | `.instafix` in `process.cwd()` | Where `history.jsonl` and `screenshots/` live |
 | `screenshotUrlPrefix` | `string` | `/api/instafix/screenshots` | URL prefix screenshots are served from — must match wherever you mount the screenshot route above |
+| `allowProduction` | `boolean` | `false` | Bypasses the `NODE_ENV=production` guard below — see why that's rarely what you want first |
 
 There's no `screenshotStorage` option here, unlike the Prisma/SQLite adapters — writing the file *is* this adapter's storage, so there's nothing to plug in.
 
 ## Behavior notes
 
-- **No auth by design.** The generated route doesn't pass `apiKey`/`allowedOrigins` — this adapter is meant for `localhost` during development, not for taking feedback from real site visitors. Don't point a production deployment's public widget at an `FsStore`-backed route.
+- **Refuses to start in production, on purpose.** `FsStore`'s constructor throws when `NODE_ENV === "production"` (pass `allowProduction: true` to override). This isn't about auth — it's that most hosts run each request in a fresh, disposable filesystem, so writes to `.instafix/` would silently disappear, and even a host with a real persistent disk puts the folder on a *server*, not the project checkout your coding agent has open — the entire "read it like `.git`" premise depends on the widget, the dev server, and the agent all sharing one machine. For real production feedback collection, use `@instafix/adapter-prisma` or `@instafix/adapter-sqlite` (on a persistent volume) instead. The generated route also doesn't pass `apiKey`/`allowedOrigins` — it's meant for `localhost` during development, not for taking feedback from real site visitors.
 - **Reads are always fresh off disk** — nothing is cached in memory across requests, so `history.jsonl` stays the single source of truth even if you edit it by hand or read it from another process/script while the dev server is running.
 - **Whether to commit `.instafix/` is your call.** Some projects want the history as a build log; others gitignore it. Neither is wrong — this adapter doesn't decide for you.
 - Every other `InstaFixStore` behavior (clientId dedup, filtering, pagination, `StoreNotFoundError` on missing update/delete) comes from the same `createCollectionStore` engine the memory and localStorage adapters use — see [Writing an Adapter](/docs/adapters/writing-an-adapter) if you're curious how little code that engine leaves an adapter to write.
 
-## Pairing with "Copy Prompt"
+## Pairing with the agent loop
 
-This adapter is the natural fit for the widget's [Copy Prompt](/docs/widget/copy-for-claude-code) button — captured screenshots resolve to a local path (`.instafix/screenshots/<file>.jpg`) that a coding agent with file access can open directly, and captured console errors are included inline, so a single copy-paste carries the note, the exact DOM target, a screenshot reference, and any errors the change triggered.
+This adapter is what unlocks the [agent workflow](/docs/agent-workflow) beyond plain clipboard copying: `npx @instafix/cli prompt`/`resolve` read and rewrite `history.jsonl` directly, and the "Agent에게" handoff button writes straight into `outbox/`. Captured screenshots also resolve to a local path (`.instafix/screenshots/<file>.jpg`) a coding agent with file access can open directly, and captured console errors are included inline — so a single note carries the message, the exact DOM target, a screenshot reference, and any errors the change triggered.

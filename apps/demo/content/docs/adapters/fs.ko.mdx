@@ -62,12 +62,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ fil
 |---|---|---|---|
 | `dir` | `string` | `process.cwd()` 기준 `.instafix` | `history.jsonl`과 `screenshots/`가 저장되는 위치 |
 | `screenshotUrlPrefix` | `string` | `/api/instafix/screenshots` | 스크린샷이 서빙되는 URL 접두사 — 위에서 마운트한 라우트 경로와 일치해야 함 |
+| `allowProduction` | `boolean` | `false` | 아래 `NODE_ENV=production` 안전장치를 우회합니다 — 왜 대부분의 경우 이 옵션을 켜지 않는 게 맞는지 먼저 읽어보세요 |
 
 Prisma/SQLite 어댑터와 달리 `screenshotStorage` 옵션은 없습니다 — 파일을 쓰는 것 자체가 이 어댑터의 저장 방식이라 따로 끼워 넣을 게 없습니다.
 
 ## 동작 관련 참고사항
 
-- **의도적으로 인증이 없습니다.** 생성된 라우트는 `apiKey`/`allowedOrigins`를 넘기지 않습니다 — 이 어댑터는 개발 중 `localhost` 용도이지, 실제 사이트 방문자의 피드백을 받는 프로덕션 용도가 아닙니다. 프로덕션에 공개된 위젯을 `FsStore` 기반 라우트에 연결하지 마세요.
+- **프로덕션에서는 의도적으로 실행되지 않습니다.** `NODE_ENV === "production"`이면 `FsStore` 생성자가 에러를 던집니다(`allowProduction: true`로 우회 가능). 인증 문제가 아니라 구조적인 문제입니다 — 대부분의 배포 환경은 요청마다 파일시스템이 새로 생겼다가 사라지기 때문에 `.instafix/`에 쓴 내용이 조용히 사라집니다. 영속적인 디스크가 있는 배포 환경이라도, 그 폴더는 **서버**에 생기지 코딩 에이전트가 열어둔 **프로젝트 작업 폴더**에 생기지 않습니다 — "`.git`처럼 바로 읽는다"는 전제 자체가 위젯·개발 서버·에이전트가 같은 컴퓨터에서 돌고 있다는 가정 위에 서 있습니다. 실제 프로덕션 피드백 수집이 필요하다면 `@instafix/adapter-prisma`나 `@instafix/adapter-sqlite`(영속 볼륨과 함께)를 쓰세요. 생성된 라우트는 `apiKey`/`allowedOrigins`도 넘기지 않습니다 — 개발 중 `localhost` 용도이지, 실제 방문자의 피드백을 받는 용도가 아닙니다.
 - **읽기는 항상 디스크에서 새로 읽습니다** — 요청 간 메모리 캐시가 없어서, 개발 서버가 떠 있는 동안 직접 파일을 수정하거나 다른 프로세스/스크립트로 읽어도 `history.jsonl`이 항상 유일한 진실 소스로 유지됩니다.
 - **`.instafix/`를 커밋할지 여부는 프로젝트마다 다른 선택입니다.** 개발 기록으로 남기고 싶다면 커밋해도 되고, `.gitignore`에 넣어도 됩니다 — 이 어댑터가 대신 결정하지 않습니다.
 - 그 외 `InstaFixStore`의 모든 동작(clientId 중복제거, 필터링, 페이지네이션, update/delete 대상이 없을 때의 `StoreNotFoundError`)은 memory·localStorage 어댑터와 동일한 `createCollectionStore` 엔진에서 나옵니다 — 이 엔진이 어댑터 작성자에게 얼마나 적은 코드만 남기는지 궁금하다면 [어댑터 작성하기](/ko/docs/adapters/writing-an-adapter) 참고.
