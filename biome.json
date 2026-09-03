@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.5/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.10/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -73,6 +73,14 @@
     },
     {
       "includes": ["apps/demo/src/app/globals.css"],
+      "linter": {
+        "rules": {
+          "complexity": { "noImportantStyles": "off" }
+        }
+      }
+    },
+    {
+      "includes": ["upgrade-v3.html"],
       "linter": {
         "rules": {
           "complexity": { "noImportantStyles": "off" }

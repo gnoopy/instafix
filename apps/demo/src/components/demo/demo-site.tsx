@@ -140,8 +140,7 @@ const COPY: Record<SiteLocale, DemoCopy> = {
           title: "Vertex Software 창업자",
         },
         {
-          quote:
-            "리브랜딩 이후 전환율이 40% 올랐습니다. 프로페셔널하고, 반응이 빠르고, 우리의 성공에 진심인 팀입니다.",
+          quote: "리브랜딩 이후 전환율이 40% 올랐습니다. 프로페셔널하고, 반응이 빠르고, 우리의 성공에 진심인 팀입니다.",
           name: "Elena Rossi",
           title: "Greenfield Co. 마케팅 디렉터",
         },
@@ -177,7 +176,10 @@ const COPY: Record<SiteLocale, DemoCopy> = {
       sub: "Des compétences de bout en bout pour donner vie à votre vision.",
       items: [
         { title: "Web design", description: "Des sites élégants et responsives à l'image de votre marque" },
-        { title: "Développement", description: "Des applications évolutives construites avec des technologies modernes" },
+        {
+          title: "Développement",
+          description: "Des applications évolutives construites avec des technologies modernes",
+        },
         { title: "Branding", description: "Des identités visuelles qui racontent votre histoire" },
         { title: "Stratégie", description: "Des stratégies digitales pilotées par la donnée" },
       ],

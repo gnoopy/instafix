@@ -273,10 +273,7 @@ export class Panel {
     // select-all click reads the live feedback list through the provider.
     const listToolbar = el("div", { class: "sp-list-toolbar" });
     listToolbar.appendChild(
-      this.bulk.createSelectAllBar(
-        () => this.feedbacks.map((f) => f.id),
-        this.t("bulk.selectAll"),
-      ),
+      this.bulk.createSelectAllBar(() => this.feedbacks.map((f) => f.id), this.t("bulk.selectAll")),
     );
     listToolbar.appendChild(searchWrap);
     filters.appendChild(listToolbar);

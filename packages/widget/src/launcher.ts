@@ -242,7 +242,10 @@ export function launch(config: InstaFixConfig): InstaFixInstance {
     focusFeedback: (feedbackId) => current.focusFeedback(feedbackId),
     on: (event, listener) => {
       let set = listeners.get(event);
-      if (!set) listeners.set(event, (set = new Set()));
+      if (!set) {
+        set = new Set();
+        listeners.set(event, set);
+      }
       set.add(listener as (...args: never[]) => void);
       current.on(event, listener);
       // The returned unsubscribe (and `facade.off`, below) always act on
