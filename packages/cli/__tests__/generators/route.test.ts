@@ -84,21 +84,20 @@ describe("generateRoute", () => {
     const result = generateRoute(tmpDir);
     const content = readFileSync(result.path, "utf-8");
 
-    expect(content).toContain('import { createInstaFixHandler } from "@instafix/adapter-prisma"');
-    expect(content).toContain('import { prisma } from "@/lib/prisma"');
+    expect(content).toContain('import { createInstaFixHandler, SqliteStore } from "@instafix/adapter-sqlite"');
     expect(content).toContain("export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({");
-    expect(content).toContain("prisma,");
+    expect(content).toContain("store,");
     expect(content).toContain("// apiKey: process.env.INSTAFIX_API_KEY,");
     expect(content).toContain('// allowedOrigins: ["https://your-site.com"],');
   });
 
-  it('defaults to the prisma backend when "backend" is not passed', () => {
+  it('defaults to the sqlite backend when "backend" is not passed', () => {
     mkdirSync(join(tmpDir, "app"), { recursive: true });
 
     const result = generateRoute(tmpDir);
     const content = readFileSync(result.path, "utf-8");
 
-    expect(content).toContain("@instafix/adapter-prisma");
+    expect(content).toContain("@instafix/adapter-sqlite");
   });
 
   it('generates a SqliteStore-backed route for backend: "sqlite"', () => {

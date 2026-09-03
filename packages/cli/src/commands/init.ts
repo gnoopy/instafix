@@ -1,88 +1,20 @@
-import { syncPrismaModels } from "../generators/prisma.js";
 import { generateRoute } from "../generators/route.js";
 import { generateWidgetComponent } from "../generators/widget-component.js";
 import { p } from "../prompts.js";
-import { findPrismaSchema } from "../utils/find-schema.js";
 import { readProjectName } from "../utils/read-project-name.js";
-import { runPrismaDbPush } from "../utils/run-prisma-db-push.js";
 import { installSlashCommand } from "./slash-command.js";
 
 export async function initCommand(): Promise<void> {
   p.intro("instafix — Setup");
 
   const cwd = process.cwd();
-  let dbPushed = false;
 
-  // Step 1: Prisma schema
-  const schemaPath = findPrismaSchema(cwd);
-
-  if (schemaPath) {
-    p.log.info(`Prisma schema found: ${schemaPath}`);
-
-    const shouldSync = await p.confirm({
-      message: "Sync InstaFix models to your Prisma schema?",
-    });
-
-    if (p.isCancel(shouldSync)) {
-      p.cancel("Cancelled.");
-      process.exit(0);
-    }
-
-    if (shouldSync) {
-      try {
-        const { addedModels, changes } = syncPrismaModels(schemaPath);
-
-        if (addedModels.length > 0) {
-          p.log.success(`Models synced: ${addedModels.join(", ")}`);
-        }
-
-        for (const change of changes) {
-          if (change.action === "added") {
-            p.log.success(`${change.model}.${change.field} — added (${change.detail})`);
-          } else {
-            p.log.success(`${change.model}.${change.field} — updated (${change.detail})`);
-          }
-        }
-
-        if (addedModels.length === 0 && changes.length === 0) {
-          p.log.info("Schema is already up to date.");
-        }
-      } catch (error) {
-        p.log.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-        p.outro("Fix the errors above and re-run `instafix init`.");
-        process.exit(1);
-      }
-    }
-
-    const shouldPush = await p.confirm({
-      message: "Run `npx prisma db push` now?",
-    });
-
-    if (p.isCancel(shouldPush)) {
-      p.cancel("Cancelled.");
-      process.exit(0);
-    }
-
-    if (shouldPush) {
-      p.log.info("Running `npx prisma db push`…");
-      dbPushed = runPrismaDbPush(cwd);
-      if (dbPushed) {
-        p.log.success("Database schema pushed.");
-      } else {
-        p.log.error("`npx prisma db push` failed — see output above.");
-      }
-    }
-  } else {
-    p.log.warn("No schema.prisma file found. You will need to add the models manually.");
-    p.log.info("See the documentation: https://github.com/gnoopy/instafix#prisma-schema-1");
-  }
-
-  // Step 2: API route — backend depends on whether a Prisma schema exists.
-  // A schema found means Prisma is already this project's ORM; otherwise
-  // ask, rather than assuming Prisma and generating an unusable route (the
-  // route previously always imported `@instafix/adapter-prisma` + `@/lib/prisma`
-  // even in projects with no Prisma at all).
-  function generateRouteOrExit(basePath: string, backend: "prisma" | "sqlite" | "fs"): void {
+  // Step 1: API route. InstaFix's own feedback storage is independent of
+  // whatever ORM the host project uses for its own data — even a project
+  // with an existing Prisma schema gets asked the same sqlite/fs/skip
+  // question (there's no InstaFix adapter that writes into a caller-owned
+  // Prisma schema; a separate, zero-config sqlite.db is the point).
+  function generateRouteOrExit(basePath: string, backend: "sqlite" | "fs"): void {
     try {
       const { created, path } = generateRoute(basePath, backend);
       if (created) {
@@ -100,55 +32,38 @@ export async function initCommand(): Promise<void> {
   let routeSkipped = false;
   let fsBackendChosen = false;
 
-  if (schemaPath) {
-    const shouldRoute = await p.confirm({
-      message: "Generate the Next.js App Router API route (Prisma)?",
-    });
+  const backend = await p.select({
+    message: "How should InstaFix store feedback?",
+    options: [
+      {
+        value: "sqlite" as const,
+        label: "SQLite",
+        hint: "recommended for a team — a local .db file, no ORM or database server needed",
+      },
+      {
+        value: "fs" as const,
+        label: "Local history (.instafix/ folder)",
+        hint: "no database at all — plain files, for a single developer working solo",
+      },
+      { value: "skip" as const, label: "Skip — I'll wire storage myself" },
+    ],
+  });
 
-    if (p.isCancel(shouldRoute)) {
-      p.cancel("Cancelled.");
-      process.exit(0);
-    }
-
-    if (shouldRoute) {
-      generateRouteOrExit(cwd, "prisma");
-    } else {
-      routeSkipped = true;
-    }
-  } else {
-    const backend = await p.select({
-      message: "No Prisma schema found — how should InstaFix store feedback?",
-      options: [
-        {
-          value: "sqlite" as const,
-          label: "SQLite",
-          hint: "recommended for a team — a local .db file, no ORM or database server needed",
-        },
-        {
-          value: "fs" as const,
-          label: "Local history (.instafix/ folder)",
-          hint: "no database at all — plain files, for a single developer working solo",
-        },
-        { value: "skip" as const, label: "Skip — I'll wire storage myself" },
-      ],
-    });
-
-    if (p.isCancel(backend)) {
-      p.cancel("Cancelled.");
-      process.exit(0);
-    }
-
-    if (backend === "sqlite") {
-      generateRouteOrExit(cwd, "sqlite");
-    } else if (backend === "fs") {
-      generateRouteOrExit(cwd, "fs");
-      fsBackendChosen = true;
-    } else {
-      routeSkipped = true;
-    }
+  if (p.isCancel(backend)) {
+    p.cancel("Cancelled.");
+    process.exit(0);
   }
 
-  // Step 3: Widget component
+  if (backend === "sqlite") {
+    generateRouteOrExit(cwd, "sqlite");
+  } else if (backend === "fs") {
+    generateRouteOrExit(cwd, "fs");
+    fsBackendChosen = true;
+  } else {
+    routeSkipped = true;
+  }
+
+  // Step 2: Widget component
   const shouldGenerateWidget = await p.confirm({
     message: "Generate the widget client component?",
   });
@@ -175,17 +90,13 @@ export async function initCommand(): Promise<void> {
     }
   }
 
-  // Step 4: Next steps — only what's left to do by hand
+  // Step 3: Next steps — only what's left to do by hand
   const steps: string[] = [];
-
-  if (schemaPath && !dbPushed) {
-    steps.push(`${steps.length + 1}. Run: npx prisma db push`);
-  }
 
   if (routeSkipped) {
     steps.push(
-      `${steps.length + 1}. Wire the API route yourself: app/api/instafix/route.ts, using either`,
-      "   @instafix/adapter-prisma or @instafix/adapter-sqlite's createInstaFixHandler(),",
+      `${steps.length + 1}. Wire the API route yourself: app/api/instafix/route.ts, using`,
+      "   @instafix/adapter-sqlite or @instafix/adapter-fs's createInstaFixHandler(),",
       "   or a custom store — see /docs/adapters.",
     );
   }
