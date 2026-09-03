@@ -119,6 +119,22 @@ export const SETTINGS_CSS = /* css */ `
     min-width: 0;
   }
 
+  /* The column's default align-items:stretch widens the segmented pill to
+     the full cell, but its buttons stay content-sized — leaving a dead gap
+     on the right. Inside settings, the buttons split the pill EVENLY
+     instead (scoped here so filter-bar segments elsewhere keep fitting
+     their content). */
+  .sp-settings-field .sp-segmented {
+    display: flex;
+  }
+
+  .sp-settings-field .sp-segmented .sp-segmented__btn {
+    flex: 1 1 0;
+    justify-content: center;
+    padding: 0 6px;
+    min-width: 0;
+  }
+
   .sp-settings-field--wide {
     grid-column: 1 / -1;
     flex-direction: row;
