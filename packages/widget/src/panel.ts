@@ -446,6 +446,24 @@ export class Panel {
           if (this.pendingMutations.has(feedback.id)) return;
           const btn = actionEl as HTMLButtonElement;
           this.deleteFeedback(feedback, btn).catch(() => {});
+        } else if (action === "handoff") {
+          const btn = actionEl as HTMLButtonElement;
+          btn.disabled = true;
+          this.client
+            .handoffFeedback?.(feedback.id)
+            .then((ok) => {
+              if (ok) {
+                markHandedOff([feedback.id]);
+                this.renderList(); // re-render picks up the ⇥ 전달됨 badge
+              } else {
+                btn.disabled = false;
+                setText(btn, this.t("agent.sendToAgentFailed"));
+              }
+            })
+            .catch(() => {
+              btn.disabled = false;
+              setText(btn, this.t("agent.sendToAgentFailed"));
+            });
         }
         return;
       }
@@ -1007,6 +1025,20 @@ export class Panel {
     const deleteBtnLabel = document.createElement("span");
     setText(deleteBtnLabel, ` ${this.t("panel.delete")}`);
     deleteBtn.appendChild(deleteBtnLabel);
+
+    // "Agent에게" — the same mode-B handoff as the detail view's button,
+    // surfaced on the card so a fix note can be pushed into the running
+    // agent session without opening the detail view first. Only rendered
+    // when the client can reach a server outbox (HTTP mode + adapter-fs).
+    if (this.client.handoffFeedback) {
+      const handoffBtn = document.createElement("button");
+      handoffBtn.className = "sp-btn-handoff";
+      handoffBtn.dataset.action = "handoff";
+      const handoffLabel = document.createElement("span");
+      setText(handoffLabel, `⇥ ${this.t("agent.sendToAgent")}`);
+      handoffBtn.appendChild(handoffLabel);
+      footer.appendChild(handoffBtn);
+    }
 
     footer.appendChild(resolveBtn);
     footer.appendChild(deleteBtn);

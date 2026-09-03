@@ -2,23 +2,23 @@ import type { Translations } from "./types.js";
 
 export const ko: Translations = {
   // Panel
-  "panel.title": "피드백",
-  "panel.ariaLabel": "InstaFix 피드백 패널",
-  "panel.feedbackList": "피드백 목록",
-  "panel.loading": "피드백을 불러오는 중",
+  "panel.title": "픽스노트",
+  "panel.ariaLabel": "InstaFix 픽스노트 패널",
+  "panel.feedbackList": "픽스노트 목록",
+  "panel.loading": "픽스노트를 불러오는 중",
   "panel.close": "패널 닫기",
   "panel.deleteAll": "전체 삭제",
   "panel.deleteAllConfirmTitle": "전체 삭제",
-  "panel.deleteAllConfirmMessage": "이 프로젝트의 모든 피드백을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
-  "panel.deleteConfirmTitle": "피드백 삭제",
-  "panel.deleteConfirmMessage": "이 피드백을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
-  "panel.deleteConfirmBulkMessage": "피드백 {count}개를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+  "panel.deleteAllConfirmMessage": "이 프로젝트의 모든 픽스노트를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+  "panel.deleteConfirmTitle": "픽스노트 삭제",
+  "panel.deleteConfirmMessage": "이 픽스노트를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+  "panel.deleteConfirmBulkMessage": "픽스노트 {count}개를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
   "panel.search": "검색...",
-  "panel.searchAria": "피드백 검색",
+  "panel.searchAria": "픽스노트 검색",
   "panel.filterAll": "전체",
   "panel.loadError": "불러오기 실패",
   "panel.retry": "다시 시도",
-  "panel.empty": "아직 피드백이 없습니다",
+  "panel.empty": "아직 픽스노트가 없습니다",
   "panel.showMore": "더 보기",
   "panel.showLess": "간략히 보기",
   "panel.resolve": "해결",
@@ -61,15 +61,15 @@ export const ko: Translations = {
 
   // Annotator
   "annotator.instruction":
-    "의견을 남길 영역에 사각형을 그리세요. 방금 포커스한 요소에 의견을 남기려면 Enter 키를 누르세요",
-  "annotator.instantInstruction": "클릭한 지점에 의견 남기기",
+    "픽스노트를 남길 영역에 사각형을 그리세요. 방금 포커스한 요소에 픽스노트를 남기려면 Enter 키를 누르세요",
+  "annotator.instantInstruction": "클릭한 지점에 픽스노트 남기기",
   "annotator.cancel": "취소",
   "annotator.selectionCount": "{count}개 선택됨 — 계속 추가하려면 다시 드래그하고, 완료하려면 Shift 없이 놓으세요",
 
   // Popup
-  "popup.ariaLabel": "피드백 작성 양식",
-  "popup.placeholder": "피드백 내용을 입력하세요...",
-  "popup.textareaAria": "피드백 메시지",
+  "popup.ariaLabel": "픽스노트 작성 양식",
+  "popup.placeholder": "픽스노트 내용을 입력하세요...",
+  "popup.textareaAria": "픽스노트 메시지",
   "popup.submitHintMac": "⌘+Enter로 전송",
   "popup.submitHintOther": "Ctrl+Enter로 전송",
   "popup.cancel": "취소",
@@ -91,19 +91,19 @@ export const ko: Translations = {
 
   // Markers
   "marker.approximate": "근사 위치입니다 (신뢰도: {confidence}%)",
-  "marker.aria": "피드백 #{number}: {type} — {message}",
-  "marker.count": "피드백 마커 {count}개 표시됨",
+  "marker.aria": "픽스노트 #{number}: {type} — {message}",
+  "marker.count": "픽스노트 마커 {count}개 표시됨",
 
   // FAB badge
-  "fab.badge": "미해결 피드백 {count}개",
+  "fab.badge": "미해결 픽스노트 {count}개",
 
   // Accessibility — screen reader announcements
-  "feedback.sent.confirmation": "피드백이 성공적으로 전송되었습니다",
-  "feedback.error.message": "피드백 전송에 실패했습니다",
-  "feedback.deleted.confirmation": "피드백이 삭제되었습니다",
+  "feedback.sent.confirmation": "픽스노트가 성공적으로 전송되었습니다",
+  "feedback.error.message": "픽스노트 전송에 실패했습니다",
+  "feedback.deleted.confirmation": "픽스노트가 삭제되었습니다",
 
   // Badge
-  "badge.count": "미해결 피드백 {count}개",
+  "badge.count": "미해결 픽스노트 {count}개",
 
   // Bulk actions toolbar
   "bulk.selectAll": "전체 선택",
@@ -119,7 +119,7 @@ export const ko: Translations = {
   "sort.openFirst": "열림 우선",
   "sort.label": "정렬",
   "group.byPage": "페이지별",
-  "group.feedbacks": "피드백 {count}개",
+  "group.feedbacks": "픽스노트 {count}개",
 
   // Stats bar
   "stats.open": "열림",
@@ -129,7 +129,7 @@ export const ko: Translations = {
 
   // Detail view
   "detail.back": "뒤로",
-  "detail.title": "피드백 #{number}",
+  "detail.title": "픽스노트 #{number}",
   "detail.status": "상태",
   "detail.message": "메시지",
   "detail.editMessage": "메시지 수정",
@@ -167,7 +167,7 @@ export const ko: Translations = {
 
   // Keyboard shortcuts overlay
   "shortcuts.title": "키보드 단축키",
-  "shortcuts.navigate": "피드백 탐색",
+  "shortcuts.navigate": "픽스노트 탐색",
   "shortcuts.resolve": "해결 / 다시 열기",
   "shortcuts.delete": "삭제",
   "shortcuts.search": "검색으로 이동",
@@ -198,7 +198,7 @@ export const ko: Translations = {
   "detail.verifyKeepResolved": "확인 완료",
   "detail.verifyReopen": "재열기",
   "shortcuts.globalSection": "전역 (페이지 어디서나)",
-  "shortcuts.globalPanel": "피드백 목록 열기",
+  "shortcuts.globalPanel": "픽스노트 목록 열기",
   "shortcuts.globalAnnotate": "주석 그리기",
   "shortcuts.globalTargeting": "요소 자동 선택",
   "shortcuts.globalMarkers": "마커 표시 토글",
@@ -241,7 +241,7 @@ export const ko: Translations = {
   "onboarding.progress": "{current}/{total}",
 
   // Right-click target-size picker
-  "popup.targetLabel": "의견 대상",
+  "popup.targetLabel": "픽스노트 대상",
   "popup.targetElement": "요소",
   "popup.targetContainer": "컨테이너",
   "popup.legendLabel": "번호가 매겨진 대상",

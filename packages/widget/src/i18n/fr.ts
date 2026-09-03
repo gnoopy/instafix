@@ -2,23 +2,23 @@ import type { Translations } from "./types.js";
 
 export const fr: Translations = {
   // Panel
-  "panel.title": "Feedbacks",
-  "panel.ariaLabel": "Panneau de feedback InstaFix",
-  "panel.feedbackList": "Liste des feedbacks",
-  "panel.loading": "Chargement des feedbacks",
+  "panel.title": "Fix notes",
+  "panel.ariaLabel": "Panneau de fix notes InstaFix",
+  "panel.feedbackList": "Liste des fix notes",
+  "panel.loading": "Chargement des fix notes",
   "panel.close": "Fermer le panneau",
   "panel.deleteAll": "Tout supprimer",
   "panel.deleteAllConfirmTitle": "Tout supprimer",
-  "panel.deleteAllConfirmMessage": "Supprimer tous les feedbacks de ce projet ? Cette action est irr\u00e9versible.",
-  "panel.deleteConfirmTitle": "Supprimer le feedback",
-  "panel.deleteConfirmMessage": "Supprimer ce feedback ? Cette action est irr\u00e9versible.",
-  "panel.deleteConfirmBulkMessage": "Supprimer {count} feedback(s) ? Cette action est irr\u00e9versible.",
+  "panel.deleteAllConfirmMessage": "Supprimer toutes les fix notes de ce projet ? Cette action est irr\u00e9versible.",
+  "panel.deleteConfirmTitle": "Supprimer la fix note",
+  "panel.deleteConfirmMessage": "Supprimer cette fix note ? Cette action est irr\u00e9versible.",
+  "panel.deleteConfirmBulkMessage": "Supprimer {count} fix note(s) ? Cette action est irr\u00e9versible.",
   "panel.search": "Rechercher...",
-  "panel.searchAria": "Rechercher dans les feedbacks",
+  "panel.searchAria": "Rechercher dans les fix notes",
   "panel.filterAll": "Tous",
   "panel.loadError": "Erreur de chargement",
   "panel.retry": "R\u00e9essayer",
-  "panel.empty": "Aucun feedback pour le moment",
+  "panel.empty": "Aucune fix note pour le moment",
   "panel.showMore": "Voir plus",
   "panel.showLess": "Voir moins",
   "panel.resolve": "R\u00e9soudre",
@@ -35,7 +35,7 @@ export const fr: Translations = {
   "panel.statusInProgress": "En cours",
   "panel.statusWontFix": "Sans suite",
 
-  // Feedback type labels
+  // Fix note type labels
   "type.label": "Type",
   "type.question": "Question",
   "type.change": "Changement",
@@ -68,9 +68,9 @@ export const fr: Translations = {
     "{count} sélectionné(s) — faites glisser à nouveau pour ajouter, ou relâchez sans Maj pour terminer",
 
   // Popup
-  "popup.ariaLabel": "Formulaire de feedback",
+  "popup.ariaLabel": "Formulaire de fix note",
   "popup.placeholder": "D\u00e9crivez votre retour...",
-  "popup.textareaAria": "Message de feedback",
+  "popup.textareaAria": "Message de fix note",
   "popup.submitHintMac": "\u2318+Entr\u00e9e pour envoyer",
   "popup.submitHintOther": "Ctrl+Entr\u00e9e pour envoyer",
   "popup.cancel": "Annuler",
@@ -92,19 +92,19 @@ export const fr: Translations = {
 
   // Markers
   "marker.approximate": "Position approximative (confiance : {confidence}%)",
-  "marker.aria": "Feedback n°{number} : {type} — {message}",
-  "marker.count": "{count} marqueurs de feedback affichés",
+  "marker.aria": "Fix note n°{number} : {type} — {message}",
+  "marker.count": "{count} marqueurs de fix note affichés",
 
   // FAB badge
-  "fab.badge": "{count} feedbacks non résolus",
+  "fab.badge": "{count} fix notes non résolues",
 
   // Accessibility — screen reader announcements
-  "feedback.sent.confirmation": "Feedback envoyé avec succès",
-  "feedback.error.message": "Échec de l'envoi du feedback",
-  "feedback.deleted.confirmation": "Feedback supprimé",
+  "feedback.sent.confirmation": "Fix note envoyée avec succès",
+  "feedback.error.message": "Échec de l'envoi de la fix note",
+  "feedback.deleted.confirmation": "Fix note supprimée",
 
   // Badge
-  "badge.count": "{count} feedbacks non résolus",
+  "badge.count": "{count} fix notes non résolues",
 
   // Bulk actions toolbar
   "bulk.selectAll": "Tout sélectionner",
@@ -120,7 +120,7 @@ export const fr: Translations = {
   "sort.openFirst": "Ouverts d'abord",
   "sort.label": "Trier",
   "group.byPage": "Par page",
-  "group.feedbacks": "{count} feedbacks",
+  "group.feedbacks": "{count} fix notes",
 
   // Stats bar
   "stats.open": "Ouverts",
@@ -130,7 +130,7 @@ export const fr: Translations = {
 
   // Detail view
   "detail.back": "Retour",
-  "detail.title": "Feedback n°{number}",
+  "detail.title": "Fix note n°{number}",
   "detail.status": "Statut",
   "detail.message": "Message",
   "detail.editMessage": "Modifier le message",
@@ -168,7 +168,7 @@ export const fr: Translations = {
 
   // Keyboard shortcuts overlay
   "shortcuts.title": "Raccourcis clavier",
-  "shortcuts.navigate": "Naviguer les feedbacks",
+  "shortcuts.navigate": "Naviguer les fix notes",
   "shortcuts.resolve": "Résoudre / Rouvrir",
   "shortcuts.delete": "Supprimer",
   "shortcuts.search": "Rechercher",

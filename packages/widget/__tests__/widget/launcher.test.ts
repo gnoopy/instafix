@@ -491,7 +491,7 @@ describe("launch", () => {
         panel = shadow.querySelector<HTMLElement>('[role="complementary"]');
         expect(panel).not.toBeNull();
       });
-      expect(panel!.getAttribute("aria-label")).toBe("InstaFix feedback panel");
+      expect(panel!.getAttribute("aria-label")).toBe("InstaFix fix note panel");
 
       instance.destroy();
     });

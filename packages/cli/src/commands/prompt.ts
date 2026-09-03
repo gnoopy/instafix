@@ -68,7 +68,7 @@ export async function promptCommand(options: PromptOptions): Promise<void> {
     }
 
     if (selected.length === 0) {
-      process.stderr.write("instafix prompt: no matching feedbacks — nothing to output.\n");
+      process.stderr.write("instafix prompt: no matching fix notes — nothing to output.\n");
       return;
     }
 
@@ -80,7 +80,7 @@ export async function promptCommand(options: PromptOptions): Promise<void> {
       : undefined;
 
     process.stdout.write(formatFeedbacksForAgent(selected, instructions ? { instructions } : undefined));
-    process.stderr.write(`instafix prompt: ${selected.length} feedback(s) written to stdout.\n`);
+    process.stderr.write(`instafix prompt: ${selected.length} fix note(s) written to stdout.\n`);
   } catch (err) {
     process.stderr.write(`instafix prompt: ${err instanceof Error ? err.message : String(err)}\n`);
     process.exitCode = 1;

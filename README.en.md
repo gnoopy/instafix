@@ -10,6 +10,7 @@ A lightweight browser widget for developers working with AI coding agents (Claud
 While an agent is building your page, click or draw a rectangle on whatever's wrong and leave a short note —
 InstaFix turns it into a prompt with the exact DOM target, a screenshot, and any console errors, copied straight
 to your clipboard. Paste it into your agent's chat and you're done.
+Every note you leave this way is recorded as a **fix note**.
 
 ![Demo](./demo.gif)
 
@@ -38,13 +39,13 @@ to your clipboard. Paste it into your agent's chat and you're done.
 ## Features
 
 - **Point instead of describing** — no more "the second card from the left" or "the gap under that button." Pick a component with the hover-and-click auto-target picker, or drag a rectangle to grab several elements at once — InstaFix captures exact CSS/XPath/text-based DOM selectors automatically. On a dev server it also captures the **name of the React component that rendered the element**, so the agent finds the file in one grep
-- **Copy Prompt** — bundles the annotation, exact DOM selectors, a screenshot path, and any console errors into one Markdown prompt, copied to your clipboard — paste it into Claude Code, Cursor, or any coding agent. Every item carries its feedback ID plus close-out instructions, so **the agent marks fixed items resolved itself**
-- **Straight into the terminal (`instafix prompt` · `/instafix` · "To agent")** — pipe your open feedback wholesale into a fresh agent session with `npx @instafix/cli prompt | claude -p`, pull it into your CURRENT Claude Code session with `/instafix`, or push one item from the panel's "To agent" button to a session running `instafix watch` — the loop runs without copy/paste
+- **Copy Prompt** — bundles the annotation, exact DOM selectors, a screenshot path, and any console errors into one Markdown prompt, copied to your clipboard — paste it into Claude Code, Cursor, or any coding agent. Every fix note carries its ID plus close-out instructions, so **the agent marks fixed items resolved itself**
+- **Straight into the terminal (`instafix prompt` · `/instafix` · "To agent")** — pipe your open fix notes wholesale into a fresh agent session with `npx @instafix/cli prompt | claude -p`, pull it into your CURRENT Claude Code session with `/instafix`, or push one item from the panel's "To agent" button to a session running `instafix watch` — the loop runs without copy/paste
 - **DOM-anchored persistence** — annotations tie to elements, not pixels; they survive the agent reshuffling the layout
 - **Screenshots + diagnostics** — opt-in JPEG of the annotated area (with privacy masking) and console/network capture — hand the agent the actual console log instead of just saying "it's erroring". Want to show a design reference instead? Paste an image straight into the note with ⌘V
 - **A layer color your app can never be confused with** — InstaFix samples the page's own brand colors and dresses its toolbar, popover, panel, and markers in one tone picked to stand apart from all of them (`autoSelectionColor: false` falls back to your `accentColor`)
 - **Local history (`.instafix/` folder)** — no database — a plain-text record of your session (and its screenshots) at your project root, searchable any time (`@instafix/adapter-fs`)
-- **Triage inbox** — `<InstaFixInbox />` (`@instafix/dashboard`): for when you want to manage feedback as a team — Linear-style, keyboard-first, light/dark, 8 locales
+- **Triage inbox** — `<InstaFixInbox />` (`@instafix/dashboard`): for when you want to manage fix notes as a team — Linear-style, keyboard-first, light/dark, 8 locales
 - **Reliability built in** — retry with backoff plus a localStorage queue; a flaky network never loses a comment
 - **Shadow DOM isolation** — widget CSS never leaks into your site, and your site CSS never breaks the widget
 - **Dev-only by default** — auto-hides in production builds unless `forceShow: true`
@@ -66,7 +67,7 @@ Install and set up InstaFix (a self-hosted feedback widget) in this project:
 
 That's it — draw a rectangle on the page, leave a note, and copy it as a prompt for your agent.
 
-Hand the accumulated feedback to an agent whichever way suits the moment:
+Hand the accumulated fix notes to an agent whichever way suits the moment:
 
 ```bash
 # Dispatch everything open (or just --id picks) to a fresh agent session
@@ -76,7 +77,7 @@ npx github:gnoopy/instafix#cli-dist prompt --status open | claude -p
 npx github:gnoopy/instafix#cli-dist resolve <ID>
 ```
 
-To continue in the Claude Code session you're already working in, type `/instafix` there (`init` installs the slash command). Don't want to leave the browser? The **"To agent"** button on a feedback's detail view hands it to any session running `instafix watch` in the background.
+To continue in the Claude Code session you're already working in, type `/instafix` there (`init` installs the slash command). Don't want to leave the browser? The **"To agent"** button on a fix note card or its detail view hands it to any session running `instafix watch` in the background.
 
 ### Prefer to do it by hand?
 
@@ -101,7 +102,7 @@ npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-sq
 npx github:gnoopy/instafix#cli-dist init generated components/instafix-widget.tsx, which exports a component named InstaFixWidget. Add <InstaFixWidget /> to my app's root layout — app/layout.tsx for Next.js App Router, or the equivalent root layout/root component for whatever framework this project uses. Import it from @/components/instafix-widget (adjust the import path if this project doesn't use the @/ alias). Place the tag once, inside <body>, alongside any other global providers — it renders nothing itself (return null), so exact position doesn't matter. Don't wrap it in a conditional: it already no-ops outside development unless forceShow is set.
 ```
 
-Triage feedback with one component:
+Triage fix notes with one component:
 
 ```tsx
 import { InstaFixInbox } from "@instafix/dashboard";

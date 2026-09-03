@@ -987,7 +987,8 @@ export function buildStyles(colors: ThemeColors): string {
     }
 
     .sp-btn-resolve,
-    .sp-btn-delete {
+    .sp-btn-delete,
+    .sp-btn-handoff {
       padding: 8px 14px;
       border-radius: var(--sp-radius-full);
       border: 1px solid var(--sp-border);
@@ -1021,8 +1022,22 @@ export function buildStyles(colors: ThemeColors): string {
       background: rgba(239, 68, 68, 0.06);
     }
 
+    /* Handoff sits apart on the left — send-to-agent is a different kind of
+       act than the resolve/delete pair, and the gap keeps a mis-click from
+       landing on delete. */
+    .sp-btn-handoff {
+      margin-right: auto;
+    }
+
+    .sp-btn-handoff:hover {
+      border-color: var(--sp-accent);
+      color: var(--sp-accent);
+      background: var(--sp-accent-light);
+    }
+
     .sp-btn-resolve:disabled,
-    .sp-btn-delete:disabled {
+    .sp-btn-delete:disabled,
+    .sp-btn-handoff:disabled {
       opacity: 0.5;
       cursor: not-allowed;
       pointer-events: none;

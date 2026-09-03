@@ -59,5 +59,5 @@ export async function resolveCommand(ids: string[], options: ResolveOptions): Pr
 
   await writeFile(historyPath, `${lines.join("\n")}\n`, "utf8");
   const verb = options.reopen ? "reopened" : "resolved";
-  process.stderr.write(`instafix resolve: ${found.size} feedback(s) ${verb}.\n`);
+  process.stderr.write(`instafix resolve: ${found.size} fix note(s) ${verb}.\n`);
 }

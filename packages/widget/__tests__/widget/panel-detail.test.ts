@@ -197,7 +197,7 @@ describe("DetailView", () => {
       setup.view.show(makeFeedback(), 42);
       const title = setup.view.element.querySelector<HTMLElement>(".sp-detail-title");
       expect(title).not.toBeNull();
-      expect(title!.textContent).toBe("Feedback #42");
+      expect(title!.textContent).toBe("Fix note #42");
     });
 
     it("renders title in French when locale is fr", () => {
@@ -224,7 +224,7 @@ describe("DetailView", () => {
       const badges = setup.view.element.querySelectorAll(".sp-badge");
       expect(titles.length).toBe(1);
       expect(badges.length).toBe(1);
-      expect(titles[0]!.textContent).toBe("Feedback #2");
+      expect(titles[0]!.textContent).toBe("Fix note #2");
       expect(badges[0]!.textContent).toBe("change");
     });
 

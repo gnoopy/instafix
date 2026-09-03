@@ -171,7 +171,7 @@ describe("EvidenceCard — no screenshot", () => {
   it("shows the no-screenshot message when there are no annotations either", () => {
     const record = makeRecord({ screenshotUrl: null, annotations: [] });
     renderWithUi(<EvidenceCard record={record} />);
-    expect(screen.getByText("No screenshot for this feedback")).toBeTruthy();
+    expect(screen.getByText("No screenshot for this fix note")).toBeTruthy();
   });
 });
 

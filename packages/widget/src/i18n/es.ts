@@ -2,24 +2,23 @@ import type { Translations } from "./types.js";
 
 export const es: Translations = {
   // Panel
-  "panel.title": "Comentarios",
-  "panel.ariaLabel": "Panel de comentarios de InstaFix",
-  "panel.feedbackList": "Lista de comentarios",
-  "panel.loading": "Cargando comentarios",
+  "panel.title": "Fix notes",
+  "panel.ariaLabel": "Panel de fix notes de InstaFix",
+  "panel.feedbackList": "Lista de fix notes",
+  "panel.loading": "Cargando fix notes",
   "panel.close": "Cerrar panel",
   "panel.deleteAll": "Eliminar todo",
   "panel.deleteAllConfirmTitle": "Eliminar todo",
-  "panel.deleteAllConfirmMessage":
-    "¿Eliminar todos los comentarios de este proyecto? Esta acción no se puede deshacer.",
-  "panel.deleteConfirmTitle": "Eliminar comentario",
-  "panel.deleteConfirmMessage": "¿Eliminar este comentario? Esta acción no se puede deshacer.",
-  "panel.deleteConfirmBulkMessage": "¿Eliminar {count} comentario(s)? Esta acción no se puede deshacer.",
+  "panel.deleteAllConfirmMessage": "¿Eliminar todas las fix notes de este proyecto? Esta acción no se puede deshacer.",
+  "panel.deleteConfirmTitle": "Eliminar fix note",
+  "panel.deleteConfirmMessage": "¿Eliminar esta fix note? Esta acción no se puede deshacer.",
+  "panel.deleteConfirmBulkMessage": "¿Eliminar {count} fix note(s)? Esta acción no se puede deshacer.",
   "panel.search": "Buscar...",
-  "panel.searchAria": "Buscar comentarios",
+  "panel.searchAria": "Buscar fix notes",
   "panel.filterAll": "Todos",
   "panel.loadError": "No se pudo cargar",
   "panel.retry": "Reintentar",
-  "panel.empty": "Aún no hay comentarios",
+  "panel.empty": "Aún no hay fix notes",
   "panel.showMore": "Mostrar más",
   "panel.showLess": "Mostrar menos",
   "panel.resolve": "Resolver",
@@ -69,9 +68,9 @@ export const es: Translations = {
     "{count} seleccionado(s) — arrastra de nuevo para añadir, o suelta sin Mayús para terminar",
 
   // Popup
-  "popup.ariaLabel": "Formulario de comentarios",
-  "popup.placeholder": "Describe tu comentario...",
-  "popup.textareaAria": "Mensaje de comentario",
+  "popup.ariaLabel": "Formulario de fix notes",
+  "popup.placeholder": "Describe tu fix note...",
+  "popup.textareaAria": "Mensaje de fix note",
   "popup.submitHintMac": "⌘+Enter para enviar",
   "popup.submitHintOther": "Ctrl+Enter para enviar",
   "popup.cancel": "Cancelar",
@@ -93,19 +92,19 @@ export const es: Translations = {
 
   // Markers
   "marker.approximate": "Posición aproximada (confianza: {confidence}%)",
-  "marker.aria": "Comentario #{number}: {type} — {message}",
+  "marker.aria": "Fix note #{number}: {type} — {message}",
   "marker.count": "{count} marcadores de feedback mostrados",
 
   // FAB badge
-  "fab.badge": "{count} comentarios sin resolver",
+  "fab.badge": "{count} fix notes sin resolver",
 
   // Accessibility — screen reader announcements
-  "feedback.sent.confirmation": "Comentario enviado correctamente",
-  "feedback.error.message": "No se pudo enviar el comentario",
-  "feedback.deleted.confirmation": "Comentario eliminado",
+  "feedback.sent.confirmation": "Fix note enviada correctamente",
+  "feedback.error.message": "No se pudo enviar la fix note",
+  "feedback.deleted.confirmation": "Fix note eliminada",
 
   // Badge
-  "badge.count": "{count} comentarios sin resolver",
+  "badge.count": "{count} fix notes sin resolver",
 
   // Bulk actions toolbar
   "bulk.selectAll": "Seleccionar todo",
@@ -121,7 +120,7 @@ export const es: Translations = {
   "sort.openFirst": "Abiertos primero",
   "sort.label": "Ordenar",
   "group.byPage": "Por página",
-  "group.feedbacks": "{count} comentarios",
+  "group.feedbacks": "{count} fix notes",
 
   // Stats bar
   "stats.open": "Abiertos",
@@ -131,7 +130,7 @@ export const es: Translations = {
 
   // Detail view
   "detail.back": "Atrás",
-  "detail.title": "Comentario #{number}",
+  "detail.title": "Fix note #{number}",
   "detail.status": "Estado",
   "detail.message": "Mensaje",
   "detail.editMessage": "Editar mensaje",
@@ -169,7 +168,7 @@ export const es: Translations = {
 
   // Keyboard shortcuts overlay
   "shortcuts.title": "Atajos de teclado",
-  "shortcuts.navigate": "Navegar comentarios",
+  "shortcuts.navigate": "Navegar fix notes",
   "shortcuts.resolve": "Resolver / Reabrir",
   "shortcuts.delete": "Eliminar",
   "shortcuts.search": "Buscar",

@@ -2,24 +2,24 @@ import type { Translations } from "./types.js";
 
 export const de: Translations = {
   // Panel
-  "panel.title": "Feedbacks",
-  "panel.ariaLabel": "InstaFix-Feedback-Panel",
-  "panel.feedbackList": "Feedbackliste",
-  "panel.loading": "Feedbacks werden geladen",
+  "panel.title": "Fix Notes",
+  "panel.ariaLabel": "InstaFix-Fix-Note-Panel",
+  "panel.feedbackList": "Fix-Note-Liste",
+  "panel.loading": "Fix Notes werden geladen",
   "panel.close": "Panel schließen",
   "panel.deleteAll": "Alle löschen",
   "panel.deleteAllConfirmTitle": "Alle löschen",
   "panel.deleteAllConfirmMessage":
-    "Alle Feedbacks für dieses Projekt löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
-  "panel.deleteConfirmTitle": "Feedback löschen",
-  "panel.deleteConfirmMessage": "Dieses Feedback löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
-  "panel.deleteConfirmBulkMessage": "{count} Feedback(s) löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "Alle Fix Notes für dieses Projekt löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+  "panel.deleteConfirmTitle": "Fix Note löschen",
+  "panel.deleteConfirmMessage": "Dieses Fix Note löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+  "panel.deleteConfirmBulkMessage": "{count} Fix Note(s) löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
   "panel.search": "Suchen...",
-  "panel.searchAria": "Feedbacks suchen",
+  "panel.searchAria": "Fix Notes suchen",
   "panel.filterAll": "Alle",
   "panel.loadError": "Laden fehlgeschlagen",
   "panel.retry": "Erneut versuchen",
-  "panel.empty": "Noch kein Feedback",
+  "panel.empty": "Noch keine Fix Note",
   "panel.showMore": "Mehr anzeigen",
   "panel.showLess": "Weniger anzeigen",
   "panel.resolve": "Erledigen",
@@ -36,7 +36,7 @@ export const de: Translations = {
   "panel.statusInProgress": "In Arbeit",
   "panel.statusWontFix": "Wird nicht behoben",
 
-  // Feedback type labels
+  // Fix Note type labels
   "type.label": "Typ",
   "type.question": "Frage",
   "type.change": "Änderung",
@@ -69,9 +69,9 @@ export const de: Translations = {
     "{count} ausgewählt — erneut ziehen zum Hinzufügen, oder ohne Umschalttaste loslassen zum Abschließen",
 
   // Popup
-  "popup.ariaLabel": "Feedbackformular",
-  "popup.placeholder": "Beschreibe dein Feedback...",
-  "popup.textareaAria": "Feedbacknachricht",
+  "popup.ariaLabel": "Fix-Note-Formular",
+  "popup.placeholder": "Beschreibe deine Fix Note...",
+  "popup.textareaAria": "Fix-Note-Nachricht",
   "popup.submitHintMac": "⌘+Enter zum Senden",
   "popup.submitHintOther": "Strg+Enter zum Senden",
   "popup.cancel": "Abbrechen",
@@ -93,19 +93,19 @@ export const de: Translations = {
 
   // Markers
   "marker.approximate": "Ungefähre Position (Konfidenz: {confidence}%)",
-  "marker.aria": "Feedback #{number}: {type} — {message}",
-  "marker.count": "{count} Feedback-Markierungen angezeigt",
+  "marker.aria": "Fix Note #{number}: {type} — {message}",
+  "marker.count": "{count} Fix Note-Markierungen angezeigt",
 
   // FAB badge
-  "fab.badge": "{count} unerledigte Feedbacks",
+  "fab.badge": "{count} unerledigte Fix Notes",
 
   // Accessibility — screen reader announcements
-  "feedback.sent.confirmation": "Feedback erfolgreich gesendet",
-  "feedback.error.message": "Feedback konnte nicht gesendet werden",
-  "feedback.deleted.confirmation": "Feedback gelöscht",
+  "feedback.sent.confirmation": "Fix Note erfolgreich gesendet",
+  "feedback.error.message": "Fix Note konnte nicht gesendet werden",
+  "feedback.deleted.confirmation": "Fix Note gelöscht",
 
   // Badge
-  "badge.count": "{count} unerledigte Feedbacks",
+  "badge.count": "{count} unerledigte Fix Notes",
 
   // Bulk actions toolbar
   "bulk.selectAll": "Alle auswählen",
@@ -121,7 +121,7 @@ export const de: Translations = {
   "sort.openFirst": "Offene zuerst",
   "sort.label": "Sortieren",
   "group.byPage": "Nach Seite",
-  "group.feedbacks": "{count} Feedbacks",
+  "group.feedbacks": "{count} Fix Notes",
 
   // Stats bar
   "stats.open": "Offen",
@@ -131,7 +131,7 @@ export const de: Translations = {
 
   // Detail view
   "detail.back": "Zurück",
-  "detail.title": "Feedback #{number}",
+  "detail.title": "Fix Note #{number}",
   "detail.status": "Status",
   "detail.message": "Nachricht",
   "detail.editMessage": "Nachricht bearbeiten",
@@ -169,7 +169,7 @@ export const de: Translations = {
 
   // Keyboard shortcuts overlay
   "shortcuts.title": "Tastenkürzel",
-  "shortcuts.navigate": "Feedbacks navigieren",
+  "shortcuts.navigate": "Fix Notes navigieren",
   "shortcuts.resolve": "Erledigen / Wieder öffnen",
   "shortcuts.delete": "Löschen",
   "shortcuts.search": "Suche fokussieren",
@@ -200,7 +200,7 @@ export const de: Translations = {
   "detail.verifyKeepResolved": "Sieht behoben aus",
   "detail.verifyReopen": "Wieder öffnen",
   "shortcuts.globalSection": "Global (überall auf der Seite)",
-  "shortcuts.globalPanel": "Feedback-Panel öffnen",
+  "shortcuts.globalPanel": "Fix Note-Panel öffnen",
   "shortcuts.globalAnnotate": "Annotation zeichnen",
   "shortcuts.globalTargeting": "Element automatisch wählen",
   "shortcuts.globalMarkers": "Marker umschalten",

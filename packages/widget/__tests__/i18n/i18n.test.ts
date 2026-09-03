@@ -64,7 +64,7 @@ describe("createT", () => {
 
   it("returns English translations for 'en'", () => {
     const t = createT("en");
-    expect(t("panel.title")).toBe("Feedbacks");
+    expect(t("panel.title")).toBe("Fix notes");
     expect(t("panel.close")).toBe("Close panel");
     expect(t("popup.submit")).toBe("Send");
   });
@@ -73,7 +73,7 @@ describe("createT", () => {
   // guarantee structure, this one guards the actual French wording.
   it("returns French translations for 'fr'", () => {
     const t = createT("fr");
-    expect(t("panel.title")).toBe("Feedbacks");
+    expect(t("panel.title")).toBe("Fix notes");
     expect(t("panel.close")).toBe("Fermer le panneau");
     expect(t("popup.submit")).toBe("Envoyer");
   });
@@ -126,7 +126,7 @@ describe("registerLocale", () => {
 
 describe("interpolate", () => {
   it("substitutes named placeholders", () => {
-    expect(interpolate("{count} feedback markers displayed", { count: 3 })).toBe("3 feedback markers displayed");
+    expect(interpolate("{count} fix note markers displayed", { count: 3 })).toBe("3 fix note markers displayed");
   });
 
   it("leaves unknown placeholders untouched", () => {
@@ -138,12 +138,12 @@ describe("interpolate", () => {
   });
 
   it("tWithParams interpolates a translated template", () => {
-    expect(tWithParams(createT("en"), "marker.count", { count: 7 })).toBe("7 feedback markers displayed");
+    expect(tWithParams(createT("en"), "marker.count", { count: 7 })).toBe("7 fix note markers displayed");
   });
 
   it("tWithParams fills every placeholder of a multi-param template", () => {
     expect(tWithParams(createT("en"), "marker.aria", { number: 2, type: "Bug", message: "oops" })).toBe(
-      "Feedback #2: Bug — oops",
+      "Fix note #2: Bug — oops",
     );
   });
 });

@@ -2,13 +2,13 @@ import type { Translations } from "./types.js";
 
 export const en: Translations = {
   // Inbox chrome
-  "inbox.regionLabel": "Feedback inbox",
-  "inbox.listLabel": "Feedback list",
+  "inbox.regionLabel": "Fix note inbox",
+  "inbox.listLabel": "Fix note list",
   "inbox.statusFilter": "Filter by status",
   "inbox.searchPlaceholder": "Search messages…",
-  "inbox.searchAria": "Search feedbacks",
+  "inbox.searchAria": "Search fix notes",
   "inbox.clearSearch": "Clear search",
-  "inbox.resultsCount": "{count} feedbacks",
+  "inbox.resultsCount": "{count} fix notes",
   "inbox.typeFilter": "Filter by type",
   "inbox.typeAll": "All types",
   "inbox.project": "Project",
@@ -16,14 +16,14 @@ export const en: Translations = {
   "inbox.loadMore": "Load more ({count})",
 
   // Empty / error states
-  "inbox.emptyTitle": "No feedback yet",
-  "inbox.emptySub": "Feedback sent from the widget lands here.",
+  "inbox.emptyTitle": "No fix notes yet",
+  "inbox.emptySub": "Fix note sent from the widget lands here.",
   "inbox.emptyFilteredTitle": "Nothing here",
-  "inbox.emptyFilteredSub": "No feedback matches this filter.",
+  "inbox.emptyFilteredSub": "No fix notes match this filter.",
   "inbox.viewAll": "View all",
   "inbox.inboxZeroTitle": "All clear",
-  "inbox.inboxZeroSub": "Every open feedback has been handled.",
-  "inbox.loadError": "Failed to load feedbacks",
+  "inbox.inboxZeroSub": "Every open fix note has been handled.",
+  "inbox.loadError": "Failed to load fix notes",
   "inbox.retry": "Retry",
 
   // Actions & toasts
@@ -32,7 +32,7 @@ export const en: Translations = {
   "inbox.actionFailed": "Something went wrong. Change reverted.",
   "inbox.copied": "Copied",
   "inbox.markedAs": "Marked as {status}",
-  "inbox.deleted": "Feedback deleted",
+  "inbox.deleted": "Fix note deleted",
 
   // Status labels
   "status.all": "All",
@@ -48,7 +48,7 @@ export const en: Translations = {
   "type.other": "Other",
 
   // Drawer
-  "drawer.title": "Feedback details",
+  "drawer.title": "Fix note details",
   "drawer.close": "Close details",
   "drawer.openOnPage": "Open on page",
   "drawer.status": "Status",
@@ -64,8 +64,8 @@ export const en: Translations = {
   "drawer.showAnnotation": "Show annotation",
   "drawer.screenshotAlt": "Screenshot of the annotated area",
   "drawer.zoomScreenshot": "Zoom screenshot",
-  "drawer.noScreenshot": "No screenshot for this feedback",
-  "drawer.delete": "Delete feedback",
+  "drawer.noScreenshot": "No screenshot for this fix note",
+  "drawer.delete": "Delete fix note",
   "drawer.deleteConfirm": "Delete permanently? This cannot be undone.",
   "drawer.deleteYes": "Delete",
 

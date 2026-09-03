@@ -2,23 +2,23 @@ import type { Translations } from "./types.js";
 
 export const en: Translations = {
   // Panel
-  "panel.title": "Feedbacks",
-  "panel.ariaLabel": "InstaFix feedback panel",
-  "panel.feedbackList": "Feedback list",
-  "panel.loading": "Loading feedbacks",
+  "panel.title": "Fix notes",
+  "panel.ariaLabel": "InstaFix fix note panel",
+  "panel.feedbackList": "Fix note list",
+  "panel.loading": "Loading fix notes",
   "panel.close": "Close panel",
   "panel.deleteAll": "Delete all",
   "panel.deleteAllConfirmTitle": "Delete all",
-  "panel.deleteAllConfirmMessage": "Delete all feedbacks for this project? This action cannot be undone.",
-  "panel.deleteConfirmTitle": "Delete feedback",
-  "panel.deleteConfirmMessage": "Delete this feedback? This action cannot be undone.",
-  "panel.deleteConfirmBulkMessage": "Delete {count} feedback(s)? This action cannot be undone.",
+  "panel.deleteAllConfirmMessage": "Delete all fix notes for this project? This action cannot be undone.",
+  "panel.deleteConfirmTitle": "Delete fix note",
+  "panel.deleteConfirmMessage": "Delete this fix note? This action cannot be undone.",
+  "panel.deleteConfirmBulkMessage": "Delete {count} fix note(s)? This action cannot be undone.",
   "panel.search": "Search...",
-  "panel.searchAria": "Search feedbacks",
+  "panel.searchAria": "Search fix notes",
   "panel.filterAll": "All",
   "panel.loadError": "Failed to load",
   "panel.retry": "Retry",
-  "panel.empty": "No feedback yet",
+  "panel.empty": "No fix notes yet",
   "panel.showMore": "Show more",
   "panel.showLess": "Show less",
   "panel.resolve": "Resolve",
@@ -35,7 +35,7 @@ export const en: Translations = {
   "panel.statusInProgress": "In progress",
   "panel.statusWontFix": "Won't fix",
 
-  // Feedback type labels
+  // Fix note type labels
   "type.label": "Type",
   "type.question": "Question",
   "type.change": "Change",
@@ -67,9 +67,9 @@ export const en: Translations = {
   "annotator.selectionCount": "{count} selected — drag again to add, or release without Shift to finish",
 
   // Popup
-  "popup.ariaLabel": "Feedback form",
-  "popup.placeholder": "Describe your feedback...",
-  "popup.textareaAria": "Feedback message",
+  "popup.ariaLabel": "Fix note form",
+  "popup.placeholder": "Describe your fix note...",
+  "popup.textareaAria": "Fix note message",
   "popup.submitHintMac": "\u2318+Enter to send",
   "popup.submitHintOther": "Ctrl+Enter to send",
   "popup.cancel": "Cancel",
@@ -91,19 +91,19 @@ export const en: Translations = {
 
   // Markers
   "marker.approximate": "Approximate position (confidence: {confidence}%)",
-  "marker.aria": "Feedback #{number}: {type} — {message}",
-  "marker.count": "{count} feedback markers displayed",
+  "marker.aria": "Fix note #{number}: {type} — {message}",
+  "marker.count": "{count} fix note markers displayed",
 
   // FAB badge
-  "fab.badge": "{count} unresolved feedbacks",
+  "fab.badge": "{count} unresolved fix notes",
 
   // Accessibility — screen reader announcements
-  "feedback.sent.confirmation": "Feedback sent successfully",
-  "feedback.error.message": "Failed to send feedback",
-  "feedback.deleted.confirmation": "Feedback deleted",
+  "feedback.sent.confirmation": "Fix note sent successfully",
+  "feedback.error.message": "Failed to send fix note",
+  "feedback.deleted.confirmation": "Fix note deleted",
 
   // Badge
-  "badge.count": "{count} unresolved feedbacks",
+  "badge.count": "{count} unresolved fix notes",
 
   // Bulk actions toolbar
   "bulk.selectAll": "Select all",
@@ -119,7 +119,7 @@ export const en: Translations = {
   "sort.openFirst": "Open first",
   "sort.label": "Sort",
   "group.byPage": "By page",
-  "group.feedbacks": "{count} feedbacks",
+  "group.feedbacks": "{count} fix notes",
 
   // Stats bar
   "stats.open": "Open",
@@ -129,7 +129,7 @@ export const en: Translations = {
 
   // Detail view
   "detail.back": "Back",
-  "detail.title": "Feedback #{number}",
+  "detail.title": "Fix note #{number}",
   "detail.status": "Status",
   "detail.message": "Message",
   "detail.editMessage": "Edit message",
@@ -167,7 +167,7 @@ export const en: Translations = {
 
   // Keyboard shortcuts overlay
   "shortcuts.title": "Keyboard shortcuts",
-  "shortcuts.navigate": "Navigate feedbacks",
+  "shortcuts.navigate": "Navigate fix notes",
   "shortcuts.resolve": "Resolve / Reopen",
   "shortcuts.delete": "Delete",
   "shortcuts.search": "Focus search",
@@ -198,7 +198,7 @@ export const en: Translations = {
   "detail.verifyKeepResolved": "Looks fixed",
   "detail.verifyReopen": "Reopen",
   "shortcuts.globalSection": "Global (anywhere on the page)",
-  "shortcuts.globalPanel": "Open feedback panel",
+  "shortcuts.globalPanel": "Open fix note panel",
   "shortcuts.globalAnnotate": "Draw annotation",
   "shortcuts.globalTargeting": "Auto-select element",
   "shortcuts.globalMarkers": "Toggle markers",

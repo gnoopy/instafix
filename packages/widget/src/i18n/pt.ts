@@ -3,23 +3,23 @@ import type { Translations } from "./types.js";
 /** Brazilian Portuguese translations (pt-BR). */
 export const pt: Translations = {
   // Panel
-  "panel.title": "Feedbacks",
-  "panel.ariaLabel": "Painel de feedback do InstaFix",
-  "panel.feedbackList": "Lista de feedbacks",
-  "panel.loading": "Carregando feedbacks",
+  "panel.title": "Fix notes",
+  "panel.ariaLabel": "Painel de fix notes do InstaFix",
+  "panel.feedbackList": "Lista de fix notes",
+  "panel.loading": "Carregando fix notes",
   "panel.close": "Fechar painel",
   "panel.deleteAll": "Excluir tudo",
   "panel.deleteAllConfirmTitle": "Excluir tudo",
-  "panel.deleteAllConfirmMessage": "Excluir todos os feedbacks deste projeto? Esta ação não pode ser desfeita.",
-  "panel.deleteConfirmTitle": "Excluir feedback",
-  "panel.deleteConfirmMessage": "Excluir este feedback? Esta ação não pode ser desfeita.",
-  "panel.deleteConfirmBulkMessage": "Excluir {count} feedback(s)? Esta ação não pode ser desfeita.",
+  "panel.deleteAllConfirmMessage": "Excluir todas as fix notes deste projeto? Esta ação não pode ser desfeita.",
+  "panel.deleteConfirmTitle": "Excluir fix note",
+  "panel.deleteConfirmMessage": "Excluir esta fix note? Esta ação não pode ser desfeita.",
+  "panel.deleteConfirmBulkMessage": "Excluir {count} fix note(s)? Esta ação não pode ser desfeita.",
   "panel.search": "Pesquisar...",
-  "panel.searchAria": "Pesquisar feedbacks",
+  "panel.searchAria": "Pesquisar fix notes",
   "panel.filterAll": "Todos",
   "panel.loadError": "Falha ao carregar",
   "panel.retry": "Tentar novamente",
-  "panel.empty": "Nenhum feedback ainda",
+  "panel.empty": "Nenhuma fix note ainda",
   "panel.showMore": "Mostrar mais",
   "panel.showLess": "Mostrar menos",
   "panel.resolve": "Resolver",
@@ -36,7 +36,7 @@ export const pt: Translations = {
   "panel.statusInProgress": "Em andamento",
   "panel.statusWontFix": "Não será corrigido",
 
-  // Feedback type labels
+  // Fix note type labels
   "type.label": "Tipo",
   "type.question": "Pergunta",
   "type.change": "Alteração",
@@ -69,9 +69,9 @@ export const pt: Translations = {
     "{count} selecionado(s) — arraste novamente para adicionar, ou solte sem Shift para concluir",
 
   // Popup
-  "popup.ariaLabel": "Formulário de feedback",
-  "popup.placeholder": "Descreva seu feedback...",
-  "popup.textareaAria": "Mensagem de feedback",
+  "popup.ariaLabel": "Formulário de fix note",
+  "popup.placeholder": "Descreva sua fix note...",
+  "popup.textareaAria": "Mensagem de fix note",
   "popup.submitHintMac": "⌘+Enter para enviar",
   "popup.submitHintOther": "Ctrl+Enter para enviar",
   "popup.cancel": "Cancelar",
@@ -93,19 +93,19 @@ export const pt: Translations = {
 
   // Markers
   "marker.approximate": "Posição aproximada (confiança: {confidence}%)",
-  "marker.aria": "Feedback #{number}: {type} — {message}",
-  "marker.count": "{count} marcadores de feedback exibidos",
+  "marker.aria": "Fix note #{number}: {type} — {message}",
+  "marker.count": "{count} marcadores de fix note exibidos",
 
   // FAB badge
-  "fab.badge": "{count} feedbacks não resolvidos",
+  "fab.badge": "{count} fix notes não resolvidos",
 
   // Accessibility — screen reader announcements
-  "feedback.sent.confirmation": "Feedback enviado com sucesso",
-  "feedback.error.message": "Falha ao enviar feedback",
-  "feedback.deleted.confirmation": "Feedback excluído",
+  "feedback.sent.confirmation": "Fix note enviada com sucesso",
+  "feedback.error.message": "Falha ao enviar fix note",
+  "feedback.deleted.confirmation": "Fix note excluído",
 
   // Badge
-  "badge.count": "{count} feedbacks não resolvidos",
+  "badge.count": "{count} fix notes não resolvidos",
 
   // Bulk actions toolbar
   "bulk.selectAll": "Selecionar tudo",
@@ -121,7 +121,7 @@ export const pt: Translations = {
   "sort.openFirst": "Abertos primeiro",
   "sort.label": "Ordenar",
   "group.byPage": "Por página",
-  "group.feedbacks": "{count} feedbacks",
+  "group.feedbacks": "{count} fix notes",
 
   // Stats bar
   "stats.open": "Abertos",
@@ -131,7 +131,7 @@ export const pt: Translations = {
 
   // Detail view
   "detail.back": "Voltar",
-  "detail.title": "Feedback #{number}",
+  "detail.title": "Fix note #{number}",
   "detail.status": "Status",
   "detail.message": "Mensagem",
   "detail.editMessage": "Editar mensagem",
@@ -169,7 +169,7 @@ export const pt: Translations = {
 
   // Keyboard shortcuts overlay
   "shortcuts.title": "Atalhos de teclado",
-  "shortcuts.navigate": "Navegar feedbacks",
+  "shortcuts.navigate": "Navegar fix notes",
   "shortcuts.resolve": "Resolver / Reabrir",
   "shortcuts.delete": "Excluir",
   "shortcuts.search": "Buscar",
@@ -200,7 +200,7 @@ export const pt: Translations = {
   "detail.verifyKeepResolved": "Corrigido",
   "detail.verifyReopen": "Reabrir",
   "shortcuts.globalSection": "Global (em toda a página)",
-  "shortcuts.globalPanel": "Abrir painel de feedback",
+  "shortcuts.globalPanel": "Abrir painel de fix note",
   "shortcuts.globalAnnotate": "Desenhar anotação",
   "shortcuts.globalTargeting": "Seleção automática",
   "shortcuts.globalMarkers": "Alternar marcadores",

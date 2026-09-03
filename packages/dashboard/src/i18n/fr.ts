@@ -2,13 +2,13 @@ import type { Translations } from "./types.js";
 
 export const fr: Translations = {
   // Inbox chrome
-  "inbox.regionLabel": "Boîte de réception des feedbacks",
-  "inbox.listLabel": "Liste des feedbacks",
+  "inbox.regionLabel": "Boîte de réception des fix notes",
+  "inbox.listLabel": "Liste des fix notes",
   "inbox.statusFilter": "Filtrer par statut",
   "inbox.searchPlaceholder": "Rechercher dans les messages…",
-  "inbox.searchAria": "Rechercher des feedbacks",
+  "inbox.searchAria": "Rechercher des fix notes",
   "inbox.clearSearch": "Effacer la recherche",
-  "inbox.resultsCount": "{count} feedbacks",
+  "inbox.resultsCount": "{count} fix notes",
   "inbox.typeFilter": "Filtrer par type",
   "inbox.typeAll": "Tous les types",
   "inbox.project": "Projet",
@@ -16,14 +16,14 @@ export const fr: Translations = {
   "inbox.loadMore": "Charger plus ({count})",
 
   // Empty / error states
-  "inbox.emptyTitle": "Aucun feedback pour l'instant",
+  "inbox.emptyTitle": "Aucune fix note pour l'instant",
   "inbox.emptySub": "Les retours envoyés depuis le widget arrivent ici.",
   "inbox.emptyFilteredTitle": "Rien ici",
-  "inbox.emptyFilteredSub": "Aucun feedback ne correspond à ce filtre.",
+  "inbox.emptyFilteredSub": "Aucune fix note ne correspond à ce filtre.",
   "inbox.viewAll": "Tout afficher",
   "inbox.inboxZeroTitle": "Tout est trié",
-  "inbox.inboxZeroSub": "Tous les feedbacks ouverts ont été traités.",
-  "inbox.loadError": "Impossible de charger les feedbacks",
+  "inbox.inboxZeroSub": "Tous les fix notes ouverts ont été traités.",
+  "inbox.loadError": "Impossible de charger les fix notes",
   "inbox.retry": "Réessayer",
 
   // Actions & toasts
@@ -32,7 +32,7 @@ export const fr: Translations = {
   "inbox.actionFailed": "Une erreur est survenue. Modification annulée.",
   "inbox.copied": "Copié",
   "inbox.markedAs": "Marqué comme {status}",
-  "inbox.deleted": "Feedback supprimé",
+  "inbox.deleted": "Fix note supprimé",
 
   // Status labels
   "status.all": "Tous",
@@ -48,7 +48,7 @@ export const fr: Translations = {
   "type.other": "Autre",
 
   // Drawer
-  "drawer.title": "Détail du feedback",
+  "drawer.title": "Détail du fix note",
   "drawer.close": "Fermer le détail",
   "drawer.openOnPage": "Ouvrir sur la page",
   "drawer.status": "Statut",
@@ -64,8 +64,8 @@ export const fr: Translations = {
   "drawer.showAnnotation": "Afficher l'annotation",
   "drawer.screenshotAlt": "Capture de la zone annotée",
   "drawer.zoomScreenshot": "Zoomer la capture",
-  "drawer.noScreenshot": "Pas de capture pour ce feedback",
-  "drawer.delete": "Supprimer le feedback",
+  "drawer.noScreenshot": "Pas de capture pour cette fix note",
+  "drawer.delete": "Supprimer la fix note",
   "drawer.deleteConfirm": "Supprimer définitivement ? Action irréversible.",
   "drawer.deleteYes": "Supprimer",
 

@@ -52,7 +52,7 @@ const colors = buildThemeColors();
 describe("shortcuts: exports", () => {
   it("exports an i18n EN object with expected keys", () => {
     expect(SHORTCUTS_I18N_EN["shortcuts.title"]).toBe("Keyboard shortcuts");
-    expect(SHORTCUTS_I18N_EN["shortcuts.navigate"]).toBe("Navigate feedbacks");
+    expect(SHORTCUTS_I18N_EN["shortcuts.navigate"]).toBe("Navigate fix notes");
     expect(SHORTCUTS_I18N_EN["shortcuts.resolve"]).toBe("Resolve / Reopen");
     expect(SHORTCUTS_I18N_EN["shortcuts.delete"]).toBe("Delete");
     expect(SHORTCUTS_I18N_EN["shortcuts.search"]).toBe("Focus search");

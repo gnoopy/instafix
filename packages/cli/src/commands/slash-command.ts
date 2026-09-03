@@ -2,13 +2,13 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const SLASH_COMMAND = `---
-description: InstaFix에 쌓인 UI 피드백을 이 세션으로 가져와 이어서 처리
+description: InstaFix에 쌓인 픽스노트(fix note)를 이 세션으로 가져와 이어서 처리
 ---
 
-InstaFix 피드백을 현재 세션에서 처리하라.
+InstaFix 픽스노트를 현재 세션에서 처리하라.
 
-1. \`npx @instafix/cli prompt --status open\`을 실행해 열린 피드백을 읽어라.
-   ("no matching feedbacks"면 그렇게 보고하고 끝내라. $ARGUMENTS 가 있으면
+1. \`npx @instafix/cli prompt --status open\`을 실행해 열린 픽스노트를 읽어라.
+   ("no matching fix notes"면 그렇게 보고하고 끝내라. $ARGUMENTS 가 있으면
    \`--id $ARGUMENTS\`로 해당 건만 가져와라.)
 2. 각 항목을 현재 코드와 대조해 수정하라. Target의 소스 힌트(Component 라인)가
    있으면 그 파일부터, 없으면 셀렉터로 컴포넌트를 찾아라. 애매하면 추측하지

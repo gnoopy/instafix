@@ -2,23 +2,23 @@ import type { Translations } from "./types.js";
 
 export const ru: Translations = {
   // Panel
-  "panel.title": "Обратная связь",
+  "panel.title": "Fix notes",
   "panel.ariaLabel": "Панель обратной связи InstaFix",
-  "panel.feedbackList": "Список отзывов",
-  "panel.loading": "Загрузка отзывов",
+  "panel.feedbackList": "Список fix notes",
+  "panel.loading": "Загрузка fix notes",
   "panel.close": "Закрыть панель",
   "panel.deleteAll": "Удалить всё",
   "panel.deleteAllConfirmTitle": "Удалить всё",
-  "panel.deleteAllConfirmMessage": "Удалить все отзывы этого проекта? Это действие необратимо.",
-  "panel.deleteConfirmTitle": "Удалить отзыв",
-  "panel.deleteConfirmMessage": "Удалить этот отзыв? Это действие необратимо.",
-  "panel.deleteConfirmBulkMessage": "Удалить {count} отзыв(ов)? Это действие необратимо.",
+  "panel.deleteAllConfirmMessage": "Удалить все fix notes этого проекта? Это действие необратимо.",
+  "panel.deleteConfirmTitle": "Удалить fix note",
+  "panel.deleteConfirmMessage": "Удалить этот fix note? Это действие необратимо.",
+  "panel.deleteConfirmBulkMessage": "Удалить {count} fix note(s)? Это действие необратимо.",
   "panel.search": "Поиск...",
-  "panel.searchAria": "Поиск по отзывам",
+  "panel.searchAria": "Поиск по fix notes",
   "panel.filterAll": "Все",
   "panel.loadError": "Ошибка загрузки",
   "panel.retry": "Повторить",
-  "panel.empty": "Пока нет отзывов",
+  "panel.empty": "Пока нет fix notes",
   "panel.showMore": "Показать больше",
   "panel.showLess": "Показать меньше",
   "panel.resolve": "Решено",
@@ -92,19 +92,19 @@ export const ru: Translations = {
 
   // Markers
   "marker.approximate": "Приблизительная позиция (точность: {confidence}%)",
-  "marker.aria": "Отзыв #{number}: {type} — {message}",
-  "marker.count": "Отображено маркеров отзывов: {count}",
+  "marker.aria": "Fix note #{number}: {type} — {message}",
+  "marker.count": "Отображено маркеров fix notes: {count}",
 
   // FAB badge
-  "fab.badge": "Нерешённых отзывов: {count}",
+  "fab.badge": "Нерешённых fix notes: {count}",
 
   // Accessibility — screen reader announcements
-  "feedback.sent.confirmation": "Отзыв успешно отправлен",
-  "feedback.error.message": "Не удалось отправить отзыв",
-  "feedback.deleted.confirmation": "Отзыв удалён",
+  "feedback.sent.confirmation": "Fix note успешно отправлен",
+  "feedback.error.message": "Не удалось отправить fix note",
+  "feedback.deleted.confirmation": "Fix note удалён",
 
   // Badge
-  "badge.count": "Нерешённых отзывов: {count}",
+  "badge.count": "Нерешённых fix notes: {count}",
 
   // Bulk actions toolbar
   "bulk.selectAll": "Выбрать все",
@@ -120,7 +120,7 @@ export const ru: Translations = {
   "sort.openFirst": "Сначала открытые",
   "sort.label": "Сортировка",
   "group.byPage": "По странице",
-  "group.feedbacks": "Отзывов: {count}",
+  "group.feedbacks": "Fix notes: {count}",
 
   // Stats bar
   "stats.open": "Открытые",
@@ -130,7 +130,7 @@ export const ru: Translations = {
 
   // Detail view
   "detail.back": "Назад",
-  "detail.title": "Отзыв #{number}",
+  "detail.title": "Fix note #{number}",
   "detail.status": "Статус",
   "detail.message": "Сообщение",
   "detail.editMessage": "Изменить сообщение",
@@ -168,7 +168,7 @@ export const ru: Translations = {
 
   // Keyboard shortcuts overlay
   "shortcuts.title": "Горячие клавиши",
-  "shortcuts.navigate": "Навигация по отзывам",
+  "shortcuts.navigate": "Навигация по fix notes",
   "shortcuts.resolve": "Решить / Переоткрыть",
   "shortcuts.delete": "Удалить",
   "shortcuts.search": "Поиск",
@@ -199,7 +199,7 @@ export const ru: Translations = {
   "detail.verifyKeepResolved": "Исправлено",
   "detail.verifyReopen": "Открыть заново",
   "shortcuts.globalSection": "Глобально (в любом месте страницы)",
-  "shortcuts.globalPanel": "Открыть панель отзывов",
+  "shortcuts.globalPanel": "Открыть панель fix notes",
   "shortcuts.globalAnnotate": "Нарисовать аннотацию",
   "shortcuts.globalTargeting": "Автовыбор элемента",
   "shortcuts.globalMarkers": "Переключить маркеры",

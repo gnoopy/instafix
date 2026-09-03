@@ -161,7 +161,7 @@ describe("InstaFixInbox — keyboard", () => {
     const listbox = await ready();
     fireEvent.keyDown(listbox, { key: "j" }); // focus o1
     fireEvent.keyDown(listbox, { key: "Enter" }); // open o1
-    await screen.findByRole("dialog", { name: /Feedback details/ });
+    await screen.findByRole("dialog", { name: /Fix note details/ });
     await waitFor(() => expect(listRows()[0]?.getAttribute("aria-selected")).toBe("true"));
   });
 
@@ -170,7 +170,7 @@ describe("InstaFixInbox — keyboard", () => {
     const listbox = await ready();
     fireEvent.keyDown(listbox, { key: "j" });
     fireEvent.keyDown(listbox, { key: "Enter" });
-    expect(await screen.findByRole("dialog", { name: /Feedback details/ })).toBeTruthy();
+    expect(await screen.findByRole("dialog", { name: /Fix note details/ })).toBeTruthy();
   });
 
   it("e resolves the focused row — it leaves the open tab and a toast offers undo, u reverts", async () => {
@@ -227,7 +227,7 @@ describe("InstaFixInbox — keyboard", () => {
     const listbox = await ready();
     fireEvent.keyDown(listbox, { key: "j" }); // focus o1
     fireEvent.keyDown(listbox, { key: "Enter" }); // open o1 (overlay mode in jsdom)
-    await screen.findByRole("dialog", { name: /Feedback details/ });
+    await screen.findByRole("dialog", { name: /Fix note details/ });
     fireEvent.keyDown(listbox, { key: "j" }); // should be ignored
     // Focus stays on o1 (the first row keeps its focus ring).
     expect(listRows()[0]?.className).toContain("ifd-row-focused");
@@ -238,7 +238,7 @@ describe("InstaFixInbox — keyboard", () => {
     const listbox = await ready();
     fireEvent.keyDown(listbox, { key: "j" }); // focus + will open o1
     fireEvent.keyDown(listbox, { key: "Enter" });
-    await screen.findByRole("dialog", { name: /Feedback details/ });
+    await screen.findByRole("dialog", { name: /Fix note details/ });
     fireEvent.keyDown(listbox, { key: "e" }); // resolves the opened record
     expect(await screen.findByText("Marked as resolved")).toBeTruthy();
     await waitFor(() => expect(listRows()).toHaveLength(2)); // o1 left the open list
@@ -281,7 +281,7 @@ describe("InstaFixInbox — search & live regions", () => {
     await ready();
     const liveRegion = container.querySelector(".ifd-sr-only[role='status']");
     expect(liveRegion).not.toBeNull();
-    await waitFor(() => expect(liveRegion?.textContent).toContain("feedbacks"));
+    await waitFor(() => expect(liveRegion?.textContent).toContain("fix notes"));
   });
 
   it("keeps the toast live region mounted even when no toast is showing", async () => {
@@ -298,7 +298,7 @@ describe("InstaFixInbox — drawer", () => {
     const listbox = await ready();
     fireEvent.keyDown(listbox, { key: "j" });
     fireEvent.keyDown(listbox, { key: "Enter" });
-    await screen.findByRole("dialog", { name: /Feedback details/ });
+    await screen.findByRole("dialog", { name: /Fix note details/ });
   }
 
   it("links Open on page to the record URL with the deep-link param", async () => {
@@ -319,7 +319,7 @@ describe("InstaFixInbox — drawer", () => {
   it("opens the status menu with the four statuses", async () => {
     renderInbox();
     await openFirst();
-    const dialog = screen.getByRole("dialog", { name: /Feedback details/ });
+    const dialog = screen.getByRole("dialog", { name: /Fix note details/ });
     // The trigger's accessible name is the visible status (o1 is open), per WCAG 2.5.3.
     fireEvent.click(within(dialog).getByRole("button", { name: "Open" }));
     const menu = await screen.findByRole("listbox", { name: "Status" });
@@ -344,7 +344,7 @@ describe("InstaFixInbox — drawer", () => {
   it("is a modal dialog in overlay (narrow) mode", async () => {
     renderInbox();
     await openFirst();
-    const dialog = screen.getByRole("dialog", { name: /Feedback details/ });
+    const dialog = screen.getByRole("dialog", { name: /Fix note details/ });
     expect(dialog.getAttribute("aria-modal")).toBe("true");
     expect(dialog.tagName).toBe("DIV");
   });
@@ -368,7 +368,7 @@ describe("InstaFixInbox — drawer", () => {
       const listbox = await ready();
       fireEvent.keyDown(listbox, { key: "j" });
       fireEvent.keyDown(listbox, { key: "Enter" });
-      const panel = await screen.findByRole("region", { name: /Feedback details/ });
+      const panel = await screen.findByRole("region", { name: /Fix note details/ });
       expect(panel.getAttribute("aria-modal")).toBeNull();
     } finally {
       globalThis.ResizeObserver = original;
@@ -382,7 +382,7 @@ describe("InstaFixInbox — empty & error states", () => {
     // Default "open" filter counts as a filter → the filtered-empty state.
     expect(await screen.findByText("Nothing here")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "View all" }));
-    expect(await screen.findByText("No feedback yet")).toBeTruthy();
+    expect(await screen.findByText("No fix notes yet")).toBeTruthy();
   });
 
   it("shows the inbox-zero state when the project has feedback but none is open", async () => {
@@ -404,7 +404,7 @@ describe("InstaFixInbox — empty & error states", () => {
     const source = makeSource(seed());
     source.list.mockRejectedValue(new Error("boom"));
     render(<InstaFixInbox source={source} projects="demo" theme="dark" locale="en" />);
-    expect(await screen.findByText("Failed to load feedbacks")).toBeTruthy();
+    expect(await screen.findByText("Failed to load fix notes")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
   });
 });
