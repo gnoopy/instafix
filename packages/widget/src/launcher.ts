@@ -455,6 +455,20 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
 
   document.body.appendChild(host);
 
+  // Z_INDEX_MAX is already the highest value CSS accepts, so the widget wins
+  // a stacking fight against virtually anything — except another fixed
+  // overlay that *also* uses the max value and mounts after us, since a tie
+  // resolves in favor of the later sibling in the DOM. Keep our own host
+  // element pinned as <body>'s last child so we win that tie too, no matter
+  // what else the host page inserts later. This only ever repositions our
+  // own element; it doesn't inspect, name, or touch anything else on the
+  // page — the same technique toast/modal libraries commonly use to stay on
+  // top of whatever else is on the page.
+  const keepHostLast = new MutationObserver(() => {
+    if (host.nextSibling) document.body.appendChild(host);
+  });
+  keepHostLast.observe(document.body, { childList: true });
+
   // Layer-identity retry — only needed when the synchronous pass above found
   // nothing to sample (the widget mounted before the host page's first
   // paint). One frame later the page has real layout; on success, mutate the
@@ -875,6 +889,7 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
       log("Destroying widget");
       destroyed = true;
       pendingOpen = false;
+      keepHostLast.disconnect();
       teardownNavigation?.();
       focusTracker.destroy();
       unsubAnnotation();

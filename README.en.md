@@ -47,7 +47,7 @@ Every note you leave this way is recorded as a **fix note**.
 - **Local history (`.instafix/` folder)** — no database — a plain-text record of your session (and its screenshots) at your project root, searchable any time (`@instafix/adapter-fs`)
 - **Triage inbox** — `<InstaFixInbox />` (`@instafix/dashboard`): for when you want to manage fix notes as a team — Linear-style, keyboard-first, light/dark, 8 locales
 - **Reliability built in** — retry with backoff plus a localStorage queue; a flaky network never loses a comment
-- **Shadow DOM isolation** — widget CSS never leaks into your site, and your site CSS never breaks the widget
+- **Shadow DOM isolation + always on top** — widget CSS never leaks into your site, and your site CSS never breaks the widget. Uses the maximum CSS z-index and keeps repositioning itself last in `<body>`, so it stays visible even alongside other floating dev tools (Vercel Toolbar, etc.)
 - **Dev-only by default** — auto-hides in production builds unless `forceShow: true`
 - **Lightweight** — ~30 KB gzipped (ESM); the panel, screenshot engine, and non-English locales load on demand
 
@@ -115,19 +115,6 @@ import { InstaFixInbox } from "@instafix/dashboard";
 No server? The widget also runs fully client-side with `store: new LocalStorageStore()` (`github:gnoopy/instafix#adapter-localstorage-dist`).
 
 **To remove InstaFix**: revert your lockfile and `package.json` (`git checkout -- package.json package-lock.json`, or your lockfile), delete `app/api/instafix/` and `components/instafix-widget.tsx`, then reinstall.
-
-## Why InstaFix?
-
-Beyond the agent workflow, InstaFix works just as well for the original use case — collecting client feedback as a team. Stop chasing it across Slack threads, email chains, and Notion docs; it gives clients a **contextual** way to leave feedback, anchored to the exact element they're looking at.
-
-| | InstaFix | Marker.io | BugHerd |
-|---|---|---|---|
-| **Self-hosted** | Yes — your DB, your data | No (SaaS) | No (SaaS) |
-| **Package install** | `npm install` from GitHub — no registry gatekeeping | npm + script tag | Script tag only |
-| **Framework-native** | First-class Next.js support | Framework-agnostic | Framework-agnostic |
-| **Pricing** | Free & open source | From $39/mo | From $42/mo |
-| **DOM-anchored annotations** | Multi-selector (CSS + XPath + text) | Screenshot-based | Pin-based |
-| **Annotations survive layout changes** | Yes (percentage-relative rects) | No (pixel coordinates) | Partially |
 
 ## Documentation
 

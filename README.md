@@ -46,7 +46,7 @@ Claude Code, Cursor 같은 AI 코딩 에이전트와 함께 개발할 때 쓰는
 - **로컬 히스토리 (`.instafix/` 폴더)** — DB 없이 프로젝트 폴더에 작업 이력(과 스크린샷)을 평문으로 남기고 언제든 검색 가능 (`@instafix/adapter-fs`)
 - **트리아지 인박스** — `<InstaFixInbox />`(`@instafix/dashboard`): 팀 단위로 픽스노트를 관리하고 싶을 때, Linear 스타일 키보드 우선 UI, 라이트/다크, 8개 로케일
 - **기본 내장된 안정성** — 백오프 재시도 + localStorage 큐로, 불안정한 네트워크에서도 코멘트를 잃지 않음
-- **Shadow DOM 격리** — 위젯 CSS가 사이트로 새어나가지 않고, 사이트 CSS가 위젯을 깨뜨리지도 않음
+- **Shadow DOM 격리 + 항상 맨 위에 표시** — 위젯 CSS가 사이트로 새어나가지 않고, 사이트 CSS가 위젯을 깨뜨리지도 않음. 다른 플로팅 위젯(Vercel 툴바 등)과 함께 써도 최댓값 z-index와 자체 위치 재조정으로 InstaFix가 가려지지 않음
 - **기본적으로 개발 환경 전용** — `forceShow: true`를 주지 않는 한 프로덕션 빌드에서는 자동으로 숨겨짐
 - **가벼움** — gzip 기준 ~30KB(ESM); 패널·스크린샷 엔진·비영어 로케일은 필요할 때만 로드됨
 
@@ -115,19 +115,6 @@ import { InstaFixInbox } from "@instafix/dashboard";
 서버가 없다면? 위젯은 `store: new LocalStorageStore()`(`github:gnoopy/instafix#adapter-localstorage-dist`)로 완전히 클라이언트 사이드에서도 동작합니다.
 
 **InstaFix 제거하기**: 락파일과 `package.json`을 되돌리고(`git checkout -- package.json package-lock.json` 또는 사용 중인 락파일), `app/api/instafix/`와 `components/instafix-widget.tsx`를 삭제한 뒤 다시 설치하세요.
-
-## InstaFix를 쓰는 이유
-
-에이전트 워크플로우 외에, 팀 단위로 클라이언트 피드백을 받아야 할 때도 InstaFix는 그대로 쓸 수 있습니다. Slack 스레드, 이메일, Notion 문서를 뒤지며 피드백을 쫓아다니지 마세요 — 클라이언트가 보고 있는 바로 그 요소에 고정된, **맥락이 살아있는** 피드백 방법을 제공합니다.
-
-| | InstaFix | Marker.io | BugHerd |
-|---|---|---|---|
-| **셀프 호스팅** | 가능 — 내 DB, 내 데이터 | 불가 (SaaS) | 불가 (SaaS) |
-| **패키지 설치** | GitHub에서 `npm install` — 레지스트리 제약 없음 | npm + 스크립트 태그 | 스크립트 태그만 |
-| **프레임워크 친화도** | Next.js 퍼스트클래스 지원 | 프레임워크 무관 | 프레임워크 무관 |
-| **가격** | 무료 & 오픈소스 | 월 $39부터 | 월 $42부터 |
-| **DOM 기반 주석** | 다중 셀렉터(CSS + XPath + 텍스트) | 스크린샷 기반 | 핀 기반 |
-| **레이아웃 변경에도 주석 유지** | 유지됨 (퍼센트 상대좌표) | 유지 안 됨 (픽셀 좌표) | 부분적으로 유지 |
 
 ## 문서
 

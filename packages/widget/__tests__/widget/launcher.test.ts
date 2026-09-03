@@ -389,6 +389,38 @@ describe("launch", () => {
 
       instance.destroy();
     });
+
+    it("reclaims a trailing position after another element is appended later (max-z-index tie-break)", async () => {
+      const instance = launch(defaultConfig());
+      const widget = document.querySelector("instafix-widget")!;
+
+      const intruder = document.createElement("div");
+      intruder.style.cssText = "position:fixed;z-index:2147483647;";
+      document.body.appendChild(intruder);
+
+      // The re-append happens from a MutationObserver callback — poll rather
+      // than assume a fixed number of microtask ticks.
+      await vi.waitFor(() => {
+        // DOCUMENT_POSITION_FOLLOWING: `widget` comes after `intruder`.
+        expect(intruder.compareDocumentPosition(widget) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      });
+
+      intruder.remove();
+      instance.destroy();
+    });
+
+    it("stops reclaiming a trailing position after destroy", async () => {
+      const instance = launch(defaultConfig());
+      instance.destroy();
+
+      const intruder = document.createElement("div");
+      document.body.appendChild(intruder);
+      await new Promise((r) => setTimeout(r, 0));
+
+      // The (now-removed) widget host must not have been reinserted after it.
+      expect(document.querySelector("instafix-widget")).toBeNull();
+      intruder.remove();
+    });
   });
 
   // -------------------------------------------------------------------------
