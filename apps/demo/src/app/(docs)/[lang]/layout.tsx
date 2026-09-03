@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     default: "InstaFix Documentation",
     template: "%s — InstaFix Docs",
   },
-  description: "Every option, default, and behavior of the InstaFix feedback widget — verified against the source.",
+  description: "Every option, default, and behavior of the InstaFix widget — verified against the source.",
 };
 
 // Root layout of the docs route group: unlike the landing (fixed dark), the

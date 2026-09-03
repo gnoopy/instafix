@@ -2,7 +2,10 @@
 
 <div align="center">
 
-<h1>InstaFix</h1>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/brand/logo-horizontal-dark.png">
+  <img src="./assets/brand/logo-horizontal.png" alt="InstaFix" height="64">
+</picture>
 
 **AI 코딩 에이전트와 디버깅할 때, 화면을 가리키기만 하면 프롬프트가 완성됩니다.**
 

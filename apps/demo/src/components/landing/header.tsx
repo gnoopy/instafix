@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { LanguageSwitcher } from "@/components/site/language-switcher";
 import { headerContent } from "@/lib/site-i18n/content/header";
@@ -13,17 +14,7 @@ export async function Header() {
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-tight text-white">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent">
-            <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-              <title>InstaFix</title>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
-              />
-            </svg>
-          </span>
+          <Image src="/brand/icon.png" alt="" width={28} height={28} className="h-7 w-7" />
           InstaFix
         </Link>
 

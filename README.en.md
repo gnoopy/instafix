@@ -2,7 +2,10 @@
 
 <div align="center">
 
-<h1>InstaFix</h1>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/brand/logo-horizontal-dark.png">
+  <img src="./assets/brand/logo-horizontal.png" alt="InstaFix" height="64">
+</picture>
 
 **Debugging with a coding agent? Point at the UI, get a ready-made prompt.**
 

@@ -8,15 +8,15 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 export const metadata: Metadata = {
   metadataBase: new URL("https://instafix.realstory.blog"),
   title: {
-    default: "InstaFix — Client feedback, pinned to the pixel",
+    default: "InstaFix — From Web UI to Agent-Ready Prompt",
     template: "%s — InstaFix",
   },
   description:
-    "Open-source feedback widget for freelancers and agencies. DOM-anchored annotations, self-hosted, zero SaaS fees.",
+    "Point at what's wrong in the browser and get a ready-made prompt for Claude Code, Cursor, or any coding agent — exact DOM target, screenshot, and console errors included.",
   openGraph: {
-    title: "InstaFix — Client feedback, pinned to the pixel",
+    title: "InstaFix — From Web UI to Agent-Ready Prompt",
     description:
-      "Open-source feedback widget for freelancers and agencies. DOM-anchored annotations, self-hosted, zero SaaS fees.",
+      "Point at what's wrong in the browser and get a ready-made prompt for Claude Code, Cursor, or any coding agent — exact DOM target, screenshot, and console errors included.",
     url: "https://instafix.realstory.blog",
     siteName: "InstaFix",
     type: "website",
@@ -24,8 +24,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "InstaFix — Client feedback, pinned to the pixel",
-    description: "Open-source feedback widget. Self-hosted, DOM-anchored, npm install and go.",
+    title: "InstaFix — From Web UI to Agent-Ready Prompt",
+    description: "Point at what's wrong in the browser and get a ready-made prompt for your coding agent.",
   },
   other: {
     "theme-color": "#030712",
