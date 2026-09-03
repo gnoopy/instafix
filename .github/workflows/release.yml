@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     branches: [main]
+  workflow_dispatch: {}
 
 # Read-only floor. release-please re-declares its own scope, which replaces
 # this block rather than adding to it — so the default stays least-privilege
