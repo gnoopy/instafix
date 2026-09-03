@@ -90,7 +90,9 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - name: Build
-        run: bun run build --filter="./${{ matrix.package }}"
+        env:
+          PACKAGE_PATH: ${{ matrix.package }}
+        run: bun run build --filter="./$PACKAGE_PATH"
 
       - name: Publish to npm
         working-directory: ${{ matrix.package }}
