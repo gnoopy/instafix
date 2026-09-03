@@ -407,8 +407,8 @@ export function buildStyles(colors: ThemeColors): string {
     .sp-panel-header {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      padding: 16px 24px;
+      gap: 8px;
+      padding: 10px 16px;
       border-bottom: 1px solid var(--sp-border);
       background: var(--sp-glass-bg-heavy);
       backdrop-filter: blur(var(--sp-blur));
@@ -428,7 +428,7 @@ export function buildStyles(colors: ThemeColors): string {
     }
 
     .sp-panel-title {
-      font-size: 17px;
+      font-size: 15px;
       font-weight: 700;
       color: var(--sp-text);
       letter-spacing: -0.02em;
@@ -439,8 +439,8 @@ export function buildStyles(colors: ThemeColors): string {
     }
 
     .sp-panel-close {
-      width: 44px;
-      height: 44px;
+      width: 36px;
+      height: 36px;
       flex-shrink: 0;
       border-radius: var(--sp-radius);
       border: none;
@@ -468,7 +468,7 @@ export function buildStyles(colors: ThemeColors): string {
        ============================ */
 
     .sp-filters {
-      padding: 16px 24px;
+      padding: 10px 16px;
       border-bottom: 1px solid var(--sp-border);
       background: var(--sp-glass-bg-heavy);
       backdrop-filter: blur(var(--sp-blur));
@@ -480,16 +480,19 @@ export function buildStyles(colors: ThemeColors): string {
 
     .sp-search-wrap {
       position: relative;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
+    /* Filled instead of outlined — the soft background says "input" without
+       adding yet another border line to a stack of them; focus brings the
+       accent outline back. */
     .sp-search {
       width: 100%;
-      height: 40px;
-      padding: 0 12px 0 38px;
+      height: 32px;
+      padding: 0 12px 0 34px;
       border-radius: var(--sp-radius);
-      border: 1px solid var(--sp-border);
-      background: var(--sp-glass-bg-heavy);
+      border: 1px solid transparent;
+      background: var(--sp-bg-hover);
       color: var(--sp-text);
       font-family: var(--sp-font);
       font-size: 13px;
@@ -509,7 +512,7 @@ export function buildStyles(colors: ThemeColors): string {
 
     .sp-search-icon {
       position: absolute;
-      left: 12px;
+      left: 10px;
       top: 50%;
       transform: translateY(-50%);
       color: var(--sp-text-tertiary);
@@ -530,8 +533,8 @@ export function buildStyles(colors: ThemeColors): string {
     .sp-filter-bar {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
+      gap: 4px 6px;
+      margin-bottom: 0;
       flex-wrap: wrap;
     }
 
@@ -553,11 +556,12 @@ export function buildStyles(colors: ThemeColors): string {
       align-items: center;
       gap: 8px;
       width: 100%;
-      height: 32px;
+      height: 28px;
       padding: 0 8px 0 10px;
       border-radius: var(--sp-radius-full);
-      border: 1px solid var(--sp-border);
-      background: var(--sp-glass-bg-heavy);
+      /* Ghost chip — border only appears with state (hover/open/filtered). */
+      border: 1px solid transparent;
+      background: transparent;
       color: var(--sp-text);
       font-family: var(--sp-font);
       font-size: 12px;
@@ -740,13 +744,16 @@ export function buildStyles(colors: ThemeColors): string {
        Status segmented control
        ============================ */
 
+    /* Borderless group — the active chip's tinted fill + inset ring carries
+       the selection; the enclosing outline added a line without meaning. */
     .sp-segmented {
       display: inline-flex;
       align-items: stretch;
-      padding: 2px;
+      padding: 0;
+      gap: 2px;
       border-radius: var(--sp-radius-full);
-      border: 1px solid var(--sp-border);
-      background: var(--sp-glass-bg-heavy);
+      border: none;
+      background: transparent;
       flex-shrink: 0;
     }
 
@@ -757,8 +764,8 @@ export function buildStyles(colors: ThemeColors): string {
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      height: 26px;
-      padding: 0 10px;
+      height: 24px;
+      padding: 0 8px;
       border: none;
       border-radius: var(--sp-radius-full);
       background: transparent;
@@ -840,7 +847,7 @@ export function buildStyles(colors: ThemeColors): string {
     .sp-list {
       flex: 1;
       overflow-y: auto;
-      padding: 8px 12px;
+      padding: 6px 10px;
     }
 
     .sp-list::-webkit-scrollbar {
@@ -860,14 +867,16 @@ export function buildStyles(colors: ThemeColors): string {
       background: var(--sp-text-tertiary);
     }
 
+    /* Card separation comes from background + shadow + the left status bar
+       — no resting border, so the list isn't a grid of outlines. */
     .sp-card {
       display: flex;
-      padding: 14px 16px;
-      margin-bottom: 6px;
+      padding: 9px 12px;
+      margin-bottom: 5px;
       cursor: pointer;
       border-radius: var(--sp-radius);
       background: var(--sp-glass-bg-heavy);
-      border: 1px solid var(--sp-glass-border);
+      border: 1px solid transparent;
       box-shadow: var(--sp-shadow-xs);
       transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
@@ -898,7 +907,7 @@ export function buildStyles(colors: ThemeColors): string {
     .sp-card-bar {
       width: 3px;
       border-radius: var(--sp-radius-full);
-      margin-right: 14px;
+      margin-right: 10px;
       flex-shrink: 0;
     }
 
@@ -910,8 +919,8 @@ export function buildStyles(colors: ThemeColors): string {
     .sp-card-header {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 6px;
+      gap: 6px;
+      margin-bottom: 3px;
     }
 
     .sp-card-number {
@@ -949,11 +958,11 @@ export function buildStyles(colors: ThemeColors): string {
     }
 
     .sp-card-message {
-      font-size: 13px;
-      line-height: 1.5;
+      font-size: 12.5px;
+      line-height: 1.45;
       color: var(--sp-text);
       display: -webkit-box;
-      -webkit-line-clamp: 3;
+      -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -982,20 +991,50 @@ export function buildStyles(colors: ThemeColors): string {
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: 6px;
-      margin-top: 10px;
+      gap: 4px;
+      margin-top: 6px;
+    }
+
+    /* On pointer devices the footer floats over the card's top-right corner
+       and only materializes on hover/focus/selection — cards stay two lines
+       tall (that's what lets the list show twice the items) and hovering
+       never shifts the layout. Touch devices (no hover) keep the inline,
+       always-visible footer. */
+    @media (hover: hover) and (pointer: fine) {
+      .sp-card {
+        position: relative;
+      }
+
+      .sp-card-footer {
+        display: none;
+        position: absolute;
+        top: 5px;
+        right: 8px;
+        margin-top: 0;
+        padding: 2px 4px;
+        border-radius: var(--sp-radius-full);
+        background: var(--sp-bg);
+        box-shadow: var(--sp-shadow-sm);
+        z-index: 1;
+      }
+
+      .sp-card:hover .sp-card-footer,
+      .sp-card:focus-within .sp-card-footer,
+      .sp-card--selected .sp-card-footer {
+        display: flex;
+      }
     }
 
     .sp-btn-resolve,
     .sp-btn-delete,
     .sp-btn-handoff {
-      padding: 8px 14px;
+      padding: 4px 10px;
       border-radius: var(--sp-radius-full);
-      border: 1px solid var(--sp-border);
+      border: 1px solid transparent;
       background: transparent;
       color: var(--sp-text-secondary);
       font-family: var(--sp-font);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 500;
       cursor: pointer;
       display: flex;
@@ -1062,7 +1101,7 @@ export function buildStyles(colors: ThemeColors): string {
     .sp-btn-delete-all {
       padding: 5px 12px;
       border-radius: var(--sp-radius-full);
-      border: 1px solid var(--sp-border);
+      border: 1px solid transparent;
       background: transparent;
       color: var(--sp-text-tertiary);
       font-family: var(--sp-font);
@@ -1340,6 +1379,25 @@ export function buildStyles(colors: ThemeColors): string {
       font-size: 13px;
       box-shadow: var(--sp-shadow-lg);
       z-index: 5;
+    }
+
+    /* Transient notice variant (e.g. handoff failure) — same body as the
+       undo toast, centered text, no action, removes itself. */
+    .sp-notice-toast {
+      justify-content: center;
+      text-align: center;
+      animation: sp-notice-toast-in 0.2s ease;
+    }
+
+    @keyframes sp-notice-toast-in {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .sp-undo-toast-btn {

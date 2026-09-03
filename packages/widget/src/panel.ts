@@ -325,6 +325,8 @@ export class Panel {
                 if (ok) {
                   markHandedOff([fb.id]);
                   this.renderList();
+                } else {
+                  this.showNoticeToast(this.t("agent.sendToAgentFailed"));
                 }
                 return ok;
               },
@@ -457,12 +459,12 @@ export class Panel {
                 this.renderList(); // re-render picks up the ⇥ 전달됨 badge
               } else {
                 btn.disabled = false;
-                setText(btn, this.t("agent.sendToAgentFailed"));
+                this.showNoticeToast(this.t("agent.sendToAgentFailed"));
               }
             })
             .catch(() => {
               btn.disabled = false;
-              setText(btn, this.t("agent.sendToAgentFailed"));
+              this.showNoticeToast(this.t("agent.sendToAgentFailed"));
             });
         }
         return;
@@ -1251,6 +1253,30 @@ export class Panel {
   /** Deferred single-card deletes still inside their UNDO window. */
   private pendingDeletes = new Map<string, { timer: ReturnType<typeof setTimeout>; undo: () => void }>();
   private undoToast: HTMLElement | null = null;
+  private noticeToast: HTMLElement | null = null;
+  private noticeToastTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Transient notice toast — errors like a failed handoff are announced
+   * here and disappear on their own, instead of being baked into the
+   * button that triggered them (which stretched cards and buttons into
+   * multi-line layouts).
+   */
+  private showNoticeToast(message: string): void {
+    this.noticeToast?.remove();
+    if (this.noticeToastTimer) clearTimeout(this.noticeToastTimer);
+    const toast = el("div", { class: "sp-undo-toast sp-notice-toast" });
+    toast.setAttribute("role", "status");
+    const label = el("span");
+    setText(label, message);
+    toast.appendChild(label);
+    this.root.appendChild(toast);
+    this.noticeToast = toast;
+    this.noticeToastTimer = setTimeout(() => {
+      toast.remove();
+      if (this.noticeToast === toast) this.noticeToast = null;
+    }, 4000);
+  }
 
   private showUndoToast(): void {
     this.hideUndoToast();
@@ -1625,6 +1651,8 @@ export class Panel {
 
   destroy(): void {
     this.flushPendingDeletes();
+    this.noticeToast?.remove();
+    if (this.noticeToastTimer) clearTimeout(this.noticeToastTimer);
     this.loadController?.abort();
     if (this.searchTimeout) clearTimeout(this.searchTimeout);
     this.listContainer.removeEventListener("click", this.onListClick);

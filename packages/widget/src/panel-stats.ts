@@ -11,8 +11,8 @@ export const STATS_CSS = /* css */ `
   .sp-stats-bar {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 12px 24px;
+    gap: 6px;
+    padding: 8px 16px;
     border-bottom: 1px solid var(--sp-border);
     user-select: none;
   }

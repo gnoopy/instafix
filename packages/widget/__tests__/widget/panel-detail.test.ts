@@ -368,7 +368,7 @@ describe("DetailView", () => {
       }
     });
 
-    it("renders metadata rows: page (truncated), author, date, viewport, browser", () => {
+    it("renders metadata rows: page (truncated), author, date, browser·viewport", () => {
       const longUrl = "http://example.com/" + "a/".repeat(60);
       const fb = makeFeedback({
         url: longUrl,
@@ -379,12 +379,15 @@ describe("DetailView", () => {
       setup.view.show(fb, 1);
 
       const rows = setup.view.element.querySelectorAll(".sp-detail-meta-row");
-      // Page, Author, Date, Viewport, Browser = 5 rows
-      expect(rows.length).toBe(5);
+      // Page, Author, Date, Browser·Viewport = 4 rows (browser and viewport
+      // share one environment line)
+      expect(rows.length).toBe(4);
 
       // Author row should include name and email
       const authorText = setup.view.element.textContent ?? "";
       expect(authorText).toContain("Alice (alice@example.com)");
+      // Environment line carries the viewport as a suffix
+      expect(authorText).toContain("· 1920x1080");
 
       // Page row truncates long pathnames
       const pageRow = rows[0]!;
@@ -408,20 +411,22 @@ describe("DetailView", () => {
       expect(text).not.toContain("Bob (");
     });
 
-    it("falls back to 'Unknown' viewport when missing", () => {
+    it("omits the viewport suffix on the environment line when missing", () => {
       const fb = makeFeedback({ viewport: "" });
       setup.view.show(fb, 1);
-      // viewport row uses --mono modifier
-      const monoVal = setup.view.element.querySelector<HTMLElement>(".sp-detail-meta-value--mono")!;
-      expect(monoVal.textContent).toBe("Unknown");
+      const rows = setup.view.element.querySelectorAll(".sp-detail-meta-row");
+      const browserRow = Array.from(rows).find((r) =>
+        r.querySelector(".sp-detail-meta-label")?.textContent?.toLowerCase().includes("browser"),
+      )!;
+      expect(browserRow.querySelector(".sp-detail-meta-value")?.textContent).not.toContain("·");
     });
 
     it("renders the resolvedAt row only when resolvedAt is set", () => {
       const fb = makeFeedback({ status: "resolved", resolvedAt: "2024-02-01T12:00:00.000Z" });
       setup.view.show(fb, 1);
       const rows = setup.view.element.querySelectorAll(".sp-detail-meta-row");
-      // Page, Author, Date, Viewport, Browser, ResolvedAt = 6 rows
-      expect(rows.length).toBe(6);
+      // Page, Author, Date, Browser·Viewport, ResolvedAt = 5 rows
+      expect(rows.length).toBe(5);
 
       // resolved value uses --secondary modifier
       const secondaryVal = setup.view.element.querySelector<HTMLElement>(".sp-detail-meta-value--secondary");
@@ -1077,7 +1082,10 @@ describe("DetailView", () => {
       const browserRow = Array.from(rows).find((r) =>
         r.querySelector(".sp-detail-meta-label")?.textContent?.toLowerCase().includes("browser"),
       );
-      return browserRow?.querySelector(".sp-detail-meta-value")?.textContent ?? "";
+      // The environment line is "<browser> · <viewport>" — strip the
+      // viewport suffix so these assertions test parseBrowser alone.
+      const text = browserRow?.querySelector(".sp-detail-meta-value")?.textContent ?? "";
+      return text.split(" · ")[0] ?? "";
     }
 
     it("detects Edge", () => {

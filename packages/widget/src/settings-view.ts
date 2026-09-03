@@ -57,7 +57,7 @@ export const SETTINGS_CSS = /* css */ `
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 20px;
+    padding: 5px 14px;
     border: none;
     background: transparent;
     color: var(--sp-text-tertiary);

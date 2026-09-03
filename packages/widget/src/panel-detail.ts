@@ -122,8 +122,8 @@ export const DETAIL_CSS = /* css */ `
   .sp-detail-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 16px 20px;
+    gap: 10px;
+    padding: 10px 14px;
     border-bottom: 1px solid var(--sp-border);
     background: var(--sp-glass-bg-heavy);
     backdrop-filter: blur(var(--sp-blur));
@@ -208,7 +208,7 @@ export const DETAIL_CSS = /* css */ `
   /* ---- Section ---- */
 
   .sp-detail-section {
-    padding: 20px 24px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--sp-border);
     opacity: 0;
     transform: translateY(8px);
@@ -232,7 +232,7 @@ export const DETAIL_CSS = /* css */ `
     color: var(--sp-text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    margin-bottom: 14px;
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -249,17 +249,17 @@ export const DETAIL_CSS = /* css */ `
   .sp-detail-status {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 16px;
+    gap: 8px;
+    margin-bottom: 10px;
   }
 
   .sp-detail-status-pill {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 5px 14px;
+    padding: 3px 10px;
     border-radius: var(--sp-radius-full);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.02em;
   }
@@ -297,16 +297,16 @@ export const DETAIL_CSS = /* css */ `
 
   .sp-detail-actions {
     display: flex;
-    gap: 8px;
+    gap: 6px;
+    margin-left: auto;
   }
 
   .sp-detail-actions button {
-    flex: 1;
-    height: 40px;
-    padding: 0 16px;
+    height: 30px;
+    padding: 0 12px;
     border-radius: var(--sp-radius);
     font-family: var(--sp-font);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     display: flex;
@@ -380,13 +380,26 @@ export const DETAIL_CSS = /* css */ `
     box-shadow: none;
   }
 
+  /* Copy Prompt + "Agent에게" as one half-and-half row. */
+  .sp-detail-agent-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .sp-detail-agent-row .sp-agent-btn--detail {
+    flex: 1;
+    width: auto;
+    height: 32px;
+    margin-top: 0;
+  }
+
   /* ---- Message Section ---- */
 
   .sp-detail-message {
-    font-size: 14px;
-    line-height: 1.65;
+    font-size: 13px;
+    line-height: 1.5;
     color: var(--sp-text);
-    padding: 14px 16px;
+    padding: 10px 12px;
     border-left: 3px solid var(--sp-accent);
     border-radius: 0 var(--sp-radius) var(--sp-radius) 0;
     background: var(--sp-glass-bg-heavy);
@@ -399,7 +412,13 @@ export const DETAIL_CSS = /* css */ `
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 14px;
+    margin-bottom: 8px;
+  }
+
+  /* The title inside the message header supplies the section label — kill
+     its own bottom margin so the header row stays one line high. */
+  .sp-detail-message-header .sp-detail-section-title {
+    margin-bottom: 0;
   }
 
   .sp-detail-message-edit-btn {
@@ -482,7 +501,7 @@ export const DETAIL_CSS = /* css */ `
     display: block;
     width: 100%;
     height: auto;
-    max-height: 400px;
+    max-height: 180px;
     object-fit: contain;
     border-radius: var(--sp-radius);
     border: 1px solid var(--sp-glass-border);
@@ -544,26 +563,30 @@ export const DETAIL_CSS = /* css */ `
   .sp-detail-meta {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 5px;
   }
 
   .sp-detail-meta-row {
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
+    align-items: center;
+    gap: 8px;
   }
 
   .sp-detail-meta-row svg {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
     color: var(--sp-text-tertiary);
     flex-shrink: 0;
-    margin-top: 1px;
   }
 
+  /* Label and value share one line — the stacked two-line rows doubled the
+     section's height for five short facts. */
   .sp-detail-meta-content {
     flex: 1;
     min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
   }
 
   .sp-detail-meta-label {
@@ -573,14 +596,16 @@ export const DETAIL_CSS = /* css */ `
     text-transform: uppercase;
     letter-spacing: 0.06em;
     line-height: 1;
-    margin-bottom: 4px;
+    flex-shrink: 0;
+    min-width: 40px;
   }
 
   .sp-detail-meta-value {
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.4;
     color: var(--sp-text);
     word-break: break-all;
+    min-width: 0;
   }
 
   .sp-detail-meta-value--mono {
@@ -602,7 +627,7 @@ export const DETAIL_CSS = /* css */ `
   .sp-detail-annotation {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
   }
 
   .sp-detail-resolution-badge {
@@ -1362,10 +1387,8 @@ export class DetailView {
     // always renders the record's actual status.
     const isClosed = isClosedStatus(feedback.status);
 
-    // Section title
-    const sectionTitle = el("div", { class: "sp-detail-section-title" });
-    setText(sectionTitle, this.t("detail.status"));
-    container.appendChild(sectionTitle);
+    // No section title here — the pill announces itself, and this section
+    // leads the view, so the label row was pure vertical cost.
 
     // Status pill — one modifier class per status (open, in-progress,
     // resolved, wont-fix), each with its own dot colour.
@@ -1420,16 +1443,23 @@ export class DetailView {
     this.deleteBtn.appendChild(deleteSpan);
     this.deleteBtn.addEventListener("click", () => this.handleDelete());
 
+    // Resolve/delete share the status row (pill left, actions right) —
+    // one line instead of two, and the pairing "state ↔ state-changing
+    // actions" reads naturally.
     actions.appendChild(this.resolveBtn);
     actions.appendChild(this.deleteBtn);
-    container.appendChild(actions);
-    container.appendChild(this.agentCopyBtn.element);
+    statusRow.appendChild(actions);
+
+    // Copy Prompt + "Agent에게" side by side — the two "hand it to the
+    // agent" verbs belong on one line.
+    const agentRow = el("div", { class: "sp-detail-agent-row" });
+    agentRow.appendChild(this.agentCopyBtn.element);
 
     // "Agent에게" — one click drops this feedback's prompt into the server's
     // outbox for `instafix watch` to deliver into the developer's RUNNING
     // Claude Code session (mode B handoff). Only rendered when the backend
-    // path exists (HTTP client + adapter-fs); on a 404/failed handoff the
-    // button reports it inline instead of pretending.
+    // path exists (HTTP client + adapter-fs); a failed handoff is announced
+    // by the panel's toast (see Panel.onHandoff), not baked into the button.
     if (this.callbacks.onHandoff) {
       const handoffBtn = document.createElement("button");
       handoffBtn.type = "button";
@@ -1441,11 +1471,14 @@ export class DetailView {
         handoffBtn.disabled = true;
         const ok = await this.callbacks.onHandoff?.(feedback);
         handoffBtn.disabled = false;
-        setText(handoffLabel, ok ? `✓ ${this.t("agent.handedOff")}` : this.t("agent.sendToAgentFailed"));
-        setTimeout(() => setText(handoffLabel, `⇥ ${this.t("agent.sendToAgent")}`), 2000);
+        if (ok) {
+          setText(handoffLabel, `✓ ${this.t("agent.handedOff")}`);
+          setTimeout(() => setText(handoffLabel, `⇥ ${this.t("agent.sendToAgent")}`), 2000);
+        }
       });
-      container.appendChild(handoffBtn);
+      agentRow.appendChild(handoffBtn);
     }
+    container.appendChild(agentRow);
   }
 
   /**
@@ -1571,24 +1604,14 @@ export class DetailView {
       return value;
     });
 
-    // Viewport
-    this.addMetaRow(meta, ICON_MONITOR, this.t("detail.viewport"), () => {
-      const value = el("div", { class: "sp-detail-meta-value sp-detail-meta-value--mono" });
-      setText(value, feedback.viewport || "Unknown");
+    // Browser · viewport — one environment line ("Chrome 126 · 1440x900"):
+    // two stacked rows said less than this single one.
+    this.addMetaRow(meta, ICON_MONITOR, this.t("detail.browser"), () => {
+      const value = el("div", { class: "sp-detail-meta-value" });
+      const vp = feedback.viewport ? ` · ${feedback.viewport}` : "";
+      setText(value, `${parseBrowser(feedback.userAgent)}${vp}`);
       return value;
     });
-
-    // Browser
-    this.addMetaRow(
-      meta,
-      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,
-      this.t("detail.browser"),
-      () => {
-        const value = el("div", { class: "sp-detail-meta-value" });
-        setText(value, parseBrowser(feedback.userAgent));
-        return value;
-      },
-    );
 
     // Closure date (resolvedAt is the closure timestamp for BOTH terminal
     // statuses — label it "closed" rather than "resolved" for won't-fix)

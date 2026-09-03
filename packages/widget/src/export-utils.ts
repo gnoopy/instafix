@@ -26,7 +26,9 @@ export const EXPORT_CSS = `
   .sp-export-btn {
     padding: 5px 12px;
     border-radius: var(--sp-radius-full);
-    border: 1px solid var(--sp-border);
+    /* Ghost until hover — one accented button (Copy Prompt) per row is
+       enough; a wall of outlined pills reads as noise. */
+    border: 1px solid transparent;
     background: transparent;
     color: var(--sp-text-tertiary);
     font-family: var(--sp-font);

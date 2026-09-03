@@ -406,8 +406,8 @@ export const SORT_CSS = `
     gap: 5px;
     padding: 5px 12px;
     border-radius: var(--sp-radius-full);
-    border: 1px solid var(--sp-border);
-    background: var(--sp-glass-bg-heavy);
+    border: 1px solid transparent;
+    background: transparent;
     color: var(--sp-text-secondary);
     font-family: var(--sp-font);
     font-size: 12px;
@@ -511,8 +511,8 @@ export const SORT_CSS = `
     gap: 5px;
     padding: 5px 12px;
     border-radius: var(--sp-radius-full);
-    border: 1px solid var(--sp-border);
-    background: var(--sp-glass-bg-heavy);
+    border: 1px solid transparent;
+    background: transparent;
     color: var(--sp-text-secondary);
     font-family: var(--sp-font);
     font-size: 12px;
