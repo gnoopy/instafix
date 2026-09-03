@@ -480,7 +480,19 @@ export function buildStyles(colors: ThemeColors): string {
 
     .sp-search-wrap {
       position: relative;
-      margin-bottom: 8px;
+    }
+
+    /* Select-all + search share one row directly above the cards. */
+    .sp-list-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .sp-list-toolbar .sp-search-wrap {
+      flex: 1;
+      min-width: 0;
     }
 
     /* Filled instead of outlined — the soft background says "input" without

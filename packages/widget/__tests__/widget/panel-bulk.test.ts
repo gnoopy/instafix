@@ -59,7 +59,7 @@ describe("BulkActions", () => {
 
   it("selects all and then deselects all from the select-all bar", () => {
     const { bulk, list } = createBulkActions();
-    const selectAll = bulk.createSelectAllBar(["fb-1", "fb-2", "fb-3"], "Select all");
+    const selectAll = bulk.createSelectAllBar(() => ["fb-1", "fb-2", "fb-3"], "Select all");
     list.prepend(selectAll);
 
     selectAll.click();

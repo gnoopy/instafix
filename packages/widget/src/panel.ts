@@ -250,7 +250,6 @@ export class Panel {
     this.sortControls.element.classList.add("sp-sort-controls--inline");
     filterBar.appendChild(this.sortControls.element);
 
-    filters.appendChild(searchWrap);
     filters.appendChild(filterBar);
 
     // --- List ---
@@ -268,6 +267,19 @@ export class Panel {
       this.t,
     );
     this.bulk.setListContainer(this.listContainer);
+
+    // List toolbar — the select-all checkbox (always visible) shares one
+    // row with the search field, directly above the cards. Built once; the
+    // select-all click reads the live feedback list through the provider.
+    const listToolbar = el("div", { class: "sp-list-toolbar" });
+    listToolbar.appendChild(
+      this.bulk.createSelectAllBar(
+        () => this.feedbacks.map((f) => f.id),
+        this.t("bulk.selectAll"),
+      ),
+    );
+    listToolbar.appendChild(searchWrap);
+    filters.appendChild(listToolbar);
 
     // --- Detail View ---
     this.detail = new DetailView(
@@ -853,13 +865,8 @@ export class Panel {
       return;
     }
 
-    // Apply sorting
+    // Apply sorting (the select-all bar is static, up in the list toolbar)
     const sorted = sortFeedbacks(this.feedbacks, this.sortControls.sortMode);
-
-    // Select all bar
-    const feedbackIds = sorted.map((f) => f.id);
-    const selectAllBar = this.bulk.createSelectAllBar(feedbackIds, this.t("bulk.selectAll"));
-    this.listContainer.appendChild(selectAllBar);
 
     if (this.sortControls.groupByPage) {
       // Group by page rendering

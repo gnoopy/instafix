@@ -27,6 +27,8 @@ export const BULK_CSS = `
      Bulk Checkbox
      ============================ */
 
+  /* Visible at rest (subdued), darker on card hover, accent on direct
+     hover — selectability shouldn't be a secret you discover by mousing. */
   .sp-bulk-checkbox {
     position: relative;
     width: 16px;
@@ -34,8 +36,8 @@ export const BULK_CSS = `
     flex-shrink: 0;
     cursor: pointer;
     border-radius: 4px;
-    color: var(--sp-border);
-    opacity: 0;
+    color: var(--sp-text-tertiary);
+    opacity: 0.55;
     transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
     display: inline-flex;
     align-items: center;
@@ -59,9 +61,10 @@ export const BULK_CSS = `
     filter: drop-shadow(0 0 4px var(--sp-accent-glow));
   }
 
-  /* Show checkboxes when hovering a card */
+  /* Darken when hovering the card */
   .sp-card:hover .sp-bulk-checkbox {
     opacity: 1;
+    color: var(--sp-text-secondary);
   }
 
   /* When any card has selection, show ALL checkboxes */
@@ -86,32 +89,28 @@ export const BULK_CSS = `
      Select All Bar
      ============================ */
 
+  /* Always visible — lives in the list toolbar next to the search field. */
   .sp-bulk-select-all {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    margin-bottom: 4px;
+    gap: 6px;
+    height: 32px;
+    padding: 0 8px 0 4px;
+    flex-shrink: 0;
     border-radius: var(--sp-radius);
     background: transparent;
     cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.2s ease, background 0.2s ease;
+    transition: background 0.2s ease;
     user-select: none;
     font-family: var(--sp-font);
     font-size: 12px;
     font-weight: 500;
     color: var(--sp-text-secondary);
+    white-space: nowrap;
   }
 
   .sp-bulk-select-all:hover {
     background: var(--sp-bg-hover);
-  }
-
-  /* Show select-all on list hover or when selections exist */
-  .sp-list:hover .sp-bulk-select-all,
-  .sp-list--has-selection .sp-bulk-select-all {
-    opacity: 1;
   }
 
   .sp-bulk-select-all .sp-bulk-checkbox {
@@ -430,10 +429,12 @@ export class BulkActions {
   }
 
   /**
-   * Create a "Select all" bar element.
-   * The caller should insert this at the top of the list container.
+   * Create a "Select all" bar element. Built ONCE and mounted statically
+   * (it lives in the list toolbar next to the search field, not inside the
+   * re-rendered list) — so the current ids come from a provider, read at
+   * click time.
    */
-  createSelectAllBar(feedbackIds: string[], label: string): HTMLElement {
+  createSelectAllBar(getFeedbackIds: () => string[], label: string): HTMLElement {
     const wrapper = el("div", { class: "sp-bulk-select-all" });
 
     const checkbox = el("div", { class: "sp-bulk-checkbox" });
@@ -447,6 +448,7 @@ export class BulkActions {
     wrapper.appendChild(labelEl);
 
     wrapper.addEventListener("click", () => {
+      const feedbackIds = getFeedbackIds();
       // If all selected, deselect; otherwise select all
       if (this.selected.size === feedbackIds.length && feedbackIds.length > 0) {
         this.deselectAll();
@@ -521,15 +523,16 @@ export class BulkActions {
     return this.selected.size > 0;
   }
 
-  /** Reset state (e.g., after feedbacks reload) */
+  /** Reset state (e.g., after feedbacks reload). The static select-all
+   *  checkbox survives resets — only its checked visual is cleared. */
   reset(): void {
     this.selected.clear();
     this.checkboxMap.clear();
-    this.selectAllCheckbox = null;
 
     this.isProcessing = false;
     this.updateBar();
     this.updateListSelectionClass();
+    this.updateSelectAllCheckbox();
   }
 
   /** Destroy / cleanup */
