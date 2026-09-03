@@ -30,8 +30,3 @@ export const validPayload = {
   annotations: [validAnnotation],
   clientId: "uuid-123",
 };
-
-export const validPayloadNoAnnotations = {
-  ...validPayload,
-  annotations: [] as typeof validPayload.annotations,
-};

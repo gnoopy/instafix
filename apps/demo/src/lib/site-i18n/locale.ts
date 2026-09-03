@@ -1,7 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { SITE_LOCALE_COOKIE, SITE_LOCALES, type SiteLocale } from "./constants";
 
-export { SITE_LOCALE_COOKIE, SITE_LOCALE_LABELS, SITE_LOCALES, type SiteLocale } from "./constants";
+export type { SiteLocale } from "./constants";
 
 /**
  * Language switcher for the marketing/landing pages — separate from the docs

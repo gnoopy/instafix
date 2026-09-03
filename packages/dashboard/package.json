@@ -56,6 +56,9 @@
   "engines": {
     "node": ">=20"
   },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
   "devDependencies": {
     "@instafix/core": "workspace:*",
     "@size-limit/preset-small-lib": "^12.1.0",

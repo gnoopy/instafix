@@ -53,9 +53,16 @@ export default defineConfig({
         // branches 92.3→88.2. Issue #252 tracks covering those components
         // and ratcheting these back up (branches toward 92 then 95,
         // functions to 95).
-        functions: 94,
-        branches: 88,
-        statements: 95,
+        //
+        // Recalibrated again after removing adapter-kit and adapter-prisma
+        // (both small, near-100%-covered packages): same suite, same
+        // per-file coverage, but the blended average drops once those two
+        // stop padding it. functions 94.3→93.7, statements 95→94.1,
+        // branches 88.2→86.9 — a population-size artifact, not a quality
+        // regression. Small margin kept below the honest current numbers.
+        functions: 93,
+        branches: 86,
+        statements: 93.5,
       },
     },
   },
