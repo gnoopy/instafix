@@ -1,6 +1,6 @@
 {
   "name": "@instafix/dashboard",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "Linear-style triage inbox React component for InstaFix feedback",
   "type": "module",
   "sideEffects": false,
