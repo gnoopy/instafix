@@ -1,7 +1,8 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-function componentTemplate(projectName: string): string {
+function componentTemplate(projectName: string, dashboardUrl?: string): string {
+  const dashboardLine = dashboardUrl ? `\n      dashboardUrl: "${dashboardUrl}",` : "";
   return `"use client";
 
 import { useEffect } from "react";
@@ -11,7 +12,7 @@ export function InstaFixWidget() {
   useEffect(() => {
     const { destroy } = initInstaFix({
       endpoint: "/api/instafix",
-      projectName: "${projectName}",
+      projectName: "${projectName}",${dashboardLine}
     });
     return destroy;
   }, []);
@@ -36,10 +37,17 @@ export interface WidgetComponentGenerationResult {
  * project uses a `src/` layout) so the caller only has to drop
  * `<InstaFixWidget />` into their root layout. Skips if the file already
  * exists.
+ *
+ * `dashboardUrl`, when given, is threaded into the generated `initInstaFix()`
+ * call so the panel's "Open dashboard" button shows up pointing at the page
+ * `generateDashboardPage()` scaffolds (see dashboard-page.ts) — the button is
+ * only rendered when this option is set, so omitting it here is what keeps it
+ * hidden for widget-only setups.
  */
 export function generateWidgetComponent(
   basePath: string = process.cwd(),
   projectName = "my-project",
+  dashboardUrl?: string,
 ): WidgetComponentGenerationResult {
   const componentsDir = existsSync(join(basePath, "src", "app"))
     ? join(basePath, "src", "components")
@@ -53,7 +61,7 @@ export function generateWidgetComponent(
 
   try {
     mkdirSync(dirname(componentPath), { recursive: true });
-    writeFileSync(componentPath, componentTemplate(projectName), "utf-8");
+    writeFileSync(componentPath, componentTemplate(projectName, dashboardUrl), "utf-8");
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
     if (code === "EACCES" || code === "EPERM") {

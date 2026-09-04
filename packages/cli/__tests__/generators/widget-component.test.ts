@@ -74,6 +74,24 @@ describe("generateWidgetComponent", () => {
   });
 
   // -------------------------------------------------------------------------
+  // dashboardUrl wiring
+  // -------------------------------------------------------------------------
+
+  it("wires dashboardUrl into initInstaFix when given", () => {
+    const result = generateWidgetComponent(tmpDir, "acme", "/instafix");
+    const content = readFileSync(result.path, "utf-8");
+
+    expect(content).toContain('dashboardUrl: "/instafix"');
+  });
+
+  it("omits dashboardUrl entirely when not given", () => {
+    const result = generateWidgetComponent(tmpDir, "acme");
+    const content = readFileSync(result.path, "utf-8");
+
+    expect(content).not.toContain("dashboardUrl");
+  });
+
+  // -------------------------------------------------------------------------
   // Permission error
   // -------------------------------------------------------------------------
 

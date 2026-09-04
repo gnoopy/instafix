@@ -1,3 +1,5 @@
+import { basename } from "node:path";
+import { generateDashboardPage } from "../generators/dashboard-page.js";
 import { generateRoute } from "../generators/route.js";
 import { generateWidgetComponent } from "../generators/widget-component.js";
 import { p } from "../prompts.js";
@@ -73,11 +75,42 @@ export async function initCommand(): Promise<void> {
     process.exit(0);
   }
 
+  // Step 3: Dashboard page — asked before generating the widget component
+  // (below) so, when both are accepted, the widget can be scaffolded with
+  // `dashboardUrl` already wired to the page this step creates, instead of
+  // shipping a widget-only setup that leaves the panel's dashboard button
+  // silently hidden (its only tell was `dashboardUrl` missing from the
+  // generated component — nothing in `init`'s own output pointed at it).
+  const shouldGenerateDashboard = await p.confirm({
+    message: "Generate a dashboard page too? (a private /instafix admin view of the feedback)",
+  });
+
+  if (p.isCancel(shouldGenerateDashboard)) {
+    p.cancel("Cancelled.");
+    process.exit(0);
+  }
+
   let widgetResult: { created: boolean; path: string } | null = null;
+  let dashboardResult: { created: boolean; path: string; url: string } | null = null;
+
+  if (shouldGenerateDashboard) {
+    try {
+      dashboardResult = generateDashboardPage(cwd, readProjectName(cwd));
+      if (dashboardResult.created) {
+        p.log.success(`Dashboard page created: ${dashboardResult.path}`);
+      } else {
+        p.log.info(`Dashboard page already exists: ${dashboardResult.path}`);
+      }
+    } catch (error) {
+      p.log.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      p.outro("Fix the errors above and re-run `instafix init`.");
+      process.exit(1);
+    }
+  }
 
   if (shouldGenerateWidget) {
     try {
-      widgetResult = generateWidgetComponent(cwd, readProjectName(cwd));
+      widgetResult = generateWidgetComponent(cwd, readProjectName(cwd), dashboardResult?.url);
       if (widgetResult.created) {
         p.log.success(`Widget component created: ${widgetResult.path}`);
       } else {
@@ -90,7 +123,7 @@ export async function initCommand(): Promise<void> {
     }
   }
 
-  // Step 3: Next steps — only what's left to do by hand
+  // Step 4: Next steps — only what's left to do by hand
   const steps: string[] = [];
 
   if (routeSkipped) {
@@ -112,6 +145,17 @@ export async function initCommand(): Promise<void> {
     );
   }
 
+  if (dashboardResult) {
+    steps.push(
+      `${steps.length + 1}. Install the dashboard package:`,
+      "   npm install @instafix/dashboard",
+      "",
+      `   The ${dashboardResult.url} page has no access control of its own — guard`,
+      "   it the same way you'd guard any other admin page in your app before",
+      "   shipping it.",
+    );
+  }
+
   if (widgetResult) {
     steps.push(
       `${steps.length + 1}. Add it to your root layout:`,
@@ -120,6 +164,14 @@ export async function initCommand(): Promise<void> {
       "",
       "   <InstaFixWidget />",
     );
+    if (dashboardResult && !widgetResult.created) {
+      steps.push(
+        "",
+        `   ${basename(widgetResult.path)} already existed, so it was left as-is — add`,
+        `   dashboardUrl: "${dashboardResult.url}" to its initInstaFix({...}) call yourself`,
+        "   if you want the panel's dashboard button to show up.",
+      );
+    }
   } else {
     steps.push(
       `${steps.length + 1}. Add the widget to your layout:`,
@@ -129,6 +181,7 @@ export async function initCommand(): Promise<void> {
       "   initInstaFix({",
       '     endpoint: "/api/instafix",',
       `     projectName: "${readProjectName(cwd)}",`,
+      ...(dashboardResult ? [`     dashboardUrl: "${dashboardResult.url}",`] : []),
       "   })",
     );
   }

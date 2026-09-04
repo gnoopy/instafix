@@ -217,6 +217,120 @@ describe("initCommand", () => {
   });
 
   // -------------------------------------------------------------------------
+  // Dashboard page generation
+  // -------------------------------------------------------------------------
+
+  describe("dashboard page generation", () => {
+    it("generates the page and reports success when confirmed", async () => {
+      writeFileSync(join(tmpDir, "package.json"), JSON.stringify({ name: "acme" }));
+      vi.mocked(p.confirm).mockResolvedValueOnce(false); // decline widget
+      vi.mocked(p.confirm).mockResolvedValueOnce(true); // confirm dashboard
+
+      await initCommand();
+
+      const pagePath = join(tmpDir, "app", "instafix", "page.tsx");
+      expect(existsSync(pagePath)).toBe(true);
+      expect(p.log.success).toHaveBeenCalledWith(expect.stringContaining("Dashboard page created:"));
+    });
+
+    it("shows info when the page already exists", async () => {
+      mkdirSync(join(tmpDir, "app", "instafix"), { recursive: true });
+      writeFileSync(join(tmpDir, "app", "instafix", "page.tsx"), "// existing");
+      vi.mocked(p.confirm).mockResolvedValueOnce(false); // decline widget
+      vi.mocked(p.confirm).mockResolvedValueOnce(true); // confirm dashboard
+
+      await initCommand();
+
+      expect(p.log.info).toHaveBeenCalledWith(expect.stringContaining("Dashboard page already exists:"));
+    });
+
+    it("does not generate the page when declined", async () => {
+      // beforeEach already defaults both select() and confirm() to decline
+
+      await initCommand();
+
+      expect(existsSync(join(tmpDir, "app", "instafix", "page.tsx"))).toBe(false);
+    });
+
+    it("exits(0) when the dashboard confirm is cancelled", async () => {
+      vi.mocked(p.confirm).mockResolvedValueOnce(false); // decline widget
+      vi.mocked(p.confirm).mockResolvedValueOnce(Symbol("cancel") as any); // cancel dashboard prompt
+
+      const err = await initCommand().catch((e) => e);
+
+      expect(err).toBeInstanceOf(ExitError);
+      expect((err as ExitError).code).toBe(0);
+      expect(p.cancel).toHaveBeenCalledWith("Cancelled.");
+    });
+
+    it("wires dashboardUrl into the generated widget component when both are confirmed", async () => {
+      writeFileSync(join(tmpDir, "package.json"), JSON.stringify({ name: "acme" }));
+      vi.mocked(p.confirm).mockResolvedValueOnce(true); // confirm widget
+      vi.mocked(p.confirm).mockResolvedValueOnce(true); // confirm dashboard
+
+      await initCommand();
+
+      const widgetContent = readFileSync(join(tmpDir, "components", "instafix-widget.tsx"), "utf-8");
+      expect(widgetContent).toContain('dashboardUrl: "/instafix"');
+    });
+
+    it("does not wire dashboardUrl when the dashboard page is declined", async () => {
+      writeFileSync(join(tmpDir, "package.json"), JSON.stringify({ name: "acme" }));
+      vi.mocked(p.confirm).mockResolvedValueOnce(true); // confirm widget
+      vi.mocked(p.confirm).mockResolvedValueOnce(false); // decline dashboard
+
+      await initCommand();
+
+      const widgetContent = readFileSync(join(tmpDir, "components", "instafix-widget.tsx"), "utf-8");
+      expect(widgetContent).not.toContain("dashboardUrl");
+    });
+
+    it("lists the dashboard install + access-control note as a next step when confirmed", async () => {
+      writeFileSync(join(tmpDir, "package.json"), JSON.stringify({ name: "acme" }));
+      vi.mocked(p.confirm).mockResolvedValueOnce(false); // decline widget
+      vi.mocked(p.confirm).mockResolvedValueOnce(true); // confirm dashboard
+
+      await initCommand();
+
+      const noteText = vi.mocked(p.note).mock.calls.find((c) => c[1] === "Next steps")?.[0] as string;
+      expect(noteText).toContain("npm install @instafix/dashboard");
+      expect(noteText).toContain("no access control of its own");
+    });
+
+    it("tells the user to manually wire dashboardUrl when the widget component already existed", async () => {
+      mkdirSync(join(tmpDir, "components"), { recursive: true });
+      writeFileSync(join(tmpDir, "components", "instafix-widget.tsx"), "// existing, untouched");
+      vi.mocked(p.confirm).mockResolvedValueOnce(true); // confirm widget (no-op, already exists)
+      vi.mocked(p.confirm).mockResolvedValueOnce(true); // confirm dashboard
+
+      await initCommand();
+
+      const noteText = vi.mocked(p.note).mock.calls.find((c) => c[1] === "Next steps")?.[0] as string;
+      expect(noteText).toContain("already existed, so it was left as-is");
+      expect(noteText).toContain('dashboardUrl: "/instafix"');
+    });
+
+    it("formats generation failures via String() when a non-Error value is thrown", async () => {
+      const dashboardModule = await import("../../src/generators/dashboard-page.js");
+      const stub = vi.spyOn(dashboardModule, "generateDashboardPage").mockImplementation(() => {
+        throw "plain-string dashboard failure"; // not an Error
+      });
+
+      vi.mocked(p.confirm).mockResolvedValueOnce(false); // decline widget
+      vi.mocked(p.confirm).mockResolvedValueOnce(true); // confirm dashboard
+
+      const err = await initCommand().catch((e) => e);
+
+      expect(err).toBeInstanceOf(ExitError);
+      expect((err as ExitError).code).toBe(1);
+      expect(p.log.error).toHaveBeenCalledWith(expect.stringContaining("plain-string dashboard failure"));
+      expect(p.outro).toHaveBeenCalledWith(expect.stringContaining("Fix the errors"));
+
+      stub.mockRestore();
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // Full happy path
   // -------------------------------------------------------------------------
 
@@ -245,6 +359,23 @@ describe("initCommand", () => {
       expect(noteText).toContain('import { InstaFixWidget } from "@/components/instafix-widget"');
       expect(noteText).toContain("<InstaFixWidget />");
       expect(noteText).not.toContain("initInstaFix");
+    });
+
+    it("runs route + widget + dashboard, wired together, when all three confirmed", async () => {
+      createAppDir(tmpDir);
+      vi.mocked(p.select).mockResolvedValueOnce("sqlite" as never);
+      vi.mocked(p.confirm).mockResolvedValueOnce(true); // widget
+      vi.mocked(p.confirm).mockResolvedValueOnce(true); // dashboard
+
+      await initCommand();
+
+      expect(p.log.success).toHaveBeenCalledWith(expect.stringContaining("Route created"));
+      expect(p.log.success).toHaveBeenCalledWith(expect.stringContaining("Dashboard page created"));
+      expect(p.log.success).toHaveBeenCalledWith(expect.stringContaining("Widget component created"));
+      expect(existsSync(join(tmpDir, "app", "api", "instafix", "route.ts"))).toBe(true);
+      expect(existsSync(join(tmpDir, "app", "instafix", "page.tsx"))).toBe(true);
+      const widgetContent = readFileSync(join(tmpDir, "components", "instafix-widget.tsx"), "utf-8");
+      expect(widgetContent).toContain('dashboardUrl: "/instafix"');
     });
   });
 
