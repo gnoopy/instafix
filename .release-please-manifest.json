@@ -1,5 +1,5 @@
 {
-  "packages/widget": "0.10.14",
+  "packages/widget": "0.10.15",
   "packages/dashboard": "0.2.10",
   "packages/cli": "0.5.8",
   "packages/adapter-sqlite": "1.0.0",
