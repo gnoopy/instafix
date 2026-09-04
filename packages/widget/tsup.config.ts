@@ -1,4 +1,14 @@
+import { readFileSync } from "node:fs";
 import { defineConfig } from "tsup";
+
+// The shipped version string, read from this package's own manifest and
+// inlined into every bundle (see src/version.ts). The panel header renders
+// it, so "am I running the version I think I am?" is answerable from the UI
+// instead of node_modules — the exact question a stale npm install raises.
+const { version } = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")) as {
+  version: string;
+};
+const versionDefine = { __INSTAFIX_VERSION__: JSON.stringify(version) } as const;
 
 // Three parallel builds:
 //  - ESM+CJS main: ESM is code-split so dynamic imports (Panel, locale
@@ -53,7 +63,7 @@ export default defineConfig([
     noExternal: ["@medv/finder", "@instafix/core", "html2canvas-pro"],
     esbuildOptions(o) {
       o.pure = [...pureCalls];
-      o.define = { ...o.define, ...keepNodeEnvLiteral };
+      o.define = { ...o.define, ...keepNodeEnvLiteral, ...versionDefine };
     },
   },
   {
@@ -71,7 +81,7 @@ export default defineConfig([
     noExternal: ["@medv/finder", "@instafix/core"],
     esbuildOptions(o) {
       o.pure = [...pureCalls];
-      o.define = { ...o.define, ...keepNodeEnvLiteral };
+      o.define = { ...o.define, ...keepNodeEnvLiteral, ...versionDefine };
     },
   },
   {
@@ -91,7 +101,7 @@ export default defineConfig([
     external: ["react"],
     esbuildOptions(o) {
       o.pure = [...pureCalls];
-      o.define = { ...o.define, ...keepNodeEnvLiteral };
+      o.define = { ...o.define, ...keepNodeEnvLiteral, ...versionDefine };
     },
   },
 ]);

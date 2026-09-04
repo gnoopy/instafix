@@ -42,6 +42,7 @@ import { savePersistedSettings } from "./settings-storage.js";
 import { SettingsView } from "./settings-view.js";
 import { focusCardByIndex, getFocusedCardIndex, KeyboardShortcuts } from "./shortcuts.js";
 import { getStatusBgColor, getStatusColor, getTypeBgColor, getTypeColor, type ThemeColors } from "./styles/theme.js";
+import { WIDGET_VERSION } from "./version.js";
 
 /** Non-terminal statuses — complement of `CLOSED_FEEDBACK_STATUSES`; backs the panel's "Open" tab bucket. */
 const OPEN_FEEDBACK_STATUSES: readonly FeedbackStatus[] = FEEDBACK_STATUSES.filter((s) => !isClosedStatus(s));
@@ -134,6 +135,13 @@ export class Panel {
     const title = el("span", { class: "sp-panel-title" });
     setText(title, this.t("panel.title"));
 
+    // Version chip next to the title — the shipped build's own version, so a
+    // stale install ("why is this icon the old one?") is visible in the UI
+    // instead of requiring a dig through node_modules.
+    const version = el("span", { class: "sp-panel-version" });
+    setText(version, `v${WIDGET_VERSION}`);
+    version.title = `@instafix/widget ${WIDGET_VERSION}`;
+
     this.closeBtn = document.createElement("button");
     this.closeBtn.className = "sp-panel-close";
     this.closeBtn.setAttribute("aria-label", this.t("panel.close"));
@@ -221,6 +229,7 @@ export class Panel {
     if (this.openDashboardBtn) headerTopIcons.appendChild(this.openDashboardBtn);
     headerTopIcons.appendChild(this.closeBtn);
     headerTop.appendChild(title);
+    headerTop.appendChild(version);
     headerTop.appendChild(headerTopIcons);
 
     // Settings — an inline accordion pinned to the top of the panel body
