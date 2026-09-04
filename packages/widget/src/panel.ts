@@ -154,15 +154,21 @@ export class Panel {
     // discover on its own). Only rendered when the host supplied
     // `dashboardUrl`; there is no default/guessed URL, so omitting the
     // option simply omits the button instead of producing a dead link.
+    //
+    // Icon-only (like closeBtn), unlike its three siblings here: a visible
+    // label pushed the header past its wrap width and stranded this button
+    // alone on its own row (finish-pass harness screenshot, desktop 1440px —
+    // the other three already filled the row edge-to-edge without it). A
+    // native `title` tooltip covers discoverability that the icon alone
+    // can't, since "external link" reads less immediately than the other
+    // three icons' actions.
     const dashboardUrl = this.settingsOptions?.config.dashboardUrl;
     if (dashboardUrl) {
       this.openDashboardBtn = document.createElement("button");
       this.openDashboardBtn.className = "sp-btn-open-dashboard";
       this.openDashboardBtn.setAttribute("aria-label", this.t("panel.openDashboard"));
+      this.openDashboardBtn.setAttribute("title", this.t("panel.openDashboard"));
       this.openDashboardBtn.appendChild(parseSvg(ICON_EXTERNAL_LINK));
-      const openDashboardLabel = document.createElement("span");
-      setText(openDashboardLabel, ` ${this.t("panel.openDashboard")}`);
-      this.openDashboardBtn.appendChild(openDashboardLabel);
       this.openDashboardBtn.addEventListener("click", () => {
         // New tab, not same-tab navigation — the widget (and the feedback
         // session it's mid-flow on) stays alive in the original tab, and

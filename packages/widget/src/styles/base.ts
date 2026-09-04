@@ -1148,18 +1148,15 @@ export function buildStyles(colors: ThemeColors): string {
        brand-specific color (this is a plain navigation action, not export or
        a destructive one). */
     .sp-btn-open-dashboard {
-      padding: 5px 12px;
+      padding: 6px;
       border-radius: var(--sp-radius-full);
       border: 1px solid transparent;
       background: transparent;
       color: var(--sp-text-tertiary);
-      font-family: var(--sp-font);
-      font-size: 11px;
-      font-weight: 500;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 4px;
+      justify-content: center;
       transition: all 0.2s ease;
     }
 
