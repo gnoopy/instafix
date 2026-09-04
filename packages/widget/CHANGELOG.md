@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.11](https://github.com/gnoopy/instafix/compare/widget-v0.10.10...widget-v0.10.11) (2026-09-04)
+
+
+### Bug Fixes
+
+* **widget,dashboard:** reposition dashboard-link button, fix accent-sync bugs ([5deb2b7](https://github.com/gnoopy/instafix/commit/5deb2b749a4d1b525d8855b8cf1beed834dbc731))
+
 ## [0.10.10](https://github.com/gnoopy/instafix/compare/widget-v0.10.9...widget-v0.10.10) (2026-09-04)
 
 
