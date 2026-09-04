@@ -1,5 +1,6 @@
 import type { InstaFixConfig } from "@instafix/core";
 import { sampleBackgroundIsLight } from "./dom/background-contrast.js";
+import { type FrozenPage, freezePage } from "./dom/freeze.js";
 import { parseSvg, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
 import { type TFunction, type Translations, tWithParams } from "./i18n/index.js";
@@ -12,6 +13,8 @@ import {
   ICON_EYE_OFF,
   ICON_INSTAFIX,
   ICON_LIST,
+  ICON_PAUSE,
+  ICON_PLAY,
   ICON_TARGET,
 } from "./icons.js";
 
@@ -22,7 +25,7 @@ const CONTRAST_DEBOUNCE_MS = 200;
 const SHINE_INTERVAL_CHOICES_MS = [3000, 4000, 5000];
 
 /** Closed set of toolbar item ids — keeps the label lookup exhaustive. */
-type ToolbarItemId = "chat" | "annotate" | "target-picker" | "toggle-annotations" | "move-side";
+type ToolbarItemId = "chat" | "annotate" | "target-picker" | "freeze" | "toggle-annotations" | "move-side";
 
 interface ToolbarItem {
   id: ToolbarItemId;
@@ -39,6 +42,7 @@ const ITEM_LABEL_KEYS: Record<ToolbarItemId, keyof Translations> = {
   chat: "fab.messages",
   annotate: "fab.annotate",
   "target-picker": "fab.targeting",
+  freeze: "fab.freeze",
   "toggle-annotations": "fab.annotations",
   // Placeholder: the real key depends on which side the widget currently
   // sits on, so the item carries its own `labelKey` override.
@@ -61,6 +65,10 @@ const ITEM_SHORTCUT_CODES: Record<ToolbarItemId, string> = {
   chat: "KeyS",
   annotate: "KeyA",
   "target-picker": "KeyT",
+  // P for Pause. The shortcut matters more here than for the other items:
+  // reaching for the button moves the pointer, and moving the pointer is
+  // exactly what loses the hover state freezing is meant to hold.
+  freeze: "KeyP",
   "toggle-annotations": "KeyV",
   // M for Move — the only remaining unclaimed letter that reads as its verb.
   "move-side": "KeyM",
@@ -135,6 +143,8 @@ export class Fab {
   private contrastDebounce: ReturnType<typeof setTimeout> | null = null;
   private readonly onWindowChange: () => void;
   private shineTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Active page freeze, or null. Owned here because nothing else needs it — the annotator works the same frozen or not. */
+  private frozen: FrozenPage | null = null;
   private activeShine: HTMLElement | null = null;
 
   constructor(
@@ -159,6 +169,7 @@ export class Fab {
       { id: "chat", icon: ICON_LIST },
       { id: "annotate", icon: ICON_CROP },
       { id: "target-picker", icon: ICON_TARGET },
+      { id: "freeze", icon: ICON_PAUSE, iconAlt: ICON_PLAY },
     ];
     if (config.showAnnotationsToggle !== false) {
       this.items.push({ id: "toggle-annotations", icon: ICON_EYE, iconAlt: ICON_EYE_OFF });
@@ -544,12 +555,46 @@ export class Fab {
     if (badge) this.fab.appendChild(badge);
   }
 
+  /**
+   * Hold the page still so a transient state can be annotated — a running
+   * animation, a playing video, or (the hard one) an element that only exists
+   * while hovered. Stays frozen until toggled off, so several annotations can
+   * be drawn on the same held state rather than re-triggering it each time.
+   *
+   * The button's own label and icon flip so the frozen state is never
+   * ambiguous — a frozen page that looks broken with no visible cause is a
+   * worse bug than the one this feature fixes.
+   */
+  private toggleFreeze(): void {
+    if (this.frozen) {
+      this.frozen.release();
+      this.frozen = null;
+    } else {
+      this.frozen = freezePage();
+    }
+    const active = this.frozen !== null;
+    const btn = this.toolbar.querySelector<HTMLButtonElement>('[data-item-id="freeze"]');
+    if (btn) {
+      btn.classList.toggle("sp-toolbar-item--active", active);
+      btn.setAttribute("aria-pressed", String(active));
+      // Replace ONLY the icon SVG — the button also carries its hover label.
+      const oldSvg = btn.querySelector("svg");
+      if (oldSvg) oldSvg.replaceWith(parseSvg(active ? ICON_PLAY : ICON_PAUSE));
+      const labelText = btn.querySelector<HTMLSpanElement>(".sp-toolbar-label-text");
+      if (labelText) setText(labelText, this.t(active ? "fab.unfreeze" : "fab.freeze"));
+      btn.setAttribute("aria-label", this.t(active ? "fab.unfreeze" : "fab.freeze"));
+    }
+  }
+
   private handleItemClick(id: ToolbarItemId): void {
     // The toolbar stays visible after an action — that's the entire point of
     // making it persistent instead of a menu that closes on every use.
     switch (id) {
       case "chat":
         this.bus.emit("panel:toggle", true);
+        break;
+      case "freeze":
+        this.toggleFreeze();
         break;
       case "move-side":
         // launcher.ts owns this: flipping sides persists the choice and
@@ -604,6 +649,11 @@ export class Fab {
   }
 
   destroy(): void {
+    // A freeze mutates the HOST page (stylesheet, paused media, inline
+    // styles). Leaving it behind on teardown would strand the page in a
+    // broken-looking state with the control that undoes it already gone.
+    this.frozen?.release();
+    this.frozen = null;
     window.removeEventListener("scroll", this.onWindowChange);
     window.removeEventListener("resize", this.onWindowChange);
     if (this.contrastDebounce) clearTimeout(this.contrastDebounce);

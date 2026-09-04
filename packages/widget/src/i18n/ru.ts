@@ -59,6 +59,8 @@ export const ru: Translations = {
   "fab.annotate": "Выбрать область",
   "fab.targeting": "Автовыбор элемента",
   "fab.annotations": "Показать или скрыть метки",
+  "fab.freeze": "Заморозить страницу",
+  "fab.unfreeze": "Разморозить страницу",
   "fab.moveLeft": "Переместить панель влево",
   "fab.moveRight": "Переместить панель вправо",
 
@@ -193,6 +195,8 @@ export const ru: Translations = {
   "agent.copyButton": "Копировать промпт",
   "agent.scopeSelected": "Выбрано: {count}",
   "agent.scopeOpenPage": "Все открытые элементы этой страницы",
+  "agent.scopeOpenTemplate": "Все открытые элементы на страницах этого типа",
+  "agent.scopeOpenAll": "Все открытые элементы со всех страниц (пакет)",
   "agent.handedOff": "Передано",
   "agent.handedOffTitle": "Промпт этого элемента уже передан агенту",
   "agent.sendToAgent": "Агенту",

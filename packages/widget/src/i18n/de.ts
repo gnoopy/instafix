@@ -60,6 +60,8 @@ export const de: Translations = {
   "fab.annotate": "Bereich auswählen",
   "fab.targeting": "Element automatisch anvisieren",
   "fab.annotations": "Markierungen ein- oder ausblenden",
+  "fab.freeze": "Seite einfrieren",
+  "fab.unfreeze": "Seite freigeben",
   "fab.moveLeft": "Leiste nach links verschieben",
   "fab.moveRight": "Leiste nach rechts verschieben",
 
@@ -194,6 +196,8 @@ export const de: Translations = {
   "agent.copyButton": "Prompt kopieren",
   "agent.scopeSelected": "{count} ausgewählte(s) Element(e)",
   "agent.scopeOpenPage": "Alle offenen Einträge dieser Seite",
+  "agent.scopeOpenTemplate": "Alle offenen Einträge auf diesem Seitentyp",
+  "agent.scopeOpenAll": "Alle offenen Einträge über alle Seiten (Stapel)",
   "agent.handedOff": "Übergeben",
   "agent.handedOffTitle": "Der Prompt dieses Eintrags wurde bereits an einen Agenten übergeben",
   "agent.sendToAgent": "An Agent",

@@ -62,6 +62,8 @@ export interface Translations {
   "fab.annotate": string;
   "fab.targeting": string;
   "fab.annotations": string;
+  "fab.freeze": string;
+  "fab.unfreeze": string;
   "fab.moveLeft": string;
   "fab.moveRight": string;
 
@@ -202,6 +204,8 @@ export interface Translations {
   "agent.copyButton": string;
   "agent.scopeSelected": string;
   "agent.scopeOpenPage": string;
+  "agent.scopeOpenTemplate": string;
+  "agent.scopeOpenAll": string;
   "agent.handedOff": string;
   "agent.handedOffTitle": string;
   "agent.sendToAgent": string;

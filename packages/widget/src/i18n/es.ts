@@ -59,6 +59,8 @@ export const es: Translations = {
   "fab.annotate": "Seleccionar área",
   "fab.targeting": "Seleccionar elemento automáticamente",
   "fab.annotations": "Mostrar u ocultar marcadores",
+  "fab.freeze": "Congelar la página",
+  "fab.unfreeze": "Descongelar la página",
   "fab.moveLeft": "Mover la barra a la izquierda",
   "fab.moveRight": "Mover la barra a la derecha",
 
@@ -193,6 +195,8 @@ export const es: Translations = {
   "agent.copyButton": "Copiar prompt",
   "agent.scopeSelected": "{count} elemento(s) seleccionado(s)",
   "agent.scopeOpenPage": "Todos los elementos abiertos de esta página",
+  "agent.scopeOpenTemplate": "Todos los elementos abiertos en este tipo de página",
+  "agent.scopeOpenAll": "Todos los elementos abiertos de todas las páginas (lote)",
   "agent.handedOff": "Entregado",
   "agent.handedOffTitle": "El prompt de este elemento ya fue entregado a un agente",
   "agent.sendToAgent": "Al agente",

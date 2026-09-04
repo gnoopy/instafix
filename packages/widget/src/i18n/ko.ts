@@ -59,6 +59,8 @@ export const ko: Translations = {
   "fab.annotate": "영역 지정",
   "fab.targeting": "요소 자동 선택",
   "fab.annotations": "마커 표시/숨기기",
+  "fab.freeze": "화면 고정",
+  "fab.unfreeze": "고정 해제",
   "fab.moveLeft": "도구모음 왼쪽으로 옮기기",
   "fab.moveRight": "도구모음 오른쪽으로 옮기기",
 
@@ -192,6 +194,8 @@ export const ko: Translations = {
   "agent.copyButton": "프롬프트 복사",
   "agent.scopeSelected": "선택한 {count}건",
   "agent.scopeOpenPage": "이 페이지의 열린 항목 전체",
+  "agent.scopeOpenTemplate": "이 유형 페이지들의 열린 항목 전체",
+  "agent.scopeOpenAll": "모든 페이지의 열린 항목 전체 (배치)",
   "agent.handedOff": "전달됨",
   "agent.handedOffTitle": "이 항목의 프롬프트가 이미 에이전트에 전달되었습니다",
   "agent.sendToAgent": "Agent에게",

@@ -109,8 +109,8 @@ test.describe("FAB toolbar", () => {
   test("is visible by default and shows the toolbar items", async ({ page }) => {
     const s = shadow(page);
     await s.waitFor(".sp-toolbar.sp-toolbar--visible");
-    // chat, annotate, target-picker, toggle-annotations + the move-side arrow
-    expect(await s.count(".sp-toolbar-item")).toBe(5);
+    // move-side, chat, annotate, target-picker, freeze, toggle-annotations
+    expect(await s.count(".sp-toolbar-item")).toBe(6);
     expect(await s.attr(".sp-fab", "aria-expanded")).toBe("true");
   });
 
