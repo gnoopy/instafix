@@ -207,15 +207,21 @@ export class Panel {
       this.t,
     );
 
-    // Title + close live on their own row, just the two of them — the close
-    // button must never compete for space with the (unbounded-growth) action
-    // toolbar below it. A close button that can be pushed out of the visible
+    // Title + close live on their own row, apart from the (unbounded-growth)
+    // action toolbar below — the close button must never compete for space
+    // with that row. A close button that can be pushed out of the visible
     // panel by an overflowing header is a real bug, not a cosmetic one: it's
     // the only other way (besides Escape / an outside click) to leave the
-    // panel.
+    // panel. `openDashboardBtn` shares this row instead — a single
+    // fixed-size icon button, not another unbounded list — grouped with
+    // closeBtn in their own flex child so `space-between` keeps the pair
+    // pinned to the end together instead of splitting toward the middle.
     const headerTop = el("div", { class: "sp-panel-header-top" });
+    const headerTopIcons = el("div", { class: "sp-panel-header-icons" });
+    if (this.openDashboardBtn) headerTopIcons.appendChild(this.openDashboardBtn);
+    headerTopIcons.appendChild(this.closeBtn);
     headerTop.appendChild(title);
-    headerTop.appendChild(this.closeBtn);
+    headerTop.appendChild(headerTopIcons);
 
     // Settings — an inline accordion pinned to the top of the panel body
     // (below the header, above the stats/list) so visitors can adjust
@@ -240,7 +246,6 @@ export class Panel {
     const headerActions = el("div", { class: "sp-panel-header-actions" });
     headerActions.appendChild(this.agentCopyBtn.element);
     headerActions.appendChild(this.exportBtn.element);
-    if (this.openDashboardBtn) headerActions.appendChild(this.openDashboardBtn);
     headerActions.appendChild(this.deleteAllBtn);
 
     header.appendChild(headerTop);

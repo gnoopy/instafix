@@ -154,9 +154,17 @@ export function InstaFixInbox(props: InstaFixInboxProps): ReactElement {
   const resolvedTheme = themePref === "auto" ? systemTheme : themePref;
   // Falls back to the accent @instafix/widget last wrote for this visitor
   // (see readSharedAccentColor) before the component's own hardcoded
-  // default — only read once at mount, same as `accentColor` itself is only
-  // ever a static prop, never watched for live changes.
-  const [sharedAccentColor] = useState<string | null>(() => readSharedAccentColor());
+  // default — read once, same as `accentColor` itself is only ever a static
+  // prop, never watched for live changes. Read in an effect, not a useState
+  // lazy initializer: this runs through SSR in a Next.js host (readSharedAccentColor
+  // itself is SSR-safe and returns null there), and hydration reuses whatever
+  // the initializer produced on the server rather than re-invoking it on the
+  // client — a lazy initializer would have frozen this at "null" forever,
+  // same reasoning as `resolvedTheme`'s "auto" case just above.
+  const [sharedAccentColor, setSharedAccentColor] = useState<string | null>(null);
+  useEffect(() => {
+    setSharedAccentColor(readSharedAccentColor());
+  }, []);
   const rootStyle = useMemo(
     () => ({ "--ifd-accent": normalizeAccent(accentColor ?? sharedAccentColor ?? "#0066ff") }) as CSSProperties,
     [accentColor, sharedAccentColor],

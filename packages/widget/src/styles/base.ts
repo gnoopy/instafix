@@ -417,14 +417,19 @@ export function buildStyles(colors: ThemeColors): string {
       z-index: 2;
     }
 
-    /* Title + close only — always exactly these two, so the close button can
-       never be crowded out by however many action buttons the row below
-       grows to. */
+    /* Title + a small fixed icon-button group only — never the unbounded
+       action row below, so the close button can never be crowded out. */
     .sp-panel-header-top {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+    }
+
+    .sp-panel-header-icons {
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
 
     .sp-panel-title {
@@ -1143,13 +1148,17 @@ export function buildStyles(colors: ThemeColors): string {
       pointer-events: none;
     }
 
-    /* Same ghost-pill shape as .sp-btn-delete-all/.sp-export-btn — neutral
-       until hover, then picks up the widget's accent instead of a danger or
+    /* Sized to match .sp-panel-close exactly (36x36, 16px icon) — they now
+       sit side by side in the header-top icon group, so a mismatched size
+       would read as a mistake rather than a second icon button. Ghost until
+       hover, then picks up the widget's accent instead of a danger or
        brand-specific color (this is a plain navigation action, not export or
        a destructive one). */
     .sp-btn-open-dashboard {
-      padding: 6px;
-      border-radius: var(--sp-radius-full);
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+      border-radius: var(--sp-radius);
       border: 1px solid transparent;
       background: transparent;
       color: var(--sp-text-tertiary);
@@ -1161,8 +1170,8 @@ export function buildStyles(colors: ThemeColors): string {
     }
 
     .sp-btn-open-dashboard svg {
-      width: 13px;
-      height: 13px;
+      width: 16px;
+      height: 16px;
     }
 
     .sp-btn-open-dashboard:hover {

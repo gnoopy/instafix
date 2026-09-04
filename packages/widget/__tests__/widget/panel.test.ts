@@ -4124,7 +4124,7 @@ describe("Panel", () => {
       noDashboardPanel.destroy();
     });
 
-    it("renders in the header actions row when dashboardUrl is set, and opens it in a new tab on click", () => {
+    it("renders in the header-top icon group when dashboardUrl is set, and opens it in a new tab on click", () => {
       const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
       const dashboardShadow = createShadowRoot();
       const dashboardPanel = new Panel(
@@ -4149,7 +4149,10 @@ describe("Panel", () => {
 
       const btn = dashboardShadow.querySelector<HTMLButtonElement>(".sp-btn-open-dashboard");
       expect(btn).not.toBeNull();
-      expect(btn?.closest(".sp-panel-header-actions")).not.toBeNull();
+      // Lives in the header-top icon group, immediately left of the close
+      // button — not the unbounded actions row below.
+      expect(btn?.closest(".sp-panel-header-top")).not.toBeNull();
+      expect(btn?.closest(".sp-panel-header-actions")).toBeNull();
       expect(btn?.getAttribute("aria-label")).toBe(t("panel.openDashboard"));
 
       btn?.click();

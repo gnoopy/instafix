@@ -77,7 +77,10 @@ export function DemoInbox() {
   const shared = {
     theme,
     density,
-    accentColor: "#173CFF",
+    // No explicit accentColor — falls back to whatever the widget on /demo
+    // last synced (see @instafix/dashboard's readSharedAccentColor), so this
+    // page actually demonstrates the widget→dashboard color hand-off instead
+    // of masking it with a fixed brand hex.
     locale,
     className: "h-full",
   } as const;

@@ -371,15 +371,23 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
 
   const colors = buildThemeColors(config.accentColor, config.theme);
 
-  // Keep @instafix/dashboard's accent fallback in sync on every mount — not
-  // just when the visitor opens the settings panel, so a host that only sets
-  // `accentColor` via config (never touched by the visitor) still reaches
-  // the dashboard, a full page navigation away and not the same JS runtime.
-  // `colors.accent` is already the validated/normalized 6-digit hex. Uses a
-  // sync-only field (see syncSharedAccentColor's doc comment) instead of
+  // Keep @instafix/dashboard's accent fallback in sync — not just when the
+  // visitor opens the settings panel, so a host that only sets `accentColor`
+  // via config (never touched by the visitor) still reaches the dashboard, a
+  // full page navigation away and not the same JS runtime. `colors.accent`
+  // is already the validated/normalized 6-digit hex. Uses a sync-only field
+  // (see syncSharedAccentColor's doc comment) instead of
   // SettingsPatch.accentColor specifically so this write can never feed back
   // into `loadPersistedSettings()` and "stick" a visitor's first-visit
   // accent forever, overriding later host-side config changes.
+  //
+  // This baseline call covers `autoSelectionColor: false` and "detection
+  // found nothing" — both call sites below re-sync once `colors.accent` has
+  // actually been mutated to the detected tone, since syncing the
+  // pre-detection configured accent here and never again silently
+  // desynced the dashboard from whatever color the toolbar visibly renders
+  // in (auto-detection is the default, so this was the common case, not the
+  // edge case).
   syncSharedAccentColor(colors.accent);
 
   // ---- Layer identity ----------------------------------------------------
@@ -398,6 +406,7 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
     if (detected) {
       applyLayerColor(colors, detected.hex, config.theme);
       layerColorApplied = true;
+      syncSharedAccentColor(colors.accent);
     }
   }
 
@@ -524,6 +533,7 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
       const detected = detectSelectionColor(host);
       if (!detected) return;
       applyLayerColor(colors, detected.hex, config.theme);
+      syncSharedAccentColor(colors.accent);
       host.style.setProperty("--sp-accent", colors.accent);
       host.style.setProperty("--sp-accent-light", colors.accentLight);
       host.style.setProperty("--sp-accent-dark", colors.accentDark);
