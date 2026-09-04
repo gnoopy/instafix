@@ -292,12 +292,90 @@ describe("Popup", () => {
       });
     });
 
-    it("auto-grows the textarea on input (72px floor in jsdom's zero-scrollHeight world)", () => {
+    it("auto-grows the textarea on input (100px floor in jsdom's zero-scrollHeight world)", () => {
       popup.show(makeBounds());
       const textarea = document.querySelector<HTMLTextAreaElement>("textarea")!;
       textarea.value = "line1\nline2\nline3";
       textarea.dispatchEvent(new Event("input"));
-      expect(textarea.style.height).toBe("72px");
+      expect(textarea.style.height).toBe("100px");
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Clear / undo / redo (composer corner buttons)
+  // -------------------------------------------------------------------------
+
+  describe("clear/undo/redo", () => {
+    function getBtn(label: string): HTMLButtonElement {
+      return document.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!;
+    }
+
+    it("undo/redo start disabled, clear starts enabled-but-inert with no text", () => {
+      popup.show(makeBounds());
+      expect(getBtn(t("popup.undoClear")).disabled).toBe(true);
+      expect(getBtn(t("popup.redoClear")).disabled).toBe(true);
+    });
+
+    it("clear empties the textarea and enables undo", () => {
+      popup.show(makeBounds());
+      const textarea = document.querySelector<HTMLTextAreaElement>("textarea")!;
+      textarea.value = "hello world";
+      textarea.dispatchEvent(new Event("input"));
+
+      getBtn(t("popup.clearMessage")).click();
+
+      expect(textarea.value).toBe("");
+      expect(getBtn(t("popup.undoClear")).disabled).toBe(false);
+      expect(getBtn(t("popup.redoClear")).disabled).toBe(true);
+    });
+
+    it("undo restores the cleared text and flips to redo-enabled", () => {
+      popup.show(makeBounds());
+      const textarea = document.querySelector<HTMLTextAreaElement>("textarea")!;
+      textarea.value = "hello world";
+      textarea.dispatchEvent(new Event("input"));
+      getBtn(t("popup.clearMessage")).click();
+
+      getBtn(t("popup.undoClear")).click();
+
+      expect(textarea.value).toBe("hello world");
+      expect(getBtn(t("popup.undoClear")).disabled).toBe(true);
+      expect(getBtn(t("popup.redoClear")).disabled).toBe(false);
+    });
+
+    it("redo re-empties the textarea after an undo", () => {
+      popup.show(makeBounds());
+      const textarea = document.querySelector<HTMLTextAreaElement>("textarea")!;
+      textarea.value = "hello world";
+      textarea.dispatchEvent(new Event("input"));
+      getBtn(t("popup.clearMessage")).click();
+      getBtn(t("popup.undoClear")).click();
+
+      getBtn(t("popup.redoClear")).click();
+
+      expect(textarea.value).toBe("");
+      expect(getBtn(t("popup.undoClear")).disabled).toBe(false);
+      expect(getBtn(t("popup.redoClear")).disabled).toBe(true);
+    });
+
+    it("clearing an already-empty textarea is a no-op (does not arm undo)", () => {
+      popup.show(makeBounds());
+      getBtn(t("popup.clearMessage")).click();
+      expect(getBtn(t("popup.undoClear")).disabled).toBe(true);
+    });
+
+    it("re-showing the popup resets clear/undo/redo state", () => {
+      popup.show(makeBounds());
+      const textarea = document.querySelector<HTMLTextAreaElement>("textarea")!;
+      textarea.value = "hello world";
+      textarea.dispatchEvent(new Event("input"));
+      getBtn(t("popup.clearMessage")).click();
+      expect(getBtn(t("popup.undoClear")).disabled).toBe(false);
+
+      popup.show(makeBounds());
+
+      expect(getBtn(t("popup.undoClear")).disabled).toBe(true);
+      expect(getBtn(t("popup.redoClear")).disabled).toBe(true);
     });
   });
 

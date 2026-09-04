@@ -10,7 +10,7 @@ import { FONT_STACK, Z_INDEX_MAX } from "./constants.js";
 import { el, parseSvg, setText } from "./dom-utils.js";
 import { clearDraft, loadDraft, saveDraft } from "./draft-storage.js";
 import type { TFunction, Translations } from "./i18n/index.js";
-import { ICON_BUG, ICON_CHANGE, ICON_OTHER, ICON_QUESTION } from "./icons.js";
+import { ICON_BUG, ICON_CHANGE, ICON_CLOSE, ICON_OTHER, ICON_QUESTION, ICON_REDO, ICON_UNDO } from "./icons.js";
 import { getTypeBgColor, getTypeColor, type ThemeColors } from "./styles/theme.js";
 import { isVoiceInputSupported, type VoiceErrorReason, VoiceInputController, type VoiceState } from "./voice.js";
 
@@ -156,6 +156,12 @@ export class Popup {
   private root: HTMLElement;
   private selectedType: FeedbackType | null = null;
   private textarea: HTMLTextAreaElement;
+  private textareaWrap: HTMLElement;
+  private clearBtn: HTMLButtonElement;
+  private undoClearBtn: HTMLButtonElement;
+  private redoClearBtn: HTMLButtonElement;
+  /** Single-slot undo history for the clear (X) button only — `textarea.value = ""` bypasses the browser's native undo stack, so this is the sole way to recover an accidental clear. Not a general text-editing undo stack. */
+  private clearedMessage: string | null = null;
   private submitBtn: HTMLButtonElement;
   private cancelBtn: HTMLButtonElement;
   private typeRow: HTMLElement;
@@ -253,7 +259,9 @@ export class Popup {
       style: `
         position:fixed;
         z-index:${Z_INDEX_MAX};
-        width:300px;
+        width:390px;
+        max-width:calc(100vw - 16px);
+        box-sizing:border-box;
         padding:16px;
         border-radius:16px;
         background:${this.colors.layerBg};
@@ -362,31 +370,41 @@ export class Popup {
     this.legendRow.appendChild(this.legendHeadingEl);
     this.legendRow.appendChild(this.legendListEl);
 
-    // Type selector grid (2x2). Labels are bound later by `applyLabels()` —
-    // the constructor only builds the structure (icon + empty label span).
+    // Type selector — one row of 4 (was a 2x2 grid; the wider popover now
+    // has room, and one row reads faster than two). Labels are bound later
+    // by `applyLabels()` — the constructor only builds the structure (icon +
+    // empty label span).
     const typeOptions: TypeOption[] = [
       { type: "question", icon: ICON_QUESTION },
       { type: "change", icon: ICON_CHANGE },
       { type: "bug", icon: ICON_BUG },
       { type: "other", icon: ICON_OTHER },
     ];
-    this.typeRow = el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;" });
+    this.typeRow = el("div", {
+      style: "display:grid;grid-template-columns:repeat(4, 1fr);gap:5px;margin-bottom:12px;",
+    });
     for (const option of typeOptions) {
       const btn = document.createElement("button");
       btn.style.cssText = `
-        height:44px;
+        height:36px;
         border-radius:9999px;border:1px solid ${this.colors.border};
         background:${this.colors.glassBg};cursor:pointer;
-        display:flex;align-items:center;justify-content:center;gap:5px;
+        display:flex;align-items:center;justify-content:center;gap:4px;
         font-family:${FONT_STACK};
-        font-size:13px;font-weight:500;color:${this.colors.textTertiary};
+        font-size:12px;font-weight:500;color:${this.colors.textTertiary};
         transition:all 0.2s ease;
-        padding:0 12px;
+        padding:0 4px;
+        min-width:0;
       `;
       const icon = parseSvg(option.icon);
-      icon.setAttribute("style", "width:13px;height:13px;flex-shrink:0;");
+      icon.setAttribute("style", "width:12px;height:12px;flex-shrink:0;");
       btn.appendChild(icon);
-      btn.appendChild(document.createElement("span"));
+      const label = document.createElement("span");
+      // One row of 4 at this width is tight for longer-language labels
+      // ("Question", "Discussion", …) — truncate instead of wrapping or
+      // overflowing the pill. The icon alone still identifies the type.
+      label.style.cssText = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;";
+      btn.appendChild(label);
       btn.dataset.type = option.type;
       btn.setAttribute("aria-pressed", "false");
 
@@ -440,6 +458,9 @@ export class Popup {
     `;
     discardBtn.addEventListener("click", () => {
       this.textarea.value = "";
+      this.clearedMessage = null;
+      this.setComposerActionEnabled(this.undoClearBtn, false);
+      this.setComposerActionEnabled(this.redoClearBtn, false);
       clearDraft();
       this.hideDraftBanner();
       this.updateSubmitState();
@@ -450,13 +471,16 @@ export class Popup {
     this.draftLabelEl = draftLabel;
     this.draftDiscardBtn = discardBtn;
 
-    // Textarea — auto-grows with content (72→152px, then scrolls), the
+    // Textarea — auto-grows with content (100→220px, then scrolls), the
     // modern composer behavior (Linear/Slack style); no manual resize
-    // handle, autogrowTextarea() owns the height.
+    // handle, autogrowTextarea() owns the height. Wrapped in a relative
+    // container so the clear/undo/redo trio (below) can sit in its
+    // top-right corner without affecting textarea layout.
+    this.textareaWrap = el("div", { style: "position:relative;" });
     this.textarea = document.createElement("textarea");
     this.textarea.style.cssText = `
-      width:100%;min-height:72px;height:72px;
-      padding:10px 12px;border-radius:12px;
+      width:100%;min-height:100px;height:100px;
+      padding:10px 74px 10px 12px;border-radius:12px;
       border:1px solid ${this.colors.border};
       background:${this.colors.glassBgHeavy};
       color:${this.colors.text};font-family:${FONT_STACK};
@@ -465,6 +489,74 @@ export class Popup {
       box-sizing:border-box;
     `;
     this.textarea.maxLength = 5000;
+
+    // Clear / undo / redo trio, top-right corner of the textarea. Clearing
+    // via this button sets `.value` directly, which does NOT go through the
+    // browser's native undo stack (Ctrl+Z does nothing after it) — hence a
+    // small dedicated one-slot history just for this action, not a general
+    // text-editing undo stack the rest of the textarea doesn't have either.
+    const composerActions = el("div", {
+      style: `
+        position:absolute;top:6px;right:6px;display:flex;align-items:center;gap:2px;
+      `,
+    });
+    const makeComposerActionBtn = (icon: string): HTMLButtonElement => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.style.cssText = `
+        width:22px;height:22px;border-radius:6px;border:none;
+        background:transparent;color:${this.colors.textTertiary};
+        display:flex;align-items:center;justify-content:center;cursor:pointer;
+        transition:background 0.15s ease,color 0.15s ease;
+      `;
+      const svg = parseSvg(icon);
+      svg.setAttribute("style", "width:12px;height:12px;flex-shrink:0;");
+      b.appendChild(svg);
+      b.addEventListener("mouseenter", () => {
+        if (b.disabled) return;
+        b.style.background = this.colors.glassBg;
+        b.style.color = this.colors.text;
+      });
+      b.addEventListener("mouseleave", () => {
+        b.style.background = "transparent";
+        b.style.color = b.disabled ? this.colors.border : this.colors.textTertiary;
+      });
+      return b;
+    };
+    this.clearBtn = makeComposerActionBtn(ICON_CLOSE);
+    this.undoClearBtn = makeComposerActionBtn(ICON_UNDO);
+    this.redoClearBtn = makeComposerActionBtn(ICON_REDO);
+    this.setComposerActionEnabled(this.undoClearBtn, false);
+    this.setComposerActionEnabled(this.redoClearBtn, false);
+
+    this.clearBtn.addEventListener("click", () => {
+      if (this.submittingState || !this.textarea.value) return;
+      this.clearedMessage = this.textarea.value;
+      this.textarea.value = "";
+      this.textarea.dispatchEvent(new Event("input"));
+      this.textarea.focus();
+      this.setComposerActionEnabled(this.undoClearBtn, true);
+      this.setComposerActionEnabled(this.redoClearBtn, false);
+    });
+    this.undoClearBtn.addEventListener("click", () => {
+      if (this.clearedMessage === null) return;
+      this.textarea.value = this.clearedMessage;
+      this.textarea.dispatchEvent(new Event("input"));
+      this.textarea.focus();
+      this.setComposerActionEnabled(this.undoClearBtn, false);
+      this.setComposerActionEnabled(this.redoClearBtn, true);
+    });
+    this.redoClearBtn.addEventListener("click", () => {
+      if (this.clearedMessage === null) return;
+      this.textarea.value = "";
+      this.textarea.dispatchEvent(new Event("input"));
+      this.textarea.focus();
+      this.setComposerActionEnabled(this.undoClearBtn, true);
+      this.setComposerActionEnabled(this.redoClearBtn, false);
+    });
+    composerActions.appendChild(this.clearBtn);
+    composerActions.appendChild(this.undoClearBtn);
+    composerActions.appendChild(this.redoClearBtn);
 
     // Keyboard shortcut hint. keep-all: when the voice-status text squeezes
     // this narrow, the line must break between words ("Ctrl+Enter" / "로
@@ -641,7 +733,9 @@ export class Popup {
     this.root.appendChild(this.typeRow);
     this.root.appendChild(this.legendRow);
     if (this.draftBanner) this.root.appendChild(this.draftBanner);
-    this.root.appendChild(this.textarea);
+    this.textareaWrap.appendChild(this.textarea);
+    this.textareaWrap.appendChild(composerActions);
+    this.root.appendChild(this.textareaWrap);
     this.root.appendChild(this.pastedImageRow);
     this.root.appendChild(hintRow);
     this.root.appendChild(btnRow);
@@ -704,6 +798,9 @@ export class Popup {
 
     this.textarea.placeholder = this.t("popup.placeholder");
     this.textarea.setAttribute("aria-label", this.t("popup.textareaAria"));
+    this.clearBtn.setAttribute("aria-label", this.t("popup.clearMessage"));
+    this.undoClearBtn.setAttribute("aria-label", this.t("popup.undoClear"));
+    this.redoClearBtn.setAttribute("aria-label", this.t("popup.redoClear"));
 
     setText(this.hint, isMacPlatform() ? this.t("popup.submitHintMac") : this.t("popup.submitHintOther"));
     setText(this.cancelBtn, this.t("popup.cancel"));
@@ -811,11 +908,19 @@ export class Popup {
     }, 1600);
   }
 
-  /** Auto-grow the note textarea with its content: 72px floor, 152px cap (then it scrolls). */
+  /** Auto-grow the note textarea with its content: 100px floor, 220px cap (then it scrolls). */
   private autogrowTextarea(): void {
     const ta = this.textarea;
     ta.style.height = "auto";
-    ta.style.height = `${Math.min(Math.max(ta.scrollHeight, 72), 152)}px`;
+    ta.style.height = `${Math.min(Math.max(ta.scrollHeight, 100), 220)}px`;
+  }
+
+  /** Enable/disable a composer action button (undo/redo) and dim it to match. */
+  private setComposerActionEnabled(btn: HTMLButtonElement, enabled: boolean): void {
+    btn.disabled = !enabled;
+    btn.style.cursor = enabled ? "pointer" : "default";
+    btn.style.opacity = enabled ? "1" : "0.35";
+    btn.style.color = enabled ? this.colors.textTertiary : this.colors.border;
   }
 
   /**
@@ -900,6 +1005,11 @@ export class Popup {
       left = rectBounds.right - popupW;
     }
     left = Math.max(8, left);
+    // The popup's own `max-width` shrinks it on narrow viewports, but the
+    // flip-right branch above can still push `left` far enough that the
+    // (now-narrower) popup runs off the right edge — clamp last so the
+    // right edge always stays on-screen regardless of popupW.
+    left = Math.min(left, window.innerWidth - popupW - 8);
     top = Math.max(8, top);
 
     this.root.style.top = `${top}px`;
@@ -1094,6 +1204,9 @@ export class Popup {
       this.onSubmit = onSubmit ?? null;
       this.selectedType = null;
       this.textarea.value = "";
+      this.clearedMessage = null;
+      this.setComposerActionEnabled(this.undoClearBtn, false);
+      this.setComposerActionEnabled(this.redoClearBtn, false);
       this.submittingState = false;
       this.resetTypeButtons();
       this.hideDraftBanner();

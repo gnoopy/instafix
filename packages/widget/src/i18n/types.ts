@@ -81,6 +81,12 @@ export interface Translations {
   /** Shown when a previous draft is restored into the composer (G7). */
   "popup.draftRestored": string;
   "popup.discardDraft": string;
+  /** aria-label on the small icon button that clears the note textarea in one click. */
+  "popup.clearMessage": string;
+  /** aria-label on the button that restores the textarea content after clearMessage — enabled only right after a clear. */
+  "popup.undoClear": string;
+  /** aria-label on the button that re-applies a clearMessage after undoClear — enabled only right after an undo. */
+  "popup.redoClear": string;
   /** Composer's "copy the full context + note as an agent prompt" button. */
   "popup.copyContext": string;
   "popup.copyContextCopied": string;
