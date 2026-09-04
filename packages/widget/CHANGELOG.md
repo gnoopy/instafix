@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.10.15](https://github.com/gnoopy/instafix/compare/widget-v0.10.14...widget-v0.10.15) (2026-09-04)
+
+
+### Features
+
+* **widget:** move-side toolbar button, and 80% toolbar chips ([ebeb8d3](https://github.com/gnoopy/instafix/commit/ebeb8d301d34f3b115513188992d3107f3b4040d))
+* **widget:** show the build version next to the panel title ([91eef0a](https://github.com/gnoopy/instafix/commit/91eef0afc3de4705f87dfa41f77922e69ee5ca09))
+
+
+### Bug Fixes
+
+* **e2e:** update toolbar assertions — unblocks the release that was failing to publish ([6f04777](https://github.com/gnoopy/instafix/commit/6f0477792192ed25125c984e3ec90b1df1700759))
+* **widget:** adapt the accent FILL for white content, and dock the move arrow to its own side ([5ffd628](https://github.com/gnoopy/instafix/commit/5ffd628b85bd4268b85fd72973c7831492fd0aa0))
+* **widget:** composer's undo/redo were invisible — disable by icon tone, not by fading the button ([8800c8f](https://github.com/gnoopy/instafix/commit/8800c8fd2aed6a9236635f669f5f938ad6a3eb4f))
+* **widget:** derive accent foreground and ink by WCAG contrast, not a fixed white ([6289e46](https://github.com/gnoopy/instafix/commit/6289e46667e6a200efdd69dd3645f0971456b8a4))
+* **widget:** ship the area-select crop icon and its "영역 지정" label ([f55144d](https://github.com/gnoopy/instafix/commit/f55144d74dc77d70283510f25dc0d9c973664465))
+
 ## [0.10.14](https://github.com/gnoopy/instafix/compare/widget-v0.10.13...widget-v0.10.14) (2026-09-04)
 
 
