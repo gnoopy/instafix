@@ -1,0 +1,58 @@
+{
+  "name": "@instafix/adapter-sqlite",
+  "version": "1.0.0",
+  "description": "SQLite adapter for InstaFix — zero external services, server-side request handlers",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "instafix",
+    "sqlite",
+    "better-sqlite3",
+    "adapter",
+    "feedback",
+    "api-handler",
+    "nextjs",
+    "feedback-api",
+    "self-hosted",
+    "typescript"
+  ],
+  "author": "gnoopy",
+  "license": "MIT",
+  "homepage": "https://instafix.realstory.blog",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gnoopy/instafix.git",
+    "directory": "packages/adapter-sqlite"
+  },
+  "bugs": {
+    "url": "https://github.com/gnoopy/instafix/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "zod": "^4.4.3"
+  }
+}
