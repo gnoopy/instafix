@@ -537,14 +537,14 @@ export const SORT_CSS = `
   .sp-group-toggle--active {
     background: var(--sp-accent-gradient);
     border-color: transparent;
-    color: #fff;
+    color: var(--sp-accent-fg, #fff);
     box-shadow: 0 2px 8px var(--sp-accent-glow);
   }
 
   .sp-group-toggle--active:hover {
     background: var(--sp-accent-gradient);
     border-color: transparent;
-    color: #fff;
+    color: var(--sp-accent-fg, #fff);
   }
 
   /* ============================

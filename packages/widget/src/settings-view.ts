@@ -249,6 +249,12 @@ export const SETTINGS_CSS = /* css */ `
     background: var(--sp-accent);
   }
 
+  /* Knob on a filled track — same contrast rule as any other accent fill:
+     a white knob disappears on a light layer tone. */
+  .sp-settings-chip--on .sp-settings-switch::after {
+    background: var(--sp-accent-fg, #ffffff);
+  }
+
   .sp-settings-chip--on .sp-settings-switch::after {
     transform: translateX(11px);
   }

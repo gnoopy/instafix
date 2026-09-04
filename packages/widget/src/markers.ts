@@ -517,7 +517,7 @@ export class MarkerManager {
         position:absolute;top:-6px;right:-6px;
         min-width:16px;height:16px;padding:0 4px;
         border-radius:9999px;
-        background:#ffffff;color:${this.colors.selection};
+        background:#ffffff;color:${this.colors.accentInk};
         font-size:10px;font-weight:700;
         display:flex;align-items:center;justify-content:center;
         border:1.5px solid ${this.colors.selection};
@@ -616,7 +616,7 @@ export class MarkerManager {
         display:flex;align-items:center;justify-content:center;
         font-family:${FONT_STACK};
         font-size:11px;font-weight:700;
-        color:${isResolved ? "#94a3b8" : "#ffffff"};
+        color:${isResolved ? "#94a3b8" : this.colors.accentForeground};
         cursor:pointer;pointer-events:auto;
         box-shadow:${isResolved ? "0 2px 8px rgba(0,0,0,0.06)" : `0 2px 12px ${markerColor}40, 0 2px 6px rgba(0,0,0,0.15)`};
         transition:top 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), left 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.15s ease, box-shadow 0.15s ease;

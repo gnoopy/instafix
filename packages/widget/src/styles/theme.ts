@@ -1,4 +1,5 @@
 import { FONT_STACK } from "../constants.js";
+import { relativeLuminance } from "../dom/background-contrast.js";
 
 /** Color palette and glassmorphism tokens derived from the accent color */
 export interface ThemeColors {
@@ -7,6 +8,21 @@ export interface ThemeColors {
   accentDark: string;
   accentGlow: string;
   accentGradient: string;
+  /**
+   * Ink to render ON an accent fill (FAB, toolbar chips, primary buttons).
+   * White or near-black, whichever WCAG-contrasts better against the accent
+   * — a hardcoded `#fff` turned unreadable the moment the layer tone landed
+   * on a light hue (amber/lime): white on amber is 1.9:1, near-black 9.6:1.
+   */
+  accentForeground: string;
+  /**
+   * The accent adjusted until it is legible AS a foreground (text, icon,
+   * state ring) on the widget's own surface — darkened on a light theme,
+   * lightened on a dark one. Identical to `accent` whenever the accent
+   * already clears the target, which is the case for the default blue and
+   * most brand colors, so this changes nothing until it has to.
+   */
+  accentInk: string;
   /**
    * Selection-indicator color family — the toolbar's active-state
    * background, the drag/auto-target highlight outline, and the
@@ -116,6 +132,68 @@ export function darkenHex(hex: string, amount: number): string {
   return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
 }
 
+/** Lighten a hex color toward white by a percentage (0-1) — darkenHex's mirror. */
+function lightenHex(hex: string, amount: number): string {
+  const up = (i: number) => {
+    const c = parseInt(hex.slice(i, i + 2), 16);
+    return Math.min(255, Math.round(c + (255 - c) * amount));
+  };
+  const [r, g, b] = [up(1), up(3), up(5)];
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+
+/** WCAG relative luminance of a 6-digit hex. */
+function luminanceOfHex(hex: string): number {
+  return relativeLuminance(parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16));
+}
+
+/**
+ * WCAG 2.1 contrast ratio between two 6-digit hex colors (1–21).
+ * Exported for the theme tests, which assert the accessibility floors
+ * directly rather than trusting the derived tokens by eye.
+ */
+export function contrastRatio(hexA: string, hexB: string): number {
+  const a = luminanceOfHex(hexA);
+  const b = luminanceOfHex(hexB);
+  const [hi, lo] = a > b ? [a, b] : [b, a];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/** Near-black ink — the light theme's own text color, reused so a dark-on-accent chip matches the rest of the UI. */
+const INK = "#0f172a";
+const WHITE = "#ffffff";
+
+/**
+ * Pick white or near-black for text/icons sitting on a fill that runs from
+ * `from` to `to` (a flat fill passes the same color twice). Scores each
+ * candidate by its WORST contrast across the gradient, so neither end of a
+ * FAB gradient can be the unreadable one.
+ */
+function readableForeground(from: string, to: string = from): string {
+  const worst = (ink: string) => Math.min(contrastRatio(ink, from), contrastRatio(ink, to));
+  return worst(WHITE) >= worst(INK) ? WHITE : INK;
+}
+
+/** WCAG AA for normal text. UI components and icons only need 3:1, but hitting the stricter bar keeps labels safe too. */
+const INK_TARGET = 4.5;
+
+/**
+ * Nudge `hex` away from `surface` — darker on a light surface, lighter on a
+ * dark one — until it clears `target`. Returns `hex` untouched when it
+ * already does. Bounded; returns the closest it got if the color runs out of
+ * range (only reachable for a surface with no headroom in either direction).
+ */
+function legibleOn(hex: string, surface: string, target: number = INK_TARGET): string {
+  if (contrastRatio(hex, surface) >= target) return hex;
+  const surfaceIsLight = luminanceOfHex(surface) > 0.4;
+  let current = hex;
+  for (let i = 0; i < 24; i++) {
+    current = surfaceIsLight ? darkenHex(current, 0.06) : lightenHex(current, 0.06);
+    if (contrastRatio(current, surface) >= target) break;
+  }
+  return current;
+}
+
 /** Detect if user prefers dark mode via media query */
 function prefersDark(): boolean {
   if (typeof window === "undefined") return false;
@@ -141,6 +219,8 @@ export function buildThemeColors(accent: string = DEFAULT_ACCENT, theme?: "light
       accentDark: dark,
       accentGlow: hex + "44",
       accentGradient: `linear-gradient(135deg, ${hex}, ${dark})`,
+      accentForeground: readableForeground(hex, dark),
+      accentInk: legibleOn(hex, "#0f172a"),
       selection: hex,
       selectionLight: hex + "22",
       selectionGlow: hex + "44",
@@ -188,6 +268,8 @@ export function buildThemeColors(accent: string = DEFAULT_ACCENT, theme?: "light
     accentDark: dark,
     accentGlow: hex + "33", // 20% opacity
     accentGradient: `linear-gradient(135deg, ${hex}, ${dark})`,
+    accentForeground: readableForeground(hex, dark),
+    accentInk: legibleOn(hex, "#ffffff"),
     selection: hex,
     selectionLight: hex + "14",
     selectionGlow: hex + "33",
@@ -267,6 +349,11 @@ export function applyLayerColor(colors: ThemeColors, hex: string, theme?: "light
   colors.accentDark = dark;
   colors.accentGlow = hex + glowAlpha;
   colors.accentGradient = `linear-gradient(135deg, ${hex}, ${dark})`;
+  // Re-derive the accessibility pair for the NEW tone — the whole point of
+  // rule 1 is that a detected tone can be anything on the wheel, including
+  // the light hues where a fixed white-on-accent chip goes unreadable.
+  colors.accentForeground = readableForeground(hex, dark);
+  colors.accentInk = legibleOn(hex, resolved === "dark" ? "#0f172a" : "#ffffff");
   colors.selection = hex;
   colors.selectionLight = hex + lightAlpha;
   colors.selectionGlow = hex + glowAlpha;
@@ -345,6 +432,8 @@ export function cssVariables(colors: ThemeColors): string {
     --sp-accent-dark: ${colors.accentDark};
     --sp-accent-glow: ${colors.accentGlow};
     --sp-accent-gradient: ${colors.accentGradient};
+    --sp-accent-fg: ${colors.accentForeground};
+    --sp-accent-ink: ${colors.accentInk};
     --sp-bg: ${colors.bg};
     --sp-bg-hover: ${colors.bgHover};
     --sp-text: ${colors.text};

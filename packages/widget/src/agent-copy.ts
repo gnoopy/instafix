@@ -47,7 +47,7 @@ export const AGENT_COPY_CSS = `
 
   .sp-agent-btn:hover {
     background: var(--sp-accent);
-    color: #fff;
+    color: var(--sp-accent-fg, #fff);
     box-shadow: 0 2px 12px var(--sp-accent-glow);
   }
 

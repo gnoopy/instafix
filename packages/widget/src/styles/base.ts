@@ -80,7 +80,7 @@ export function buildStyles(colors: ThemeColors): string {
       height: 52px;
       border-radius: var(--sp-radius-full);
       background: var(--sp-selection-gradient, var(--sp-accent-gradient));
-      color: #fff;
+      color: var(--sp-accent-fg, #fff);
       border: none;
       cursor: pointer;
       display: flex;
@@ -201,7 +201,10 @@ export function buildStyles(colors: ThemeColors): string {
       border-radius: var(--sp-radius-full);
       background: var(--sp-selection, var(--sp-accent));
       border: 1px solid rgba(255, 255, 255, 0.3);
-      color: #fff;
+      /* Never a fixed white: on a light layer tone (amber, lime) white icons
+         drop to ~1.9:1 against their own chip. --sp-accent-fg flips to the
+         near-black ink whenever that happens. */
+      color: var(--sp-accent-fg, #fff);
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -239,8 +242,11 @@ export function buildStyles(colors: ThemeColors): string {
        chromatic on the host page to contrast against). */
     .sp-toolbar-item--active {
       background: #ffffff;
-      border-color: var(--sp-selection, var(--sp-accent));
-      color: var(--sp-selection, var(--sp-accent));
+      /* Inverted chip — the tone is now the FOREGROUND on white, so it needs
+         the contrast-adjusted ink, not the raw tone (raw amber on white is
+         1.9:1). Ring included: it is this chip's only state cue. */
+      border-color: var(--sp-accent-ink, var(--sp-selection, var(--sp-accent)));
+      color: var(--sp-accent-ink, var(--sp-selection, var(--sp-accent)));
       box-shadow:
         inset 0 1px 3px rgba(0, 0, 0, 0.12),
         0 0 0 3px var(--sp-selection-glow, var(--sp-accent-glow));
@@ -441,6 +447,21 @@ export function buildStyles(colors: ThemeColors): string {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    /* Build version, next to the title — quiet enough to ignore, present
+       enough to answer "which version is this?" at a glance. */
+    .sp-panel-version {
+      flex-shrink: 0;
+      margin-right: auto;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--sp-text-tertiary);
+      background: var(--sp-bg-hover);
+      border-radius: var(--sp-radius-full);
+      padding: 2px 7px;
+      font-variant-numeric: tabular-nums;
     }
 
     .sp-panel-close {
@@ -1330,7 +1351,7 @@ export function buildStyles(colors: ThemeColors): string {
       border-radius: var(--sp-radius);
       border: none;
       background: var(--sp-accent-gradient);
-      color: #fff;
+      color: var(--sp-accent-fg, #fff);
       font-family: var(--sp-font);
       font-size: 14px;
       font-weight: 600;

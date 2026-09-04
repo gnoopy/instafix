@@ -791,7 +791,7 @@ export const DETAIL_CSS = /* css */ `
     border-radius: var(--sp-radius);
     border: none;
     background: var(--sp-accent-gradient);
-    color: #fff;
+    color: var(--sp-accent-fg, #fff);
     font-family: var(--sp-font);
     font-size: 14px;
     font-weight: 600;

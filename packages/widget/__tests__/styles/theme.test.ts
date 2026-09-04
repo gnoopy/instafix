@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { applyLayerColor, buildThemeColors, getTypeColor } from "../../src/styles/theme.js";
+import { hslToRgb, LAYER_PALETTES } from "../../src/dom/selection-color.js";
+import {
+  applyLayerColor,
+  buildThemeColors,
+  contrastRatio,
+  cssVariables,
+  getTypeColor,
+} from "../../src/styles/theme.js";
 
 describe("buildThemeColors", () => {
   it("uses default accent when none provided", () => {
@@ -114,5 +121,78 @@ describe("getTypeColor", () => {
   it("returns gray for other and unknown", () => {
     expect(getTypeColor("other", colors)).toBe(colors.typeOther);
     expect(getTypeColor("unknown", colors)).toBe(colors.typeOther);
+  });
+});
+
+describe("accessible accent tokens", () => {
+  // The bug these guard: the layer tone is picked for HUE distance from the
+  // host palette, so it can legitimately land on a light hue (LAYER_PALETTES'
+  // amber is hsl(45, 85%, 50%)). A hardcoded white-on-accent chip is 1.9:1
+  // there — the toolbar icons stopped being distinguishable.
+  const AMBER = "#ecb613";
+  const WCAG_AA = 4.5;
+  const WCAG_NON_TEXT = 3;
+
+  it("keeps white ink on the default blue (no regression for the common case)", () => {
+    expect(buildThemeColors("#0066ff").accentForeground).toBe("#ffffff");
+  });
+
+  it("flips to dark ink on a light accent white could not survive", () => {
+    const colors = buildThemeColors(AMBER);
+    expect(colors.accentForeground).not.toBe("#ffffff");
+    expect(contrastRatio(colors.accentForeground, AMBER)).toBeGreaterThanOrEqual(WCAG_AA);
+  });
+
+  it("clears the non-text floor on EVERY curated layer palette, and always picks the better ink", () => {
+    // 3:1 is the normative bar for icons and UI components (WCAG 1.4.11),
+    // which is what a toolbar chip actually carries — and what the reported
+    // white-on-amber bug violated at 1.9:1. Most palettes clear 4.5 as well;
+    // magenta tops out at 4.45 with white (dark ink is worse there at 3.9),
+    // so the contract asserted here is "the best available ink, never below
+    // the non-text floor" rather than a promise the color space can't keep.
+    for (const palette of LAYER_PALETTES) {
+      const { r, g, b } = hslToRgb(palette.h, palette.s, palette.l);
+      const hex = `#${[r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+      for (const theme of ["light", "dark"] as const) {
+        const colors = buildThemeColors("#0066ff", theme);
+        applyLayerColor(colors, hex, theme);
+        const chosen = contrastRatio(colors.accentForeground, hex);
+        const best = Math.max(contrastRatio("#ffffff", hex), contrastRatio("#0f172a", hex));
+        expect(chosen, `${palette.name} (${hex}) in ${theme}`).toBeGreaterThanOrEqual(WCAG_NON_TEXT);
+        expect(chosen, `${palette.name} (${hex}) in ${theme} is the better of the two inks`).toBeCloseTo(best, 5);
+      }
+    }
+  });
+
+  it("darkens the ink until the tone is legible AS text on a light surface", () => {
+    const colors = buildThemeColors(AMBER, "light");
+    expect(contrastRatio(colors.accentInk, "#ffffff")).toBeGreaterThanOrEqual(WCAG_AA);
+    // Raw amber is exactly what was unreadable — the ink must differ from it.
+    expect(colors.accentInk).not.toBe(colors.accent);
+  });
+
+  it("leaves the ink untouched when the accent is already legible", () => {
+    const colors = buildThemeColors("#0066ff", "light");
+    expect(colors.accentInk).toBe(colors.accent);
+  });
+
+  it("lightens rather than darkens on a dark theme", () => {
+    const dark = buildThemeColors("#0b3ba8", "dark");
+    expect(contrastRatio(dark.accentInk, "#0f172a")).toBeGreaterThanOrEqual(WCAG_AA);
+  });
+
+  it("re-derives both tokens when a layer tone replaces the accent", () => {
+    const colors = buildThemeColors("#0066ff", "light");
+    expect(colors.accentForeground).toBe("#ffffff");
+    applyLayerColor(colors, AMBER, "light");
+    expect(colors.accentForeground).not.toBe("#ffffff");
+    expect(contrastRatio(colors.accentForeground, AMBER)).toBeGreaterThanOrEqual(WCAG_AA);
+    expect(contrastRatio(colors.accentInk, "#ffffff")).toBeGreaterThanOrEqual(WCAG_AA);
+  });
+
+  it("exposes both tokens as CSS variables", () => {
+    const css = cssVariables(buildThemeColors(AMBER));
+    expect(css).toContain("--sp-accent-fg:");
+    expect(css).toContain("--sp-accent-ink:");
   });
 });
