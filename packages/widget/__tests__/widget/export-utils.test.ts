@@ -245,6 +245,7 @@ describe("feedback export conversion", () => {
             devicePixelRatio: 2,
             createdAt: "2026-04-30T12:01:00.000Z",
             target: null,
+            inspect: null,
           },
         ],
       }),

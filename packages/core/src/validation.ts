@@ -46,6 +46,15 @@ const targetSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("area") }),
 ]);
 
+// DOM/CSSOM snapshot (gap 05). Caps are generous enough for a real ancestor
+// chain and a curated style set, tight enough that a tampered client cannot
+// turn the JSON column into a dumping ground.
+const inspectSchema = z.object({
+  domPath: z.array(z.string().max(200)).max(24),
+  styles: z.record(z.string().max(80), z.string().max(300)),
+  component: z.string().max(300).optional(),
+});
+
 const annotationSchema = z.object({
   anchor: anchorSchema,
   rect: rectSchema,
@@ -55,6 +64,7 @@ const annotationSchema = z.object({
   viewportH: z.number().int().positive(),
   devicePixelRatio: z.number().positive().default(1),
   target: targetSchema.nullable().optional(),
+  inspect: inspectSchema.nullable().optional(),
 });
 
 // Diagnostics caps mirror the widget defaults — the widget never sends more

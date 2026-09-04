@@ -49,6 +49,7 @@ const annotationArb: fc.Arbitrary<AnnotationResponse> = fc.record({
   devicePixelRatio: fc.float({ min: 0.5, max: 4, noNaN: true }),
   createdAt: fc.constant("2026-01-01T00:00:00.000Z"),
   target: targetArb,
+  inspect: fc.constant(null),
 });
 
 const feedbackArb: fc.Arbitrary<FeedbackResponse> = fc.record({

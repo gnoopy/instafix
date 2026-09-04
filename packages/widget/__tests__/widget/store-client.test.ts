@@ -107,6 +107,7 @@ function makeFeedbackRecord(overrides?: Partial<FeedbackRecord>): FeedbackRecord
         devicePixelRatio: 2,
         createdAt: now,
         target: null,
+        inspect: null,
       },
     ],
     ...overrides,

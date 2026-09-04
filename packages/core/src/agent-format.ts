@@ -117,6 +117,28 @@ function boundsContent(ann: AnnotationResponse): string {
   return `x=${pct(ann.xPct)} y=${pct(ann.yPct)} w=${pct(ann.wPct)} h=${pct(ann.hPct)} (relative to ${relativeTo})`;
 }
 
+/**
+ * Render the DOM/CSSOM snapshot: where the element sits, and how it is
+ * actually styled right now. Both lines are omitted when the widget that
+ * created the feedback predates the field, so an older record simply reads
+ * the way it always did.
+ *
+ * Styles are emitted as a `prop: value;` run rather than a list — an agent
+ * pastes them straight into a rule, and it costs a fraction of the lines.
+ */
+function inspectLines(ann: AnnotationResponse): string[] {
+  const inspect = ann.inspect;
+  if (!inspect) return [];
+  const out: string[] = [];
+  if (inspect.component) out.push(`Component: ${inspect.component}`);
+  if (inspect.domPath.length > 0) out.push(`DOM path: ${inspect.domPath.join(" > ")}`);
+  const styles = Object.entries(inspect.styles);
+  if (styles.length > 0) {
+    out.push(`Computed: ${styles.map(([k, v]) => `${k}: ${v};`).join(" ")}`);
+  }
+  return out;
+}
+
 /** Render one target as flat top-level lines (used when a feedback has exactly one). */
 function renderSingleTarget(lines: string[], ann: AnnotationResponse): void {
   lines.push(`Target: ${targetKindLabel(ann)}`);
@@ -129,6 +151,7 @@ function renderSingleTarget(lines: string[], ann: AnnotationResponse): void {
   }
   const ctx = contextContent(ann);
   if (ctx) lines.push(`Context: ${ctx}`);
+  for (const line of inspectLines(ann)) lines.push(line);
   lines.push(`Bounds: ${boundsContent(ann)}`);
 }
 
@@ -144,6 +167,7 @@ function renderMultipleTargets(lines: string[], annotations: AnnotationResponse[
     for (const l of selLines) lines.push(`   - ${l}`);
     const ctx = contextContent(ann);
     if (ctx) lines.push(`   Context: ${ctx}`);
+    for (const line of inspectLines(ann)) lines.push(`   ${line}`);
     lines.push(`   Bounds: ${boundsContent(ann)}`);
   });
   if (annotations.length > shown.length) {

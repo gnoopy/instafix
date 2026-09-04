@@ -602,6 +602,8 @@ export interface AnnotationCreateInput {
   devicePixelRatio: number;
   /** Discriminated target kind — see {@link AnnotationTarget}. Null/omitted means legacy `element`-kind. */
   target?: AnnotationTarget | null | undefined;
+  /** DOM/CSSOM snapshot of the element — see {@link AnnotationInspect}. */
+  inspect?: AnnotationInspect | null | undefined;
 }
 
 /** Query parameters for fetching feedbacks. */
@@ -748,6 +750,8 @@ export interface AnnotationRecord {
   createdAt: Date;
   /** Discriminated target kind — see {@link AnnotationTarget}. Null means legacy `element`-kind. */
   target: AnnotationTarget | null;
+  /** DOM/CSSOM snapshot of the element — see {@link AnnotationInspect}. Null for annotations created before it existed. */
+  inspect: AnnotationInspect | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -867,6 +871,7 @@ export function flattenAnnotation(ann: AnnotationPayload): AnnotationCreateInput
     viewportH: ann.viewportH,
     devicePixelRatio: ann.devicePixelRatio,
     target: ann.target ?? null,
+    inspect: ann.inspect ?? null,
   };
 }
 
@@ -1104,6 +1109,44 @@ export interface AreaTargetData {
 }
 
 /**
+ * A DOM/CSSOM snapshot of the annotated element, taken at selection time.
+ *
+ * Answers the two questions an agent asks first and cannot answer from a
+ * selector alone: *where does this element sit in the tree*, and *what is it
+ * actually styled as right now*. Competing tools solve this by reading the
+ * React fiber tree, which limits them to React; this is read from the DOM and
+ * CSSOM, so it works on any framework or none — the same reason the widget
+ * itself is framework-agnostic.
+ *
+ * Everything here is a snapshot of the LIVE state at selection time, so a
+ * hover- or animation-dependent style is captured as the user actually saw
+ * it — the computed value, not the stylesheet's resting rule.
+ *
+ * Optional/nullable on the wire: annotations created before this field
+ * existed have none, and a host can be running an older widget.
+ */
+export interface AnnotationInspect {
+  /**
+   * Ancestor chain, outermost first, each as a compact CSS-ish descriptor
+   * (`div#app`, `nav.site-header`, `button.btn.btn-primary`). Bounded depth —
+   * the point is orientation, not a full document dump.
+   */
+  domPath: string[];
+  /**
+   * Curated computed styles of the target element: layout, box, typography
+   * and color. Property names are CSS (kebab-case) so they can be pasted back
+   * into a stylesheet as-is.
+   */
+  styles: Record<string, string>;
+  /**
+   * Framework component chain when one is discoverable in development (React
+   * owner names today), else absent. Never required — it is a bonus on top of
+   * the framework-neutral data above, not the mechanism.
+   */
+  component?: string | undefined;
+}
+
+/**
  * Discriminated target kind for an annotation — the G4 "context model" that
  * lets a coding agent tell an element pick apart from a text quote or a bare
  * screen region. Optional/nullable on the wire for backward compatibility:
@@ -1136,6 +1179,8 @@ export interface AnnotationPayload {
   devicePixelRatio: number;
   /** Discriminated target kind — see {@link AnnotationTarget}. */
   target?: AnnotationTarget | null | undefined;
+  /** DOM/CSSOM snapshot of the element — see {@link AnnotationInspect}. */
+  inspect?: AnnotationInspect | null | undefined;
 }
 
 // ---------------------------------------------------------------------------

@@ -99,6 +99,18 @@ describe("createFocusTracker", () => {
     expect(tracker.getLastPageFocus()).toBe(btn);
   });
 
+  it("ignores focus landing on <body> or <html> (blur/overlay-teardown side effect)", () => {
+    tracker = createFocusTracker(makeHost());
+    const btn = pageButton();
+    btn.focus();
+
+    document.body.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+    expect(tracker.getLastPageFocus()).toBe(btn);
+
+    document.documentElement.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+    expect(tracker.getLastPageFocus()).toBe(btn);
+  });
+
   it("returns null once the tracked element leaves the DOM", () => {
     tracker = createFocusTracker(makeHost());
     const btn = pageButton();

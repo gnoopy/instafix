@@ -727,6 +727,7 @@ describe("Panel", () => {
       devicePixelRatio: 1,
       createdAt: new Date().toISOString(),
       target: null,
+      inspect: null,
     };
 
     it("clicking resolve button calls apiClient.resolveFeedback and reloads", async () => {
@@ -1052,6 +1053,7 @@ describe("Panel", () => {
       devicePixelRatio: 1,
       createdAt: new Date().toISOString(),
       target: null,
+      inspect: null,
     };
 
     it("Enter key on card opens detail view", async () => {
@@ -1573,6 +1575,7 @@ describe("Panel", () => {
       devicePixelRatio: 1,
       createdAt: new Date().toISOString(),
       target: null,
+      inspect: null,
     };
 
     it("detail onResolve calls client.resolveFeedback, reloads, and hides detail", async () => {

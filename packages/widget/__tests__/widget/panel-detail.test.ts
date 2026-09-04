@@ -45,6 +45,7 @@ function makeAnnotation(overrides: Partial<AnnotationResponse> = {}): Annotation
     devicePixelRatio: 2,
     createdAt: new Date().toISOString(),
     target: null,
+    inspect: null,
     ...overrides,
   };
 }

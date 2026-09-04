@@ -29,6 +29,7 @@ export { hasOwn, isRecord } from "./type-utils.js";
 export type {
   AnchorData,
   AnnotationCreateInput,
+  AnnotationInspect,
   AnnotationPayload,
   AnnotationRecord,
   AnnotationResponse,

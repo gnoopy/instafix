@@ -27,6 +27,7 @@ function makeAnnotation(overrides: Partial<AnnotationResponse> = {}): Annotation
     devicePixelRatio: 2,
     createdAt: "2026-01-01T00:00:00.000Z",
     target: null,
+    inspect: null,
     ...overrides,
   };
 }
@@ -333,5 +334,33 @@ describe("formatFeedbacksForAgent", () => {
       expect(out).not.toContain("Console errors");
       expect(out).not.toContain("Failed network requests");
     });
+  });
+});
+
+describe("DOM/CSSOM inspect snapshot", () => {
+  it("renders the DOM path, computed styles and component when present", () => {
+    const out = formatFeedbacksForAgent([
+      makeFeedback({
+        annotations: [
+          makeAnnotation({
+            inspect: {
+              domPath: ["div#app", "nav.site-header", "button.btn"],
+              styles: { display: "flex", "font-size": "14px" },
+              component: "Header ‹ Layout",
+            },
+          }),
+        ],
+      }),
+    ]);
+    expect(out).toContain("Component: Header ‹ Layout");
+    expect(out).toContain("DOM path: div#app > nav.site-header > button.btn");
+    // Emitted as a pasteable declaration run, not a bullet list.
+    expect(out).toContain("Computed: display: flex; font-size: 14px;");
+  });
+
+  it("says nothing at all when the annotation predates the field", () => {
+    const out = formatFeedbacksForAgent([makeFeedback({ annotations: [makeAnnotation({ inspect: null })] })]);
+    expect(out).not.toContain("DOM path:");
+    expect(out).not.toContain("Computed:");
   });
 });

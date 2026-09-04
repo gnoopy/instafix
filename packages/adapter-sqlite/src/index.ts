@@ -1,4 +1,5 @@
 import {
+  type AnnotationInspect,
   type AnnotationRecord,
   type AnnotationTarget,
   buildAnnotationRecord,
@@ -93,7 +94,8 @@ CREATE TABLE IF NOT EXISTS instafix_annotation (
   viewportH INTEGER NOT NULL,
   devicePixelRatio REAL NOT NULL,
   createdAt TEXT NOT NULL,
-  target TEXT
+  target TEXT,
+  inspect TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_instafix_annotation_feedback ON instafix_annotation(feedbackId);
 `;
@@ -147,6 +149,7 @@ interface AnnotationRow {
   devicePixelRatio: number;
   createdAt: string;
   target: string | null;
+  inspect: string | null;
 }
 
 function rowToAnnotation(row: AnnotationRow): AnnotationRecord {
@@ -174,6 +177,7 @@ function rowToAnnotation(row: AnnotationRow): AnnotationRecord {
     devicePixelRatio: row.devicePixelRatio,
     createdAt: new Date(row.createdAt),
     target: row.target ? (JSON.parse(row.target) as AnnotationTarget) : null,
+    inspect: row.inspect ? (JSON.parse(row.inspect) as AnnotationInspect) : null,
   };
 }
 
@@ -273,8 +277,32 @@ export class SqliteStore implements InstaFixStore {
     this.db.pragma("journal_mode = WAL");
     this.db.pragma("foreign_keys = ON");
     this.db.exec(SCHEMA_SQL);
+    this.migrate();
     this.screenshotStorage = options.screenshotStorage;
     this.caseInsensitiveSearch = options.caseInsensitiveSearch ?? true;
+  }
+
+  /**
+   * Additive column migrations for databases created by an older version.
+   *
+   * `CREATE TABLE IF NOT EXISTS` leaves an existing table exactly as it was,
+   * so a column added to SCHEMA_SQL never reaches a database that already
+   * exists — reads would be fine, but the INSERT naming the new column would
+   * fail with "no such column". There is no migration command by design (see
+   * the class doc), so the check runs on every construction: read the table's
+   * actual columns and add whatever is missing. Adding a nullable column is
+   * instant and lossless in SQLite regardless of table size.
+   */
+  private migrate(): void {
+    const columns = new Set(
+      this.db
+        .prepare("PRAGMA table_info(instafix_annotation)")
+        .all()
+        .map((row) => (row as { name: string }).name),
+    );
+    if (!columns.has("inspect")) {
+      this.db.exec("ALTER TABLE instafix_annotation ADD COLUMN inspect TEXT");
+    }
   }
 
   private generateId(): string {
@@ -326,16 +354,17 @@ export class SqliteStore implements InstaFixStore {
         `INSERT INTO instafix_annotation
           (id, feedbackId, cssSelector, xpath, textSnippet, elementTag, elementId, textPrefix, textSuffix,
            fingerprint, neighborText, anchorKey, xPct, yPct, wPct, hPct, scrollX, scrollY, viewportW,
-           viewportH, devicePixelRatio, createdAt, target)
+           viewportH, devicePixelRatio, createdAt, target, inspect)
          VALUES
           (@id, @feedbackId, @cssSelector, @xpath, @textSnippet, @elementTag, @elementId, @textPrefix, @textSuffix,
            @fingerprint, @neighborText, @anchorKey, @xPct, @yPct, @wPct, @hPct, @scrollX, @scrollY, @viewportW,
-           @viewportH, @devicePixelRatio, @createdAt, @target)`,
+           @viewportH, @devicePixelRatio, @createdAt, @target, @inspect)`,
       )
       .run({
         ...annotation,
         createdAt: annotation.createdAt.toISOString(),
         target: annotation.target ? JSON.stringify(annotation.target) : null,
+        inspect: annotation.inspect ? JSON.stringify(annotation.inspect) : null,
       });
   }
 

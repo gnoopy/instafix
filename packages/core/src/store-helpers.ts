@@ -63,6 +63,7 @@ export function buildAnnotationRecord(
     devicePixelRatio: input.devicePixelRatio,
     createdAt: ctx.now,
     target: input.target ?? null,
+    inspect: input.inspect ?? null,
   };
 }
 

@@ -162,6 +162,7 @@ const _INSTAFIX_MODELS = {
       devicePixelRatio: { type: "Float", default: "1" },
       createdAt: { type: "DateTime", default: "now()" },
       target: { type: "Json", optional: true },
+      inspect: { type: "Json", optional: true },
     },
     indexes: [{ fields: ["feedbackId"] }],
   },

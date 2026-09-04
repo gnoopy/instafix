@@ -2,6 +2,7 @@ import type { AnnotationPayload, FeedbackType, ScreenshotRegion } from "@instafi
 import { CLICK_THRESHOLD_PX, FONT_STACK, Z_INDEX_MAX } from "./constants.js";
 import { findAnchorElement, findLargestAncestor, generateAnchor, rectToPercentages } from "./dom/anchor.js";
 import { computeAutoScrollDelta } from "./dom/auto-scroll.js";
+import { inspectElement } from "./dom/inspect.js";
 import { collectMarqueeElements, collectMarqueeElementsDetailed } from "./dom/marquee.js";
 import { type MotionPauseHandle, pauseMotion } from "./dom/motion-pause.js";
 import { getSourceHint } from "./dom/source-hint.js";
@@ -1093,6 +1094,7 @@ export class Annotator {
         quotePrefix: detected.quotePrefix,
         quoteSuffix: detected.quoteSuffix,
       },
+      inspect: inspectElement(anchorElement),
     };
   }
 
@@ -1191,6 +1193,7 @@ export class Annotator {
         viewportH: window.innerHeight,
         devicePixelRatio: window.devicePixelRatio,
         target: { kind: "element" },
+        inspect: inspectElement(element),
       }),
     );
   }
@@ -1431,6 +1434,9 @@ export class Annotator {
       viewportH: window.innerHeight,
       devicePixelRatio: window.devicePixelRatio,
       target: { kind: "element" },
+      // Captured on the LIVE element, before any overlay/redraw — with the
+      // freeze toggle on, this is how a hover-only state gets recorded.
+      inspect: inspectElement(anchorElement),
     };
     return { annotation, anchorBounds };
   }

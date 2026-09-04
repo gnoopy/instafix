@@ -298,6 +298,7 @@ describe("flattenAnnotation", () => {
       "elementTag",
       "fingerprint",
       "hPct",
+      "inspect",
       "neighborText",
       "scrollX",
       "scrollY",

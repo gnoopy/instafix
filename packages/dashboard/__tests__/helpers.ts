@@ -49,6 +49,7 @@ export function makeAnnotation(overrides: Partial<AnnotationRecord> = {}): Annot
     devicePixelRatio: 2,
     createdAt: new Date("2026-07-20T10:00:00.000Z"),
     target: null,
+    inspect: null,
     ...overrides,
   };
 }
@@ -105,6 +106,7 @@ export function makeAnnotationResponse(overrides: Partial<AnnotationResponse> = 
     devicePixelRatio: 1,
     createdAt: "2026-07-20T10:00:00.000Z",
     target: null,
+    inspect: null,
     ...overrides,
   };
 }

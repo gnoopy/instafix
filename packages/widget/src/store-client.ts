@@ -147,5 +147,6 @@ function toAnnotationResponse(ann: AnnotationRecord): AnnotationResponse {
     devicePixelRatio: ann.devicePixelRatio,
     createdAt: ann.createdAt.toISOString(),
     target: ann.target ?? null,
+    inspect: ann.inspect ?? null,
   };
 }

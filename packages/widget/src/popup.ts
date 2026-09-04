@@ -82,6 +82,7 @@ export function buildComposePrompt(
       elementId: ann.anchor.elementId ?? null,
       anchorKey: ann.anchor.anchorKey ?? null,
       target: ann.target ?? null,
+      inspect: ann.inspect ?? null,
       id: `draft-${i + 1}`,
       feedbackId: "draft",
       createdAt: now,
