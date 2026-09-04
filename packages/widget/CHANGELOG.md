@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.10](https://github.com/gnoopy/instafix/compare/widget-v0.10.9...widget-v0.10.10) (2026-09-04)
+
+
+### Features
+
+* **widget,dashboard:** add a dashboard link + accent-color sync from the panel ([4d46db7](https://github.com/gnoopy/instafix/commit/4d46db7d4584e209c9a192bd58f5f42adec7177a))
+
+
+### Bug Fixes
+
+* **widget:** make the dashboard-link button icon-only to stop header wrap ([7790659](https://github.com/gnoopy/instafix/commit/7790659bc06269b20fc8162f79ed7f0f8b8ba020))
+
 ## [0.10.9](https://github.com/gnoopy/instafix/compare/widget-v0.10.8...widget-v0.10.9) (2026-09-03)
 
 
