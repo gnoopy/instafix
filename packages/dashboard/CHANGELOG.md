@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.10](https://github.com/gnoopy/instafix/compare/dashboard-v0.2.9...dashboard-v0.2.10) (2026-09-04)
+
+
+### Features
+
+* **widget,dashboard:** wire dashboardUrl into the live demo, sync theme + locale too ([e43b50f](https://github.com/gnoopy/instafix/commit/e43b50ff7e8c35e9c880bcaa8f8e3af5e14d4cfc))
+
 ## [0.2.9](https://github.com/gnoopy/instafix/compare/dashboard-v0.2.8...dashboard-v0.2.9) (2026-09-04)
 
 
