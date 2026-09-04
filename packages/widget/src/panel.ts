@@ -47,6 +47,9 @@ import { WIDGET_VERSION } from "./version.js";
 /** Non-terminal statuses — complement of `CLOSED_FEEDBACK_STATUSES`; backs the panel's "Open" tab bucket. */
 const OPEN_FEEDBACK_STATUSES: readonly FeedbackStatus[] = FEEDBACK_STATUSES.filter((s) => !isClosedStatus(s));
 
+/** Ceiling for one batch hand-off. Matches core's `MAX_ITEMS`, so nothing fetched is dropped by the formatter. */
+const AGENT_BATCH_LIMIT = 200;
+
 /**
  * Side panel (400px) with feedback history, filters, search, stats,
  * sort/group, bulk actions, export, detail view, and keyboard shortcuts.
@@ -200,10 +203,15 @@ export class Panel {
         getContainer: () => this.shadowRoot,
         // The copy's coverage, spelled out in the preview — selected items
         // when a bulk selection is active, open-on-this-page otherwise.
-        getScopeLabel: () =>
-          this.bulk.hasSelection
-            ? tWithParams(this.t, "agent.scopeSelected", { count: this.bulk.selectedIds.length })
-            : this.t("agent.scopeOpenPage"),
+        getScopeLabel: () => {
+          if (this.bulk.hasSelection) {
+            return tWithParams(this.t, "agent.scopeSelected", { count: this.bulk.selectedIds.length });
+          }
+          const scope = this.scopeSegmented?.value ?? "this";
+          if (scope === "all") return this.t("agent.scopeOpenAll");
+          if (scope === "template") return this.t("agent.scopeOpenTemplate");
+          return this.t("agent.scopeOpenPage");
+        },
         instructions: this.settingsOptions?.config.agentInstructions,
         // Successful copy = these items are now "in an agent's hands" —
         // badge them so nobody hands the same item off twice by accident.
@@ -822,19 +830,37 @@ export class Panel {
    * page — fetched fresh so it's accurate regardless of the list's active
    * type/search filter or pagination state.
    */
+  /**
+   * What "Copy Prompt" covers, in priority order: an explicit bulk selection,
+   * otherwise every open fix note in the CURRENTLY SELECTED page scope.
+   *
+   * That last part used to be hardcoded to the current URL, which quietly
+   * contradicted the panel's own "모든 페이지" toggle — switching to it
+   * changed the visible list but the copy still went out page-scoped. Honoring
+   * the toggle is what makes a cross-page batch a real capability: annotate
+   * your way through several screens, flip to all pages, and hand the entire
+   * queue over in one paste.
+   *
+   * The limit matches `MAX_ITEMS` in core's formatter, so the fetch never
+   * returns items the prompt would silently drop.
+   */
   private async getFeedbacksForAgentCopy(): Promise<FeedbackResponse[]> {
     if (this.bulk.hasSelection) {
       const ids = new Set(this.bulk.selectedIds);
       return this.feedbacks.filter((f) => ids.has(f.id));
     }
     const scope = this.getScope();
+    const currentScope = this.scopeSegmented.value;
+    const options: GetFeedbacksOptions & { page: number; limit: number } = {
+      statuses: OPEN_FEEDBACK_STATUSES,
+      page: 1,
+      limit: AGENT_BATCH_LIMIT,
+    };
+    if (currentScope === "this") options.url = scope.url;
+    else if (currentScope === "template" && scope.urlPattern) options.urlPattern = scope.urlPattern;
+    // "all" adds no location filter — the whole project is the batch.
     try {
-      const { feedbacks } = await this.client.getFeedbacks(this.projectName, {
-        url: scope.url,
-        statuses: OPEN_FEEDBACK_STATUSES,
-        page: 1,
-        limit: 100,
-      });
+      const { feedbacks } = await this.client.getFeedbacks(this.projectName, options);
       return feedbacks;
     } catch (error) {
       this.bus.emit("feedback:error", error instanceof Error ? error : new Error(String(error)));
