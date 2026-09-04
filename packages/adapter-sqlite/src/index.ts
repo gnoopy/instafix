@@ -294,12 +294,14 @@ export class SqliteStore implements InstaFixStore {
    * instant and lossless in SQLite regardless of table size.
    */
   private migrate(): void {
-    const columns = new Set(
-      this.db
-        .prepare("PRAGMA table_info(instafix_annotation)")
-        .all()
-        .map((row) => (row as { name: string }).name),
-    );
+    // `pragma()` rather than `prepare(...).all()`: a prepared Statement left
+    // to the GC is finalized AFTER the Node environment is torn down, which
+    // trips better-sqlite3's native destructor
+    // (`RemoveEnvironmentCleanupHook ... Assertion failed: (env) != nullptr`)
+    // and crashes the process on Node 24. The pragma helper owns and releases
+    // its own statement.
+    const info = this.db.pragma("table_info(instafix_annotation)") as Array<{ name: string }>;
+    const columns = new Set(info.map((row) => row.name));
     if (!columns.has("inspect")) {
       this.db.exec("ALTER TABLE instafix_annotation ADD COLUMN inspect TEXT");
     }
