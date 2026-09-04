@@ -480,7 +480,7 @@ export class Popup {
     this.textarea = document.createElement("textarea");
     this.textarea.style.cssText = `
       width:100%;min-height:100px;height:100px;
-      padding:10px 74px 10px 12px;border-radius:12px;
+      padding:10px 12px;border-radius:12px;
       border:1px solid ${this.colors.border};
       background:${this.colors.glassBgHeavy};
       color:${this.colors.text};font-family:${FONT_STACK};
@@ -490,36 +490,45 @@ export class Popup {
     `;
     this.textarea.maxLength = 5000;
 
-    // Clear / undo / redo trio, top-right corner of the textarea. Clearing
-    // via this button sets `.value` directly, which does NOT go through the
+    // Clear / undo / redo trio — a floating overlay in the textarea's
+    // top-right corner, ON TOP of whatever text is typed there (no reserved
+    // padding pushing text out of the way), so it must read as buttons at
+    // rest, not just on hover: a circular outline + translucent fill (same
+    // glass tokens the textarea itself uses) rather than the fully
+    // transparent-until-hover treatment other icon buttons use. Clearing via
+    // this button sets `.value` directly, which does NOT go through the
     // browser's native undo stack (Ctrl+Z does nothing after it) — hence a
     // small dedicated one-slot history just for this action, not a general
     // text-editing undo stack the rest of the textarea doesn't have either.
     const composerActions = el("div", {
       style: `
-        position:absolute;top:6px;right:6px;display:flex;align-items:center;gap:2px;
+        position:absolute;top:6px;right:6px;display:flex;align-items:center;gap:4px;
       `,
     });
     const makeComposerActionBtn = (icon: string): HTMLButtonElement => {
       const b = document.createElement("button");
       b.type = "button";
       b.style.cssText = `
-        width:22px;height:22px;border-radius:6px;border:none;
-        background:transparent;color:${this.colors.textTertiary};
+        width:22px;height:22px;border-radius:50%;
+        border:1px solid ${this.colors.border};
+        background:${this.colors.glassBg};color:${this.colors.textTertiary};
+        box-shadow:0 1px 3px ${this.colors.shadow};
         display:flex;align-items:center;justify-content:center;cursor:pointer;
-        transition:background 0.15s ease,color 0.15s ease;
+        transition:background 0.15s ease,color 0.15s ease,border-color 0.15s ease;
       `;
       const svg = parseSvg(icon);
       svg.setAttribute("style", "width:12px;height:12px;flex-shrink:0;");
       b.appendChild(svg);
       b.addEventListener("mouseenter", () => {
         if (b.disabled) return;
-        b.style.background = this.colors.glassBg;
+        b.style.background = this.colors.glassBgHeavy;
         b.style.color = this.colors.text;
+        b.style.borderColor = this.colors.accent;
       });
       b.addEventListener("mouseleave", () => {
-        b.style.background = "transparent";
+        b.style.background = this.colors.glassBg;
         b.style.color = b.disabled ? this.colors.border : this.colors.textTertiary;
+        b.style.borderColor = this.colors.border;
       });
       return b;
     };
