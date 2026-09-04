@@ -316,6 +316,26 @@ describe("Popup", () => {
       expect(getBtn(t("popup.redoClear")).disabled).toBe(true);
     });
 
+    it("keeps a disabled action fully visible — only its icon tone dims", () => {
+      // Regression: undo/redo used to drop to opacity 0.35 with a
+      // border-colored (near-white) icon when disabled, which on a light
+      // theme left the composer looking like a lone X with dead space.
+      popup.show(makeBounds());
+      const clear = getBtn(t("popup.clearMessage"));
+      const undo = getBtn(t("popup.undoClear"));
+      expect(undo.disabled).toBe(true);
+
+      // The circular chrome is identical whether or not the action is live.
+      expect(undo.style.opacity).toBe("");
+      expect(undo.style.background).toBe(clear.style.background);
+      expect(undo.style.borderColor || undo.style.border).toBe(clear.style.borderColor || clear.style.border);
+      // Translucent (jsdom normalizes #rrggbbaa to rgba()), and toned by the
+      // layer color rather than a flat neutral.
+      expect(clear.style.background).toMatch(/^rgba\(0, 102, 255, 0?\.\d+\)$/);
+      // Availability is the icon tone alone, and the two tones differ.
+      expect(undo.style.color).not.toBe(clear.style.color);
+    });
+
     it("clear empties the textarea and enables undo", () => {
       popup.show(makeBounds());
       const textarea = document.querySelector<HTMLTextAreaElement>("textarea")!;

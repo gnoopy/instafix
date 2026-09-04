@@ -505,14 +505,33 @@ export class Popup {
         position:absolute;top:6px;right:6px;display:flex;align-items:center;gap:4px;
       `,
     });
+    // The circular chrome is CONSTANT — a translucent wash plus a matching
+    // ring, on every button, enabled or not. Only the icon dims. The trio
+    // used to fade the whole button to `opacity: 0.35` with a
+    // `colors.border`-colored icon when disabled, which on a light theme
+    // meant a near-white icon inside a near-white ring on a near-white
+    // textarea: undo/redo were invisible and the row looked like a lone X
+    // with dead space beside it.
+    //
+    // The wash is the LAYER TONE at low alpha, not the glass tokens (which
+    // are themselves near-white and vanish against the textarea they sit
+    // on). Tinting with `accent` — which `applyLayerColor` has already
+    // rewritten to the detected layer tone — keeps the trio inside the
+    // widget's one-tone identity while making it clearly a control surface
+    // rather than part of the field. Alphas as hex suffixes on the 6-digit
+    // accent, the same convention accentLight/accentGlow use.
+    const onLight = this.colors.bg === "#ffffff";
+    const tone = this.colors.accent;
+    const actionBg = `${tone}${onLight ? "26" : "33"}`;
+    const actionBgHover = `${tone}${onLight ? "45" : "55"}`;
+    const actionBorder = `${tone}${onLight ? "80" : "99"}`;
     const makeComposerActionBtn = (icon: string): HTMLButtonElement => {
       const b = document.createElement("button");
       b.type = "button";
       b.style.cssText = `
         width:22px;height:22px;border-radius:50%;
-        border:1px solid ${this.colors.border};
-        background:${this.colors.glassBg};color:${this.colors.textTertiary};
-        box-shadow:0 1px 3px ${this.colors.shadow};
+        border:1px solid ${actionBorder};
+        background:${actionBg};color:${this.colors.accentInk};
         display:flex;align-items:center;justify-content:center;cursor:pointer;
         transition:background 0.15s ease,color 0.15s ease,border-color 0.15s ease;
       `;
@@ -521,14 +540,12 @@ export class Popup {
       b.appendChild(svg);
       b.addEventListener("mouseenter", () => {
         if (b.disabled) return;
-        b.style.background = this.colors.glassBgHeavy;
-        b.style.color = this.colors.text;
+        b.style.background = actionBgHover;
         b.style.borderColor = this.colors.accent;
       });
       b.addEventListener("mouseleave", () => {
-        b.style.background = this.colors.glassBg;
-        b.style.color = b.disabled ? this.colors.border : this.colors.textTertiary;
-        b.style.borderColor = this.colors.border;
+        b.style.background = actionBg;
+        b.style.borderColor = actionBorder;
       });
       return b;
     };
@@ -925,11 +942,18 @@ export class Popup {
   }
 
   /** Enable/disable a composer action button (undo/redo) and dim it to match. */
+  /**
+   * Availability is carried by the ICON's tone alone — the translucent
+   * circle and its ring stay put, so a disabled undo/redo still reads as a
+   * button sitting there rather than as empty space. Both tones clear AA on
+   * the wash; the step between them (the saturated layer tone → a neutral
+   * gray) is what marks the state, with `disabled` carrying it for
+   * assistive tech.
+   */
   private setComposerActionEnabled(btn: HTMLButtonElement, enabled: boolean): void {
     btn.disabled = !enabled;
     btn.style.cursor = enabled ? "pointer" : "default";
-    btn.style.opacity = enabled ? "1" : "0.35";
-    btn.style.color = enabled ? this.colors.textTertiary : this.colors.border;
+    btn.style.color = enabled ? this.colors.accentInk : this.colors.textTertiary;
   }
 
   /**
