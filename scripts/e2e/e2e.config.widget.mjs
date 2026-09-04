@@ -22,8 +22,19 @@ export default {
   },
 
   /**
-   * Playwright's locator engine pierces shadow DOM (open AND closed) by default,
-   * so `page.locator("instafix-widget").locator(...)` works without page.evaluate.
+   * CORRECTION (2026-09-03, verified against apps/demo): Playwright's CSS-selector
+   * locator piercing (`page.locator("instafix-widget").locator(...)`) only reaches
+   * an OPEN shadow root — confirmed working here for exactly that reason, since
+   * e2e/server.mjs forces NODE_ENV=test, which flips shadowMode to "open" (see the
+   * file header above). Against a CLOSED shadow root (any real dev/prod target,
+   * e.g. apps/demo) the same locator silently matches zero elements — `count()`
+   * returns 0, `waitFor()` times out — even though `document.elementFromPoint(x,y)`
+   * correctly resolves to the host element and the content is genuinely rendered
+   * and interactive. For a closed-shadow target, drive it by screen coordinates
+   * instead (`page.mouse.click(x, y)`, located via a screenshot or
+   * `elementFromPoint`), not by locator chains through the host element — do not
+   * copy this file's locator pattern onto a closed-shadow config.
+   *
    * Verified selectors (packages/widget/src/panel.ts, launcher.ts): host element
    * `instafix-widget`, launcher button `.sp-fab`, panel `.sp-panel`, feedback cards
    * `.sp-card`. The reset endpoint is per-project: GET /api/reset?projectName=<name>.

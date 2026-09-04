@@ -56,7 +56,7 @@ export const ru: Translations = {
   "fab.hideTools": "Скрыть инструменты",
   "fab.showTools": "Показать инструменты",
   "fab.messages": "Показать панель",
-  "fab.annotate": "Создать аннотацию",
+  "fab.annotate": "Выбрать область",
   "fab.targeting": "Автовыбор элемента",
   "fab.annotations": "Показать или скрыть метки",
 

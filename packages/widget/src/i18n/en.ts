@@ -56,7 +56,7 @@ export const en: Translations = {
   "fab.hideTools": "Hide tools",
   "fab.showTools": "Show tools",
   "fab.messages": "Show sidebar",
-  "fab.annotate": "Create new annotation",
+  "fab.annotate": "Select area",
   "fab.targeting": "Auto-target an element",
   "fab.annotations": "Show or hide markers",
 

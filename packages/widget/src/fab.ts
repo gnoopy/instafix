@@ -3,7 +3,7 @@ import { sampleBackgroundIsLight } from "./dom/background-contrast.js";
 import { parseSvg, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
 import { type TFunction, type Translations, tWithParams } from "./i18n/index.js";
-import { ICON_CLOSE, ICON_EDIT, ICON_EYE, ICON_EYE_OFF, ICON_INSTAFIX, ICON_LIST, ICON_TARGET } from "./icons.js";
+import { ICON_CLOSE, ICON_CROP, ICON_EYE, ICON_EYE_OFF, ICON_INSTAFIX, ICON_LIST, ICON_TARGET } from "./icons.js";
 
 /** Re-sample the background behind the FAB/toolbar at most this often while scrolling/resizing. */
 const CONTRAST_DEBOUNCE_MS = 200;
@@ -140,7 +140,7 @@ export class Fab {
     // the toolbar entirely (no DOM, no keyboard slot, no click handler).
     this.items = [
       { id: "chat", icon: ICON_LIST },
-      { id: "annotate", icon: ICON_EDIT },
+      { id: "annotate", icon: ICON_CROP },
       { id: "target-picker", icon: ICON_TARGET },
     ];
     if (config.showAnnotationsToggle !== false) {

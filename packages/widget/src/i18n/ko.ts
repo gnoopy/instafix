@@ -56,7 +56,7 @@ export const ko: Translations = {
   "fab.hideTools": "도구 숨기기",
   "fab.showTools": "도구 표시",
   "fab.messages": "사이드바 표시",
-  "fab.annotate": "새 주석 만들기",
+  "fab.annotate": "영역 지정",
   "fab.targeting": "요소 자동 선택",
   "fab.annotations": "마커 표시/숨기기",
 

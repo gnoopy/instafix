@@ -39,8 +39,14 @@ export const ICON_TRASH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentC
 // List icon (Feather "list") — bullet rows. Used for the FAB radial item that opens the feedback sidebar.
 export const ICON_LIST = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`;
 
-// Pencil / edit-3 (Feather "edit-3") — pure pencil with no document. Used for the FAB radial item that creates a new annotation.
+// Pencil / edit-3 (Feather "edit-3") — pure pencil with no document. Kept for other in-panel edit affordances.
 export const ICON_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>`;
+
+// Crop (Feather "crop") — two L-shaped corner brackets framing a rectangle, the
+// conventional "marquee/area selection" glyph. Used for the FAB toolbar item
+// that draws a rectangle to select an area (a pencil reads as "write," not
+// "select" — see fab.annotate's rename to "Select area").
+export const ICON_CROP = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.13 1 6 16a2 2 0 0 0 2 2h15"/><path d="M1 6.13 16 6a2 2 0 0 1 2 2v15"/></svg>`;
 
 // Target / crosshair (Feather "target") — three concentric circles. Used for the FAB toolbar item that toggles the hover-and-click "auto-target" picker mode.
 export const ICON_TARGET = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`;

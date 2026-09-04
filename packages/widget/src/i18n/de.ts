@@ -57,7 +57,7 @@ export const de: Translations = {
   "fab.hideTools": "Werkzeuge ausblenden",
   "fab.showTools": "Werkzeuge einblenden",
   "fab.messages": "Seitenleiste anzeigen",
-  "fab.annotate": "Neue Anmerkung erstellen",
+  "fab.annotate": "Bereich auswählen",
   "fab.targeting": "Element automatisch anvisieren",
   "fab.annotations": "Markierungen ein- oder ausblenden",
 
