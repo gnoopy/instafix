@@ -4,7 +4,7 @@ import { useCallback, useEffect, useInsertionEffect, useMemo, useRef, useState }
 import { buildDeepLink } from "../format.js";
 import { createT, getStatusLabel, loadLocale, tWithParams } from "../i18n/index.js";
 import { ensureStyles } from "../inject-styles.js";
-import { normalizeAccent, resolveInitialTheme, watchSystemTheme } from "../theme.js";
+import { normalizeAccent, readSharedAccentColor, resolveInitialTheme, watchSystemTheme } from "../theme.js";
 import type { InstaFixInboxProps } from "../types.js";
 import { useInstaFixInbox } from "../use-inbox.js";
 import type { InboxUiContextValue } from "./context.js";
@@ -152,9 +152,14 @@ export function InstaFixInbox(props: InstaFixInboxProps): ReactElement {
     return watchSystemTheme(setSystemTheme);
   }, [themePref]);
   const resolvedTheme = themePref === "auto" ? systemTheme : themePref;
+  // Falls back to the accent @instafix/widget last wrote for this visitor
+  // (see readSharedAccentColor) before the component's own hardcoded
+  // default — only read once at mount, same as `accentColor` itself is only
+  // ever a static prop, never watched for live changes.
+  const [sharedAccentColor] = useState<string | null>(() => readSharedAccentColor());
   const rootStyle = useMemo(
-    () => ({ "--ifd-accent": normalizeAccent(accentColor ?? "#0066ff") }) as CSSProperties,
-    [accentColor],
+    () => ({ "--ifd-accent": normalizeAccent(accentColor ?? sharedAccentColor ?? "#0066ff") }) as CSSProperties,
+    [accentColor, sharedAccentColor],
   );
 
   // ----- drawer mode: overlay below the side-by-side container breakpoint

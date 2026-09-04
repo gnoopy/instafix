@@ -15,6 +15,21 @@ export const BUILTIN_LOCALES = ["en", "ko", "fr", "de", "es", "it", "pt", "ru"] 
 export type BuiltinLocale = (typeof BUILTIN_LOCALES)[number];
 
 /**
+ * localStorage key shared between `@instafix/widget` and `@instafix/dashboard`
+ * for settings that need to survive a full page navigation between the two —
+ * currently just the accent color, so a visitor's chosen (or host-configured)
+ * widget accent carries over to `<InstaFixInbox />` even though the dashboard
+ * is typically a different route entirely (a fresh page load, not the same JS
+ * runtime — the only channel that also covers a direct/bookmarked visit to
+ * the dashboard with no query string). The stored value is a JSON object;
+ * only its `syncedAccentColor` field is a cross-package contract — every
+ * other field (including the visitor-preference `accentColor` the widget's
+ * own settings panel writes) is `@instafix/widget`-internal and may change
+ * shape without notice.
+ */
+export const INSTAFIX_SHARED_SETTINGS_KEY = "instafix_settings";
+
+/**
  * Locale identifier accepted by the widget. Built-in locales are kept as
  * literal strings so editors auto-complete them, but arbitrary BCP-47 tags
  * are also accepted (custom dictionaries registered via `registerLocale`).
@@ -104,6 +119,21 @@ export interface InstaFixBaseConfig {
    * these elements too — full manual control, previous behavior.
    */
   autoSelectionColor?: boolean | undefined;
+  /**
+   * Full URL of the page where the host mounted `<InstaFixInbox />` (the
+   * dashboard component has no fixed route of its own — the host app's
+   * developer chooses where to render it, then supplies that URL here so the
+   * widget knows where to send visitors).
+   *
+   * When set, the panel header shows a button that opens it in a new tab.
+   * Unset (default): the button is not rendered at all — no dead link.
+   *
+   * The widget also writes its resolved `accentColor` to the
+   * `INSTAFIX_SHARED_SETTINGS_KEY` localStorage entry at every mount, so a
+   * dashboard mounted at this URL with no explicit `accentColor` prop of its
+   * own picks up the same accent automatically.
+   */
+  dashboardUrl?: string | undefined;
   /**
    * Steer clear of another floating corner overlay the host page already
    * has — a chat bubble, a deploy-preview toolbar, a cookie banner, any

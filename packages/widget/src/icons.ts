@@ -40,3 +40,9 @@ export const ICON_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentCo
 
 // Target / crosshair (Feather "target") — three concentric circles. Used for the FAB toolbar item that toggles the hover-and-click "auto-target" picker mode.
 export const ICON_TARGET = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`;
+
+// External link (Feather "external-link") — box with an arrow breaking out of
+// its top-right corner. Used for the panel header's "open dashboard" button,
+// which navigates away to a different page/app entirely (the shipped
+// <InstaFixInbox /> dashboard component), not an in-panel view.
+export const ICON_EXTERNAL_LINK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;

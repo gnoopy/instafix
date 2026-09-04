@@ -4092,4 +4092,70 @@ describe("Panel", () => {
       expect(settingsShadow.querySelector(".sp-settings")).toBeNull();
     });
   });
+
+  // -------------------------------------------------------------------------
+  // "Open dashboard" header button — only rendered when the launcher supplies
+  // config.dashboardUrl (no dead link when the host never configured one).
+  // -------------------------------------------------------------------------
+
+  describe("open dashboard button", () => {
+    it("does not render when settingsOptions.config.dashboardUrl is unset", () => {
+      // The shared `panel` from beforeEach is constructed without settingsOptions.
+      expect(shadow.querySelector(".sp-btn-open-dashboard")).toBeNull();
+    });
+
+    it("does not render when settingsOptions is supplied but dashboardUrl is unset", () => {
+      const noDashboardShadow = createShadowRoot();
+      const noDashboardPanel = new Panel(
+        noDashboardShadow,
+        colors,
+        new EventBus<WidgetEvents>(),
+        apiClient as never,
+        "test-project",
+        markers as never,
+        t,
+        "fr",
+        undefined,
+        { config: { projectName: "test-project", endpoint: "/api/instafix" }, onUpdateConfig: vi.fn() },
+      );
+
+      expect(noDashboardShadow.querySelector(".sp-btn-open-dashboard")).toBeNull();
+
+      noDashboardPanel.destroy();
+    });
+
+    it("renders in the header actions row when dashboardUrl is set, and opens it in a new tab on click", () => {
+      const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+      const dashboardShadow = createShadowRoot();
+      const dashboardPanel = new Panel(
+        dashboardShadow,
+        colors,
+        new EventBus<WidgetEvents>(),
+        apiClient as never,
+        "test-project",
+        markers as never,
+        t,
+        "fr",
+        undefined,
+        {
+          config: {
+            projectName: "test-project",
+            endpoint: "/api/instafix",
+            dashboardUrl: "https://app.example.com/admin/feedback",
+          },
+          onUpdateConfig: vi.fn(),
+        },
+      );
+
+      const btn = dashboardShadow.querySelector<HTMLButtonElement>(".sp-btn-open-dashboard");
+      expect(btn).not.toBeNull();
+      expect(btn?.closest(".sp-panel-header-actions")).not.toBeNull();
+      expect(btn?.getAttribute("aria-label")).toBe(t("panel.openDashboard"));
+
+      btn?.click();
+      expect(openSpy).toHaveBeenCalledWith("https://app.example.com/admin/feedback", "_blank", "noopener,noreferrer");
+
+      dashboardPanel.destroy();
+    });
+  });
 });

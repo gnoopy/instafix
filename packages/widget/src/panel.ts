@@ -25,6 +25,7 @@ import {
   ICON_CHEVRON_DOWN,
   ICON_CLOSE,
   ICON_DOT_OPEN,
+  ICON_EXTERNAL_LINK,
   ICON_LAYERS,
   ICON_OTHER,
   ICON_QUESTION,
@@ -59,6 +60,8 @@ export class Panel {
   private searchInput: HTMLInputElement;
   private closeBtn: HTMLButtonElement;
   private deleteAllBtn: HTMLButtonElement;
+  /** Only created when `config.dashboardUrl` is set — no dead link otherwise. */
+  private openDashboardBtn: HTMLButtonElement | null = null;
   private activeFilters = new Set<string>(["all"]);
   private typeDropdownBtn!: HTMLButtonElement;
   private typeDropdownContainer!: HTMLElement;
@@ -146,6 +149,29 @@ export class Panel {
     this.deleteAllBtn.appendChild(deleteAllLabel);
     this.deleteAllBtn.addEventListener("click", () => this.confirmDeleteAll());
 
+    // "Open dashboard" — links out to wherever the host mounted
+    // <InstaFixInbox /> (a separate package/route/runtime the widget cannot
+    // discover on its own). Only rendered when the host supplied
+    // `dashboardUrl`; there is no default/guessed URL, so omitting the
+    // option simply omits the button instead of producing a dead link.
+    const dashboardUrl = this.settingsOptions?.config.dashboardUrl;
+    if (dashboardUrl) {
+      this.openDashboardBtn = document.createElement("button");
+      this.openDashboardBtn.className = "sp-btn-open-dashboard";
+      this.openDashboardBtn.setAttribute("aria-label", this.t("panel.openDashboard"));
+      this.openDashboardBtn.appendChild(parseSvg(ICON_EXTERNAL_LINK));
+      const openDashboardLabel = document.createElement("span");
+      setText(openDashboardLabel, ` ${this.t("panel.openDashboard")}`);
+      this.openDashboardBtn.appendChild(openDashboardLabel);
+      this.openDashboardBtn.addEventListener("click", () => {
+        // New tab, not same-tab navigation — the widget (and the feedback
+        // session it's mid-flow on) stays alive in the original tab, and
+        // `noopener,noreferrer` avoids handing the new page a `window.opener`
+        // back into the host app.
+        window.open(dashboardUrl, "_blank", "noopener,noreferrer");
+      });
+    }
+
     // Export button
     this.exportBtn = new ExportButton(colors, () => this.feedbacks, this.t);
 
@@ -208,6 +234,7 @@ export class Panel {
     const headerActions = el("div", { class: "sp-panel-header-actions" });
     headerActions.appendChild(this.agentCopyBtn.element);
     headerActions.appendChild(this.exportBtn.element);
+    if (this.openDashboardBtn) headerActions.appendChild(this.openDashboardBtn);
     headerActions.appendChild(this.deleteAllBtn);
 
     header.appendChild(headerTop);

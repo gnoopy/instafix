@@ -46,6 +46,19 @@ describe("InstaFixConfig discriminated union", () => {
     const storeWithApiKey: InstaFixConfig = { projectName: "p", store, apiKey: "leaked" };
     void storeWithApiKey;
   });
+
+  it("accepts the optional dashboardUrl on either mode — it's a base-config field, not part of the XOR arms", () => {
+    expectTypeOf({
+      projectName: "p",
+      endpoint: "/api/instafix",
+      dashboardUrl: "https://app.example.com/admin/feedback",
+    }).toExtend<InstaFixConfig>();
+    expectTypeOf({
+      projectName: "p",
+      store,
+      dashboardUrl: "https://app.example.com/admin/feedback",
+    }).toExtend<InstaFixConfig>();
+  });
 });
 
 describe("FeedbackUpdateInput closure invariant", () => {

@@ -1143,6 +1143,37 @@ export function buildStyles(colors: ThemeColors): string {
       pointer-events: none;
     }
 
+    /* Same ghost-pill shape as .sp-btn-delete-all/.sp-export-btn — neutral
+       until hover, then picks up the widget's accent instead of a danger or
+       brand-specific color (this is a plain navigation action, not export or
+       a destructive one). */
+    .sp-btn-open-dashboard {
+      padding: 5px 12px;
+      border-radius: var(--sp-radius-full);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--sp-text-tertiary);
+      font-family: var(--sp-font);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .sp-btn-open-dashboard svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .sp-btn-open-dashboard:hover {
+      border-color: var(--sp-accent);
+      color: var(--sp-accent);
+      background: var(--sp-accent-light);
+    }
+
     /* ---- Confirm Dialog ---- */
 
     .sp-confirm-backdrop {
@@ -1440,6 +1471,7 @@ export function buildStyles(colors: ThemeColors): string {
       .sp-btn-resolve,
       .sp-btn-delete,
       .sp-btn-delete-all,
+      .sp-btn-open-dashboard,
       .sp-btn-primary,
       .sp-btn-ghost,
       .sp-btn-danger,
@@ -1480,6 +1512,7 @@ export function buildStyles(colors: ThemeColors): string {
       .sp-btn-resolve:focus-visible,
       .sp-btn-delete:focus-visible,
       .sp-btn-delete-all:focus-visible,
+      .sp-btn-open-dashboard:focus-visible,
       .sp-btn-primary:focus-visible,
       .sp-btn-ghost:focus-visible,
       .sp-btn-danger:focus-visible,

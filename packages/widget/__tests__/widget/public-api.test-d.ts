@@ -27,6 +27,19 @@ describe("initInstaFix config modes", () => {
     // @ts-expect-error — endpoint and store are mutually exclusive
     initInstaFix({ projectName: "p", endpoint: "/api", store });
   });
+
+  it("accepts the optional dashboardUrl in either mode", () => {
+    expectTypeOf(initInstaFix).toBeCallableWith({
+      projectName: "p",
+      endpoint: "/api/instafix",
+      dashboardUrl: "https://app.example.com/admin/feedback",
+    });
+    expectTypeOf(initInstaFix).toBeCallableWith({
+      projectName: "p",
+      store,
+      dashboardUrl: "https://app.example.com/admin/feedback",
+    });
+  });
 });
 
 describe("public events", () => {

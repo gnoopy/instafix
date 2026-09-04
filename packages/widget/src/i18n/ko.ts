@@ -27,6 +27,7 @@ export const ko: Translations = {
   "panel.cancel": "취소",
   "panel.confirmDelete": "삭제",
   "panel.loadMore": "더 불러오기 (남은 {remaining}개)",
+  "panel.openDashboard": "대시보드 열기",
 
   // Status filter labels
   "panel.statusAll": "전체",

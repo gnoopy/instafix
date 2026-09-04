@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { normalizeAccent, resolveInitialTheme, watchSystemTheme } from "../../src/theme.js";
+import { INSTAFIX_SHARED_SETTINGS_KEY } from "@instafix/core";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { normalizeAccent, readSharedAccentColor, resolveInitialTheme, watchSystemTheme } from "../../src/theme.js";
 
 // ---------------------------------------------------------------------------
 // matchMedia stub — jsdom ships none by default
@@ -108,5 +109,60 @@ describe("watchSystemTheme", () => {
     expect(typeof unsubscribe).toBe("function");
     expect(() => unsubscribe()).not.toThrow();
     expect(cb).not.toHaveBeenCalled();
+  });
+});
+
+describe("readSharedAccentColor", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("returns null when nothing is stored", () => {
+    expect(readSharedAccentColor()).toBeNull();
+  });
+
+  it("reads the syncedAccentColor field @instafix/widget writes under the shared key", () => {
+    localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ syncedAccentColor: "#7c3aed", theme: "dark" }));
+    expect(readSharedAccentColor()).toBe("#7c3aed");
+  });
+
+  it("returns null when the stored blob has no syncedAccentColor field", () => {
+    localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ theme: "dark" }));
+    expect(readSharedAccentColor()).toBeNull();
+  });
+
+  it("ignores the widget's own visitor-preference accentColor field — only syncedAccentColor is the cross-package contract", () => {
+    // Regression guard: reading the widget's `accentColor` field here (instead
+    // of the dedicated `syncedAccentColor` one) would mean the dashboard only
+    // ever reflects a value that was *also* designed to override the widget's
+    // own host config on its next load — not the intent here at all.
+    localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ accentColor: "#7c3aed" }));
+    expect(readSharedAccentColor()).toBeNull();
+  });
+
+  it("returns null for a non-string or empty syncedAccentColor", () => {
+    localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ syncedAccentColor: 42 }));
+    expect(readSharedAccentColor()).toBeNull();
+    localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ syncedAccentColor: "" }));
+    expect(readSharedAccentColor()).toBeNull();
+  });
+
+  it("returns null for non-object stored JSON (null, array, primitive)", () => {
+    localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, "null");
+    expect(readSharedAccentColor()).toBeNull();
+    localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, "42");
+    expect(readSharedAccentColor()).toBeNull();
+  });
+
+  it("survives corrupted (non-JSON) storage without throwing", () => {
+    localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, "{not json");
+    expect(readSharedAccentColor()).toBeNull();
+  });
+
+  it("survives localStorage.getItem throwing", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("disabled");
+    });
+    expect(readSharedAccentColor()).toBeNull();
   });
 });

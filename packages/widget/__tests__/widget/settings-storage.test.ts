@@ -1,7 +1,12 @@
 // @vitest-environment jsdom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPersistedSettings, savePersistedSettings } from "../../src/settings-storage.js";
+import {
+  getSyncedAccentColor,
+  loadPersistedSettings,
+  savePersistedSettings,
+  syncSharedAccentColor,
+} from "../../src/settings-storage.js";
 
 describe("settings-storage", () => {
   beforeEach(() => {
@@ -86,5 +91,63 @@ describe("settings-storage", () => {
       throw new Error("disabled");
     });
     expect(loadPersistedSettings()).toEqual({});
+  });
+});
+
+describe("syncSharedAccentColor / getSyncedAccentColor", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("returns null when nothing was ever synced", () => {
+    expect(getSyncedAccentColor()).toBeNull();
+  });
+
+  it("round-trips a synced accent color", () => {
+    syncSharedAccentColor("#7c3aed");
+    expect(getSyncedAccentColor()).toBe("#7c3aed");
+  });
+
+  it("overwrites on every call, reflecting the most recent sync", () => {
+    syncSharedAccentColor("#7c3aed");
+    syncSharedAccentColor("#059669");
+    expect(getSyncedAccentColor()).toBe("#059669");
+  });
+
+  it("preserves whatever visitor-preference settings were already persisted", () => {
+    savePersistedSettings({ theme: "dark", locale: "fr" });
+    syncSharedAccentColor("#7c3aed");
+    expect(loadPersistedSettings()).toEqual({ theme: "dark", locale: "fr" });
+    expect(getSyncedAccentColor()).toBe("#7c3aed");
+  });
+
+  it("does NOT surface as SettingsPatch.accentColor — it must never win over the host's config on the widget's own next load", () => {
+    syncSharedAccentColor("#7c3aed");
+    expect(loadPersistedSettings().accentColor).toBeUndefined();
+  });
+
+  it("sync is a no-op that never throws when localStorage itself throws", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("quota exceeded");
+    });
+    expect(() => syncSharedAccentColor("#7c3aed")).not.toThrow();
+  });
+
+  it("read survives localStorage.getItem throwing", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("disabled");
+    });
+    expect(getSyncedAccentColor()).toBeNull();
+  });
+
+  it("survives corrupted (non-JSON) storage without throwing", () => {
+    localStorage.setItem("instafix_settings", "{not json");
+    expect(getSyncedAccentColor()).toBeNull();
+    expect(() => syncSharedAccentColor("#7c3aed")).not.toThrow();
+    expect(getSyncedAccentColor()).toBe("#7c3aed");
   });
 });

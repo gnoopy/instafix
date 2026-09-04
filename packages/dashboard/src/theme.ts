@@ -1,3 +1,5 @@
+import { INSTAFIX_SHARED_SETTINGS_KEY } from "@instafix/core";
+
 /** Theme requested by the host — `auto` follows the system preference live. */
 export type InboxTheme = "light" | "dark" | "auto";
 
@@ -33,6 +35,44 @@ export function normalizeAccent(raw: string): string {
     `[instafix] Invalid accentColor "${raw}" — only hex colors (#RGB, #RRGGBB, #RRGGBBAA) are supported. Using default.`,
   );
   return DEFAULT_ACCENT;
+}
+
+/**
+ * Read the accent color `@instafix/widget` last resolved and wrote to the
+ * shared `INSTAFIX_SHARED_SETTINGS_KEY` localStorage entry's
+ * `syncedAccentColor` field — used as `<InstaFixInbox />`'s accent fallback
+ * when the host doesn't pass an explicit `accentColor` prop, so a visitor's
+ * widget-side accent (whether host-configured or picked via the widget's own
+ * settings panel) carries over here even though this is typically a full
+ * page navigation to a different route, not the same JS runtime — including
+ * a direct/bookmarked visit with no query string.
+ *
+ * Deliberately reads `syncedAccentColor`, NOT the widget's own
+ * visitor-preference `accentColor` field in the same blob — that field is
+ * designed to override the widget's host config on its *own* next load, and
+ * reading it here too would just be reading the wrong field, not reusing a
+ * mechanism (the widget writes `syncedAccentColor` unconditionally on every
+ * mount specifically so the dashboard has something safe to read).
+ *
+ * Returns `null` (not the default hex) when nothing usable is stored, so the
+ * caller's own `accentColor ?? sharedAccentColor ?? "#0066ff"` fallback chain
+ * stays the single place that knows the actual default. SSR-safe, and
+ * tolerant of localStorage being disabled, absent, or holding a foreign/
+ * malformed value (the widget owns the schema; this only reads one field
+ * defensively rather than importing any widget-internal type).
+ */
+export function readSharedAccentColor(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(INSTAFIX_SHARED_SETTINGS_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null) return null;
+    const accentColor = (parsed as Record<string, unknown>).syncedAccentColor;
+    return typeof accentColor === "string" && accentColor.length > 0 ? accentColor : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Detect if the user prefers dark mode via media query. SSR-safe (false). */

@@ -83,6 +83,7 @@ export {
   FEEDBACK_STATUSES,
   FEEDBACK_TYPES,
   flattenAnnotation,
+  INSTAFIX_SHARED_SETTINGS_KEY,
   isClosedStatus,
   isStoreDuplicate,
   isStoreNotFound,

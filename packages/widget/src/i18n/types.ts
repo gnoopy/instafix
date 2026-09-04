@@ -26,6 +26,8 @@ export interface Translations {
   "panel.cancel": string;
   "panel.confirmDelete": string;
   "panel.loadMore": string;
+  /** aria-label + visible label on the header button that opens the dashboard (`config.dashboardUrl`) in a new tab. Only rendered when that option is set. */
+  "panel.openDashboard": string;
 
   // Status filter labels
   "panel.statusAll": string;

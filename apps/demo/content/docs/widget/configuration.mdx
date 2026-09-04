@@ -50,6 +50,14 @@ function mountFeedback(config: InstaFixHttpConfig) { /* endpoint guaranteed */ }
 | `theme` | `"light"` \| `"dark"` \| `"auto"` | `"light"` | `auto` reads the system preference **once at init** — an OS theme change mid-session doesn't re-theme the widget |
 | `locale` | `string` | `"ko"` | Any BCP-47 tag; see [Languages](/docs/widget/i18n) |
 
+## Dashboard link
+
+| Option | Type | Default | What it does |
+|---|---|---|---|
+| `dashboardUrl` | `string` | — | Full URL of the page where you mounted `<InstaFixInbox />` (see [`@instafix/dashboard`](/docs/dashboard)). When set, the panel header shows a button that opens it in a new tab. Unset (default): the button isn't rendered — there's no way for the widget to guess this URL, so leaving it out never produces a dead link |
+
+> The dashboard has no fixed route of its own — you choose where to render `<InstaFixInbox />` in your own app, so `dashboardUrl` is how the widget finds out. Along the way, the widget also writes its resolved `accentColor` to a shared `localStorage` key at every mount; a dashboard mounted at that URL with no `accentColor` prop of its own picks up the same accent automatically. See [Dashboard theming](/docs/dashboard/theming#accent-color-sync-with-the-widget) for the other half of that mechanism.
+
 ## Features
 
 | Option | Type | Default | What it does |

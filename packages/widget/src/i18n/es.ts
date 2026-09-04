@@ -27,6 +27,7 @@ export const es: Translations = {
   "panel.cancel": "Cancelar",
   "panel.confirmDelete": "Eliminar",
   "panel.loadMore": "Cargar más ({remaining} restantes)",
+  "panel.openDashboard": "Abrir panel",
 
   // Status filter labels
   "panel.statusAll": "Todos",

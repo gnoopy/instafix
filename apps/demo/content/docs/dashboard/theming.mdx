@@ -17,6 +17,17 @@ Set it with the prop — it's applied as an inline CSS variable, so a stylesheet
 
 Hex only (`#RGB`, `#RRGGBB`, `#RRGGBBAA`); anything else warns and falls back to `#0066ff`. Every accent shade in the UI is a `color-mix()` derivation of this single value.
 
+## Accent color sync with the widget
+
+If you don't pass `accentColor` at all, `<InstaFixInbox />` falls back — in order — to:
+
+1. the accent color `@instafix/widget` last resolved and wrote to a shared `localStorage` key, then
+2. `#0066ff` if neither is available.
+
+This exists because `@instafix/widget` and `@instafix/dashboard` are separate bundles running in separate page loads — there's no shared JS runtime or props tree between "the feedback widget on your marketing site" and "the triage inbox on your internal admin route." Linking the two (the widget's panel header can show a button to `dashboardUrl`, see [widget configuration](/docs/widget/configuration#dashboard-link)) is a full page navigation, so the widget writes its resolved `accentColor` to `localStorage` at every mount — not only when a visitor opens its settings panel — so the same brand color shows up on the dashboard even on a direct or bookmarked visit with no query string involved.
+
+An explicit `accentColor` prop always wins over the shared value — set it yourself if the dashboard should use a different accent than the widget (an internal admin tool re-branded independently of the public-facing widget, for instance).
+
 ## Overriding variables from CSS
 
 Structure variables live on `.ifd-root`:

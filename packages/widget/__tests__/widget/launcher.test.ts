@@ -2,6 +2,7 @@
 
 import type { InstaFixConfig, InstaFixHttpConfig, InstaFixStore } from "@instafix/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getSyncedAccentColor, loadPersistedSettings } from "../../src/settings-storage.js";
 import { withViewportWidth } from "../helpers.js";
 
 // jsdom does not implement window.matchMedia — provide a stub
@@ -1023,6 +1024,73 @@ describe("launch", () => {
       );
 
       instance.destroy();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Shared accent-color sync (@instafix/dashboard reads this same
+  // localStorage key — see INSTAFIX_SHARED_SETTINGS_KEY in @instafix/core)
+  // -------------------------------------------------------------------------
+
+  describe("shared accent-color persistence", () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    afterEach(() => {
+      localStorage.clear();
+    });
+
+    it("writes the resolved accentColor to the shared syncedAccentColor field at mount, even if the visitor never opens settings", () => {
+      const instance = launch(defaultConfig({ accentColor: "#7c3aed" }));
+      try {
+        expect(getSyncedAccentColor()).toBe("#7c3aed");
+      } finally {
+        instance.destroy();
+      }
+    });
+
+    it("writes the default accent when the host configured none", () => {
+      const instance = launch(defaultConfig());
+      try {
+        expect(getSyncedAccentColor()).toBe("#0066ff");
+      } finally {
+        instance.destroy();
+      }
+    });
+
+    it("re-writes the shared key on every mount, keeping it current across host reconfiguration — unlike a visitor-preference field, it never sticks to the first-seen value", () => {
+      const first = launch(defaultConfig({ accentColor: "#7c3aed" }));
+      first.destroy();
+
+      const second = launch(defaultConfig({ accentColor: "#059669" }));
+      try {
+        expect(getSyncedAccentColor()).toBe("#059669");
+      } finally {
+        second.destroy();
+      }
+    });
+
+    it("never leaks into loadPersistedSettings()'s SettingsPatch — the sync write must not double as a visitor-preference override", () => {
+      // Regression guard: an earlier version of this feature wrote the synced
+      // value under SettingsPatch.accentColor itself, which — because
+      // loadPersistedSettings() always wins over the host's config on the
+      // next launch() — made whatever accent was in effect on a visitor's
+      // very first visit "stick" forever, silently overriding every later
+      // host-side accentColor config change for that returning visitor.
+      const first = launch(defaultConfig({ accentColor: "#7c3aed" }));
+      first.destroy();
+      expect(loadPersistedSettings().accentColor).toBeUndefined();
+
+      const second = launch(defaultConfig({ accentColor: "#059669" }));
+      try {
+        // The second mount actually used its own host config, not a stale
+        // persisted value from the first — this is the real invariant;
+        // getSyncedAccentColor() above is just where it's easy to observe.
+        expect(loadPersistedSettings().accentColor).toBeUndefined();
+      } finally {
+        second.destroy();
+      }
     });
   });
 });

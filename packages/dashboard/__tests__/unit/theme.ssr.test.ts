@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { resolveInitialTheme, watchSystemTheme } from "../../src/theme.js";
+import { readSharedAccentColor, resolveInitialTheme, watchSystemTheme } from "../../src/theme.js";
 
 // This file runs in the default node environment (no `@vitest-environment
 // jsdom`), so `window` is undefined — it exercises the SSR guards that the
@@ -25,5 +25,9 @@ describe("theme — SSR (no window)", () => {
     expect(typeof unsubscribe).toBe("function");
     expect(() => unsubscribe()).not.toThrow();
     expect(cb).not.toHaveBeenCalled();
+  });
+
+  it("readSharedAccentColor returns null without touching localStorage", () => {
+    expect(readSharedAccentColor()).toBeNull();
   });
 });

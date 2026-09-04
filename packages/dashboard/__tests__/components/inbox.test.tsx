@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import type { FeedbackRecord } from "@instafix/core";
+import { INSTAFIX_SHARED_SETTINGS_KEY } from "@instafix/core";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { InstaFixInbox } from "../../src/components/inbox.js";
@@ -520,6 +521,33 @@ describe("InstaFixInbox — chrome & theming", () => {
     expect(root.dataset.density).toBe("compact");
     expect(root.dataset.theme).toBe("light");
     expect(root.style.getPropertyValue("--ifd-accent")).toBe("#ff0000");
+  });
+
+  describe("shared accent-color fallback (@instafix/widget sync)", () => {
+    afterEach(() => localStorage.clear());
+
+    it("falls back to the accent @instafix/widget wrote to the shared settings key when no accentColor prop is given", async () => {
+      localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ syncedAccentColor: "#7c3aed" }));
+      const { container } = renderInbox({});
+      await ready();
+      const root = container.querySelector<HTMLElement>(".ifd-root") as HTMLElement;
+      expect(root.style.getPropertyValue("--ifd-accent")).toBe("#7c3aed");
+    });
+
+    it("prefers an explicit accentColor prop over the shared settings key", async () => {
+      localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ syncedAccentColor: "#7c3aed" }));
+      const { container } = renderInbox({ accentColor: "#ff0000" });
+      await ready();
+      const root = container.querySelector<HTMLElement>(".ifd-root") as HTMLElement;
+      expect(root.style.getPropertyValue("--ifd-accent")).toBe("#ff0000");
+    });
+
+    it("falls back to the component default when neither an accentColor prop nor a shared value exists", async () => {
+      const { container } = renderInbox({});
+      await ready();
+      const root = container.querySelector<HTMLElement>(".ifd-root") as HTMLElement;
+      expect(root.style.getPropertyValue("--ifd-accent")).toBe("#0066ff");
+    });
   });
 
   it("appends a custom className to the root", async () => {

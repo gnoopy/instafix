@@ -22,7 +22,7 @@ import { getIdentity, type Identity, saveIdentity } from "./identity.js";
 import { MarkerManager } from "./markers.js";
 import { hasSeenOnboarding, Onboarding } from "./onboarding.js";
 import type { Panel as PanelType } from "./panel.js";
-import { loadPersistedSettings } from "./settings-storage.js";
+import { loadPersistedSettings, syncSharedAccentColor } from "./settings-storage.js";
 import { StoreClient } from "./store-client.js";
 import { buildStyles } from "./styles/base.js";
 import { applyLayerColor, buildThemeColors } from "./styles/theme.js";
@@ -370,6 +370,17 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
   const networkBuffer = diagnosticsOpts.network ? new NetworkBuffer(diagnosticsOpts.maxNetworkEntries) : null;
 
   const colors = buildThemeColors(config.accentColor, config.theme);
+
+  // Keep @instafix/dashboard's accent fallback in sync on every mount — not
+  // just when the visitor opens the settings panel, so a host that only sets
+  // `accentColor` via config (never touched by the visitor) still reaches
+  // the dashboard, a full page navigation away and not the same JS runtime.
+  // `colors.accent` is already the validated/normalized 6-digit hex. Uses a
+  // sync-only field (see syncSharedAccentColor's doc comment) instead of
+  // SettingsPatch.accentColor specifically so this write can never feed back
+  // into `loadPersistedSettings()` and "stick" a visitor's first-visit
+  // accent forever, overriding later host-side config changes.
+  syncSharedAccentColor(colors.accent);
 
   // ---- Layer identity ----------------------------------------------------
   // InstaFix must read as ONE overlay layer, visually distinct from the host

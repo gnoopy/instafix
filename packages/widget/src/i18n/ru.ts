@@ -27,6 +27,7 @@ export const ru: Translations = {
   "panel.cancel": "Отмена",
   "panel.confirmDelete": "Удалить",
   "panel.loadMore": "Показать ещё ({remaining} осталось)",
+  "panel.openDashboard": "Открыть панель управления",
 
   // Status filter labels
   "panel.statusAll": "Все",
