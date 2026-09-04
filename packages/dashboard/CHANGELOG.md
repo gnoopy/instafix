@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.8](https://github.com/gnoopy/instafix/compare/dashboard-v0.2.7...dashboard-v0.2.8) (2026-09-04)
+
+
+### Features
+
+* **widget,dashboard:** add a dashboard link + accent-color sync from the panel ([4d46db7](https://github.com/gnoopy/instafix/commit/4d46db7d4584e209c9a192bd58f5f42adec7177a))
+
 ## [0.2.7](https://github.com/gnoopy/instafix/compare/dashboard-v0.2.6...dashboard-v0.2.7) (2026-09-03)
 
 
