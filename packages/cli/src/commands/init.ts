@@ -2,6 +2,7 @@ import { basename } from "node:path";
 import { generateDashboardPage } from "../generators/dashboard-page.js";
 import { generateRoute } from "../generators/route.js";
 import { generateWidgetComponent } from "../generators/widget-component.js";
+import { detectGitIdentity } from "../git-identity.js";
 import { p } from "../prompts.js";
 import { readProjectName } from "../utils/read-project-name.js";
 import { installSlashCommand } from "./slash-command.js";
@@ -110,9 +111,18 @@ export async function initCommand(): Promise<void> {
 
   if (shouldGenerateWidget) {
     try {
-      widgetResult = generateWidgetComponent(cwd, readProjectName(cwd), dashboardResult?.url);
+      // Bake this machine's own identity in, so the widget never interrupts a
+      // submit to ask who you are. Optional by construction: no gh, no git
+      // config, or a half-filled one just means the widget asks once instead.
+      const identity = detectGitIdentity(cwd);
+      widgetResult = generateWidgetComponent(cwd, readProjectName(cwd), dashboardResult?.url, identity ?? undefined);
       if (widgetResult.created) {
         p.log.success(`Widget component created: ${widgetResult.path}`);
+        if (identity) {
+          p.log.info(
+            `Author prefilled from ${identity.source === "gh" ? "your GitHub account" : "git config"}: ${identity.name} <${identity.email}>`,
+          );
+        }
       } else {
         p.log.info(`Widget component already exists: ${widgetResult.path}`);
       }

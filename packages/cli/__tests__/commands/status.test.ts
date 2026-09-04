@@ -71,6 +71,7 @@ model InstaFixAnnotation {
   devicePixelRatio Float            @default(1)
   createdAt        DateTime         @default(now())
   target           Json?
+  inspect          Json?
 
   @@index([feedbackId])
 }
@@ -220,6 +221,7 @@ model InstaFixAnnotation {
   devicePixelRatio Float            @default(1)
   createdAt        DateTime         @default(now())
   target           Json?
+  inspect          Json?
 }
 `;
 
@@ -655,6 +657,7 @@ model InstaFixAnnotation {
   devicePixelRatio Float            @default(1)
   createdAt        DateTime         @default(now())
   target           Json?
+  inspect          Json?
 }
 `;
       createPrismaSchema(tmpDir, multiOutdated);

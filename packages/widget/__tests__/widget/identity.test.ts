@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getIdentity, saveIdentity } from "../../src/identity.js";
+import { _resetSessionIdentityForTests, getIdentity, saveIdentity } from "../../src/identity.js";
 
 describe("identity", () => {
   beforeEach(() => {
+    // The identity now also lives in an in-memory session tier (so a blocked
+    // localStorage cannot re-trigger the prompt) — clear it between cases.
+    _resetSessionIdentityForTests();
     // Mock localStorage
     const store: Record<string, string> = {};
+    const sessionStore: Record<string, string> = {};
     vi.stubGlobal("localStorage", {
       getItem: vi.fn((key: string) => store[key] ?? null),
       setItem: vi.fn((key: string, value: string) => {
@@ -12,6 +16,15 @@ describe("identity", () => {
       }),
       removeItem: vi.fn((key: string) => {
         delete store[key];
+      }),
+    });
+    vi.stubGlobal("sessionStorage", {
+      getItem: vi.fn((key: string) => sessionStore[key] ?? null),
+      setItem: vi.fn((key: string, value: string) => {
+        sessionStore[key] = value;
+      }),
+      removeItem: vi.fn((key: string) => {
+        delete sessionStore[key];
       }),
     });
   });
