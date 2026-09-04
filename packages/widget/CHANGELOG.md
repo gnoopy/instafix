@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.10.16](https://github.com/gnoopy/instafix/compare/widget-v0.10.15...widget-v0.10.16) (2026-09-04)
+
+
+### Features
+
+* capture a DOM/CSSOM snapshot of the annotated element ([2e5fd77](https://github.com/gnoopy/instafix/commit/2e5fd77f9c63c80b96df4bfb3494021bf0e3f461))
+* stop re-asking who you are — session-held identity, prefilled from your git/GitHub account ([b9934f2](https://github.com/gnoopy/instafix/commit/b9934f2bce9a411afb4e1246ec02716dc8af8528))
+* **widget:** Copy Prompt honors the page scope, making a cross-page batch real ([7c00def](https://github.com/gnoopy/instafix/commit/7c00def31e9ca3b536d83f75aed9c6af8f439e1a))
+* **widget:** freeze the page to annotate a state that will not hold still ([8b758f0](https://github.com/gnoopy/instafix/commit/8b758f015e04412faf12ba8525250d45973b13e9))
+
+
+### Tests
+
+* cover the new modules' branches — CI's coverage floor was the release gate ([c681d02](https://github.com/gnoopy/instafix/commit/c681d0209d5bd4989fefb92e03eeed5dfbebb1b9))
+
 ## [0.10.15](https://github.com/gnoopy/instafix/compare/widget-v0.10.14...widget-v0.10.15) (2026-09-04)
 
 
