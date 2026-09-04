@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { inspectElement } from "../../src/dom/inspect.js";
 
 describe("inspectElement", () => {
@@ -41,6 +41,23 @@ describe("inspectElement", () => {
     const el = document.querySelector("div")!;
     expect(inspectElement(el)?.component).toBeUndefined();
     expect(inspectElement(el, "Header ‹ Layout")?.component).toBe("Header ‹ Layout");
+  });
+
+  it("returns null when there is nothing to say", () => {
+    // <body> is where the ancestor walk stops, so its own path is empty; with
+    // no styles worth keeping either, an empty snapshot is worse than none —
+    // it would persist an object that says nothing.
+    const original = globalThis.getComputedStyle;
+    vi.stubGlobal("getComputedStyle", () => ({ getPropertyValue: () => "" }));
+    expect(inspectElement(document.body)).toBeNull();
+    vi.stubGlobal("getComputedStyle", original);
+  });
+
+  it("returns null when the environment has no CSSOM at all", () => {
+    const original = globalThis.getComputedStyle;
+    vi.stubGlobal("getComputedStyle", undefined);
+    expect(inspectElement(document.createElement("div"))).toBeNull();
+    vi.stubGlobal("getComputedStyle", original);
   });
 
   it("never throws — context is not worth losing a feedback over", () => {

@@ -57,3 +57,66 @@ describe("identity", () => {
     expect(() => saveIdentity({ name: "Alice", email: "a@b.com" })).not.toThrow();
   });
 });
+
+describe("identity — storage failures must not re-open the prompt", () => {
+  beforeEach(() => {
+    _resetSessionIdentityForTests();
+  });
+
+  it("holds the answer for the session when localStorage refuses to write", () => {
+    const sessionStore: Record<string, string> = {};
+    vi.stubGlobal("localStorage", {
+      getItem: vi.fn(() => null),
+      setItem: vi.fn(() => {
+        throw new DOMException("QuotaExceededError");
+      }),
+      removeItem: vi.fn(),
+    });
+    vi.stubGlobal("sessionStorage", {
+      getItem: vi.fn((key: string) => sessionStore[key] ?? null),
+      setItem: vi.fn((key: string, value: string) => {
+        sessionStore[key] = value;
+      }),
+      removeItem: vi.fn(),
+    });
+
+    saveIdentity({ name: "Alice", email: "alice@test.com" });
+    // This is the exact loop the prompt was stuck in: a swallowed write, then
+    // a null read, then another prompt on the next submit.
+    expect(getIdentity()).toEqual({ name: "Alice", email: "alice@test.com" });
+  });
+
+  it("holds it even when BOTH storages are denied", () => {
+    const deny = {
+      getItem: vi.fn(() => {
+        throw new Error("denied");
+      }),
+      setItem: vi.fn(() => {
+        throw new Error("denied");
+      }),
+      removeItem: vi.fn(),
+    };
+    vi.stubGlobal("localStorage", deny);
+    vi.stubGlobal("sessionStorage", deny);
+
+    saveIdentity({ name: "Bob", email: "bob@test.com" });
+    expect(getIdentity()).toEqual({ name: "Bob", email: "bob@test.com" });
+  });
+
+  it("recovers from sessionStorage when only localStorage is blocked", () => {
+    const stored = JSON.stringify({ name: "Carol", email: "carol@test.com" });
+    vi.stubGlobal("localStorage", {
+      getItem: vi.fn(() => {
+        throw new Error("blocked");
+      }),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    });
+    vi.stubGlobal("sessionStorage", {
+      getItem: vi.fn(() => stored),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    });
+    expect(getIdentity()).toEqual({ name: "Carol", email: "carol@test.com" });
+  });
+});

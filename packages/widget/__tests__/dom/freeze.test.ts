@@ -64,6 +64,43 @@ describe("freezePage", () => {
     expect(alreadyPaused.play).not.toHaveBeenCalled();
   });
 
+  it("pins nothing when the pointer is only over page furniture", () => {
+    const original = document.querySelectorAll.bind(document);
+    vi.spyOn(document, "querySelectorAll").mockImplementation(((selector: string) =>
+      selector === ":hover"
+        ? ([document.body] as unknown as NodeListOf<Element>)
+        : original(selector)) as typeof original);
+    const frozen = freezePage();
+    expect(frozen.pinnedCount).toBe(0);
+    frozen.release();
+    vi.restoreAllMocks();
+  });
+
+  it("survives an engine that rejects the :hover selector", () => {
+    const original = document.querySelectorAll.bind(document);
+    vi.spyOn(document, "querySelectorAll").mockImplementation(((selector: string) => {
+      if (selector === ":hover") throw new Error("unsupported pseudo-class");
+      return original(selector);
+    }) as typeof original);
+    const frozen = freezePage();
+    expect(frozen.pinnedCount).toBe(0);
+    expect(isFrozen()).toBe(true);
+    frozen.release();
+    vi.restoreAllMocks();
+  });
+
+  it("leaves the widget's own chrome unpinned", () => {
+    document.body.innerHTML = `<div data-instafix-ignore="true"><span>panel</span></div>`;
+    const chrome = document.querySelector("div")!;
+    const original = document.querySelectorAll.bind(document);
+    vi.spyOn(document, "querySelectorAll").mockImplementation(((selector: string) =>
+      selector === ":hover" ? ([chrome] as unknown as NodeListOf<Element>) : original(selector)) as typeof original);
+    const frozen = freezePage();
+    expect(frozen.pinnedCount).toBe(0);
+    frozen.release();
+    vi.restoreAllMocks();
+  });
+
   it("restores inline styles exactly, including properties that were unset", () => {
     document.body.innerHTML = `<div id="menu"><span id="drop" style="opacity: 0.5">x</span></div>`;
     const menu = document.getElementById("menu")!;
