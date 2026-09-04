@@ -60,6 +60,8 @@ export const de: Translations = {
   "fab.annotate": "Bereich auswählen",
   "fab.targeting": "Element automatisch anvisieren",
   "fab.annotations": "Markierungen ein- oder ausblenden",
+  "fab.moveLeft": "Leiste nach links verschieben",
+  "fab.moveRight": "Leiste nach rechts verschieben",
 
   // Annotator
   "annotator.instruction":

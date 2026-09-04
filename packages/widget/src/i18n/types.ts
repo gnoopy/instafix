@@ -62,6 +62,8 @@ export interface Translations {
   "fab.annotate": string;
   "fab.targeting": string;
   "fab.annotations": string;
+  "fab.moveLeft": string;
+  "fab.moveRight": string;
 
   // Annotator
   "annotator.instruction": string;

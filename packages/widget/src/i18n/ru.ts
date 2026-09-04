@@ -59,6 +59,8 @@ export const ru: Translations = {
   "fab.annotate": "Выбрать область",
   "fab.targeting": "Автовыбор элемента",
   "fab.annotations": "Показать или скрыть метки",
+  "fab.moveLeft": "Переместить панель влево",
+  "fab.moveRight": "Переместить панель вправо",
 
   // Annotator
   "annotator.instruction":

@@ -59,6 +59,8 @@ export const en: Translations = {
   "fab.annotate": "Select area",
   "fab.targeting": "Auto-target an element",
   "fab.annotations": "Show or hide markers",
+  "fab.moveLeft": "Move toolbar to the left",
+  "fab.moveRight": "Move toolbar to the right",
 
   // Annotator
   "annotator.instruction":

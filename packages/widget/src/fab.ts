@@ -3,7 +3,17 @@ import { sampleBackgroundIsLight } from "./dom/background-contrast.js";
 import { parseSvg, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
 import { type TFunction, type Translations, tWithParams } from "./i18n/index.js";
-import { ICON_CLOSE, ICON_CROP, ICON_EYE, ICON_EYE_OFF, ICON_INSTAFIX, ICON_LIST, ICON_TARGET } from "./icons.js";
+import {
+  ICON_ARROW_LEFT,
+  ICON_ARROW_RIGHT,
+  ICON_CLOSE,
+  ICON_CROP,
+  ICON_EYE,
+  ICON_EYE_OFF,
+  ICON_INSTAFIX,
+  ICON_LIST,
+  ICON_TARGET,
+} from "./icons.js";
 
 /** Re-sample the background behind the FAB/toolbar at most this often while scrolling/resizing. */
 const CONTRAST_DEBOUNCE_MS = 200;
@@ -12,12 +22,14 @@ const CONTRAST_DEBOUNCE_MS = 200;
 const SHINE_INTERVAL_CHOICES_MS = [3000, 4000, 5000];
 
 /** Closed set of toolbar item ids — keeps the label lookup exhaustive. */
-type ToolbarItemId = "chat" | "annotate" | "target-picker" | "toggle-annotations";
+type ToolbarItemId = "chat" | "annotate" | "target-picker" | "toggle-annotations" | "move-side";
 
 interface ToolbarItem {
   id: ToolbarItemId;
   icon: string;
   iconAlt?: string;
+  /** Overrides ITEM_LABEL_KEYS — for items whose label depends on state (move-side). */
+  labelKey?: keyof Translations;
 }
 
 // Stable mapping between toolbar item ids and their translation keys. The
@@ -28,6 +40,9 @@ const ITEM_LABEL_KEYS: Record<ToolbarItemId, keyof Translations> = {
   annotate: "fab.annotate",
   "target-picker": "fab.targeting",
   "toggle-annotations": "fab.annotations",
+  // Placeholder: the real key depends on which side the widget currently
+  // sits on, so the item carries its own `labelKey` override.
+  "move-side": "fab.moveLeft",
 };
 
 /**
@@ -47,6 +62,8 @@ const ITEM_SHORTCUT_CODES: Record<ToolbarItemId, string> = {
   annotate: "KeyA",
   "target-picker": "KeyT",
   "toggle-annotations": "KeyV",
+  // M for Move — the only remaining unclaimed letter that reads as its verb.
+  "move-side": "KeyM",
 };
 
 function isMacPlatform(): boolean {
@@ -146,6 +163,16 @@ export class Fab {
     if (config.showAnnotationsToggle !== false) {
       this.items.push({ id: "toggle-annotations", icon: ICON_EYE, iconAlt: ICON_EYE_OFF });
     }
+    // Always last in the row: the arrow points at the side the widget would
+    // MOVE to, so it reads as a destination, not a description of where it
+    // is. A position change remounts the widget (launcher.updateConfig), so
+    // the icon is simply rebuilt correctly rather than swapped in place.
+    const movingLeft = position === "bottom-right";
+    this.items.push({
+      id: "move-side",
+      icon: movingLeft ? ICON_ARROW_LEFT : ICON_ARROW_RIGHT,
+      labelKey: movingLeft ? "fab.moveLeft" : "fab.moveRight",
+    });
 
     // The button's active state is driven entirely by the bus (not mutated
     // directly on click) so it stays correct regardless of whether the
@@ -437,7 +464,7 @@ export class Fab {
     for (const btn of buttons) {
       const id = btn.dataset.itemId as ToolbarItemId | undefined;
       if (!id) continue;
-      const key = ITEM_LABEL_KEYS[id];
+      const key = this.items.find((item) => item.id === id)?.labelKey ?? ITEM_LABEL_KEYS[id];
       if (!key) continue;
       const label = this.t(key);
       btn.setAttribute("aria-label", label);
@@ -519,6 +546,11 @@ export class Fab {
     switch (id) {
       case "chat":
         this.bus.emit("panel:toggle", true);
+        break;
+      case "move-side":
+        // launcher.ts owns this: flipping sides persists the choice and
+        // remounts, neither of which the Fab can do to itself.
+        this.bus.emit("position:toggle");
         break;
       case "annotate": {
         // Putting keyboard users back on the FAB when the session ends is on

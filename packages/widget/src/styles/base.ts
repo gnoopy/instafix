@@ -164,9 +164,13 @@ export function buildStyles(colors: ThemeColors): string {
     .sp-toolbar {
       position: fixed;
       bottom: 24px;
+      /* Same height as the FAB (52px at bottom:24px) so the row's items
+         center against the FAB's center instead of sitting bottom-aligned —
+         which is what let the chips look low once they shrank. */
+      height: 52px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       opacity: 0;
       pointer-events: none;
       transform: translateY(6px);
@@ -196,8 +200,10 @@ export function buildStyles(colors: ThemeColors): string {
     .sp-toolbar-item {
       position: relative;
       flex-shrink: 0;
-      width: 44px;
-      height: 44px;
+      /* 80% of the original 44px — the row reads as a companion to the FAB
+         rather than a second set of primary buttons. */
+      width: 35px;
+      height: 35px;
       border-radius: var(--sp-radius-full);
       background: var(--sp-selection, var(--sp-accent));
       border: 1px solid rgba(255, 255, 255, 0.3);
@@ -225,8 +231,8 @@ export function buildStyles(colors: ThemeColors): string {
     }
 
     .sp-toolbar-item svg {
-      width: 18px;
-      height: 18px;
+      width: 14px;
+      height: 14px;
       flex-shrink: 0;
       stroke: currentColor;
       fill: none;

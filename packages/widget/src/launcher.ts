@@ -3,6 +3,7 @@ import type {
   FeedbackPayload,
   InstaFixConfig,
   InstaFixInstance,
+  InstaFixPosition,
   InstaFixPublicEventListener,
   InstaFixPublicEvents,
   PageScope,
@@ -22,7 +23,7 @@ import { getIdentity, type Identity, saveIdentity } from "./identity.js";
 import { MarkerManager } from "./markers.js";
 import { hasSeenOnboarding, Onboarding } from "./onboarding.js";
 import type { Panel as PanelType } from "./panel.js";
-import { loadPersistedSettings, syncSharedSettings } from "./settings-storage.js";
+import { loadPersistedSettings, savePersistedSettings, syncSharedSettings } from "./settings-storage.js";
 import { StoreClient } from "./store-client.js";
 import { buildStyles } from "./styles/base.js";
 import { applyLayerColor, buildThemeColors } from "./styles/theme.js";
@@ -668,6 +669,17 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
     }
   });
 
+  // Toolbar's move-side button — flip the widget to the other corner. Same
+  // path a settings change takes (persist globally, then remount through
+  // updateConfig), so a side chosen from the toolbar sticks across reloads
+  // and pages exactly like one chosen from the settings accordion.
+  const unsubPositionToggle = bus.on("position:toggle", () => {
+    const next: InstaFixPosition =
+      (config.position ?? "bottom-right") === "bottom-right" ? "bottom-left" : "bottom-right";
+    savePersistedSettings({ position: next });
+    onUpdateConfig({ position: next });
+  });
+
   const annotator = new Annotator(
     colors,
     bus,
@@ -947,6 +959,7 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
       focusTracker.destroy();
       unsubAnnotation();
       unsubToggle();
+      unsubPositionToggle();
       fab.destroy();
       onboarding?.destroy();
       panelInstance?.destroy();

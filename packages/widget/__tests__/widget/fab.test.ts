@@ -88,9 +88,10 @@ describe("Fab", () => {
       expect(toolbar).not.toBeNull();
     });
 
-    it("creates four toolbar items as plain buttons (no menuitem role)", () => {
+    it("creates five toolbar items as plain buttons (no menuitem role)", () => {
       const items = getToolbarItems(shadow);
-      expect(items.length).toBe(4);
+      // chat, annotate, target-picker, toggle-annotations, move-side
+      expect(items.length).toBe(5);
       for (const item of items) {
         expect(item.getAttribute("role")).toBeNull();
       }
@@ -99,7 +100,30 @@ describe("Fab", () => {
     it("assigns correct data-item-id to each toolbar item", () => {
       const items = getToolbarItems(shadow);
       const ids = items.map((btn) => btn.dataset.itemId);
-      expect(ids).toEqual(["chat", "annotate", "target-picker", "toggle-annotations"]);
+      expect(ids).toEqual(["chat", "annotate", "target-picker", "toggle-annotations", "move-side"]);
+    });
+
+    it("move-side points LEFT when the widget sits on the right, and emits position:toggle", () => {
+      const btn = shadow.querySelector<HTMLButtonElement>('[data-item-id="move-side"]')!;
+      // Feather arrow-left ends at x=5 — the arrow points at the destination,
+      // not at where the widget currently is.
+      expect(btn.querySelector("svg")?.innerHTML).toContain('x2="5"');
+
+      const seen: string[] = [];
+      bus.on("position:toggle", () => seen.push("toggle"));
+      btn.click();
+      expect(seen).toEqual(["toggle"]);
+    });
+
+    it("move-side points RIGHT when the widget sits on the left", () => {
+      fab.destroy();
+      shadow.host.remove();
+      shadow = createShadowRoot();
+      fab = new Fab(shadow, { ...defaultConfig(), position: "bottom-left" }, bus, createT("en"));
+
+      const btn = shadow.querySelector<HTMLButtonElement>('[data-item-id="move-side"]')!;
+      expect(btn.querySelector("svg")?.innerHTML).toContain('x2="19"');
+      expect(btn.getAttribute("aria-label")).toBe("Move toolbar to the right");
     });
 
     it("toolbar items are tabbable by default (toolbar visible)", () => {
@@ -213,7 +237,7 @@ describe("Fab", () => {
       const items = getToolbarItems(shadow);
       const ids = items.map((btn) => btn.dataset.itemId);
       expect(ids).toContain("toggle-annotations");
-      expect(items.length).toBe(4);
+      expect(items.length).toBe(5);
     });
 
     it("`true` (explicit) keeps the toggle-annotations item", () => {
@@ -223,7 +247,7 @@ describe("Fab", () => {
       fab = new Fab(shadow, { ...defaultConfig(), showAnnotationsToggle: true }, bus, createT("fr"));
 
       const ids = getToolbarItems(shadow).map((btn) => btn.dataset.itemId);
-      expect(ids).toEqual(["chat", "annotate", "target-picker", "toggle-annotations"]);
+      expect(ids).toEqual(["chat", "annotate", "target-picker", "toggle-annotations", "move-side"]);
     });
 
     it("`false` hides the toggle-annotations item entirely — no DOM, no click handler", () => {
@@ -233,7 +257,7 @@ describe("Fab", () => {
       fab = new Fab(shadow, { ...defaultConfig(), showAnnotationsToggle: false }, bus, createT("fr"));
 
       const ids = getToolbarItems(shadow).map((btn) => btn.dataset.itemId);
-      expect(ids).toEqual(["chat", "annotate", "target-picker"]);
+      expect(ids).toEqual(["chat", "annotate", "target-picker", "move-side"]);
       expect(shadow.querySelector('[data-item-id="toggle-annotations"]')).toBeNull();
     });
 
@@ -252,7 +276,7 @@ describe("Fab", () => {
       expect(listener).not.toHaveBeenCalled();
     });
 
-    it("`false` — keyboard navigation still cycles through the remaining three items", () => {
+    it("`false` — keyboard navigation still cycles through the remaining four items", () => {
       fab.destroy();
       shadow.host.remove();
       shadow = createShadowRoot();
@@ -260,13 +284,16 @@ describe("Fab", () => {
 
       const items = getToolbarItems(shadow);
       const toolbar = shadow.querySelector<HTMLElement>('[role="toolbar"]')!;
-      expect(items.length).toBe(3);
+      // move-side is unconditional, so removing the annotations toggle leaves 4
+      expect(items.length).toBe(4);
 
       items[0]!.focus();
       toolbar.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
       expect(shadow.activeElement).toBe(items[1]);
       toolbar.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
       expect(shadow.activeElement).toBe(items[2]);
+      toolbar.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+      expect(shadow.activeElement).toBe(items[3]);
 
       // ArrowRight again wraps back to the first item (last → first)
       toolbar.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));

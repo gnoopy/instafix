@@ -74,6 +74,13 @@ export interface WidgetEvents {
   "targeting:start": [];
   "targeting:end": [];
   /**
+   * Internal-only: the toolbar's move-side button asking to flip the widget
+   * between bottom-right and bottom-left. Handled by launcher.ts, which owns
+   * both config persistence and the remount a position change requires —
+   * the Fab itself has neither. Not part of `InstaFixPublicEvents`.
+   */
+  "position:toggle": [];
+  /**
    * Internal-only: a feedback submission was aborted by a benign user action
    * (e.g. cancelling the identity prompt). Distinct from `feedback:error` so a
    * cancellation does not surface through the host's `onError` callback. Not

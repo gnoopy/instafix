@@ -60,6 +60,8 @@ export const pt: Translations = {
   "fab.annotate": "Selecionar área",
   "fab.targeting": "Selecionar elemento automaticamente",
   "fab.annotations": "Exibir ou ocultar marcadores",
+  "fab.moveLeft": "Mover a barra para a esquerda",
+  "fab.moveRight": "Mover a barra para a direita",
 
   // Annotator
   "annotator.instruction":

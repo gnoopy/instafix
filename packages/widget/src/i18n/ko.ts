@@ -59,6 +59,8 @@ export const ko: Translations = {
   "fab.annotate": "영역 지정",
   "fab.targeting": "요소 자동 선택",
   "fab.annotations": "마커 표시/숨기기",
+  "fab.moveLeft": "도구모음 왼쪽으로 옮기기",
+  "fab.moveRight": "도구모음 오른쪽으로 옮기기",
 
   // Annotator
   "annotator.instruction":
