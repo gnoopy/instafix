@@ -1,10 +1,10 @@
-import type { FeedbackStatus } from "@instafix/core";
+import type { FeedbackStatus, InstaFixSyncedSettings } from "@instafix/core";
 import type { CSSProperties, ReactElement, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useCallback, useEffect, useInsertionEffect, useMemo, useRef, useState } from "react";
 import { buildDeepLink } from "../format.js";
 import { createT, getStatusLabel, loadLocale, tWithParams } from "../i18n/index.js";
 import { ensureStyles } from "../inject-styles.js";
-import { normalizeAccent, readSharedAccentColor, resolveInitialTheme, watchSystemTheme } from "../theme.js";
+import { normalizeAccent, readSharedSettings, resolveInitialTheme, watchSystemTheme } from "../theme.js";
 import type { InstaFixInboxProps } from "../types.js";
 import { useInstaFixInbox } from "../use-inbox.js";
 import type { InboxUiContextValue } from "./context.js";
@@ -39,14 +39,28 @@ function toastStatusLabel(label: string, locale: string): string {
 export function InstaFixInbox(props: InstaFixInboxProps): ReactElement {
   const {
     accentColor,
-    theme: themePref = "auto",
+    theme: themeProp,
     density = "comfortable",
-    locale = "ko",
+    locale: localeProp,
     className,
     deepLinkParam = "instafix",
     emptyState,
     onError,
   } = props;
+
+  // Falls back to whatever @instafix/widget last synced for this visitor
+  // (see readSharedSettings) before each of these three's own hardcoded
+  // default — read once, in an effect rather than a useState lazy
+  // initializer, for the same SSR/hydration reason as `resolvedTheme`'s
+  // "auto" case below: a lazy initializer's result would freeze at "{}"
+  // forever once a Next.js (or any SSR) host reuses whatever it produced on
+  // the server, where `window` doesn't exist.
+  const [sharedSettings, setSharedSettings] = useState<InstaFixSyncedSettings>({});
+  useEffect(() => {
+    setSharedSettings(readSharedSettings());
+  }, []);
+  const themePref = themeProp ?? sharedSettings.syncedTheme ?? "auto";
+  const locale = localeProp ?? sharedSettings.syncedLocale ?? "ko";
 
   // ----- i18n: English and Korean (the default) render immediately; other locales upgrade when their chunk lands
   const [localeTick, setLocaleTick] = useState(0);
@@ -152,22 +166,14 @@ export function InstaFixInbox(props: InstaFixInboxProps): ReactElement {
     return watchSystemTheme(setSystemTheme);
   }, [themePref]);
   const resolvedTheme = themePref === "auto" ? systemTheme : themePref;
-  // Falls back to the accent @instafix/widget last wrote for this visitor
-  // (see readSharedAccentColor) before the component's own hardcoded
-  // default — read once, same as `accentColor` itself is only ever a static
-  // prop, never watched for live changes. Read in an effect, not a useState
-  // lazy initializer: this runs through SSR in a Next.js host (readSharedAccentColor
-  // itself is SSR-safe and returns null there), and hydration reuses whatever
-  // the initializer produced on the server rather than re-invoking it on the
-  // client — a lazy initializer would have frozen this at "null" forever,
-  // same reasoning as `resolvedTheme`'s "auto" case just above.
-  const [sharedAccentColor, setSharedAccentColor] = useState<string | null>(null);
-  useEffect(() => {
-    setSharedAccentColor(readSharedAccentColor());
-  }, []);
+  // accentColor falls back the same way theme/locale do above — via the same
+  // `sharedSettings` effect-populated state, not its own.
   const rootStyle = useMemo(
-    () => ({ "--ifd-accent": normalizeAccent(accentColor ?? sharedAccentColor ?? "#0066ff") }) as CSSProperties,
-    [accentColor, sharedAccentColor],
+    () =>
+      ({
+        "--ifd-accent": normalizeAccent(accentColor ?? sharedSettings.syncedAccentColor ?? "#0066ff"),
+      }) as CSSProperties,
+    [accentColor, sharedSettings.syncedAccentColor],
   );
 
   // ----- drawer mode: overlay below the side-by-side container breakpoint

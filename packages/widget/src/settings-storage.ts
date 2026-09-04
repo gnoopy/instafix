@@ -1,10 +1,15 @@
-import { INSTAFIX_SHARED_SETTINGS_KEY, type InstaFixPosition, type InstaFixTheme } from "@instafix/core";
+import {
+  INSTAFIX_SHARED_SETTINGS_KEY,
+  type InstaFixPosition,
+  type InstaFixSyncedSettings,
+  type InstaFixTheme,
+} from "@instafix/core";
 import type { SettingsPatch } from "./settings-view.js";
 
 // Shared with @instafix/dashboard — see INSTAFIX_SHARED_SETTINGS_KEY's doc
-// comment in @instafix/core for the cross-package contract (only
-// `syncedAccentColor` is guaranteed shape; everything else here is
-// widget-internal).
+// comment in @instafix/core for the cross-package contract (only the
+// `InstaFixSyncedSettings` fields are guaranteed shape; everything else here
+// is widget-internal).
 const STORAGE_KEY = INSTAFIX_SHARED_SETTINGS_KEY;
 
 const THEMES: ReadonlySet<InstaFixTheme> = new Set(["light", "dark", "auto"]);
@@ -55,26 +60,30 @@ export function savePersistedSettings(patch: SettingsPatch): void {
 }
 
 /**
- * Writes the widget's currently-resolved accent color under a `syncedAccentColor`
- * field in the same shared blob — read by `@instafix/dashboard` (see
- * `readSharedAccentColor` there) as its own accent fallback when it isn't
- * given an explicit `accentColor` prop.
+ * Writes the widget's currently-resolved accent color, theme, and locale
+ * under the `synced*` fields of {@link InstaFixSyncedSettings} in the same
+ * shared blob — read by `@instafix/dashboard` (see `readSharedSettings`
+ * there) as its own fallback for whichever of `accentColor`/`theme`/`locale`
+ * the host didn't pass explicitly to `<InstaFixInbox />`. Pass only the
+ * fields that changed or are known; omitted fields leave whatever was
+ * already stored untouched.
  *
- * Deliberately a field of its own, NOT `SettingsPatch.accentColor`, and
- * deliberately bypassing `sanitize()`/`loadPersistedSettings()` on both the
- * read and write side here: every other field in this blob is written only
- * from an explicit settings-panel change and is designed to win over the
- * host's config on the next load (see `loadPersistedSettings`'s doc
- * comment) — exactly what a visitor's remembered preference should do. This
- * one is written unconditionally on *every* mount (launcher.ts), so if it
- * fed back into that same merge, whatever accent happened to be in effect on
- * a visitor's very first visit would silently "stick" forever, overriding
- * every later host-side `accentColor` config change for that returning
- * visitor — nobody asked for that. Keeping it a separate, never-read-back
- * field avoids the loop entirely while still sharing one localStorage key
- * with `@instafix/dashboard` (see `INSTAFIX_SHARED_SETTINGS_KEY`).
+ * Deliberately its own `synced*` fields, NOT `SettingsPatch`'s
+ * `accentColor`/`theme`/`locale`, and deliberately bypassing
+ * `sanitize()`/`loadPersistedSettings()` on both the read and write side
+ * here: every `SettingsPatch` field in this blob is written only from an
+ * explicit settings-panel change and is designed to win over the host's
+ * config on the next load (see `loadPersistedSettings`'s doc comment) —
+ * exactly what a visitor's remembered preference should do. The `synced*`
+ * fields are written unconditionally on *every* mount (launcher.ts), so if
+ * they fed back into that same merge, whatever was in effect on a visitor's
+ * very first visit would silently "stick" forever, overriding every later
+ * host-side config change for that returning visitor — nobody asked for
+ * that. Keeping them separate, never-read-back fields avoids the loop
+ * entirely while still sharing one localStorage key with
+ * `@instafix/dashboard` (see `INSTAFIX_SHARED_SETTINGS_KEY`).
  */
-export function syncSharedAccentColor(accentColor: string): void {
+export function syncSharedSettings(patch: { accentColor?: string; theme?: InstaFixTheme; locale?: string }): void {
   // Read and write are guarded separately: a corrupted/foreign existing
   // value (JSON.parse throws) should still let the write below go through
   // with `existing = {}` — otherwise a single bad blob would permanently
@@ -89,23 +98,37 @@ export function syncSharedAccentColor(accentColor: string): void {
   } catch {
     // corrupted/foreign existing value — fall through with existing = {}
   }
+  const synced: InstaFixSyncedSettings = {};
+  if (patch.accentColor !== undefined) synced.syncedAccentColor = patch.accentColor;
+  if (patch.theme !== undefined) synced.syncedTheme = patch.theme;
+  if (patch.locale !== undefined) synced.syncedLocale = patch.locale;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...existing, syncedAccentColor: accentColor }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...existing, ...synced }));
   } catch {
-    // localStorage disabled/full — the dashboard just won't see a synced accent this session
+    // localStorage disabled/full — the dashboard just won't see synced settings this session
   }
 }
 
-/** Reads back what `syncSharedAccentColor` last wrote — mainly for tests; the widget itself never needs its own synced value. */
-export function getSyncedAccentColor(): string | null {
+/** Reads back what `syncSharedSettings` last wrote — mainly for tests; the widget itself never needs its own synced values. */
+export function getSyncedSettings(): InstaFixSyncedSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
+    if (!raw) return {};
     const parsed: unknown = JSON.parse(raw);
-    if (typeof parsed !== "object" || parsed === null) return null;
-    const value = (parsed as Record<string, unknown>).syncedAccentColor;
-    return typeof value === "string" && value.length > 0 ? value : null;
+    if (typeof parsed !== "object" || parsed === null) return {};
+    const raw2 = parsed as Record<string, unknown>;
+    const out: InstaFixSyncedSettings = {};
+    if (typeof raw2.syncedAccentColor === "string" && raw2.syncedAccentColor.length > 0) {
+      out.syncedAccentColor = raw2.syncedAccentColor;
+    }
+    if (typeof raw2.syncedTheme === "string" && THEMES.has(raw2.syncedTheme as InstaFixTheme)) {
+      out.syncedTheme = raw2.syncedTheme as InstaFixTheme;
+    }
+    if (typeof raw2.syncedLocale === "string" && raw2.syncedLocale.length > 0) {
+      out.syncedLocale = raw2.syncedLocale;
+    }
+    return out;
   } catch {
-    return null;
+    return {};
   }
 }

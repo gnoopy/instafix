@@ -228,6 +228,11 @@ export function Playground({ siteLocale }: { siteLocale: SiteLocale }) {
         captureDiagnostics: diagnostics,
         ...(identity ? { identity: DEMO_IDENTITY } : {}),
         endpoint: "/api/instafix",
+        // The panel's own "Open dashboard" button — same page the "Open the
+        // inbox" link in the demo banner and /demo/inbox itself point at.
+        // Relative URL: window.open() resolves it against the current
+        // origin, no need to know the deployed domain.
+        dashboardUrl: "/demo/inbox",
       });
       firstInitRef.current = false;
     })();

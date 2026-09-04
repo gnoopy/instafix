@@ -2,10 +2,10 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  getSyncedAccentColor,
+  getSyncedSettings,
   loadPersistedSettings,
   savePersistedSettings,
-  syncSharedAccentColor,
+  syncSharedSettings,
 } from "../../src/settings-storage.js";
 
 describe("settings-storage", () => {
@@ -94,7 +94,7 @@ describe("settings-storage", () => {
   });
 });
 
-describe("syncSharedAccentColor / getSyncedAccentColor", () => {
+describe("syncSharedSettings / getSyncedSettings", () => {
   beforeEach(() => {
     localStorage.clear();
   });
@@ -103,51 +103,62 @@ describe("syncSharedAccentColor / getSyncedAccentColor", () => {
     vi.restoreAllMocks();
   });
 
-  it("returns null when nothing was ever synced", () => {
-    expect(getSyncedAccentColor()).toBeNull();
+  it("returns {} when nothing was ever synced", () => {
+    expect(getSyncedSettings()).toEqual({});
   });
 
-  it("round-trips a synced accent color", () => {
-    syncSharedAccentColor("#7c3aed");
-    expect(getSyncedAccentColor()).toBe("#7c3aed");
+  it("round-trips a synced accent color, theme, and locale together", () => {
+    syncSharedSettings({ accentColor: "#7c3aed", theme: "dark", locale: "fr" });
+    expect(getSyncedSettings()).toEqual({ syncedAccentColor: "#7c3aed", syncedTheme: "dark", syncedLocale: "fr" });
+  });
+
+  it("merges a partial patch — omitted fields keep whatever was already synced", () => {
+    syncSharedSettings({ accentColor: "#7c3aed", theme: "dark", locale: "fr" });
+    syncSharedSettings({ accentColor: "#059669" });
+    expect(getSyncedSettings()).toEqual({ syncedAccentColor: "#059669", syncedTheme: "dark", syncedLocale: "fr" });
   });
 
   it("overwrites on every call, reflecting the most recent sync", () => {
-    syncSharedAccentColor("#7c3aed");
-    syncSharedAccentColor("#059669");
-    expect(getSyncedAccentColor()).toBe("#059669");
+    syncSharedSettings({ accentColor: "#7c3aed" });
+    syncSharedSettings({ accentColor: "#059669" });
+    expect(getSyncedSettings()).toEqual({ syncedAccentColor: "#059669" });
   });
 
   it("preserves whatever visitor-preference settings were already persisted", () => {
     savePersistedSettings({ theme: "dark", locale: "fr" });
-    syncSharedAccentColor("#7c3aed");
+    syncSharedSettings({ accentColor: "#7c3aed" });
     expect(loadPersistedSettings()).toEqual({ theme: "dark", locale: "fr" });
-    expect(getSyncedAccentColor()).toBe("#7c3aed");
+    expect(getSyncedSettings()).toEqual({ syncedAccentColor: "#7c3aed" });
   });
 
-  it("does NOT surface as SettingsPatch.accentColor — it must never win over the host's config on the widget's own next load", () => {
-    syncSharedAccentColor("#7c3aed");
-    expect(loadPersistedSettings().accentColor).toBeUndefined();
+  it("does NOT surface as SettingsPatch fields — synced values must never win over the host's config on the widget's own next load", () => {
+    syncSharedSettings({ accentColor: "#7c3aed", theme: "dark", locale: "fr" });
+    expect(loadPersistedSettings()).toEqual({});
   });
 
   it("sync is a no-op that never throws when localStorage itself throws", () => {
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("quota exceeded");
     });
-    expect(() => syncSharedAccentColor("#7c3aed")).not.toThrow();
+    expect(() => syncSharedSettings({ accentColor: "#7c3aed" })).not.toThrow();
   });
 
   it("read survives localStorage.getItem throwing", () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new Error("disabled");
     });
-    expect(getSyncedAccentColor()).toBeNull();
+    expect(getSyncedSettings()).toEqual({});
+  });
+
+  it("drops an invalid syncedTheme while keeping the rest", () => {
+    localStorage.setItem("instafix_settings", JSON.stringify({ syncedTheme: "rainbow", syncedAccentColor: "#7c3aed" }));
+    expect(getSyncedSettings()).toEqual({ syncedAccentColor: "#7c3aed" });
   });
 
   it("survives corrupted (non-JSON) storage without throwing", () => {
     localStorage.setItem("instafix_settings", "{not json");
-    expect(getSyncedAccentColor()).toBeNull();
-    expect(() => syncSharedAccentColor("#7c3aed")).not.toThrow();
-    expect(getSyncedAccentColor()).toBe("#7c3aed");
+    expect(getSyncedSettings()).toEqual({});
+    expect(() => syncSharedSettings({ accentColor: "#7c3aed" })).not.toThrow();
+    expect(getSyncedSettings()).toEqual({ syncedAccentColor: "#7c3aed" });
   });
 });

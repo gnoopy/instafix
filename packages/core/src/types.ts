@@ -17,17 +17,33 @@ export type BuiltinLocale = (typeof BUILTIN_LOCALES)[number];
 /**
  * localStorage key shared between `@instafix/widget` and `@instafix/dashboard`
  * for settings that need to survive a full page navigation between the two —
- * currently just the accent color, so a visitor's chosen (or host-configured)
- * widget accent carries over to `<InstaFixInbox />` even though the dashboard
- * is typically a different route entirely (a fresh page load, not the same JS
- * runtime — the only channel that also covers a direct/bookmarked visit to
- * the dashboard with no query string). The stored value is a JSON object;
- * only its `syncedAccentColor` field is a cross-package contract — every
- * other field (including the visitor-preference `accentColor` the widget's
- * own settings panel writes) is `@instafix/widget`-internal and may change
- * shape without notice.
+ * so a visitor's effective (host-configured or visitor-chosen) widget accent
+ * color, theme, and locale all carry over to `<InstaFixInbox />` even though
+ * the dashboard is typically a different route entirely (a fresh page load,
+ * not the same JS runtime — the only channel that also covers a direct/
+ * bookmarked visit to the dashboard with no query string). The stored value
+ * is a JSON object; only the three `synced*` fields listed on
+ * {@link InstaFixSyncedSettings} are a cross-package contract — every other
+ * field (including the visitor-preference `accentColor`/`theme`/`locale` the
+ * widget's own settings panel writes to this same key) is
+ * `@instafix/widget`-internal and may change shape without notice.
  */
 export const INSTAFIX_SHARED_SETTINGS_KEY = "instafix_settings";
+
+/**
+ * The cross-package fields of the {@link INSTAFIX_SHARED_SETTINGS_KEY} blob —
+ * written by `@instafix/widget` (`syncSharedSettings`, unconditionally on
+ * every mount) and read by `@instafix/dashboard` (`readSharedSettings`) as
+ * its own fallback for whichever of these three props the host didn't pass
+ * explicitly to `<InstaFixInbox />`. All optional: a widget build older than
+ * this contract, or a write that failed partway, simply leaves a field
+ * absent rather than wrong.
+ */
+export interface InstaFixSyncedSettings {
+  syncedAccentColor?: string;
+  syncedTheme?: InstaFixTheme;
+  syncedLocale?: string;
+}
 
 /**
  * Locale identifier accepted by the widget. Built-in locales are kept as

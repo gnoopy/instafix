@@ -69,19 +69,26 @@ export function DemoInbox() {
   // configuration stays shareable as a link.
   const params = useSearchParams();
   const themeParam = params.get("theme");
-  const theme = themeParam === "light" || themeParam === "auto" ? themeParam : "dark";
+  const explicitTheme = themeParam === "light" || themeParam === "dark" || themeParam === "auto" ? themeParam : null;
   const density = params.get("density") === "compact" ? "compact" : "comfortable";
   const localeParam = params.get("locale");
-  const locale = LOCALES.some(([code]) => code === localeParam) ? (localeParam as LocaleCode) : "en";
+  const explicitLocale = LOCALES.some(([code]) => code === localeParam) ? (localeParam as LocaleCode) : null;
+  // The <select>s below need a concrete value to show as selected even with
+  // no query string; InstaFixInbox needs the opposite — `undefined` so its
+  // own prop ?? shared-settings ?? default fallback actually gets a turn
+  // (see readSharedSettings) instead of always masking it with a hardcoded
+  // "dark"/"en", same reasoning as the deliberate accentColor omission below.
+  const theme = explicitTheme ?? "dark";
+  const locale = explicitLocale ?? "en";
 
   const shared = {
-    theme,
+    theme: explicitTheme ?? undefined,
     density,
     // No explicit accentColor — falls back to whatever the widget on /demo
     // last synced (see @instafix/dashboard's readSharedAccentColor), so this
     // page actually demonstrates the widget→dashboard color hand-off instead
     // of masking it with a fixed brand hex.
-    locale,
+    locale: explicitLocale ?? undefined,
     className: "h-full",
   } as const;
 

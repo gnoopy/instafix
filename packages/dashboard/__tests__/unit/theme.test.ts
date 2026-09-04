@@ -2,7 +2,7 @@
 
 import { INSTAFIX_SHARED_SETTINGS_KEY } from "@instafix/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { normalizeAccent, readSharedAccentColor, resolveInitialTheme, watchSystemTheme } from "../../src/theme.js";
+import { normalizeAccent, readSharedSettings, resolveInitialTheme, watchSystemTheme } from "../../src/theme.js";
 
 // ---------------------------------------------------------------------------
 // matchMedia stub — jsdom ships none by default
@@ -112,57 +112,65 @@ describe("watchSystemTheme", () => {
   });
 });
 
-describe("readSharedAccentColor", () => {
+describe("readSharedSettings", () => {
   beforeEach(() => {
     localStorage.clear();
   });
 
-  it("returns null when nothing is stored", () => {
-    expect(readSharedAccentColor()).toBeNull();
+  it("returns {} when nothing is stored", () => {
+    expect(readSharedSettings()).toEqual({});
   });
 
-  it("reads the syncedAccentColor field @instafix/widget writes under the shared key", () => {
-    localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ syncedAccentColor: "#7c3aed", theme: "dark" }));
-    expect(readSharedAccentColor()).toBe("#7c3aed");
+  it("reads the syncedAccentColor/syncedTheme/syncedLocale fields @instafix/widget writes under the shared key", () => {
+    localStorage.setItem(
+      INSTAFIX_SHARED_SETTINGS_KEY,
+      JSON.stringify({ syncedAccentColor: "#7c3aed", syncedTheme: "dark", syncedLocale: "fr", theme: "light" }),
+    );
+    expect(readSharedSettings()).toEqual({ syncedAccentColor: "#7c3aed", syncedTheme: "dark", syncedLocale: "fr" });
   });
 
-  it("returns null when the stored blob has no syncedAccentColor field", () => {
-    localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ theme: "dark" }));
-    expect(readSharedAccentColor()).toBeNull();
+  it("omits fields the stored blob doesn't have", () => {
+    localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ syncedTheme: "dark" }));
+    expect(readSharedSettings()).toEqual({ syncedTheme: "dark" });
   });
 
-  it("ignores the widget's own visitor-preference accentColor field — only syncedAccentColor is the cross-package contract", () => {
-    // Regression guard: reading the widget's `accentColor` field here (instead
-    // of the dedicated `syncedAccentColor` one) would mean the dashboard only
-    // ever reflects a value that was *also* designed to override the widget's
-    // own host config on its next load — not the intent here at all.
-    localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ accentColor: "#7c3aed" }));
-    expect(readSharedAccentColor()).toBeNull();
+  it("ignores the widget's own visitor-preference accentColor/theme/locale fields — only the synced* fields are the cross-package contract", () => {
+    // Regression guard: reading the widget's own `accentColor`/`theme`/`locale`
+    // fields here (instead of the dedicated `synced*` ones) would mean the
+    // dashboard only ever reflects a value that was *also* designed to
+    // override the widget's own host config on its next load — not the
+    // intent here at all.
+    localStorage.setItem(
+      INSTAFIX_SHARED_SETTINGS_KEY,
+      JSON.stringify({ accentColor: "#7c3aed", theme: "dark", locale: "fr" }),
+    );
+    expect(readSharedSettings()).toEqual({});
   });
 
-  it("returns null for a non-string or empty syncedAccentColor", () => {
-    localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ syncedAccentColor: 42 }));
-    expect(readSharedAccentColor()).toBeNull();
-    localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ syncedAccentColor: "" }));
-    expect(readSharedAccentColor()).toBeNull();
+  it("drops a non-string/empty syncedAccentColor or syncedLocale, and an invalid syncedTheme", () => {
+    localStorage.setItem(
+      INSTAFIX_SHARED_SETTINGS_KEY,
+      JSON.stringify({ syncedAccentColor: 42, syncedLocale: "", syncedTheme: "purple" }),
+    );
+    expect(readSharedSettings()).toEqual({});
   });
 
-  it("returns null for non-object stored JSON (null, array, primitive)", () => {
+  it("returns {} for non-object stored JSON (null, array, primitive)", () => {
     localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, "null");
-    expect(readSharedAccentColor()).toBeNull();
+    expect(readSharedSettings()).toEqual({});
     localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, "42");
-    expect(readSharedAccentColor()).toBeNull();
+    expect(readSharedSettings()).toEqual({});
   });
 
   it("survives corrupted (non-JSON) storage without throwing", () => {
     localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, "{not json");
-    expect(readSharedAccentColor()).toBeNull();
+    expect(readSharedSettings()).toEqual({});
   });
 
   it("survives localStorage.getItem throwing", () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new Error("disabled");
     });
-    expect(readSharedAccentColor()).toBeNull();
+    expect(readSharedSettings()).toEqual({});
   });
 });

@@ -523,7 +523,7 @@ describe("InstaFixInbox — chrome & theming", () => {
     expect(root.style.getPropertyValue("--ifd-accent")).toBe("#ff0000");
   });
 
-  describe("shared accent-color fallback (@instafix/widget sync)", () => {
+  describe("shared settings fallback (@instafix/widget sync)", () => {
     afterEach(() => localStorage.clear());
 
     it("falls back to the accent @instafix/widget wrote to the shared settings key when no accentColor prop is given", async () => {
@@ -547,6 +547,60 @@ describe("InstaFixInbox — chrome & theming", () => {
       await ready();
       const root = container.querySelector<HTMLElement>(".ifd-root") as HTMLElement;
       expect(root.style.getPropertyValue("--ifd-accent")).toBe("#0066ff");
+    });
+
+    it("falls back to the theme @instafix/widget wrote to the shared settings key when no theme prop is given", async () => {
+      localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ syncedTheme: "light" }));
+      // renderInbox's own default `theme="dark"` JSX prop must be explicitly
+      // unset here (not just omitted from the overrides object) — the spread
+      // only overrides an attribute set earlier in JSX if the key is present.
+      const { container } = renderInbox({ theme: undefined });
+      await ready();
+      const root = container.querySelector<HTMLElement>(".ifd-root") as HTMLElement;
+      expect(root.dataset.theme).toBe("light");
+    });
+
+    it("prefers an explicit theme prop over the shared settings key", async () => {
+      localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ syncedTheme: "light" }));
+      const { container } = renderInbox({ theme: "dark" });
+      await ready();
+      const root = container.querySelector<HTMLElement>(".ifd-root") as HTMLElement;
+      expect(root.dataset.theme).toBe("dark");
+    });
+
+    it("falls back to the locale @instafix/widget wrote to the shared settings key when no locale prop is given", async () => {
+      localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ syncedLocale: "fr" }));
+      // renderInbox's own default `locale="en"` JSX prop must be explicitly
+      // unset here (not just omitted from the overrides object) — the spread
+      // only overrides an attribute set earlier in JSX if the key is present.
+      const { container } = renderInbox({ locale: undefined });
+      await ready();
+      const root = container.querySelector<HTMLElement>(".ifd-root") as HTMLElement;
+      expect(root.getAttribute("lang")).toBe("fr");
+    });
+
+    it("prefers an explicit locale prop over the shared settings key", async () => {
+      localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ syncedLocale: "fr" }));
+      const { container } = renderInbox({ locale: "de" });
+      await ready();
+      const root = container.querySelector<HTMLElement>(".ifd-root") as HTMLElement;
+      expect(root.getAttribute("lang")).toBe("de");
+    });
+
+    it("ignores the widget's own visitor-preference theme/locale fields — only the synced* fields are the cross-package contract", async () => {
+      // Regression guard, dashboard side: reading the widget's plain
+      // `theme`/`locale` fields here (instead of `syncedTheme`/`syncedLocale`)
+      // would read a value designed to override the widget's own host config
+      // on its next load — the wrong field, not a reused mechanism.
+      localStorage.setItem(INSTAFIX_SHARED_SETTINGS_KEY, JSON.stringify({ theme: "dark", locale: "fr" }));
+      const { container } = renderInbox({ theme: undefined, locale: undefined });
+      await ready();
+      const root = container.querySelector<HTMLElement>(".ifd-root") as HTMLElement;
+      // Falls through to the component's own defaults (auto→light in jsdom
+      // with no matchMedia dark preference, "ko") — not the widget-internal
+      // fields that happen to share a field name.
+      expect(root.dataset.theme).not.toBe("dark");
+      expect(root.getAttribute("lang")).not.toBe("fr");
     });
   });
 

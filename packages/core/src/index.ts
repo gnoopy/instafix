@@ -66,6 +66,7 @@ export type {
   InstaFixSkipReason,
   InstaFixStore,
   InstaFixStoreConfig,
+  InstaFixSyncedSettings,
   InstaFixTheme,
   InstaFixUnsubscribe,
   NetworkDiagnosticEntry,
