@@ -139,6 +139,10 @@ The full documentation lives at **[instafix.realstory.blog/docs](https://instafi
 | [`@instafix/adapter-fs`](./packages/adapter-fs) | No database — plain files under `.instafix/`, for a single developer working locally | [Filesystem adapter](https://instafix.realstory.blog/docs/adapters/fs) |
 | [`@instafix/cli`](./packages/cli) | `init` / `prompt` / `resolve` / `watch` / `sync` / `status` / `doctor` | [CLI](https://instafix.realstory.blog/docs/cli) |
 
+### Splitting adapters by environment
+
+`adapter-fs` (local `npm run dev`) and `adapter-sqlite` (deployed `npm run start`) aren't really an either/or choice — the natural setup is both, switched by `NODE_ENV` in the same `route.ts`. See [Dev vs. production adapters](https://instafix.realstory.blog/docs/adapters/dev-vs-production) for the exact code.
+
 ## Contributing
 
 Bug reports, locale translations, docs fixes, features — everything counts, and locale additions are the friendliest first PR. Start with [CONTRIBUTING.md](./CONTRIBUTING.md).

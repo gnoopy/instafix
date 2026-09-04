@@ -138,6 +138,10 @@ npm install github:gnoopy/instafix#widget-dist github:gnoopy/instafix#adapter-sq
 | [`@instafix/adapter-fs`](./packages/adapter-fs) | DB 없음 — `.instafix/` 아래 평문 파일, 혼자 개발하는 경우용 | [파일시스템 어댑터](https://instafix.realstory.blog/docs/adapters/fs) |
 | [`@instafix/cli`](./packages/cli) | `init` / `prompt` / `resolve` / `watch` / `sync` / `status` / `doctor` | [CLI](https://instafix.realstory.blog/docs/cli) |
 
+### 개발/배포 환경별로 어댑터 나눠 쓰기
+
+`adapter-fs`(로컬 `npm run dev`)와 `adapter-sqlite`(배포된 `npm run start`)는 한 번 고르고 끝나는 양자택일이 아니라, 같은 `route.ts`에서 `NODE_ENV`로 갈라 **둘 다** 쓰는 게 자연스럽습니다 — 자세한 내용과 코드 예시는 [개발/프로덕션 어댑터 나눠 쓰기](https://instafix.realstory.blog/docs/adapters/dev-vs-production) 문서를 참고하세요.
+
 ## 기여하기
 
 버그 리포트, 로케일 번역, 문서 수정, 기능 추가 — 무엇이든 도움이 됩니다. 로케일 추가는 첫 PR로 가장 부담 없는 항목입니다. [CONTRIBUTING.md](./CONTRIBUTING.md)에서 시작하세요.

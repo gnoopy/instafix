@@ -1,0 +1,40 @@
+---
+title: One route, two adapters (dev vs. production)
+description: Use adapter-fs while you're developing locally and adapter-sqlite once you deploy, from the same route.ts, switched by NODE_ENV.
+---
+
+`adapter-fs` and `adapter-sqlite` aren't really alternatives to pick once and live with — they map cleanly onto two different moments of the same project's life:
+
+- **`npm run dev` (local, solo)** — `@instafix/adapter-fs`. No database, no server process, plain files under `.instafix/` at your project root. This is also the only adapter meant to run this way — its constructor throws under `NODE_ENV === "production"` on purpose (see [the filesystem adapter](/docs/adapters/fs)).
+- **`npm run start` / deployed (team, durable)** — `@instafix/adapter-sqlite`. A real embedded database (WAL mode, real transactions, indexed search/pagination) that a small team can point a shared dashboard at, still with nothing external to provision.
+
+Since both are already `createInstaFixHandler({ store })` behind the same shared-handler contract (auth, CORS, validation, webhooks — see the [SQLite adapter](/docs/adapters/sqlite)), one `route.ts` can pick between them at runtime instead of committing to one:
+
+```ts
+// app/api/instafix/route.ts
+import { createInstaFixHandler, SqliteStore } from "@instafix/adapter-sqlite";
+import { FsStore } from "@instafix/adapter-fs";
+
+const store =
+  process.env.NODE_ENV === "production"
+    ? new SqliteStore({ path: "./instafix.db" })
+    : new FsStore();
+
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createInstaFixHandler({ store });
+```
+
+Install both packages:
+
+```bash
+npm install @instafix/adapter-fs @instafix/adapter-sqlite
+```
+
+## Why this split, specifically
+
+- `adapter-fs`'s `.instafix/history.jsonl` is plain text a coding agent can read directly with no query tooling — exactly the point while you're mid-session with an agent locally. It's also refused outright in production, so this pairing can't accidentally ship the dev path to real traffic.
+- `adapter-sqlite` needs a persistent disk under the same process across requests — true of a normal `npm run start` on a VPS/container, **not** true of stateless serverless functions (Vercel Functions, Lambda). If you deploy there, use `@instafix/adapter-prisma` against a real managed database instead; this dev/prod split assumes a traditional always-on host.
+- Nothing about the widget or the dashboard changes — both adapters implement the same `InstaFixStore` contract, so `<InstaFixWidget />`/`<InstaFixInbox />` don't know or care which one is live underneath.
+
+## `instafix init`'s part in this
+
+`init` still asks once and wires up a single backend — it doesn't generate the conditional snippet above. If you want this dev/prod split, run `init`, pick SQLite, then hand-edit the generated `route.ts` to match the snippet above (and add the `@instafix/adapter-fs` install it skipped).
