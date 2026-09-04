@@ -100,7 +100,8 @@ describe("Fab", () => {
     it("assigns correct data-item-id to each toolbar item", () => {
       const items = getToolbarItems(shadow);
       const ids = items.map((btn) => btn.dataset.itemId);
-      expect(ids).toEqual(["chat", "annotate", "target-picker", "toggle-annotations", "move-side"]);
+      // Docked bottom-right, so the left-pointing arrow leads the row.
+      expect(ids).toEqual(["move-side", "chat", "annotate", "target-picker", "toggle-annotations"]);
     });
 
     it("move-side points LEFT when the widget sits on the right, and emits position:toggle", () => {
@@ -115,7 +116,12 @@ describe("Fab", () => {
       expect(seen).toEqual(["toggle"]);
     });
 
-    it("move-side points RIGHT when the widget sits on the left", () => {
+    it("move-side sits at the row's LEFT end while docked right", () => {
+      const ids = getToolbarItems(shadow).map((btn) => btn.dataset.itemId);
+      expect(ids[0]).toBe("move-side");
+    });
+
+    it("move-side points RIGHT and sits at the row's RIGHT end while docked left", () => {
       fab.destroy();
       shadow.host.remove();
       shadow = createShadowRoot();
@@ -124,6 +130,8 @@ describe("Fab", () => {
       const btn = shadow.querySelector<HTMLButtonElement>('[data-item-id="move-side"]')!;
       expect(btn.querySelector("svg")?.innerHTML).toContain('x2="19"');
       expect(btn.getAttribute("aria-label")).toBe("Move toolbar to the right");
+      const ids = getToolbarItems(shadow).map((b) => b.dataset.itemId);
+      expect(ids[ids.length - 1]).toBe("move-side");
     });
 
     it("toolbar items are tabbable by default (toolbar visible)", () => {
@@ -247,7 +255,8 @@ describe("Fab", () => {
       fab = new Fab(shadow, { ...defaultConfig(), showAnnotationsToggle: true }, bus, createT("fr"));
 
       const ids = getToolbarItems(shadow).map((btn) => btn.dataset.itemId);
-      expect(ids).toEqual(["chat", "annotate", "target-picker", "toggle-annotations", "move-side"]);
+      // Docked bottom-right, so the left-pointing arrow leads the row.
+      expect(ids).toEqual(["move-side", "chat", "annotate", "target-picker", "toggle-annotations"]);
     });
 
     it("`false` hides the toggle-annotations item entirely — no DOM, no click handler", () => {
@@ -257,7 +266,7 @@ describe("Fab", () => {
       fab = new Fab(shadow, { ...defaultConfig(), showAnnotationsToggle: false }, bus, createT("fr"));
 
       const ids = getToolbarItems(shadow).map((btn) => btn.dataset.itemId);
-      expect(ids).toEqual(["chat", "annotate", "target-picker", "move-side"]);
+      expect(ids).toEqual(["move-side", "chat", "annotate", "target-picker"]);
       expect(shadow.querySelector('[data-item-id="toggle-annotations"]')).toBeNull();
     });
 

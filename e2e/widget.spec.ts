@@ -109,7 +109,8 @@ test.describe("FAB toolbar", () => {
   test("is visible by default and shows the toolbar items", async ({ page }) => {
     const s = shadow(page);
     await s.waitFor(".sp-toolbar.sp-toolbar--visible");
-    expect(await s.count(".sp-toolbar-item")).toBe(4);
+    // chat, annotate, target-picker, toggle-annotations + the move-side arrow
+    expect(await s.count(".sp-toolbar-item")).toBe(5);
     expect(await s.attr(".sp-fab", "aria-expanded")).toBe("true");
   });
 
@@ -622,7 +623,7 @@ test.describe("Default locale is Korean", () => {
     const toggleLabel = await s.attr('[data-item-id="toggle-annotations"]', "aria-label");
 
     expect(chatLabel).toBe("사이드바 표시");
-    expect(annotateLabel).toBe("새 주석 만들기");
+    expect(annotateLabel).toBe("영역 지정");
     expect(toggleLabel).toBe("마커 표시/숨기기");
   });
 
