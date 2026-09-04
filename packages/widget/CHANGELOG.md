@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.13](https://github.com/gnoopy/instafix/compare/widget-v0.10.12...widget-v0.10.13) (2026-09-04)
+
+
+### Features
+
+* **widget:** compact type row + wider popup, bigger composer with clear/undo/redo ([cd2d93d](https://github.com/gnoopy/instafix/commit/cd2d93dbb6fa2f0535b5ab8c418e679d00fbd313))
+
 ## [0.10.12](https://github.com/gnoopy/instafix/compare/widget-v0.10.11...widget-v0.10.12) (2026-09-04)
 
 
