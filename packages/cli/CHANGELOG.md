@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.8](https://github.com/gnoopy/instafix/compare/cli-v0.5.7...cli-v0.5.8) (2026-09-04)
+
+
+### Features
+
+* **cli:** scaffold a dashboard page in init, wired to the widget's dashboardUrl ([9ed6831](https://github.com/gnoopy/instafix/commit/9ed6831c6313ffe6f6591a3383d1fc0c6884658d))
+
 ## [0.5.7](https://github.com/gnoopy/instafix/compare/cli-v0.5.6...cli-v0.5.7) (2026-09-03)
 
 
