@@ -1,0 +1,82 @@
+{
+  "name": "@instafix/widget",
+  "version": "0.10.15",
+  "description": "Feedback widget for client review during development — annotations, bugs, questions directly on the site",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "script": "./dist/index.global.js",
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./react": {
+      "import": {
+        "types": "./dist/react.d.ts",
+        "default": "./dist/react.js"
+      },
+      "require": {
+        "types": "./dist/react.d.cts",
+        "default": "./dist/react.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "feedback",
+    "widget",
+    "annotation",
+    "client-review",
+    "development",
+    "bug-reporting",
+    "visual-feedback",
+    "website-feedback",
+    "dom-annotation",
+    "self-hosted",
+    "open-source",
+    "shadow-dom",
+    "lightweight"
+  ],
+  "author": "gnoopy",
+  "license": "MIT",
+  "homepage": "https://instafix.realstory.blog",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gnoopy/instafix.git",
+    "directory": "packages/widget"
+  },
+  "bugs": {
+    "url": "https://github.com/gnoopy/instafix/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@medv/finder": "^4.0.2",
+    "exceljs": "4.4.0",
+    "html2canvas-pro": "^2.4.1",
+    "zod": "^4.4.3"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}
