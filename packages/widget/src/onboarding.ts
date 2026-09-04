@@ -135,7 +135,7 @@ export const ONBOARDING_CSS = /* css */ `
 
   .sp-onboarding-next {
     border: none;
-    background: var(--sp-accent);
+    background: var(--sp-accent-fill, var(--sp-accent));
     color: var(--sp-accent-fg, #fff);
     font-size: 12px;
     font-weight: 600;

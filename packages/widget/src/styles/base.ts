@@ -79,7 +79,7 @@ export function buildStyles(colors: ThemeColors): string {
       width: 52px;
       height: 52px;
       border-radius: var(--sp-radius-full);
-      background: var(--sp-selection-gradient, var(--sp-accent-gradient));
+      background: var(--sp-accent-fill-gradient, var(--sp-accent-gradient));
       color: var(--sp-accent-fg, #fff);
       border: none;
       cursor: pointer;
@@ -205,11 +205,12 @@ export function buildStyles(colors: ThemeColors): string {
       width: 35px;
       height: 35px;
       border-radius: var(--sp-radius-full);
-      background: var(--sp-selection, var(--sp-accent));
+      /* The FILL is what adapts, not the icon color: --sp-accent-fill is the
+         layer tone darkened until white clears AA on it, so these chips are
+         always white-on-color — the convention for a floating toolbar, and
+         legible on every tone the detector can land on. */
+      background: var(--sp-accent-fill, var(--sp-selection, var(--sp-accent)));
       border: 1px solid rgba(255, 255, 255, 0.3);
-      /* Never a fixed white: on a light layer tone (amber, lime) white icons
-         drop to ~1.9:1 against their own chip. --sp-accent-fg flips to the
-         near-black ink whenever that happens. */
       color: var(--sp-accent-fg, #fff);
       cursor: pointer;
       display: flex;
@@ -1356,7 +1357,7 @@ export function buildStyles(colors: ThemeColors): string {
       padding: 0 22px;
       border-radius: var(--sp-radius);
       border: none;
-      background: var(--sp-accent-gradient);
+      background: var(--sp-accent-fill-gradient, var(--sp-accent-gradient));
       color: var(--sp-accent-fg, #fff);
       font-family: var(--sp-font);
       font-size: 14px;

@@ -543,6 +543,8 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
       host.style.setProperty("--sp-accent-dark", colors.accentDark);
       host.style.setProperty("--sp-accent-glow", colors.accentGlow);
       host.style.setProperty("--sp-accent-gradient", colors.accentGradient);
+      host.style.setProperty("--sp-accent-fill", colors.accentFill);
+      host.style.setProperty("--sp-accent-fill-gradient", colors.accentFillGradient);
       host.style.setProperty("--sp-accent-fg", colors.accentForeground);
       host.style.setProperty("--sp-accent-ink", colors.accentInk);
       host.style.setProperty("--sp-selection", colors.selection);

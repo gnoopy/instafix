@@ -790,7 +790,7 @@ export const DETAIL_CSS = /* css */ `
     padding: 0 20px;
     border-radius: var(--sp-radius);
     border: none;
-    background: var(--sp-accent-gradient);
+    background: var(--sp-accent-fill-gradient, var(--sp-accent-gradient));
     color: var(--sp-accent-fg, #fff);
     font-family: var(--sp-font);
     font-size: 14px;

@@ -128,7 +128,7 @@ export class MultiTargetPreview {
       width:${BADGE_SIZE}px;height:${BADGE_SIZE}px;
       border-radius:9999px;
       display:flex;align-items:center;justify-content:center;
-      background:${this.colors.selection};color:${this.colors.accentForeground};
+      background:${this.colors.accentFill};color:${this.colors.accentForeground};
       font-family:${FONT_STACK};
       font-size:11px;font-weight:700;
       border:2px solid #fff;

@@ -843,9 +843,12 @@ describe("MarkerManager", () => {
   // -------------------------------------------------------------------------
 
   describe("selection color", () => {
-    it("fills the marker with colors.selection (white number/ring) and colors the pinned outline with it", () => {
+    it("fills the marker with the white-safe accent fill (white number/ring) and pins the outline in the selection tone", () => {
       const customColors = buildThemeColors("#0066ff");
       customColors.selection = "#ff00aa";
+      // The pin carries a white number, so it paints accentFill — the tone
+      // darkened until white clears AA — while the outline keeps the raw tone.
+      customColors.accentFill = "#ff00aa";
       const customMarkers = new MarkerManager(customColors, tooltip, bus, t);
 
       const fb = makeFeedback({ id: "fb-selection-color", type: "bug" });

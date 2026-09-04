@@ -9,11 +9,25 @@ export interface ThemeColors {
   accentGlow: string;
   accentGradient: string;
   /**
-   * Ink to render ON an accent fill (FAB, toolbar chips, primary buttons).
-   * White or near-black, whichever WCAG-contrasts better against the accent
-   * — a hardcoded `#fff` turned unreadable the moment the layer tone landed
-   * on a light hue (amber/lime): white on amber is 1.9:1, near-black 9.6:1.
+   * The accent as a FILL that is guaranteed to carry white content: the tone
+   * darkened until white clears AA on it, and left alone when it already
+   * does (the default blue, most brand colors).
+   *
+   * Picking the better of white/near-black per tone was the first attempt and
+   * it was worse in practice: a mid-lightness tone (a detected dark gold,
+   * say) scores higher with black, yet thin 14px icon strokes in near-black
+   * on saturated mid-dark gold read as muddy — a contrast ratio does not
+   * capture stroke definition. Fixing the FILL instead keeps one consistent
+   * language (white icons on a colored chip, the convention for a floating
+   * toolbar) and moves the tone out of the ambiguous mid band where neither
+   * ink is good. Hue and saturation — what actually carries layer identity —
+   * are untouched; only lightness moves, exactly as picking a 600/700 shade
+   * for a colored button would.
    */
+  accentFill: string;
+  /** `accentFill` as the two-stop gradient the FAB and primary buttons paint. */
+  accentFillGradient: string;
+  /** Content color for anything sitting on `accentFill` — white, by construction of the fill. */
   accentForeground: string;
   /**
    * The accent adjusted until it is legible AS a foreground (text, icon,
@@ -163,19 +177,23 @@ export function contrastRatio(hexA: string, hexB: string): number {
 const INK = "#0f172a";
 const WHITE = "#ffffff";
 
-/**
- * Pick white or near-black for text/icons sitting on a fill that runs from
- * `from` to `to` (a flat fill passes the same color twice). Scores each
- * candidate by its WORST contrast across the gradient, so neither end of a
- * FAB gradient can be the unreadable one.
- */
-function readableForeground(from: string, to: string = from): string {
-  const worst = (ink: string) => Math.min(contrastRatio(ink, from), contrastRatio(ink, to));
-  return worst(WHITE) >= worst(INK) ? WHITE : INK;
-}
-
 /** WCAG AA for normal text. UI components and icons only need 3:1, but hitting the stricter bar keeps labels safe too. */
 const INK_TARGET = 4.5;
+
+/**
+ * Darken `hex` until white content clears {@link INK_TARGET} on it. Returns
+ * `hex` untouched when white already does — so an accent chosen to work with
+ * white keeps its exact value, and only tones that cannot carry white move.
+ * The lightest end of a gradient is the binding one, so callers derive the
+ * darker stop FROM this result rather than adjusting the pair separately.
+ */
+function fillCarryingWhite(hex: string): string {
+  let current = hex;
+  for (let i = 0; i < 24 && contrastRatio(WHITE, current) < INK_TARGET; i++) {
+    current = darkenHex(current, 0.06);
+  }
+  return current;
+}
 
 /**
  * Nudge `hex` away from `surface` — darker on a light surface, lighter on a
@@ -210,6 +228,7 @@ export function resolveTheme(theme?: "light" | "dark" | "auto"): "light" | "dark
 export function buildThemeColors(accent: string = DEFAULT_ACCENT, theme?: "light" | "dark" | "auto"): ThemeColors {
   const hex = normalizeHex(accent);
   const dark = darkenHex(hex, 0.15);
+  const fill = fillCarryingWhite(hex);
   const resolved = resolveTheme(theme);
 
   if (resolved === "dark") {
@@ -219,7 +238,9 @@ export function buildThemeColors(accent: string = DEFAULT_ACCENT, theme?: "light
       accentDark: dark,
       accentGlow: hex + "44",
       accentGradient: `linear-gradient(135deg, ${hex}, ${dark})`,
-      accentForeground: readableForeground(hex, dark),
+      accentFill: fill,
+      accentFillGradient: `linear-gradient(135deg, ${fill}, ${darkenHex(fill, 0.15)})`,
+      accentForeground: WHITE,
       accentInk: legibleOn(hex, "#0f172a"),
       selection: hex,
       selectionLight: hex + "22",
@@ -268,7 +289,9 @@ export function buildThemeColors(accent: string = DEFAULT_ACCENT, theme?: "light
     accentDark: dark,
     accentGlow: hex + "33", // 20% opacity
     accentGradient: `linear-gradient(135deg, ${hex}, ${dark})`,
-    accentForeground: readableForeground(hex, dark),
+    accentFill: fill,
+    accentFillGradient: `linear-gradient(135deg, ${fill}, ${darkenHex(fill, 0.15)})`,
+    accentForeground: WHITE,
     accentInk: legibleOn(hex, "#ffffff"),
     selection: hex,
     selectionLight: hex + "14",
@@ -349,10 +372,13 @@ export function applyLayerColor(colors: ThemeColors, hex: string, theme?: "light
   colors.accentDark = dark;
   colors.accentGlow = hex + glowAlpha;
   colors.accentGradient = `linear-gradient(135deg, ${hex}, ${dark})`;
-  // Re-derive the accessibility pair for the NEW tone — the whole point of
+  // Re-derive the accessibility set for the NEW tone — the whole point of
   // rule 1 is that a detected tone can be anything on the wheel, including
-  // the light hues where a fixed white-on-accent chip goes unreadable.
-  colors.accentForeground = readableForeground(hex, dark);
+  // the mid-lightness hues no ink reads well on.
+  const fill = fillCarryingWhite(hex);
+  colors.accentFill = fill;
+  colors.accentFillGradient = `linear-gradient(135deg, ${fill}, ${darkenHex(fill, 0.15)})`;
+  colors.accentForeground = WHITE;
   colors.accentInk = legibleOn(hex, resolved === "dark" ? "#0f172a" : "#ffffff");
   colors.selection = hex;
   colors.selectionLight = hex + lightAlpha;
@@ -432,6 +458,8 @@ export function cssVariables(colors: ThemeColors): string {
     --sp-accent-dark: ${colors.accentDark};
     --sp-accent-glow: ${colors.accentGlow};
     --sp-accent-gradient: ${colors.accentGradient};
+    --sp-accent-fill: ${colors.accentFill};
+    --sp-accent-fill-gradient: ${colors.accentFillGradient};
     --sp-accent-fg: ${colors.accentForeground};
     --sp-accent-ink: ${colors.accentInk};
     --sp-bg: ${colors.bg};

@@ -600,7 +600,9 @@ export class MarkerManager {
     // tinted border/number was invisible whenever the detected color sat
     // close to the page background. Type is still conveyed in the tooltip
     // and the panel list, which have room to spell it out.
-    const markerColor = this.colors.selection;
+    // The numbered pin carries a white number, so it paints the
+    // white-safe fill rather than the raw tone (which can be any lightness).
+    const markerColor = this.colors.accentFill;
     // Closed feedbacks (resolved, wont_fix) render as muted checkmark markers.
     const isResolved = isClosedStatus(feedback.status);
 

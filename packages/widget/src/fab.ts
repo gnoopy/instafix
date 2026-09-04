@@ -163,16 +163,20 @@ export class Fab {
     if (config.showAnnotationsToggle !== false) {
       this.items.push({ id: "toggle-annotations", icon: ICON_EYE, iconAlt: ICON_EYE_OFF });
     }
-    // Always last in the row: the arrow points at the side the widget would
-    // MOVE to, so it reads as a destination, not a description of where it
-    // is. A position change remounts the widget (launcher.updateConfig), so
-    // the icon is simply rebuilt correctly rather than swapped in place.
+    // The arrow points at the side the widget would MOVE to, and sits at the
+    // matching END of the row — a left arrow on the row's left edge, a right
+    // arrow on its right edge — so the button is always on the side it sends
+    // you to, and travels with the row instead of hiding behind the FAB. A
+    // position change remounts the widget (launcher.updateConfig), so both
+    // the icon and its slot are rebuilt rather than swapped in place.
     const movingLeft = position === "bottom-right";
-    this.items.push({
+    const moveSide: ToolbarItem = {
       id: "move-side",
       icon: movingLeft ? ICON_ARROW_LEFT : ICON_ARROW_RIGHT,
       labelKey: movingLeft ? "fab.moveLeft" : "fab.moveRight",
-    });
+    };
+    if (movingLeft) this.items.unshift(moveSide);
+    else this.items.push(moveSide);
 
     // The button's active state is driven entirely by the bus (not mutated
     // directly on click) so it stays correct regardless of whether the
