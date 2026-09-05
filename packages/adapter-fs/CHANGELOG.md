@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.1](https://github.com/gnoopy/instafix/compare/adapter-fs-v2.0.0...adapter-fs-v2.0.1) (2026-09-05)
+
+
+### Miscellaneous
+
+* **deps:** bump the production-dependencies group across 1 directory with 5 updates ([5c48c70](https://github.com/gnoopy/instafix/commit/5c48c70be4d9795cd4913339febec60500d85805))
+* **deps:** bump the production-dependencies group across 1 directory with 5 updates ([7006aae](https://github.com/gnoopy/instafix/commit/7006aae557da42195b1548e139f8c20daeb1fb83))
+
 ## [2.0.0](https://github.com/gnoopy/instafix/compare/adapter-fs-v1.0.1...adapter-fs-v2.0.0) (2026-09-05)
 
 
