@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/gnoopy/instafix/compare/adapter-sqlite-v2.0.0...adapter-sqlite-v2.0.1) (2026-09-05)
+
+
+### Documentation
+
+* the npm pages said the packages were not on npm ([3f9c342](https://github.com/gnoopy/instafix/commit/3f9c342ea4e4673c5ba6385a34882908e08c3cb9))
+
 ## [2.0.0](https://github.com/gnoopy/instafix/compare/adapter-sqlite-v1.1.0...adapter-sqlite-v2.0.0) (2026-09-05)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/gnoopy/instafix/compare/dashboard-v0.3.0...dashboard-v0.3.1) (2026-09-05)
+
+
+### Documentation
+
+* the npm pages said the packages were not on npm ([3f9c342](https://github.com/gnoopy/instafix/commit/3f9c342ea4e4673c5ba6385a34882908e08c3cb9))
+
 ## [0.3.0](https://github.com/gnoopy/instafix/compare/dashboard-v0.2.11...dashboard-v0.3.0) (2026-09-05)
 
 

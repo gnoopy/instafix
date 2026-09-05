@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/gnoopy/instafix/compare/cli-v0.6.0...cli-v0.6.1) (2026-09-05)
+
+
+### Documentation
+
+* the npm pages said the packages were not on npm ([3f9c342](https://github.com/gnoopy/instafix/commit/3f9c342ea4e4673c5ba6385a34882908e08c3cb9))
+
 ## [0.6.0](https://github.com/gnoopy/instafix/compare/cli-v0.5.9...cli-v0.6.0) (2026-09-05)
 
 
