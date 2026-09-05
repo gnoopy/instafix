@@ -117,12 +117,25 @@ describe("captureAnnotatedScreenshot — graceful degrade", () => {
     await expect(captureAnnotatedScreenshot(new DOMRect(0, 0, 100, 100))).resolves.not.toThrow();
   });
 
-  it("returns null without rendering when the document reports a degenerate size", async () => {
-    // Zero-sized document (broken embed contexts) — the capture rect math
-    // yields a non-positive area; bail out instead of dividing by zero.
+  it("still captures when the document reports a degenerate size, floored at the drawn rect", async () => {
+    // A host that misreports scrollWidth/scrollHeight as 0 — e.g. a
+    // `position: fixed` SPA root outside normal document flow, seen in
+    // Electron/Tauri shells — must not lose the screenshot entirely: the
+    // docW/docH floor (docX + rect.width, docY + rect.height) kicks in.
     setDocumentSize(0, 0);
 
     const result = await captureAnnotatedScreenshot(new DOMRect(0, 0, 100, 100));
+
+    expect(mockHtml2Canvas).toHaveBeenCalled();
+    expect(result).not.toBeNull();
+  });
+
+  it("returns null without rendering when the document AND the drawn rect are degenerate", async () => {
+    // Nothing to floor against either — the capture rect math yields a
+    // non-positive area; bail out instead of dividing by zero.
+    setDocumentSize(0, 0);
+
+    const result = await captureAnnotatedScreenshot(new DOMRect(0, 0, 0, 0));
 
     expect(result).toBeNull();
     expect(mockHtml2Canvas).not.toHaveBeenCalled();

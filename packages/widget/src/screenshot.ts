@@ -118,9 +118,20 @@ export async function captureAnnotatedScreenshot(
   const docY = window.scrollY + rect.y;
 
   // Clamp the padded capture area to the document bounds so html2canvas
-  // never renders blank out-of-document margins.
-  const docW = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth);
-  const docH = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+  // never renders blank out-of-document margins. Floored at `docX + rect.
+  // width` (and the height equivalent): `scrollWidth`/`scrollHeight` report
+  // the *box's own* content extent, which some host apps — e.g. a
+  // `position: fixed` SPA root outside normal document flow, common in
+  // Electron/Tauri shells — leave far smaller than where the user actually
+  // clicked. A document can never be smaller than the rect a real annotation
+  // was just drawn in, so this floor only ever engages on that broken-embed
+  // case; a normal, correctly-reported document is always already at least
+  // this big and the `Math.max` is a no-op. Without it, `docW`/`docH` could
+  // end up smaller than `docX`/`docY`, making `capW`/`capH` negative below
+  // and silently dropping the screenshot even though the annotated element
+  // was plainly on screen.
+  const docW = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth, docX + rect.width);
+  const docH = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight, docY + rect.height);
   const capX = Math.max(0, docX - padX);
   const capY = Math.max(0, docY - padY);
   const capW = Math.min(docW, docX + rect.width + padX) - capX;

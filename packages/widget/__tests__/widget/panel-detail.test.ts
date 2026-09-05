@@ -34,10 +34,11 @@ function makeAnnotation(overrides: Partial<AnnotationResponse> = {}): Annotation
     fingerprint: "0:0:0",
     neighborText: "",
     anchorKey: null,
-    xPct: 12.345,
-    yPct: 67.891,
-    wPct: 23.456,
-    hPct: 45.678,
+    // 0..1 fractions — validation.ts enforces [0, 1] on the wire.
+    xPct: 0.12345,
+    yPct: 0.67891,
+    wPct: 0.23456,
+    hPct: 0.45678,
     scrollX: 100,
     scrollY: 200,
     viewportW: 1920,
@@ -456,7 +457,9 @@ describe("DetailView", () => {
     });
 
     it("renders position row including width/height when wPct or hPct > 0", () => {
-      const ann = makeAnnotation({ xPct: 1.0, yPct: 2.0, wPct: 3.0, hPct: 4.0 });
+      // xPct/yPct/wPct/hPct are 0..1 fractions on the wire (validation.ts
+      // enforces [0, 1]) — the row must multiply by 100 for display.
+      const ann = makeAnnotation({ xPct: 0.01, yPct: 0.02, wPct: 0.03, hPct: 0.04 });
       setup.view.show(makeFeedback({ annotations: [ann] }), 1);
       // Position row includes "1.0%, 2.0% (3.0% × 4.0%)"
       const txt = setup.view.element.textContent ?? "";
@@ -464,8 +467,18 @@ describe("DetailView", () => {
       expect(txt).toMatch(/3\.0%.*4\.0%/);
     });
 
+    it("renders the document.body fallback (wPct=hPct=1) as a full 100%, not 1%", () => {
+      // rectToPercentages' zero-dimension-anchor guard returns {xPct:0, yPct:0,
+      // wPct:1, hPct:1} — this must read as "covers the whole anchor", not a
+      // near-invisible sliver.
+      const ann = makeAnnotation({ xPct: 0, yPct: 0, wPct: 1, hPct: 1 });
+      setup.view.show(makeFeedback({ annotations: [ann] }), 1);
+      const txt = setup.view.element.textContent ?? "";
+      expect(txt).toMatch(/0\.0%.*0\.0%.*\(100\.0% × 100\.0%\)/);
+    });
+
     it("renders position row without size when wPct and hPct are zero", () => {
-      const ann = makeAnnotation({ xPct: 5.5, yPct: 6.6, wPct: 0, hPct: 0 });
+      const ann = makeAnnotation({ xPct: 0.055, yPct: 0.066, wPct: 0, hPct: 0 });
       setup.view.show(makeFeedback({ annotations: [ann] }), 1);
       const positionRow = Array.from(setup.view.element.querySelectorAll(".sp-detail-annotation-row")).find((row) =>
         row.textContent?.includes("Position"),

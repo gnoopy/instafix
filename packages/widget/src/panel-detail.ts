@@ -1744,13 +1744,22 @@ export class DetailView {
       return value;
     });
 
-    // Position
+    // Position \u2014 `xPct`/`yPct`/`wPct`/`hPct` are stored as 0..1 fractions
+    // (see rectToPercentages in dom/anchor.ts), so they need \u00d7100 before
+    // display. Without it, a legitimate full-anchor annotation (wPct=hPct=1,
+    // e.g. the document.body fallback when no smaller ancestor resolves)
+    // rendered as "1.0% \u00d7 1.0%" instead of "100.0% \u00d7 100.0%" \u2014 reading as a
+    // near-invisible sliver when the annotation actually covered the anchor.
     this.addAnnotationRow(info, ICON_MAP_PIN, this.t("detail.position"), () => {
       const value = el("span", { class: "sp-detail-annotation-value" });
+      const xPct = ann.xPct * 100;
+      const yPct = ann.yPct * 100;
+      const wPct = ann.wPct * 100;
+      const hPct = ann.hPct * 100;
       setText(
         value,
-        `${ann.xPct.toFixed(1)}%, ${ann.yPct.toFixed(1)}%` +
-          (ann.wPct > 0 || ann.hPct > 0 ? ` (${ann.wPct.toFixed(1)}% \u00d7 ${ann.hPct.toFixed(1)}%)` : ""),
+        `${xPct.toFixed(1)}%, ${yPct.toFixed(1)}%` +
+          (wPct > 0 || hPct > 0 ? ` (${wPct.toFixed(1)}% \u00d7 ${hPct.toFixed(1)}%)` : ""),
       );
       return value;
     });
