@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/gnoopy/instafix/compare/adapter-sqlite-v1.0.0...adapter-sqlite-v1.1.0) (2026-09-04)
+
+
+### Features
+
+* capture a DOM/CSSOM snapshot of the annotated element ([2e5fd77](https://github.com/gnoopy/instafix/commit/2e5fd77f9c63c80b96df4bfb3494021bf0e3f461))
+
+
+### Bug Fixes
+
+* **adapter-sqlite:** migrate via pragma() — a leaked Statement crashed Node 24 at teardown ([00558f0](https://github.com/gnoopy/instafix/commit/00558f0a703965622662f40f17f0aa4b5c555cc4))
+
 ## 1.0.0 (2026-09-03)
 
 

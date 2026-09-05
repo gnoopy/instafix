@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.11](https://github.com/gnoopy/instafix/compare/dashboard-v0.2.10...dashboard-v0.2.11) (2026-09-04)
+
+
+### Features
+
+* capture a DOM/CSSOM snapshot of the annotated element ([2e5fd77](https://github.com/gnoopy/instafix/commit/2e5fd77f9c63c80b96df4bfb3494021bf0e3f461))
+
 ## [0.2.10](https://github.com/gnoopy/instafix/compare/dashboard-v0.2.9...dashboard-v0.2.10) (2026-09-04)
 
 

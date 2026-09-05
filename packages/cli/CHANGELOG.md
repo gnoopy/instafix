@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.9](https://github.com/gnoopy/instafix/compare/cli-v0.5.8...cli-v0.5.9) (2026-09-04)
+
+
+### Features
+
+* stop re-asking who you are — session-held identity, prefilled from your git/GitHub account ([b9934f2](https://github.com/gnoopy/instafix/commit/b9934f2bce9a411afb4e1246ec02716dc8af8528))
+
+
+### Tests
+
+* cover the new modules' branches — CI's coverage floor was the release gate ([c681d02](https://github.com/gnoopy/instafix/commit/c681d0209d5bd4989fefb92e03eeed5dfbebb1b9))
+
 ## [0.5.8](https://github.com/gnoopy/instafix/compare/cli-v0.5.7...cli-v0.5.8) (2026-09-04)
 
 
