@@ -14,7 +14,7 @@
  * ```
  */
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { DiagnosticsSnapshot, FeedbackCreateInput, InstaFixStore } from "./types.js";
 import { isStoreDuplicate, StoreNotFoundError } from "./types.js";
 
@@ -133,6 +133,18 @@ export function testInstaFixStore(
 
     beforeEach(async () => {
       store = await factory();
+    });
+
+    // A store holding a native handle (better-sqlite3, a driver pool) gets it
+    // released while the test environment is still alive. Left to the GC, a
+    // native finalizer can run after the worker's environment is gone —
+    // better-sqlite3's Statement destructor aborts the process outright when
+    // that happens (Node 24, `RemoveEnvironmentCleanupHook: (env) != nullptr`),
+    // taking the whole run down instead of failing one test. Duck-typed: a
+    // pure-JS store simply has no `close` to call.
+    afterEach(async () => {
+      const closable = store as InstaFixStore & { close?: () => unknown };
+      if (typeof closable.close === "function") await closable.close();
     });
 
     // ------------------------------------------------------------------
