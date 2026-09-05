@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { SiteLocale } from "@/lib/site-i18n/constants";
 import { DemoAccordion } from "./demo-accordion";
+import { DemoPopovers } from "./demo-popover";
 import { DemoTabs } from "./demo-tabs";
 import { InstallCommand } from "./install-command";
 import { ShareButton } from "./share-button";
@@ -707,6 +708,15 @@ export function DemoSite({ locale = "en" }: { locale?: SiteLocale }) {
                 </div>
                 <input type="range" defaultValue={60} readOnly className="w-full accent-accent" />
               </div>
+            </div>
+
+            {/* Dismiss-on-outside popovers — the annotate-a-transient-menu case */}
+            <div className="rounded-xl border border-gray-200 bg-white p-6">
+              <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-gray-400">Dismissable popovers</h3>
+              <p className="mb-4 text-xs text-gray-500">
+                Open one, then annotate it — these close on outside interaction, the way real menus do.
+              </p>
+              <DemoPopovers />
             </div>
 
             {/* Stats */}

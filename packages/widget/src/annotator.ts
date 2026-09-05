@@ -81,6 +81,8 @@ export class Annotator {
    * which keeps its focus-restore role untouched. See issue #162.
    */
   private keyboardTarget: HTMLElement | null = null;
+  /** How the live session started — decides whether the overlay takes focus (see activate()). */
+  private activationVia: "pointer" | "keyboard" = "pointer";
   private rafId: number | null = null;
   private pendingMoveEvent: MouseEvent | Touch | null = null;
   /**
@@ -124,7 +126,7 @@ export class Annotator {
   ) {
     this.popup = new Popup(colors, t, agentInstructions);
 
-    this.bus.on("annotation:start", () => this.activate());
+    this.bus.on("annotation:start", (detail) => this.activate(detail?.via ?? "pointer"));
     this.bus.on("targeting:start", () => this.activateTargeting());
     // Also reached when the toolbar button itself is clicked to turn
     // targeting off (fab.ts emits targeting:end directly on that click) —
@@ -162,7 +164,8 @@ export class Annotator {
     return captureAnnotatedScreenshot(rect);
   }
 
-  private activate(): void {
+  private activate(via: "pointer" | "keyboard" = "pointer"): void {
+    this.activationVia = via;
     if (this.isActive) return;
     // Mutually exclusive with targeting mode (Mode 2) — starting a draw
     // session while the auto-target picker is live must cancel picking, not
@@ -305,8 +308,10 @@ export class Annotator {
       this.overlay.addEventListener("touchmove", this.onTouchMove, { passive: false });
       this.overlay.addEventListener("touchend", this.onTouchEnd);
 
-      // Keyboard annotation: Enter selects the captured keyboard target
-      this.overlay.addEventListener("keydown", this.onOverlayKeyDown);
+      // Enter is NOT registered here: `onKeyDown` (document, capture) owns it
+      // now, so the path works whether or not the overlay holds focus.
+      // Keeping this listener too would run the handler twice and submit two
+      // annotations for one keypress.
     }
 
     // Allow tab-through so keyboard users can reach underlying elements
@@ -323,13 +328,20 @@ export class Annotator {
     document.body.appendChild(this.overlay);
     if (this.toolbar) document.body.appendChild(this.toolbar);
 
-    // Move focus to the overlay so the keyboard-annotation path (Enter →
-    // annotate the captured keyboard target) actually receives keydown —
-    // onOverlayKeyDown only fires when the overlay itself is focused. The
-    // overlay has tabindex=0, and the keyboard target was captured at the top
-    // of activate(), before the overlay existed, so focusing here doesn't
-    // clobber it. (WCAG 2.1.1 Level A)
-    this.overlay.focus({ preventScroll: true });
+    // Focus the overlay ONLY for keyboard-started sessions.
+    //
+    // Focusing it announces the instruction (role=application + aria-label)
+    // and is how a keyboard user knows the mode is live — worth keeping for
+    // the path where the user is already driving by keyboard. But moving
+    // focus fires `focusout` on whatever held it, and host menus that dismiss
+    // on focusout read that as "the user left" and close. For a pointer-driven
+    // session the mouse user gains nothing from the focus (the on-screen
+    // toolbar already states the instruction) and loses the very menu they
+    // were trying to annotate, so it is skipped. Enter still works either way
+    // now that it is handled at document level. (WCAG 2.1.1 Level A)
+    if (this.activationVia === "keyboard") {
+      this.overlay.focus({ preventScroll: true });
+    }
   }
 
   private deactivate(): void {
@@ -515,6 +527,14 @@ export class Annotator {
   };
 
   private onKeyDown = (e: KeyboardEvent): void => {
+    // Enter used to be handled on the overlay itself, which meant the overlay
+    // had to hold focus — and taking focus is what dismissed focus-driven host
+    // menus. Handling it here makes the keyboard path work whether or not the
+    // overlay is focused, so the focus grab could become conditional below.
+    if (e.key === "Enter") {
+      void this.onOverlayKeyDown(e);
+      return;
+    }
     if (e.key !== "Escape") return;
     // An open composer first: without this, Escape tore down the overlay
     // around the popup and left it orphaned on screen with its show()

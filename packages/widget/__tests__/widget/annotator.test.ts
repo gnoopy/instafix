@@ -265,15 +265,50 @@ describe("Annotator", () => {
       expect(overlay!.getAttribute("aria-label")).toBe(t("annotator.instruction"));
     });
 
-    it("focuses the overlay so the keyboard (Enter) annotation path receives keydown", () => {
-      bus.emit("annotation:start");
+    it("focuses the overlay for a keyboard-started session (announces the mode, WCAG 2.1.1)", () => {
+      bus.emit("annotation:start", { via: "keyboard" });
 
       const overlay = findOverlay();
       expect(overlay).not.toBeNull();
-      // onOverlayKeyDown only fires when the overlay itself is focused. Before
-      // this fix, activeElement stayed on <body> and the Enter path was dead
-      // (WCAG 2.1.1 Level A). The overlay carries tabindex=0.
       expect(document.activeElement).toBe(overlay);
+    });
+
+    it("leaves focus alone for a pointer-started session, so host menus survive", () => {
+      const trigger = document.createElement("button");
+      document.body.appendChild(trigger);
+      trigger.focus();
+      try {
+        // Taking focus fires `focusout` on whatever held it, and host menus
+        // that dismiss on focusout close — taking the annotation target with
+        // them. A mouse user gains nothing from the focus here.
+        bus.emit("annotation:start");
+        expect(findOverlay()).not.toBeNull();
+        expect(document.activeElement).toBe(trigger);
+      } finally {
+        trigger.remove();
+      }
+    });
+
+    it("Enter still annotates without the overlay holding focus", async () => {
+      const target = document.createElement("button");
+      target.textContent = "Focus me";
+      document.body.appendChild(target);
+      Object.defineProperty(target, "getBoundingClientRect", {
+        value: () => new DOMRect(10, 20, 100, 40),
+      });
+      target.focus();
+      const completeListener = vi.fn();
+      bus.on("annotation:complete", completeListener);
+      try {
+        bus.emit("annotation:start");
+        // Pointer-started, so focus stayed on the button — the document-level
+        // handler is what makes Enter work anyway.
+        expect(document.activeElement).toBe(target);
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+        await vi.waitFor(() => expect(completeListener).toHaveBeenCalledOnce());
+      } finally {
+        target.remove();
+      }
     });
 
     it("restores focus to the pre-activation element on deactivate (WCAG 2.4.3)", () => {
@@ -282,7 +317,7 @@ describe("Annotator", () => {
       target.focus();
 
       try {
-        bus.emit("annotation:start");
+        bus.emit("annotation:start", { via: "keyboard" });
         expect(document.activeElement).toBe(findOverlay());
 
         document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));

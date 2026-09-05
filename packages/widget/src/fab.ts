@@ -74,6 +74,40 @@ const ITEM_SHORTCUT_CODES: Record<ToolbarItemId, string> = {
   "move-side": "KeyM",
 };
 
+/**
+ * Keep a click on the widget's own chrome from reading as an "outside
+ * interaction" to the host page.
+ *
+ * Dismissable menus (Radix's DismissableLayer, Headless UI, hand-rolled
+ * dropdowns) listen on `document` for pointerdown/mousedown/click and close
+ * when the event's target is not inside them. Our buttons live in a closed
+ * shadow root, so the browser retargets the event to the `<instafix-widget>`
+ * host — which is genuinely outside their subtree. The result was that
+ * opening a menu and then reaching for "Select area" closed the menu before
+ * it could be annotated, i.e. exactly the states most worth annotating were
+ * the ones you could not reach.
+ *
+ * Two defenses, because there are two dismissal mechanisms:
+ * - `stopPropagation` keeps the event from ever reaching a document-level
+ *   listener, so pointer-based dismissal never triggers.
+ * - `preventDefault` on mousedown suppresses the focus transfer, so
+ *   focus-based dismissal (`focusout` on the menu container) never triggers
+ *   either. `click` still fires, so the button's own handler is unaffected.
+ *
+ * Known limit: a host listening in the CAPTURE phase on document/window runs
+ * before anything inside our tree, and nothing in-page can pre-empt that.
+ * The keyboard shortcuts exist for exactly that case — they involve no
+ * pointer event and no focus change.
+ */
+function preserveHostState(el: HTMLElement): void {
+  el.addEventListener("pointerdown", (e) => e.stopPropagation());
+  el.addEventListener("mousedown", (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+  });
+  el.addEventListener("click", (e) => e.stopPropagation());
+}
+
 function isMacPlatform(): boolean {
   if (typeof navigator === "undefined") return false;
   return /Mac|iP(hone|ad|od)/.test(navigator.platform || navigator.userAgent);
@@ -216,6 +250,7 @@ export class Fab {
     this.fab.style.position = "fixed"; // ensure fixed even with relative children
     this.fab.appendChild(parseSvg(this.toolbarVisible ? ICON_CLOSE : ICON_INSTAFIX));
     this.fab.setAttribute("aria-expanded", String(this.toolbarVisible));
+    preserveHostState(this.fab);
     this.fab.addEventListener("click", () => this.toggle());
 
     // Toolbar container
@@ -233,10 +268,8 @@ export class Fab {
       // and would otherwise be reachable (if invisibly) while collapsed.
       btn.tabIndex = this.toolbarVisible ? 0 : -1;
 
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        this.handleItemClick(item.id);
-      });
+      preserveHostState(btn);
+      btn.addEventListener("click", () => this.handleItemClick(item.id));
 
       // Tooltip = name + shortcut chip at its right end. Two child spans so
       // applyLabels() can rewrite the (localized) name without wiping the
@@ -294,7 +327,7 @@ export class Fab {
       }
       e.preventDefault();
       e.stopPropagation();
-      this.handleItemClick(entry[0]);
+      this.handleItemClick(entry[0], "keyboard");
     };
     document.addEventListener("keydown", this.onGlobalKeydown);
 
@@ -586,7 +619,7 @@ export class Fab {
     }
   }
 
-  private handleItemClick(id: ToolbarItemId): void {
+  private handleItemClick(id: ToolbarItemId, via: "pointer" | "keyboard" = "pointer"): void {
     // The toolbar stays visible after an action — that's the entire point of
     // making it persistent instead of a menu that closes on every use.
     switch (id) {
@@ -608,7 +641,7 @@ export class Fab {
           unsubscribe();
           this.fab.focus();
         });
-        this.bus.emit("annotation:start");
+        this.bus.emit("annotation:start", { via });
         break;
       }
       case "toggle-annotations": {

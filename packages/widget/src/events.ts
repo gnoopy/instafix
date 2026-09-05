@@ -62,7 +62,14 @@ export interface WidgetEvents {
   "feedback:error": [Error];
   /** Emitted whenever the marker set changes — payload is the open (unresolved) count for the current page. */
   "markers:changed": [number];
-  "annotation:start": [];
+  /**
+   * Payload names how the session started. It decides one thing: whether the
+   * annotator takes focus. Focus is what a keyboard user needs and what a
+   * host's focus-dismissed menu cannot survive, so a pointer-started session
+   * deliberately leaves focus alone. Optional — an omitted value is treated
+   * as pointer, the conservative choice.
+   */
+  "annotation:start": [({ via: "pointer" | "keyboard" } | undefined)?];
   "annotation:end": [];
   "annotation:complete": [AnnotationComplete];
   /**

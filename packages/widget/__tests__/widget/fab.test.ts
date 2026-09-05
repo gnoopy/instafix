@@ -134,6 +134,46 @@ describe("Fab", () => {
       expect(ids[ids.length - 1]).toBe("move-side");
     });
 
+    it("a toolbar click never reaches the host page's outside-click listeners", () => {
+      // Dismissable menus (Radix, Headless UI, hand-rolled) listen on document
+      // and close when the target is not inside them. Our buttons live in a
+      // closed shadow root, so the browser retargets to <instafix-widget> —
+      // outside every menu on the page. Without stopPropagation, opening a
+      // menu and reaching for "Select area" closed the menu first.
+      const seen: string[] = [];
+      const record = (e: Event) => seen.push(e.type);
+      for (const type of ["pointerdown", "mousedown", "click"]) {
+        document.addEventListener(type, record);
+      }
+      try {
+        const btn = shadow.querySelector<HTMLButtonElement>('[data-item-id="annotate"]')!;
+        btn.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, composed: true }));
+        btn.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, composed: true }));
+        btn.dispatchEvent(new MouseEvent("click", { bubbles: true, composed: true }));
+        expect(seen).toEqual([]);
+      } finally {
+        for (const type of ["pointerdown", "mousedown", "click"]) {
+          document.removeEventListener(type, record);
+        }
+      }
+    });
+
+    it("a toolbar mousedown does not move focus, so focus-dismissed menus survive", () => {
+      const trigger = document.createElement("button");
+      document.body.appendChild(trigger);
+      trigger.focus();
+      try {
+        const btn = shadow.querySelector<HTMLButtonElement>('[data-item-id="annotate"]')!;
+        const event = new MouseEvent("mousedown", { bubbles: true, cancelable: true, composed: true });
+        btn.dispatchEvent(event);
+        // preventDefault on mousedown is what suppresses the focus transfer.
+        expect(event.defaultPrevented).toBe(true);
+        expect(document.activeElement).toBe(trigger);
+      } finally {
+        trigger.remove();
+      }
+    });
+
     it("toolbar items are tabbable by default (toolbar visible)", () => {
       const items = getToolbarItems(shadow);
       for (const item of items) {
