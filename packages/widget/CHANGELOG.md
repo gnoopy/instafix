@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.1](https://github.com/gnoopy/instafix/compare/widget-v0.11.0...widget-v0.11.1) (2026-09-05)
+
+
+### Bug Fixes
+
+* **widget:** show annotation position as a real percentage, floor screenshot capture at the drawn rect ([20dd9cf](https://github.com/gnoopy/instafix/commit/20dd9cfc16507481a3ba25ad74a8f41f0b8f282b))
+
+
+### Documentation
+
+* the npm pages said the packages were not on npm ([3f9c342](https://github.com/gnoopy/instafix/commit/3f9c342ea4e4673c5ba6385a34882908e08c3cb9))
+
 ## [0.11.0](https://github.com/gnoopy/instafix/compare/widget-v0.10.16...widget-v0.11.0) (2026-09-05)
 
 

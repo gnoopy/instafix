@@ -1,7 +1,7 @@
 {
-  "packages/widget": "0.11.0",
-  "packages/dashboard": "0.3.0",
-  "packages/cli": "0.6.0",
-  "packages/adapter-sqlite": "2.0.0",
+  "packages/widget": "0.11.1",
+  "packages/dashboard": "0.3.1",
+  "packages/cli": "0.6.1",
+  "packages/adapter-sqlite": "2.0.1",
   "packages/adapter-fs": "2.0.0"
 }
