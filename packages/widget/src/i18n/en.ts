@@ -275,4 +275,5 @@ export const en: Translations = {
   "settings.accentColor": "Accent color",
   "settings.screenshots": "Screenshots",
   "settings.diagnostics": "Diagnostics",
+  "settings.requireIdentity": "Ask who I am",
 };

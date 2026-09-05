@@ -323,7 +323,7 @@ describe("launcher — annotation:complete integration", () => {
       const response = makeFeedbackResponse();
       mockSendFeedback.mockResolvedValue(response);
 
-      const instance = launch(defaultConfig());
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       expect(capturedBus).not.toBeNull();
 
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
@@ -346,7 +346,8 @@ describe("launcher — annotation:complete integration", () => {
       // Make getIdentity return null to trigger the modal
       mockGetIdentity.mockReturnValue(null);
 
-      const instance = launch(defaultConfig());
+      // The prompt is opt-in now (submitting is never interrupted by default).
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       expect(capturedBus).not.toBeNull();
 
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
@@ -374,7 +375,8 @@ describe("launcher — annotation:complete integration", () => {
     it("moves the shadow host to the end of <body> so identity prompt wins z-index over the popup", async () => {
       mockGetIdentity.mockReturnValue(null);
 
-      const instance = launch(defaultConfig());
+      // The prompt is opt-in now (submitting is never interrupted by default).
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       expect(capturedBus).not.toBeNull();
 
       // Simulate a popup-like sibling already on document.body, mounted after
@@ -634,6 +636,37 @@ describe("launcher — annotation:complete integration", () => {
   // Identity modal interactions (cover promptIdentity flows)
   // -------------------------------------------------------------------------
 
+  describe("identity is not asked for by default", () => {
+    it("submits without a prompt and attributes the note to an undeliverable placeholder", async () => {
+      mockGetIdentity.mockReturnValue(null);
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => expect(mockSendFeedback).toHaveBeenCalledOnce());
+      const payload = mockSendFeedback.mock.calls[0]![0] as { authorName: string; authorEmail: string };
+      expect(payload.authorName).toBe("Anonymous");
+      // RFC 2606 reserves `.invalid`: a syntactically valid address that can
+      // never route mail, so nothing downstream reads it as a real contact.
+      expect(payload.authorEmail).toMatch(/@instafix\.invalid$/);
+
+      const shadow = document.querySelector("instafix-widget")?.shadowRoot;
+      const modals = shadow?.querySelectorAll('[role="dialog"][aria-modal="true"]') ?? [];
+      expect(modals.length).toBe(0);
+      instance.destroy();
+    });
+
+    it("still prefers a known identity over the placeholder", async () => {
+      mockGetIdentity.mockReturnValue({ name: "Stored User", email: "stored@example.com" });
+      const instance = launch(defaultConfig());
+      capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
+
+      await vi.waitFor(() => expect(mockSendFeedback).toHaveBeenCalledOnce());
+      const payload = mockSendFeedback.mock.calls[0]![0] as { authorName: string };
+      expect(payload.authorName).toBe("Stored User");
+      instance.destroy();
+    });
+  });
+
   describe("identity modal interactions", () => {
     /**
      * Wait for the identity modal to appear in shadow root and return its parts.
@@ -679,7 +712,7 @@ describe("launcher — annotation:complete integration", () => {
       const response = makeFeedbackResponse({ id: "fb-modal-submit" });
       mockSendFeedback.mockResolvedValue(response);
 
-      const instance = launch(defaultConfig());
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
 
       const { nameInput, emailInput, submitBtn } = await getIdentityModal();
@@ -705,7 +738,7 @@ describe("launcher — annotation:complete integration", () => {
 
     it("returns early on Submit when name is empty (no closeModal)", async () => {
       mockGetIdentity.mockReturnValue(null);
-      const instance = launch(defaultConfig());
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
 
       const { nameInput, emailInput, submitBtn, modal } = await getIdentityModal();
@@ -725,7 +758,7 @@ describe("launcher — annotation:complete integration", () => {
 
     it("returns early on Submit when email is empty", async () => {
       mockGetIdentity.mockReturnValue(null);
-      const instance = launch(defaultConfig());
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
 
       const { nameInput, emailInput, submitBtn, modal } = await getIdentityModal();
@@ -743,7 +776,7 @@ describe("launcher — annotation:complete integration", () => {
 
     it("marks email border red on Submit with invalid email format", async () => {
       mockGetIdentity.mockReturnValue(null);
-      const instance = launch(defaultConfig());
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
 
       const { nameInput, emailInput, submitBtn, modal } = await getIdentityModal();
@@ -764,7 +797,7 @@ describe("launcher — annotation:complete integration", () => {
 
     it("Cancel button click closes modal and aborts feedback submission", async () => {
       mockGetIdentity.mockReturnValue(null);
-      const instance = launch(defaultConfig());
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
 
       const { cancelBtn } = await getIdentityModal();
@@ -783,7 +816,7 @@ describe("launcher — annotation:complete integration", () => {
       // WITHOUT firing `feedback:error` (so `config.onError` is not called).
       mockGetIdentity.mockReturnValue(null);
       const onError = vi.fn();
-      const instance = launch(defaultConfig({ onError }));
+      const instance = launch(defaultConfig({ requireIdentity: true, onError }));
 
       const errorListener = vi.fn();
       const cancelledListener = vi.fn();
@@ -810,7 +843,7 @@ describe("launcher — annotation:complete integration", () => {
 
     it("Escape key closes modal and aborts submission", async () => {
       mockGetIdentity.mockReturnValue(null);
-      const instance = launch(defaultConfig());
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
 
       const { backdrop } = await getIdentityModal();
@@ -824,7 +857,7 @@ describe("launcher — annotation:complete integration", () => {
 
     it("Tab key on the last focusable element wraps focus to the first", async () => {
       mockGetIdentity.mockReturnValue(null);
-      const instance = launch(defaultConfig());
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
 
       const { backdrop, modal, nameInput, submitBtn } = await getIdentityModal();
@@ -850,7 +883,7 @@ describe("launcher — annotation:complete integration", () => {
 
     it("Shift+Tab on the first focusable element wraps focus to the last", async () => {
       mockGetIdentity.mockReturnValue(null);
-      const instance = launch(defaultConfig());
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
 
       const { backdrop, modal, nameInput, submitBtn } = await getIdentityModal();
@@ -869,7 +902,7 @@ describe("launcher — annotation:complete integration", () => {
 
     it("Tab key when no focus inside modal still triggers focus trap (refocus first)", async () => {
       mockGetIdentity.mockReturnValue(null);
-      const instance = launch(defaultConfig());
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
 
       const { backdrop, modal } = await getIdentityModal();
@@ -892,7 +925,7 @@ describe("launcher — annotation:complete integration", () => {
 
     it("non-Tab/Escape keys don't close the modal", async () => {
       mockGetIdentity.mockReturnValue(null);
-      const instance = launch(defaultConfig());
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
 
       const { backdrop, modal } = await getIdentityModal();
@@ -910,7 +943,7 @@ describe("launcher — annotation:complete integration", () => {
 
     it("clicking the backdrop (outside modal) closes the modal", async () => {
       mockGetIdentity.mockReturnValue(null);
-      const instance = launch(defaultConfig());
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
 
       const { backdrop } = await getIdentityModal();
@@ -927,7 +960,7 @@ describe("launcher — annotation:complete integration", () => {
 
     it("clicking the modal (not backdrop) does not close it", async () => {
       mockGetIdentity.mockReturnValue(null);
-      const instance = launch(defaultConfig());
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
 
       const { backdrop, modal } = await getIdentityModal();
@@ -1422,7 +1455,7 @@ describe("launcher — annotation:complete integration", () => {
 
     it("Tab when active is the last element wraps to first", async () => {
       mockGetIdentity.mockReturnValue(null);
-      const instance = launch(defaultConfig());
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
 
       const { backdrop, modal, submitBtn } = await getModal();
@@ -1444,7 +1477,7 @@ describe("launcher — annotation:complete integration", () => {
 
     it("Tab when active is in the middle (not last) does not preventDefault", async () => {
       mockGetIdentity.mockReturnValue(null);
-      const instance = launch(defaultConfig());
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
 
       const { backdrop, modal, nameInput } = await getModal();
@@ -1465,7 +1498,7 @@ describe("launcher — annotation:complete integration", () => {
 
     it("Shift+Tab when active is in the middle (not first) does not preventDefault", async () => {
       mockGetIdentity.mockReturnValue(null);
-      const instance = launch(defaultConfig());
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
 
       const { backdrop, modal, submitBtn } = await getModal();
@@ -1487,7 +1520,7 @@ describe("launcher — annotation:complete integration", () => {
 
     it("Tab key with no focusable elements in modal returns without preventDefault", async () => {
       mockGetIdentity.mockReturnValue(null);
-      const instance = launch(defaultConfig());
+      const instance = launch(defaultConfig({ requireIdentity: true }));
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
 
       const { backdrop, modal } = await getModal();

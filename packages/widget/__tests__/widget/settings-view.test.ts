@@ -89,10 +89,12 @@ describe("SettingsView", () => {
     expect(view.element.querySelector<HTMLInputElement>(".sp-settings-color-input")!.value).toBe("#173cff");
 
     const chips = view.element.querySelectorAll<HTMLButtonElement>(".sp-settings-chip");
-    // Order: screenshots, diagnostics.
+    // Order: screenshots, diagnostics, ask-who-I-am.
     expect(chips[0]?.getAttribute("aria-checked")).toBe("true");
     expect(chips[1]?.getAttribute("aria-checked")).toBe("true");
-    expect(chips).toHaveLength(2);
+    // The identity prompt is opt-in, so it starts off unless the config says otherwise.
+    expect(chips[2]?.getAttribute("aria-checked")).toBe("false");
+    expect(chips).toHaveLength(3);
 
     view.destroy();
   });
@@ -178,6 +180,25 @@ describe("SettingsView", () => {
     screenshotChip!.click();
     expect(screenshotChip!.getAttribute("aria-checked")).toBe("false");
     expect(onChange).toHaveBeenLastCalledWith({ enableScreenshot: false });
+    view.destroy();
+  });
+});
+
+describe("SettingsView — identity prompt toggle", () => {
+  it("reports the config's requireIdentity as the chip's starting state", () => {
+    const onChange = vi.fn<(patch: SettingsPatch) => void>();
+    const view = new SettingsView(t, baseConfig({ requireIdentity: true }), onChange);
+    const chips = view.element.querySelectorAll<HTMLButtonElement>(".sp-settings-chip");
+    expect(chips[2]?.getAttribute("aria-checked")).toBe("true");
+    view.destroy();
+  });
+
+  it("emits requireIdentity when toggled, so the prompt can be turned back on", () => {
+    const onChange = vi.fn<(patch: SettingsPatch) => void>();
+    const view = new SettingsView(t, baseConfig(), onChange);
+    const chips = view.element.querySelectorAll<HTMLButtonElement>(".sp-settings-chip");
+    chips[2]!.click();
+    expect(onChange).toHaveBeenCalledWith({ requireIdentity: true });
     view.destroy();
   });
 });

@@ -278,4 +278,5 @@ export const ru: Translations = {
   "settings.accentColor": "Акцентный цвет",
   "settings.screenshots": "Скриншоты",
   "settings.diagnostics": "Диагностика",
+  "settings.requireIdentity": "Спрашивать, кто я",
 };

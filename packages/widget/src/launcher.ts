@@ -721,11 +721,18 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
     try {
       const { annotations, type, message, screenshotDataUrl, screenshotRegion } = data;
 
-      // Ensure identity — config wins (host-provided), then localStorage,
-      // then prompt the user as a last resort. Host-provided identity is
-      // not persisted: the host stays the source of truth on every render.
+      // Ensure identity — config wins (host-provided), then localStorage.
+      // Host-provided identity is not persisted: the host stays the source of
+      // truth on every render.
+      //
+      // With none of those, submitting is NOT interrupted by default: a form
+      // standing between "I found a bug" and the note being filed costs more
+      // than the attribution is worth for the case this tool is built for (a
+      // developer annotating their own app, where `instafix init` has usually
+      // baked the answer in already). `requireIdentity` opts into the prompt
+      // for the shared/client-feedback case where authorship is the point.
       let identity = config.identity ?? getIdentity();
-      if (!identity) {
+      if (!identity && config.requireIdentity) {
         identity = await promptIdentity(shadow, t);
         if (!identity) {
           // User cancelled the identity prompt. Emit `submission:cancelled`
@@ -737,6 +744,10 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
         }
         saveIdentity(identity);
       }
+      // `.invalid` is reserved by RFC 2606 precisely for this: it satisfies
+      // the schema's email format while being guaranteed undeliverable, so
+      // nothing downstream can mistake it for a way to reach someone.
+      identity ??= { name: "Anonymous", email: "anonymous@instafix.invalid" };
 
       // crypto.randomUUID() throws in non-secure contexts (plain HTTP)
       const clientId = (() => {

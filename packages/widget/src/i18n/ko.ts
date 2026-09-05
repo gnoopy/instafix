@@ -276,4 +276,5 @@ export const ko: Translations = {
   "settings.accentColor": "강조색",
   "settings.screenshots": "스크린샷",
   "settings.diagnostics": "진단정보",
+  "settings.requireIdentity": "본인 확인",
 };

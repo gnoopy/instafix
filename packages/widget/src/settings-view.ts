@@ -29,6 +29,7 @@ export interface SettingsPatch {
   accentColor?: string;
   enableScreenshot?: boolean;
   captureDiagnostics?: boolean;
+  requireIdentity?: boolean;
 }
 
 /** Native names — a language picker shows each option in its own language, not translated into the current locale. */
@@ -361,6 +362,13 @@ export class SettingsView {
     chips.appendChild(
       this.buildChip(this.t("settings.diagnostics"), !!initialConfig.captureDiagnostics, (checked) =>
         this.onChange({ captureDiagnostics: checked }),
+      ),
+    );
+    chips.appendChild(
+      // Off by default (see InstaFixConfig.requireIdentity) — this is how a
+      // visitor turns the name/email prompt back on for their own browser.
+      this.buildChip(this.t("settings.requireIdentity"), !!initialConfig.requireIdentity, (checked) =>
+        this.onChange({ requireIdentity: checked }),
       ),
     );
     grid.appendChild(chips);

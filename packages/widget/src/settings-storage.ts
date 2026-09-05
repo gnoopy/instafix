@@ -28,6 +28,7 @@ function sanitize(value: unknown): SettingsPatch {
   if (typeof raw.accentColor === "string" && raw.accentColor.length > 0) patch.accentColor = raw.accentColor;
   if (typeof raw.enableScreenshot === "boolean") patch.enableScreenshot = raw.enableScreenshot;
   if (typeof raw.captureDiagnostics === "boolean") patch.captureDiagnostics = raw.captureDiagnostics;
+  if (typeof raw.requireIdentity === "boolean") patch.requireIdentity = raw.requireIdentity;
   return patch;
 }
 

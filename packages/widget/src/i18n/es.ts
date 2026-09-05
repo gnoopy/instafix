@@ -277,4 +277,5 @@ export const es: Translations = {
   "settings.accentColor": "Color de acento",
   "settings.screenshots": "Capturas de pantalla",
   "settings.diagnostics": "Diagnósticos",
+  "settings.requireIdentity": "Pedir mi identidad",
 };

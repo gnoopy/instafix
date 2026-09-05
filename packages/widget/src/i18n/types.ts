@@ -292,6 +292,7 @@ export interface Translations {
   "settings.accentColor": string;
   "settings.screenshots": string;
   "settings.diagnostics": string;
+  "settings.requireIdentity": string;
 }
 
 /** Every valid key of `Translations` as a string-literal union. */

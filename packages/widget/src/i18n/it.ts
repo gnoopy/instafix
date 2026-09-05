@@ -279,4 +279,5 @@ export const it: Translations = {
   "settings.accentColor": "Colore accento",
   "settings.screenshots": "Screenshot",
   "settings.diagnostics": "Diagnostica",
+  "settings.requireIdentity": "Chiedi chi sono",
 };

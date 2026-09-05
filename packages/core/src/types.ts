@@ -325,6 +325,24 @@ export interface InstaFixBaseConfig {
    */
   identity?: InstaFixIdentity | undefined;
 
+  /**
+   * Ask the visitor for a name and email before their first submission.
+   *
+   * Defaults to `false`: submitting must not be interrupted by a form. In the
+   * setup this tool is actually used in — a developer annotating their own app
+   * — the answer is already known (`instafix init` bakes it in from `gh api
+   * user` / `git config`), and where it is not, an anonymous note is worth
+   * more than an abandoned one. Without an identity the note is attributed to
+   * a placeholder using the RFC 2606 `.invalid` domain, which is syntactically
+   * an address but provably cannot receive mail — an honest "unknown", not a
+   * fake contact.
+   *
+   * Set `true` for the shared/client-feedback case, where knowing who filed a
+   * note is the point. Visitors can also turn it on themselves in the panel's
+   * settings; that choice is stored per browser and wins over this default.
+   */
+  requireIdentity?: boolean | undefined;
+
   // Events
   /** Called when the feedback panel is opened. */
   onOpen?: (() => void) | undefined;

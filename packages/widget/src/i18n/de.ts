@@ -280,4 +280,5 @@ export const de: Translations = {
   "settings.accentColor": "Akzentfarbe",
   "settings.screenshots": "Screenshots",
   "settings.diagnostics": "Diagnosedaten",
+  "settings.requireIdentity": "Nach Identität fragen",
 };
