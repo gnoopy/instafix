@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.2](https://github.com/gnoopy/instafix/compare/widget-v0.11.1...widget-v0.11.2) (2026-09-05)
+
+
+### Miscellaneous
+
+* **deps:** bump the production-dependencies group across 1 directory with 5 updates ([5c48c70](https://github.com/gnoopy/instafix/commit/5c48c70be4d9795cd4913339febec60500d85805))
+
 ## [0.11.1](https://github.com/gnoopy/instafix/compare/widget-v0.11.0...widget-v0.11.1) (2026-09-05)
 
 
