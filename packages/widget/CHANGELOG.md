@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.11.0](https://github.com/gnoopy/instafix/compare/widget-v0.10.16...widget-v0.11.0) (2026-09-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* @instafix/* now require Node >= 22. Consumers still on Node 20 should stay on the previous release.
+
+### Features
+
+* **cli:** report every [@instafix](https://github.com/instafix) package and its on-disk version after init ([da350fd](https://github.com/gnoopy/instafix/commit/da350fdf73e7e3a1f92a0685caf2ce93b47a5475))
+* require Node 22 — better-sqlite3 v13 (N-API) ends the Node 24 abort ([e8bd91b](https://github.com/gnoopy/instafix/commit/e8bd91b78148e9e9765477a8cafd83d02d277f8b))
+* **widget:** stop asking who you are before every first submission ([b68419f](https://github.com/gnoopy/instafix/commit/b68419fab280dd454293dc970676a5411fc6e606))
+
 ## [0.10.16](https://github.com/gnoopy/instafix/compare/widget-v0.10.15...widget-v0.10.16) (2026-09-04)
 
 

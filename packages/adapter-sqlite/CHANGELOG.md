@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.0](https://github.com/gnoopy/instafix/compare/adapter-sqlite-v1.1.0...adapter-sqlite-v2.0.0) (2026-09-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* @instafix/* now require Node >= 22. Consumers still on Node 20 should stay on the previous release.
+
+### Features
+
+* require Node 22 — better-sqlite3 v13 (N-API) ends the Node 24 abort ([e8bd91b](https://github.com/gnoopy/instafix/commit/e8bd91b78148e9e9765477a8cafd83d02d277f8b))
+
+
+### Bug Fixes
+
+* **core:** close stores after each conformance test — a leaked handle aborts Node 24 ([4182cf2](https://github.com/gnoopy/instafix/commit/4182cf2608feec62fff8ef108ff5f3d60a49899e))
+
 ## [1.1.0](https://github.com/gnoopy/instafix/compare/adapter-sqlite-v1.0.0...adapter-sqlite-v1.1.0) (2026-09-04)
 
 
