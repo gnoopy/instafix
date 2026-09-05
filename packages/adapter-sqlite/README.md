@@ -9,11 +9,11 @@ The zero-external-services server adapter for [InstaFix](https://github.com/gnoo
 
 ## Install
 
-Not on the npm registry — installs straight from this repo's build output:
-
 ```bash
-npm install github:gnoopy/instafix#adapter-sqlite-dist
+npm install @instafix/adapter-sqlite
 ```
+
+Requires Node 22+ — better-sqlite3 v13 runs on the N-API and drops Node 20, which reached EOL on 2026-04-30.
 
 ## Quick start
 

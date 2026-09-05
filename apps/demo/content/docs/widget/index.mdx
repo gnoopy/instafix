@@ -6,7 +6,7 @@ description: Install the feedback widget, understand when it shows, and control 
 The widget is the part that shows up on the page: a floating button that lets whoever's reviewing draw a rectangle, type a comment, and send it — pinned to the exact element, ready to become an [agent prompt](/docs/agent-workflow) the moment it's saved.
 
 ```bash
-npm install github:gnoopy/instafix#widget-dist
+npm install @instafix/widget
 ```
 
 ```ts
@@ -18,7 +18,7 @@ const instafix = initInstaFix({
 });
 ```
 
-`initInstaFix` is the package's main runtime export, alongside the two i18n helpers (`registerLocale`, `loadLocale`) and the TypeScript types. It weighs about **30 KB gzipped** (ESM), lazy-loads its heavier parts (panel, locales, screenshot engine), and renders inside a closed Shadow DOM so your page styles and the widget's never collide.
+`initInstaFix` is the package's main runtime export, alongside the two i18n helpers (`registerLocale`, `loadLocale`) and the TypeScript types. It weighs about **45 KB gzipped** (ESM entry), lazy-loads its heavier parts (panel, locales, screenshot engine), and renders inside a closed Shadow DOM so your page styles and the widget's never collide.
 
 ## When the widget shows — and when it doesn't
 

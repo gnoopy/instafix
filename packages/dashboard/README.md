@@ -11,10 +11,8 @@ Part of [InstaFix](https://github.com/gnoopy/instafix) — **[documentation](htt
 
 ## Install
 
-Not on the npm registry — installs straight from this repo's build output:
-
 ```bash
-npm install github:gnoopy/instafix#dashboard-dist
+npm install @instafix/dashboard
 ```
 
 React 18 or 19 (peer dependency). Ships ESM **and** CJS, zero runtime dependencies besides React.

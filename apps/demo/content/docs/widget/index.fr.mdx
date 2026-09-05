@@ -6,7 +6,7 @@ description: Installer le widget de feedback, comprendre quand il s'affiche, et 
 Le widget, c'est la partie que vos clients voient : un bouton flottant qui leur permet de dessiner un rectangle sur la page, de taper un commentaire et de l'envoyer — épinglé à l'élément exact.
 
 ```bash
-npm install github:gnoopy/instafix#widget-dist
+npm install @instafix/widget
 ```
 
 ```ts
@@ -18,7 +18,7 @@ const instafix = initInstaFix({
 });
 ```
 
-`initInstaFix` est l'export runtime principal du package, aux côtés des deux helpers i18n (`registerLocale`, `loadLocale`) et des types TypeScript. Il pèse environ **30 KB gzip** (ESM), charge ses parties lourdes à la demande (panneau, locales, moteur de capture) et s'affiche dans un Shadow DOM fermé — les styles de votre page et ceux du widget ne peuvent jamais se marcher dessus.
+`initInstaFix` est l'export runtime principal du package, aux côtés des deux helpers i18n (`registerLocale`, `loadLocale`) et des types TypeScript. Il pèse environ **45 KB gzip** (entrée ESM), charge ses parties lourdes à la demande (panneau, locales, moteur de capture) et s'affiche dans un Shadow DOM fermé — les styles de votre page et ceux du widget ne peuvent jamais se marcher dessus.
 
 ## Quand le widget s'affiche — et quand il ne s'affiche pas
 

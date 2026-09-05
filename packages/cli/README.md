@@ -3,25 +3,23 @@
 
 # @instafix/cli
 
-Set up and check [InstaFix](https://github.com/gnoopy/instafix) from the command line. Single self-contained binary, zero runtime dependencies, Node ≥ 20.
+Set up and check [InstaFix](https://github.com/gnoopy/instafix) from the command line. Single self-contained binary, zero runtime dependencies, Node ≥ 22.
 
 **[Documentation](https://instafix.realstory.blog/docs/cli)**
 
 ## Usage
 
-Not on the npm registry — run it straight from this repo's `cli-dist` branch:
-
 ```bash
-npx github:gnoopy/instafix#cli-dist init
+npx @instafix/cli@latest init
 ```
 
-> Always run the full `npx github:gnoopy/instafix#cli-dist <command>` — there is no `instafix` package on npm to shorten it to.
+> The package is `@instafix/cli`; there is no bare `instafix` package on npm, so always run `npx @instafix/cli <command>`.
 
 ## Commands
 
 | Command | What it does |
 |---------|--------------|
-| `init` | Interactive setup: adds storage (Prisma if a schema is found, otherwise offers SQLite), generates the Next.js App Router API route, and generates a ready-to-use widget component |
+| `init` | Interactive setup: asks how to store fix notes (SQLite, a plain `.instafix/` folder, or wire it yourself), generates the Next.js App Router API route and a ready-to-use widget component, installs the `/instafix` agent command, and finishes by listing every `@instafix/*` package in the project with the version actually on disk |
 | `sync [--schema <path>]` | Non-interactive, CI-friendly Prisma schema merge — creates/updates the InstaFix models, never touches your own fields |
 | `status [--schema <path>]` | Health report: schema, API route, package, and widget integration (exits 1 when something's missing) |
 | `doctor --url <url> --endpoint <path>` | One HTTP request against your running server to confirm a InstaFix handler answers |
