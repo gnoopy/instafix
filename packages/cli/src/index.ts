@@ -7,11 +7,12 @@ import { installSlashCommand } from "./commands/slash-command.js";
 import { statusCommand } from "./commands/status.js";
 import { syncCommand } from "./commands/sync.js";
 import { watchCommand } from "./commands/watch.js";
+import { CLI_VERSION } from "./version.js";
 
 const program = new Command()
   .name("instafix")
   .description("CLI to configure @instafix/* in your project")
-  .version("0.5.9"); // x-release-please-version
+  .version(CLI_VERSION);
 
 program
   .command("init")

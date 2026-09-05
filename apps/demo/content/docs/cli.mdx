@@ -19,25 +19,38 @@ npx github:gnoopy/instafix#cli-dist --help
 npx github:gnoopy/instafix#cli-dist init
 ```
 
-`init` walks you through up to four confirmations:
+`init` walks you through up to four confirmations, then always installs the `/instafix` slash command:
 
 1. **Sync Prisma models** — if a schema is found (see [schema detection](#schema-detection)), it offers to add the `InstaFixFeedback` and `InstaFixAnnotation` models.
 2. **Push the schema** — if a schema was found, it offers to run `npx prisma db push` for you right away, streaming Prisma's own output (and any confirmation it asks for) straight to your terminal.
 3. **Generate the API route** — offers to create a Next.js App Router route that serves the widget. The file goes to `app/api/instafix/route.ts`, or `src/app/api/instafix/route.ts` when your project uses a `src/` layout. An existing route is never overwritten.
    - **A schema was found**: generates a route against `@instafix/adapter-prisma`.
-   - **No schema was found**: asks which backend to use instead — **SQLite** (`@instafix/adapter-sqlite`, zero external services) or skip and wire storage yourself. `init` no longer assumes Prisma when there's no Prisma schema to sync against.
+   - **No schema was found**: asks how to store feedback instead — **SQLite** (`@instafix/adapter-sqlite`, zero external services, hinted "recommended for a team"), **local history** (`@instafix/adapter-fs`, plain files under `.instafix/`, hinted "for a single developer working solo" — the default the [agent workflow](/docs/agent-workflow) is built around), or skip and wire storage yourself. `init` no longer assumes Prisma when there's no Prisma schema to sync against.
 4. **Generate the widget component** — offers to create a `"use client"` component at `components/instafix-widget.tsx` (or `src/components/...` with a `src/` layout) that calls `initInstaFix()` for you, using your `package.json` name as the `projectName`. An existing component is never overwritten.
+5. **Install `/instafix`** — not a prompt, always happens: writes `.claude/commands/instafix.md` (same as running `agent-setup` directly, see [Agent loop](#agent-loop) below). Best-effort — a read-only project directory logs a warning rather than failing the rest of `init`.
 
 The Prisma-flavored route imports two things you need to provide yourself — the CLI installs nothing:
 
 - the `@instafix/adapter-prisma` package (`npm install github:gnoopy/instafix#adapter-prisma-dist`)
 - a Prisma client exported from `@/lib/prisma`
 
-The SQLite-flavored route only needs `@instafix/adapter-sqlite` installed (`npm install github:gnoopy/instafix#adapter-sqlite-dist`) — no client to wire up, no schema to push; see the [SQLite adapter](/docs/adapters/sqlite).
+The SQLite-flavored route only needs `@instafix/adapter-sqlite` installed — no client to wire up, no schema to push; see the [SQLite adapter](/docs/adapters/sqlite). The local-history route only needs `@instafix/adapter-fs` installed — no client, no schema, no server to run; see the [Filesystem adapter](/docs/adapters/fs).
 
 If your project has no `app/` (or `src/app/`) directory, `init` exits with an error: it only scaffolds Next.js App Router routes. Other frameworks wire the adapter manually — see [Adapters](/docs/adapters).
 
 Whatever wasn't done automatically — declined, or no schema/route detected — is listed under a **Next steps** note at the end, so nothing is silently skipped.
+
+After that comes an **InstaFix packages in this project** note listing the CLI's own version and every `@instafix/*` package the project knows about, each with the version actually unpacked in `node_modules` — the one that will load at runtime:
+
+```
+@instafix/cli  0.5.9  (this command)
+
+@instafix/adapter-sqlite  0.4.2  (declared ^0.4.0)
+@instafix/dashboard       not installed (declared ^0.6.0)
+@instafix/widget          0.10.16  (declared ^0.10.0)
+```
+
+`init` scaffolds files; it never runs a package manager, so this is a survey of what is on disk rather than a receipt for an install. Anything the generated files need but that isn't installed yet shows as `not installed` — install it with the line printed under Next steps. The version column is also the fastest answer to "why does my widget still look like an older one": a stale `node_modules` is indistinguishable from a current one until you read it.
 
 `init` is interactive by design and does nothing in CI (it exits silently without a terminal). For automation, use `sync`.
 
@@ -87,6 +100,44 @@ npx github:gnoopy/instafix#cli-dist doctor --url http://localhost:3000 --endpoin
 
 It checks the HTTP response only — it never reads your schema. For schema verification, use `status`.
 
+## Agent loop
+
+Four commands that only need `@instafix/adapter-fs` (they read/write `.instafix/history.jsonl` directly) — see [Agent workflow](/docs/agent-workflow) for how they fit together.
+
+### `prompt` — dispatch to a fresh agent session
+
+```bash
+npx github:gnoopy/instafix#cli-dist prompt --status open | claude -p
+npx github:gnoopy/instafix#cli-dist prompt --id fb_x7k2,fb_m3q9 | claude -p
+```
+
+Prints agent-ready Markdown to stdout (everything else goes to stderr). `--status` accepts a comma list or `all` (default `open`); `--id` overrides it. `--instructions` replaces the default instruction bullets, one per line. `--dir` overrides the store directory (default `.instafix`).
+
+### `resolve` — close the loop
+
+```bash
+npx github:gnoopy/instafix#cli-dist resolve fb_x7k2
+npx github:gnoopy/instafix#cli-dist resolve fb_x7k2 fb_m3q9 --reopen
+```
+
+Marks one or more fix notes resolved (or, with `--reopen`, back to open) by rewriting `history.jsonl` in place. This is what the footer of every agent prompt tells the agent to run once it's fixed and verified an item.
+
+### `watch` — pick up widget handoffs
+
+```bash
+npx github:gnoopy/instafix#cli-dist watch --once
+```
+
+Waits for `.instafix/outbox/` files (written when someone clicks "Agent에게" on a fix note) and prints each to stdout, moving it to `outbox/processed/` so it's delivered exactly once. `--once` exits after the first handoff — built for Claude Code's background-task wake pattern: run it as a background command, and the session wakes with the prompt as the command's output. Without `--once` it keeps running and delivers every handoff as it arrives.
+
+### `agent-setup` — install the `/instafix` slash command
+
+```bash
+npx github:gnoopy/instafix#cli-dist agent-setup
+```
+
+Writes `.claude/commands/instafix.md` so a Claude Code session already running in this project can type `/instafix` to pull open fix notes into its current context. `init` runs this automatically — use `agent-setup` directly to (re)install it without going through the rest of `init`.
+
 ## Exit codes
 
 All commands are scriptable. `0` means success, `1` means something needs fixing:
@@ -97,6 +148,8 @@ All commands are scriptable. `0` means success, `1` means something needs fixing
 | `sync` | No schema found, `--schema` file missing, or parse/write error |
 | `status` | Schema, API route, `package.json`, or the widget dependency is missing |
 | `doctor` | Non-200 response, unreachable server, or timeout |
+| `prompt` | No `.instafix/history.jsonl` found, or an `--id` doesn't match anything |
+| `resolve` | No `.instafix/history.jsonl` found, or an id doesn't match anything |
 
 Two caveats for CI pipelines: `status` exits `0` (with a hint to run `sync`) when schema fields merely drift, and `doctor` exits `0` on any 200 response — even one that is not a InstaFix handler (it prints a warning instead). Neither is a strict gate.
 

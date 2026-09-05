@@ -39,6 +39,18 @@ SQLite 방식 라우트는 `@instafix/adapter-sqlite`만 설치되어 있으면 
 
 자동으로 처리되지 않은 항목 — 거절했거나 스키마/라우트를 찾지 못한 경우 — 은 마지막에 **다음 단계(Next steps)** 노트로 안내되므로, 아무것도 조용히 누락되지 않습니다.
 
+그다음에는 **InstaFix packages in this project** 노트가 이어집니다. CLI 자신의 버전과, 프로젝트가 알고 있는 모든 `@instafix/*` 패키지를 실제로 `node_modules`에 풀려 있는 버전 — 즉 런타임에 실제로 로드될 버전 — 과 함께 보여줍니다.
+
+```
+@instafix/cli  0.5.9  (this command)
+
+@instafix/adapter-sqlite  0.4.2  (declared ^0.4.0)
+@instafix/dashboard       not installed (declared ^0.6.0)
+@instafix/widget          0.10.16  (declared ^0.10.0)
+```
+
+`init`은 파일만 만들어 줄 뿐 패키지 매니저를 실행하지는 않습니다. 따라서 이 표는 설치 영수증이 아니라 지금 디스크에 무엇이 있는지에 대한 조사 결과입니다. 생성된 파일이 필요로 하지만 아직 설치되지 않은 패키지는 `not installed`로 표시되며, 다음 단계 노트에 인쇄된 명령으로 설치하면 됩니다. 버전 열은 "왜 내 위젯은 아직 예전 모습이지?"에 대한 가장 빠른 답이기도 합니다. 오래된 `node_modules`는 버전을 직접 읽어보기 전까지는 최신 상태와 구분되지 않기 때문입니다.
+
 `init`은 설계상 대화형이며 CI 환경에서는 아무 동작도 하지 않습니다(터미널이 없으면 조용히 종료됩니다). 자동화가 필요하다면 `sync`를 사용하세요.
 
 ## `sync` — 비대화형 스키마 병합

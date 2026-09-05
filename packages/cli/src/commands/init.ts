@@ -4,7 +4,9 @@ import { generateRoute } from "../generators/route.js";
 import { generateWidgetComponent } from "../generators/widget-component.js";
 import { detectGitIdentity } from "../git-identity.js";
 import { p } from "../prompts.js";
+import { formatPackageStatus, surveyInstaFixPackages } from "../utils/installed-packages.js";
 import { readProjectName } from "../utils/read-project-name.js";
+import { CLI_VERSION } from "../version.js";
 import { installSlashCommand } from "./slash-command.js";
 
 export async function initCommand(): Promise<void> {
@@ -199,6 +201,28 @@ export async function initCommand(): Promise<void> {
   if (steps.length > 0) {
     p.note(steps.join("\n"), "Next steps");
   }
+
+  // Step 5: what is actually on disk. `init` scaffolds files, it never runs a
+  // package manager — so this is a survey, not a receipt. It exists because a
+  // stale `node_modules` is indistinguishable from a current one until you
+  // read the version, and "why does my widget still look old" has cost real
+  // debugging time.
+  const expected = [
+    "@instafix/widget",
+    ...(backend === "sqlite" ? ["@instafix/adapter-sqlite"] : []),
+    ...(fsBackendChosen ? ["@instafix/adapter-fs"] : []),
+    ...(dashboardResult ? ["@instafix/dashboard"] : []),
+  ];
+  const survey = surveyInstaFixPackages(cwd, expected);
+  const lines = [`@instafix/cli  ${CLI_VERSION}  (this command)`, "", ...formatPackageStatus(survey)];
+  if (survey.some((row) => !row.version)) {
+    lines.push(
+      "",
+      'Packages marked "not installed" are pulled in by the files just',
+      "scaffolded — install them before starting the dev server.",
+    );
+  }
+  p.note(lines.join("\n"), "InstaFix packages in this project");
 
   // Agent handoff (mode B): a /instafix slash command in the project lets an
   // already-running Claude Code session pull queued feedback into its own

@@ -173,8 +173,6 @@ export function contrastRatio(hexA: string, hexB: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-/** Near-black ink — the light theme's own text color, reused so a dark-on-accent chip matches the rest of the UI. */
-const INK = "#0f172a";
 const WHITE = "#ffffff";
 
 /** WCAG AA for normal text. UI components and icons only need 3:1, but hitting the stricter bar keeps labels safe too. */
