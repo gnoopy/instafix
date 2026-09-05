@@ -21,6 +21,15 @@ apps/demo/data/
 docs/ux-log/e2e-latest/
 docs/previews/
 
+# Deploy runtime state — the demo server's own log and pid, rewritten on every
+# start. Tracked once by mistake; the scripts recreate both.
+deploy/logs/
+deploy/run/
+
+# Playwright MCP scratch output — snapshots and one-off screenshots taken while
+# debugging. Evidence worth keeping goes to docs/ux-log/ by hand.
+.playwright-mcp/
+
 # Internal AI-agent planning/process docs — not part of the public project.
 /CLAUDE.md
 /GOAL.md

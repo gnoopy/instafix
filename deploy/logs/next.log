@@ -1,5 +1,0 @@
-▲ Next.js 16.2.11
-- Local:         http://127.0.0.1:42937
-- Network:       http://127.0.0.1:42937
-✓ Ready in 0ms
-⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:42937". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase

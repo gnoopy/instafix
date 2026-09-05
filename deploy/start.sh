@@ -31,14 +31,13 @@ fi
 # against a standalone build is unsupported (it silently breaks middleware,
 # causing redirect loops on locale-aware routes like /docs) and next itself
 # warns about it. Run the standalone server.js instead, same as the
-# Dockerfile's runner stage — which means manually copying `.next/static`
-# in, since standalone output doesn't include it.
-rm -rf apps/demo/.next/standalone/apps/demo/.next/static
-cp -r apps/demo/.next/static apps/demo/.next/standalone/apps/demo/.next/static
-if [[ -d apps/demo/public ]]; then
-  rm -rf apps/demo/.next/standalone/apps/demo/public
-  cp -r apps/demo/public apps/demo/.next/standalone/apps/demo/public
-fi
+# Dockerfile's runner stage — which means copying `.next/static` and public/
+# in, since standalone output doesn't include them.
+#
+# apps/demo's own build script does this too. Repeated here for `nobuild`,
+# and because a build run for some other reason (bun run verify) leaves the
+# tree needing it again.
+node apps/demo/scripts/sync-standalone-assets.mjs
 
 echo "Starting apps/demo (Next.js standalone) on ${HOST}:${PORT}..."
 PORT="$PORT" HOSTNAME="$HOST" nohup node apps/demo/.next/standalone/apps/demo/server.js > deploy/logs/next.log 2>&1 &
