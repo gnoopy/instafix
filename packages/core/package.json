@@ -22,7 +22,7 @@
     "clean": "rm -rf dist"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "devDependencies": {
     "zod": "^4.4.3"

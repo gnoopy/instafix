@@ -3,7 +3,7 @@ title: Prisma adapter
 description: The production adapter — HTTP handlers backed by your database, with auth, CORS, redaction, and webhooks.
 ---
 
-`@instafix/adapter-prisma` turns one URL of your app into a complete feedback API. It supports Prisma Client v5, v6, and v7, and requires Node 20+.
+`@instafix/adapter-prisma` turns one URL of your app into a complete feedback API. It supports Prisma Client v5, v6, and v7, and requires Node 22+.
 
 ```bash
 npm install github:gnoopy/instafix#adapter-prisma-dist
@@ -151,7 +151,7 @@ createInstaFixHandler({
 });
 ```
 
-If an upload fails, the feedback is still saved (with `screenshotUrl: null`) and a warning is logged — a broken bucket never loses a client's comment.
+If an upload fails, the feedback is still saved (with `screenshotUrl: null`) and a warning is logged — a broken bucket never loses a fix note.
 
 ## Webhooks
 

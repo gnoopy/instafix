@@ -3,7 +3,7 @@ title: Adapter SQLite
 description: Zéro service externe — un fichier .db local, aucun ORM ni serveur de base de données nécessaire.
 ---
 
-`@instafix/adapter-sqlite` est le backend durable le moins contraignant : aucun ORM à installer, aucun serveur de base de données à faire tourner, aucune commande de migration. Les deux tables (`instafix_feedback`, `instafix_annotation`) sont créées automatiquement — via `better-sqlite3` — dès la première construction d'un `SqliteStore` pour un fichier donné. Nécessite Node 20+.
+`@instafix/adapter-sqlite` est le backend durable le moins contraignant : aucun ORM à installer, aucun serveur de base de données à faire tourner, aucune commande de migration. Les deux tables (`instafix_feedback`, `instafix_annotation`) sont créées automatiquement — via `better-sqlite3` — dès la première construction d'un `SqliteStore` pour un fichier donné. Nécessite Node 22+ (better-sqlite3 v13 utilise la N-API et abandonne Node 20, en fin de vie depuis le 2026-04-30).
 
 ```bash
 npm install github:gnoopy/instafix#adapter-sqlite-dist

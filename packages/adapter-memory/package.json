@@ -49,7 +49,7 @@
     "url": "https://github.com/gnoopy/instafix/issues"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "devDependencies": {
     "@instafix/core": "workspace:*"

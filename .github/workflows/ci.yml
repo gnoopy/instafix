@@ -272,13 +272,19 @@ jobs:
 
   # bun only drives install/build — vitest and the published adapters run on
   # the consumer's Node. Exercise the supported majors.
+  #
+  # Node 20 was dropped after its 2026-04-30 EOL: better-sqlite3 v11's
+  # ObjectWrap-based Statement can be finalized after its environment is gone
+  # and aborts the process on Node 24 (upstream #1515, closed as unfixable on
+  # v11). v13 moves to the N-API, which ends that class of crash outright —
+  # and requires Node >= 22.
   node-compat:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        node-version: [20, 22, 24]
+        node-version: [22, 24]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

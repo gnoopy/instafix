@@ -5,7 +5,7 @@ Thanks for your interest in contributing! This guide covers everything you need 
 ## Prerequisites
 
 - [Bun](https://bun.sh/) **1.3.x** — the exact version is pinned in `packageManager` (root `package.json`) and used by CI. Bun 1.4 is known to break the demo build locally (symlinked `.bun` installs rejected by Turbopack — workaround: `bun install --linker=hoisted`); stick to the pinned line.
-- Node.js >= 20 — every package declares `engines.node >= 20`, and CI runs the suite on 20, 22, and 24
+- Node.js >= 22 — every package declares `engines.node >= 22`, and CI runs the suite on 22 and 24. Node 20 was dropped after its 2026-04-30 EOL, when better-sqlite3 moved to the N-API in v13 (see `packages/adapter-sqlite`)
 - For Playwright E2E tests: `bunx playwright install` — the config runs **three engines** (Chromium, Firefox, WebKit)
 
 ## Setup
@@ -127,7 +127,7 @@ is the smallest). The pieces that matter:
 1. **`package.json`** — copy from a real adapter, not from memory. The
    critical parts the old hand-written template used to miss: the dual
    `import`/`require` exports map with per-condition `types`, `sideEffects: false`,
-   `publishConfig.access: public`, `engines.node >= 20`, and the build script
+   `publishConfig.access: public`, `engines.node >= 22`, and the build script
    **must** chain fix-dts: `"build": "tsup && node ../../scripts/fix-dts.mjs dist"`
    (`bun run check:consistency` fails if it's missing). `@instafix/core` is a
    `devDependency`, never a `dependency` — it is bundled at build time and not
