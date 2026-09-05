@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/gnoopy/instafix/compare/adapter-fs-v1.0.1...adapter-fs-v2.0.0) (2026-09-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* @instafix/* now require Node >= 22. Consumers still on Node 20 should stay on the previous release.
+
+### Features
+
+* require Node 22 — better-sqlite3 v13 (N-API) ends the Node 24 abort ([e8bd91b](https://github.com/gnoopy/instafix/commit/e8bd91b78148e9e9765477a8cafd83d02d277f8b))
+
 ## [1.0.1](https://github.com/gnoopy/instafix/compare/adapter-fs-v1.0.0...adapter-fs-v1.0.1) (2026-09-03)
 
 

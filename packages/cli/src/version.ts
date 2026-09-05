@@ -6,4 +6,4 @@
  * layout is not ours to rely on. release-please rewrites the annotated line
  * on every release — see `release-please-config.json`'s `extra-files`.
  */
-export const CLI_VERSION = "0.5.9"; // x-release-please-version
+export const CLI_VERSION = "0.6.0"; // x-release-please-version

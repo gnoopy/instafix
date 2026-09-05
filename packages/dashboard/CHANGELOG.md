@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/gnoopy/instafix/compare/dashboard-v0.2.11...dashboard-v0.3.0) (2026-09-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* @instafix/* now require Node >= 22. Consumers still on Node 20 should stay on the previous release.
+
+### Features
+
+* require Node 22 — better-sqlite3 v13 (N-API) ends the Node 24 abort ([e8bd91b](https://github.com/gnoopy/instafix/commit/e8bd91b78148e9e9765477a8cafd83d02d277f8b))
+
 ## [0.2.11](https://github.com/gnoopy/instafix/compare/dashboard-v0.2.10...dashboard-v0.2.11) (2026-09-04)
 
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/gnoopy/instafix/compare/cli-v0.5.9...cli-v0.6.0) (2026-09-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* @instafix/* now require Node >= 22. Consumers still on Node 20 should stay on the previous release.
+
+### Features
+
+* **cli:** report every [@instafix](https://github.com/instafix) package and its on-disk version after init ([da350fd](https://github.com/gnoopy/instafix/commit/da350fdf73e7e3a1f92a0685caf2ce93b47a5475))
+* require Node 22 — better-sqlite3 v13 (N-API) ends the Node 24 abort ([e8bd91b](https://github.com/gnoopy/instafix/commit/e8bd91b78148e9e9765477a8cafd83d02d277f8b))
+
 ## [0.5.9](https://github.com/gnoopy/instafix/compare/cli-v0.5.8...cli-v0.5.9) (2026-09-04)
 
 
