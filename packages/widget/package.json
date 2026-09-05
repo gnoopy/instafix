@@ -75,7 +75,7 @@
     "@medv/finder": "^4.0.2",
     "exceljs": "4.4.0",
     "html2canvas-pro": "^2.4.1",
-    "zod": "^4.4.3"
+    "zod": "^4.5.2"
   },
   "devDependencies": {
     "@instafix/core": "workspace:*",
