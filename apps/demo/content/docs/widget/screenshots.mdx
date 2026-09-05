@@ -3,7 +3,7 @@ title: Screenshots
 description: Capture the annotated area as an image — with privacy masking and region metadata.
 ---
 
-With `enableScreenshot: true`, the widget captures a JPEG of the area around each annotation when the client hits Send. Your triage view then shows exactly what they saw — including transient states like open dropdowns or hover styles that a later visit can't reproduce.
+With `enableScreenshot: true`, the widget captures a JPEG of the area around each annotation on Send. The agent (or a teammate's triage view) then sees exactly what was on screen — including transient states like open dropdowns or hover styles that a later visit can't reproduce.
 
 ```ts
 initInstaFix({
@@ -36,7 +36,7 @@ The value must be exactly `"true"` — the bare attribute or `"false"` does not 
 
 ## Failure is always safe
 
-Screenshot capture is best-effort by design: if the rendering engine fails to load or the capture throws, the feedback **still submits** — just without an image. A screenshot problem never loses a client's comment.
+Screenshot capture is best-effort by design: if the rendering engine fails to load or the capture throws, the feedback **still submits** — just without an image. A screenshot problem never loses a fix note.
 
 ## Where the image goes
 

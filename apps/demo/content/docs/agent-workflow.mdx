@@ -1,0 +1,65 @@
+---
+title: Agent workflow
+description: Mark it on screen, hand it to your coding agent, watch the inbox empty itself.
+---
+
+**The loop in one line:** you mark something on the page → it's saved with an ID → your agent gets it as Markdown (three ways, pick one) → it fixes the code and closes the item by that ID itself.
+
+This page is the map. Each section links to the page that goes deep — read only what you need.
+
+## The three ways to hand off a prompt
+
+| Way | Where it runs | Use it when |
+|---|---|---|
+| **Copy Prompt** (widget button) | Anywhere, any store | You're pasting into a chat UI right now |
+| `npx @instafix/cli prompt \| claude -p` | Terminal, `@instafix/adapter-fs` only | Dispatching a batch to a **fresh** agent session |
+| **"Agent에게" button → `/instafix`** | Terminal, `@instafix/adapter-fs` only | Pulling items into a session **already running** |
+
+All three produce the exact same deterministic Markdown — see [Copy Prompt](/docs/widget/copy-for-claude-code) for what that document actually looks like (target selectors, screenshots, diagnostics, the whole shape). This page covers the other two, and the filesystem they run on.
+
+## The `.instafix/` folder — and its relationship to the fix note list
+
+If you're on `@instafix/adapter-fs` ([why you would be](/docs/adapters/fs)), every fix note you see in the panel or dashboard **is a line in `.instafix/history.jsonl`** — not a copy, not a sync target, the actual record. The store re-reads that file on every request, so editing it by hand, `grep`ing it, or watching it with another tool all just work.
+
+```
+.instafix/
+  history.jsonl        # one fix note per line — the list you see IS this file
+  screenshots/          # <clientId>.jpg — only for notes that captured one
+  outbox/                # handoff files waiting for a terminal to pick them up
+    processed/            # ...and the ones already delivered
+```
+
+## Getting a batch into a fresh session
+
+```bash
+npx @instafix/cli prompt --status open | claude -p
+npx @instafix/cli prompt --id fb_x7k2,fb_m3q9 | claude -p   # just these
+```
+
+Reads `history.jsonl` directly, writes the same Markdown `formatFeedbacksForAgent` produces, prints it to stdout (everything else goes to stderr, so piping stays clean). This is the "dispatch and walk away" path — a separate session handles it while you keep working.
+
+## Joining from a session that's already running
+
+Click **"Agent에게"** on a fix note (panel or detail view) — the server drops `<id>.md` into `.instafix/outbox/`. Two ways to pick it up:
+
+- **`/instafix`** — a slash command `instafix init` (or `instafix agent-setup`) installs into `.claude/commands/instafix.md`. Type it in your current session and it runs `instafix prompt --status open` for you, fixes what it can, and resolves what it verified.
+- **`npx @instafix/cli watch --once`** — run as a Claude Code background task; the session wakes when a handoff file lands, with the prompt as the task's output. Files move to `outbox/processed/` once delivered, so nothing is handed off twice.
+
+Nothing reaches an agent without a human clicking the button first — there's no automatic consumption in the loop.
+
+## Closing the loop
+
+Every prompt — clipboard, CLI, or outbox — carries a `(ID: fb_x7k2)` per item and ends with:
+
+```
+npx @instafix/cli resolve <ID>
+(or PATCH the feedback API for that ID with {"status":"resolved"})
+```
+
+An agent that fixes and verifies an item closes it itself; `npx @instafix/cli resolve <ID> --reopen` reverses that. The `resolve <ID>` form needs `adapter-fs` (it rewrites `history.jsonl`); the PATCH form works against any adapter.
+
+## Reference
+
+- [`instafix prompt` / `resolve` / `watch` / `agent-setup`](/docs/cli#agent-loop) — full flag reference
+- [Filesystem adapter](/docs/adapters/fs) — why `.instafix/`, what else is in `FsStore`
+- [Copy Prompt](/docs/widget/copy-for-claude-code) — the Markdown format itself, field by field

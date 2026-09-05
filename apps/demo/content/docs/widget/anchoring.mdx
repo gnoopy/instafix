@@ -3,7 +3,7 @@ title: How anchoring works
 description: Why annotations survive deploys — selectors, fallbacks, and honest limits.
 ---
 
-When a client draws a rectangle, InstaFix doesn't store screen coordinates — those break on the first layout change. It anchors the annotation to the **DOM element** under it, with layered fallbacks:
+When you draw a rectangle, InstaFix doesn't store screen coordinates — those break on the first layout change (and an agent reshuffling the DOM is the common case here, not the exception). It anchors the annotation to the **DOM element** under it, with layered fallbacks:
 
 1. **A minimal CSS selector** for the element, computed at capture time.
 2. **An XPath** to the same element, as the first fallback.

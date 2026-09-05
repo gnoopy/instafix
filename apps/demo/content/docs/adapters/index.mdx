@@ -1,18 +1,19 @@
 ---
 title: Choosing an adapter
-description: Where your feedback lives — Prisma or SQLite for production, memory for tests and demos, localStorage for client-only setups.
+description: Where your feedback lives — .instafix/ for solo agentic work, Prisma or SQLite for a team, memory/localStorage for tests and demos.
 ---
 
 An adapter is the storage layer behind InstaFix. All of them implement the same `InstaFixStore` contract (6 methods), so you can swap them without touching the widget.
 
 | Adapter | Where data lives | Use it for |
 |---|---|---|
-| [`@instafix/adapter-prisma`](/docs/adapters/prisma) | Your database, via Prisma | Production — already on Prisma |
-| [`@instafix/adapter-sqlite`](/docs/adapters/sqlite) | A local `.db` file, via better-sqlite3 | Production — no ORM or database server needed |
+| [`@instafix/adapter-fs`](/docs/adapters/fs) | Plain files under `.instafix/` at your project root | Solo, agent-driven work — no database, what the [agent workflow](/docs/agent-workflow) is built around |
+| [`@instafix/adapter-sqlite`](/docs/adapters/sqlite) | A local `.db` file, via better-sqlite3 | A real, durable store — no ORM or database server needed |
+| [`@instafix/adapter-prisma`](/docs/adapters/prisma) | Your database, via Prisma | A real store — already on Prisma |
 | [`@instafix/adapter-memory`](/docs/adapters/memory) | An in-process array | Tests, previews, throwaway demos |
-| [`@instafix/adapter-localstorage`](/docs/adapters/localstorage) | The visitor's browser | Client-side demos and prototypes — no server at all |
+| [`@instafix/adapter-localstorage`](/docs/adapters/localstorage) | Your own browser | Demos and prototypes — no server at all |
 
-Not sure which one? If the project already has Prisma set up, use it — otherwise SQLite gets you a real, durable store with nothing else to install or run. `npx github:gnoopy/instafix#cli-dist init` asks and wires up whichever you pick.
+Not sure which one? Working solo with a coding agent — the common case — use `adapter-fs`. Need more than one person looking at the same list (the [dashboard](/docs/dashboard)), or already have Prisma set up? SQLite or Prisma give you a real, shared store. `npx github:gnoopy/instafix#cli-dist init` asks and wires up whichever you pick.
 
 Need a different backend entirely (Postgres without Prisma, MongoDB, DynamoDB, …)? [Write your own](/docs/adapters/writing-an-adapter) with `@instafix/adapter-kit`.
 

@@ -12,9 +12,9 @@ In order of likelihood:
 3. **Invalid config** — a missing `endpoint`/`store` or `projectName` logs a `console.error` and mounts nothing. This case does *not* fire `onSkip`, so open the console.
 4. **It's already mounted.** A second `initInstaFix()` returns the existing instance instead of a second button.
 
-## Do my clients need an account?
+## Does whoever's using it need an account?
 
-No. The first time they send feedback, the widget asks for a name and email (kept in their browser for next time). If your app already knows who they are, pass `identity: { name, email }` and the prompt never shows.
+No. The first time someone sends a fix note, the widget asks for a name and email (kept in their browser for next time) — useful when more than one developer is marking things up on the same project, so a note's author is clear. Solo, or already know who's using it? Pass `identity: { name, email }` and the prompt never shows.
 
 ## Is it really free? What do I host?
 
@@ -41,6 +41,10 @@ The widget retries (3 attempts with backoff), then queues the payload in localSt
 ## An annotated element was deleted. Where's the annotation?
 
 The marker hides on that page (nothing to anchor to) rather than pointing at the wrong element — but the feedback itself, with its message and screenshot, stays in the panel and dashboard. See [how anchoring works](/docs/widget/anchoring).
+
+## What's the difference between the fix note list and `.instafix/`?
+
+None, if you're on `@instafix/adapter-fs` — the panel/dashboard list **is** `.instafix/history.jsonl`, read fresh off disk on every request. There's no separate database to fall out of sync with. See [Agent workflow](/docs/agent-workflow).
 
 ## My language isn't built in.
 

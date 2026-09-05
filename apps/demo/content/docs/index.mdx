@@ -1,27 +1,28 @@
 ---
 title: What is InstaFix?
-description: Open-source client feedback widget — DOM-anchored annotations, self-hosted, zero SaaS fees.
+description: Point at the UI while a coding agent builds it, get a ready-made prompt — a self-hosted browser widget for agentic development.
 ---
 
-InstaFix lets your clients leave feedback **directly on the website you're building for them**. They draw a rectangle on the page (or click the toolbar's target button and click an element), type a comment, and you receive it pinned to the exact element — no more screenshots pasted into emails, no more "the button at the top… no, the other one".
+Debugging with a coding agent? InstaFix lets you mark UI problems **directly on the page while the agent builds it**. Draw a rectangle — or click the toolbar's target button and click an element — type a short note, and it's saved pinned to the exact element, with a stable selector, a screenshot, and (in dev) which component rendered it. No more describing "the button at the top… no, the other one" in the chat.
 
-It's built for freelancers and agencies who review work-in-progress sites with clients, and it replaces tools like Marker.io or BugHerd with something you own: MIT-licensed, self-hosted, your database, zero subscription.
+Then hand it straight to the agent: every note is agent-ready Markdown from the moment it's saved — copy it, pipe it, or pull it into a session that's already running — and the agent closes it back out by ID once it's fixed. That's the whole point: **fewer round-trips typing out what's wrong, more time spent actually fixing it.** See [Agent workflow](/docs/agent-workflow) for the loop end to end.
 
 ## How it works
 
-1. **You add the widget** to the site under review — one `npm install`, one `initInstaFix()` call. By default it only shows in development and staging, never to production visitors.
-2. **Your client annotates** — draw a rectangle, or click the target button and click any element on the page. Each comment is anchored to the DOM element under it, so it survives deploys and layout changes. Optional extras: a screenshot of the annotated area, console/network diagnostics.
-3. **You triage** — in the drop-in dashboard (a Linear-style inbox with keyboard shortcuts) or through the plain HTTP API. Statuses flow `open` → `in_progress` → `resolved` / `wont_fix`.
+1. **You add the widget** to the app you're building — one `npm install`, one `initInstaFix()` call. Dev-only by default; it never shows to real visitors unless you pass `forceShow: true`.
+2. **You mark what's wrong** — draw a rectangle, or click the target button and click any element. Each note is anchored to the DOM element under it, so it survives the agent reshuffling the layout. Optional extras: a screenshot of the annotated area, console/network diagnostics.
+3. **The agent closes the loop** — grab it as agent-ready Markdown ([three ways](/docs/agent-workflow)), the agent fixes and resolves it by ID, and the list empties itself. Working with more than one person on the same project? The drop-in dashboard (a Linear-style inbox, keyboard-first) triages what's still open through `open` → `in_progress` → `resolved` / `wont_fix`.
 
 ## The pieces
 
 | Package | What it is |
 |---|---|
-| [`@instafix/widget`](/docs/widget) | The feedback widget your clients use (~30 KB gzip, framework-agnostic, React hook included) |
-| [`@instafix/dashboard`](/docs/dashboard) | The triage inbox — one React component, or a headless hook |
-| [`@instafix/adapter-prisma`](/docs/adapters/prisma) / [`-sqlite`](/docs/adapters/sqlite) | The production server adapters: one endpoint, auth, CORS, webhooks |
+| [`@instafix/widget`](/docs/widget) | The feedback widget (~30 KB gzip, framework-agnostic, React hook included) |
+| [`@instafix/adapter-fs`](/docs/adapters/fs) | Local, file-based store behind the [agent workflow](/docs/agent-workflow) — no database, `.instafix/history.jsonl` |
+| [`@instafix/cli`](/docs/cli) | `init`, plus the [agent-loop commands](/docs/cli#agent-loop) — `prompt`, `resolve`, `watch`, `agent-setup` |
+| [`@instafix/dashboard`](/docs/dashboard) | A triage inbox for when more than one person is working the list — one React component, or a headless hook |
+| [`@instafix/adapter-prisma`](/docs/adapters/prisma) / [`-sqlite`](/docs/adapters/sqlite) | A real server-backed store for that team dashboard: one endpoint, auth, CORS, webhooks |
 | [`@instafix/adapter-memory`](/docs/adapters/memory) / [`-localstorage`](/docs/adapters/localstorage) | Stores for tests, demos, and server-less prototypes |
 | [`@instafix/adapter-kit`](/docs/adapters/writing-an-adapter) | Build your own store adapter — the contract, the engine, the conformance suite |
-| [`@instafix/cli`](/docs/cli) | `init`, `sync`, `status`, `doctor` — setup and health checks |
 
 Ready? The [quickstart](/docs/quickstart) takes about three minutes — or try everything live in the [demo](/demo), which runs this very widget.
