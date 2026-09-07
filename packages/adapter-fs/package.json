@@ -52,7 +52,7 @@
     "node": ">=22"
   },
   "dependencies": {
-    "zod": "^4.5.2"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@instafix/core": "workspace:*"
