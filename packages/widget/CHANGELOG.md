@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.11.2](https://github.com/gnoopy/instafix/compare/widget-v0.11.1...widget-v0.11.2) (2026-09-11)
+
+
+### Miscellaneous
+
+* **deps-dev:** bump the dev-dependencies group with 5 updates ([#26](https://github.com/gnoopy/instafix/issues/26)) ([a16d6e0](https://github.com/gnoopy/instafix/commit/a16d6e0251cfb69d26f00ae651c0096eb6ee4a04))
+* **deps:** bump the production-dependencies group across 1 directory with 5 updates ([5c48c70](https://github.com/gnoopy/instafix/commit/5c48c70be4d9795cd4913339febec60500d85805))
+* **sync:** InstaFix core changes from TiniaCode ([c6c773a](https://github.com/gnoopy/instafix/commit/c6c773a483e870ee3e85d5511b7bc898f4f60720))
+* **sync:** InstaFix core changes from TiniaCode ([9cd2972](https://github.com/gnoopy/instafix/commit/9cd2972fa84c00a696bb0a94231187fcba2c9f0c))
+* **sync:** InstaFix core changes from TiniaCode ([e1fb5b0](https://github.com/gnoopy/instafix/commit/e1fb5b051fad07b0180f6016ee4b179060f3f4f7))
+
 ## [0.11.1](https://github.com/gnoopy/instafix/compare/widget-v0.11.0...widget-v0.11.1) (2026-09-05)
 
 
