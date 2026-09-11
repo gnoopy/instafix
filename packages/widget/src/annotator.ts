@@ -7,6 +7,7 @@ import { collectMarqueeElements, collectMarqueeElementsDetailed } from "./dom/ma
 import { type MotionPauseHandle, pauseMotion } from "./dom/motion-pause.js";
 import { getSourceHint } from "./dom/source-hint.js";
 import { detectTextSelection } from "./dom/text-selection.js";
+import { liftToTopLayer, raiseWidgetHosts } from "./dom/top-layer.js";
 import { el, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
 import { isWidgetChrome } from "./focus-tracker.js";
@@ -54,6 +55,23 @@ export interface AnnotationComplete {
  * - Subtle tinted overlay
  * - Accent-colored drawing rectangle with glow
  */
+/**
+ * The popup surface the Annotator drives. The default is the built-in `Popup`;
+ * `headless.ts` passes its own so a host application renders the feedback UI.
+ */
+export type HostPopup = Pick<
+  Popup,
+  | "isOpen"
+  | "pastedScreenshotDataUrl"
+  | "show"
+  | "cancelOpen"
+  | "destroy"
+  | "refreshLabels"
+  | "setLegend"
+  | "setSourceHint"
+  | "setPromptContext"
+>;
+
 export class Annotator {
   private overlay: HTMLElement | null = null;
   private toolbar: HTMLElement | null = null;
@@ -71,7 +89,7 @@ export class Annotator {
    * toolbar is shown and whether cancel deactivates unconditionally.
    */
   private instantMode = false;
-  private popup: Popup;
+  private popup: HostPopup;
   private savedOverflow = "";
   private preActiveFocusElement: Element | null = null;
   /**
@@ -123,8 +141,9 @@ export class Annotator {
     private readonly enableScreenshot: boolean = false,
     private readonly getFallbackTarget?: () => HTMLElement | null,
     agentInstructions?: string[],
+    private readonly hostPopup?: HostPopup,
   ) {
-    this.popup = new Popup(colors, t, agentInstructions);
+    this.popup = hostPopup ?? new Popup(colors, t, agentInstructions);
 
     this.bus.on("annotation:start", (detail) => this.activate(detail?.via ?? "pointer"));
     this.bus.on("targeting:start", () => this.activateTargeting());
@@ -132,6 +151,15 @@ export class Annotator {
     // targeting off (fab.ts emits targeting:end directly on that click) —
     // not just from this class's own click/Escape handlers below.
     this.bus.on("targeting:end", () => this.deactivateTargeting());
+    // The annotate button pressed again while its session is live (fab.ts).
+    this.bus.on("annotation:cancel", () => this.cancelSession());
+  }
+
+  /** End a live draw/instant session from outside, closing an open composer first so it is never orphaned. */
+  private cancelSession(): void {
+    if (!this.isActive) return;
+    if (this.popup.isOpen) this.popup.cancelOpen();
+    this.deactivate();
   }
 
   /**
@@ -211,6 +239,7 @@ export class Annotator {
     this.overlay = el("div", {
       style: `
         position:fixed;inset:0;
+        width:auto;height:auto;margin:0;padding:0;border:0;
         z-index:${Z_INDEX_MAX - 1};
         background:rgba(15, 23, 42, 0.04);
         cursor:${drawMode ? "crosshair" : "default"};
@@ -229,8 +258,9 @@ export class Annotator {
     this.overlay.setAttribute("data-instafix-ignore", "true");
 
     // Toolbar — glassmorphism bar (suppressed in instant mode: the
-    // "Draw a rectangle" copy is wrong when the composer is already open)
-    if (drawMode) {
+    // "Draw a rectangle" copy is wrong when the composer is already open; a
+    // host popup renders its own selection chrome)
+    if (drawMode && !this.hostPopup) {
       this.toolbar = el("div", {
         style: `
           position:fixed;top:0;left:0;right:0;
@@ -327,6 +357,12 @@ export class Annotator {
 
     document.body.appendChild(this.overlay);
     if (this.toolbar) document.body.appendChild(this.toolbar);
+    // A host popup has no body-level composer to stack with, so its session
+    // can sit above host top-layer UI (see dom/top-layer.ts).
+    if (this.hostPopup) {
+      liftToTopLayer(this.overlay);
+      raiseWidgetHosts();
+    }
 
     // Focus the overlay ONLY for keyboard-started sessions.
     //
@@ -414,13 +450,19 @@ export class Annotator {
     this.targetingHighlight.style.width = "0px";
     this.targetingHighlight.style.height = "0px";
     document.body.appendChild(this.targetingHighlight);
+    if (this.hostPopup) {
+      liftToTopLayer(this.targetingHighlight);
+      raiseWidgetHosts();
+    }
 
     document.addEventListener("mousemove", this.onTargetingMouseMove);
     // Capture phase: must run (and be able to preventDefault/stopPropagation)
     // before the click reaches its real target — a live link/button under
     // the cursor must not navigate/submit before the popup opens, and a host
     // page's own stopPropagation() on that element must not shadow us.
-    document.addEventListener("click", this.onTargetingClick, true);
+    // On window, ahead of document-level listeners: a host popover that
+    // dismisses on a document click stays open while its content is picked.
+    window.addEventListener("click", this.onTargetingClick, true);
     // Capture phase here too — same reasoning as onKeyDown above: targeting
     // mode can be entered by cancelling an active draw session, which
     // restores focus to the FAB, so the FAB's own bubble-phase "Escape
@@ -447,7 +489,7 @@ export class Annotator {
     this.targetingHoveredElement = null;
 
     document.removeEventListener("mousemove", this.onTargetingMouseMove);
-    document.removeEventListener("click", this.onTargetingClick, true);
+    window.removeEventListener("click", this.onTargetingClick, true);
     document.removeEventListener("keydown", this.onTargetingKeyDown, true);
     window.removeEventListener("scroll", this.onTargetingScroll, true);
 
@@ -761,6 +803,7 @@ export class Annotator {
     const rect = el("div", {
       style: `
         position:fixed;
+        right:auto;bottom:auto;margin:0;padding:0;
         z-index:${Z_INDEX_MAX};
         border:2px solid ${this.colors.selection};
         background:${this.colors.selection}12;

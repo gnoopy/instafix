@@ -71,6 +71,13 @@ export interface WidgetEvents {
    */
   "annotation:start": [({ via: "pointer" | "keyboard" } | undefined)?];
   "annotation:end": [];
+  /**
+   * Internal-only: a request to end the live draw session — the toolbar's
+   * annotate button pressed again while lit, the same toggle the target
+   * picker has. The session still announces `annotation:end` when it ends.
+   * Not part of `InstaFixPublicEvents`.
+   */
+  "annotation:cancel": [];
   "annotation:complete": [AnnotationComplete];
   /**
    * Internal-only: the "auto-target" toolbar button's hover-then-click

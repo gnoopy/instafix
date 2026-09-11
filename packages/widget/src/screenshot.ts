@@ -28,6 +28,41 @@ interface Html2CanvasOptions {
   allowTaint?: boolean;
   logging?: boolean;
   ignoreElements?: (element: Element) => boolean;
+  onclone?: (document: Document, element: HTMLElement) => void;
+}
+
+const TOP_LAYER_MARK = "data-instafix-top-layer";
+
+/**
+ * html2canvas renders a clone of the document, and a clone is never in the
+ * top layer: every open `popover` comes out `display: none`, so the menu or
+ * popover the user just annotated was missing from the image. Mark the open
+ * ones on the live page and give their clones the live display back;
+ * `restore` removes the marks. Widget chrome is excluded from the capture
+ * anyway.
+ */
+function markOpenPopovers(): { restore: () => void; onclone: (clone: Document) => void } {
+  let open: Element[] = [];
+  try {
+    open = Array.from(document.querySelectorAll(":popover-open"));
+  } catch {
+    // An engine without the Popover API has nothing in the top layer to restore.
+  }
+  const displays = open.map((element, index) => {
+    element.setAttribute(TOP_LAYER_MARK, String(index));
+    return getComputedStyle(element).display;
+  });
+  return {
+    restore() {
+      for (const element of open) element.removeAttribute(TOP_LAYER_MARK);
+    },
+    onclone(clone) {
+      for (const element of clone.querySelectorAll<HTMLElement>(`[${TOP_LAYER_MARK}]`)) {
+        const display = displays[Number(element.getAttribute(TOP_LAYER_MARK))];
+        if (display) element.style.setProperty("display", display, "important");
+      }
+    },
+  };
 }
 
 let cachedHtml2Canvas: Html2CanvasFn | null | undefined; // undefined = not loaded yet, null = failed
@@ -147,8 +182,10 @@ export async function captureAnnotatedScreenshot(
     hPct: roundPct(rect.height / capH),
   };
 
+  const popovers = markOpenPopovers();
   try {
     const canvas = await html2canvas(document.body, {
+      onclone: popovers.onclone,
       x: capX,
       y: capY,
       width: capW,
@@ -197,6 +234,8 @@ export async function captureAnnotatedScreenshot(
   } catch (err) {
     console.warn("[instafix] Screenshot capture failed:", err);
     return null;
+  } finally {
+    popovers.restore();
   }
 }
 

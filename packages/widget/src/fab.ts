@@ -160,6 +160,8 @@ export class Fab {
   private annotationsVisible = true;
   /** Mirrors the annotator's hover-and-click targeting mode — driven by `targeting:start`/`targeting:end`, never mutated directly on click. */
   private targetingActive = false;
+  /** Mirrors a live draw session (`annotation:start`/`annotation:end`) so the annotate button toggles it. */
+  private annotateActive = false;
   private readonly unsubTargetingStart: () => void;
   private readonly unsubTargetingEnd: () => void;
   private readonly unsubAnnotationStart: () => void;
@@ -635,6 +637,11 @@ export class Fab {
         this.bus.emit("position:toggle");
         break;
       case "annotate": {
+        // Pressed again while lit: end the session, like the target picker.
+        if (this.annotateActive) {
+          this.bus.emit("annotation:cancel");
+          break;
+        }
         // Putting keyboard users back on the FAB when the session ends is on
         // us — the annotator moves focus into its own body-level overlay.
         const unsubscribe = this.bus.on("annotation:end", () => {
@@ -676,6 +683,7 @@ export class Fab {
 
   /** Same bus-driven pattern as setTargetingActive — the annotate button reflects a live drawing session regardless of which entry path started/ended it. */
   private setAnnotateActive(active: boolean): void {
+    this.annotateActive = active;
     const btn = this.toolbar.querySelector<HTMLButtonElement>('[data-item-id="annotate"]');
     btn?.setAttribute("aria-pressed", String(active));
     btn?.classList.toggle("sp-toolbar-item--active", active);
