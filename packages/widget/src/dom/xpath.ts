@@ -1,3 +1,10 @@
+import { isGeneratedElementId } from "@instafix/core";
+
+/** An id worth anchoring on — not one a framework generated for this render. */
+function stableId(element: Element): string {
+  return element.id && !isGeneratedElementId(element.id) ? element.id : "";
+}
+
 /**
  * Generate an optimized XPath for a DOM element.
  *
@@ -8,8 +15,9 @@
  * - Cap depth at 6 levels to keep paths short
  */
 export function generateXPath(element: Element): string {
-  if (element.id) {
-    const safeId = element.id.includes("'") ? `concat('${element.id.replace(/'/g, "',\"'\",'")}')` : `'${element.id}'`;
+  const ownId = stableId(element);
+  if (ownId) {
+    const safeId = ownId.includes("'") ? `concat('${ownId.replace(/'/g, "',\"'\",'")}')` : `'${ownId}'`;
     return `//${element.localName}[@id=${safeId}]`;
   }
 
@@ -20,10 +28,9 @@ export function generateXPath(element: Element): string {
     const tag = current.localName;
     const parent: Element | null = current.parentElement;
 
-    if (current.id) {
-      const safeId = current.id.includes("'")
-        ? `concat('${current.id.replace(/'/g, "',\"'\",'")}')`
-        : `'${current.id}'`;
+    const currentId = stableId(current);
+    if (currentId) {
+      const safeId = currentId.includes("'") ? `concat('${currentId.replace(/'/g, "',\"'\",'")}')` : `'${currentId}'`;
       segments.unshift(`/${tag}[@id=${safeId}]`);
       return "/" + segments.join("");
     }

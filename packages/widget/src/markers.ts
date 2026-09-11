@@ -67,8 +67,25 @@ function resolveMarkerGeometry(
 /** Half of the 26px marker diameter — used for centering on anchor corner. */
 const MARKER_OFFSET = 13;
 
+/**
+ * Where a marker sits on its anchor.
+ * - `corner` (default): centred on the anchor's top-right corner, half outside.
+ * - `inside-start`: inside the anchor's top-left corner and never above the
+ *   page top, for dense app chrome where a half-outside dot covers the row above.
+ */
+export type MarkerPlacement = "corner" | "inside-start";
+
+/** Inset of an `inside-start` marker from its anchor's edges. */
+const INSIDE_INSET = 2;
+
 /** Convert a resolved rect to document-absolute marker position. */
-function markerPosition(rect: DOMRect): { top: number; left: number } {
+export function markerPosition(rect: DOMRect, placement: MarkerPlacement = "corner"): { top: number; left: number } {
+  if (placement === "inside-start") {
+    return {
+      top: Math.max(rect.top + INSIDE_INSET, 0) + window.scrollY,
+      left: Math.max(rect.left + INSIDE_INSET, 0) + window.scrollX,
+    };
+  }
   return {
     top: rect.top + window.scrollY - MARKER_OFFSET,
     left: rect.right + window.scrollX - MARKER_OFFSET,
@@ -160,6 +177,7 @@ export class MarkerManager {
     private readonly bus: EventBus<WidgetEvents>,
     private readonly t: TFunction,
     private readonly liveRegion: HTMLElement | null = null,
+    private readonly placement: MarkerPlacement = "corner",
   ) {
     this.container = el("div", {
       style: `position:absolute;top:0;left:0;pointer-events:none;z-index:${Z_INDEX_MAX - 1};`,
@@ -272,7 +290,7 @@ export class MarkerManager {
         if (resolveAnnotationTarget(annotation).kind === "area") {
           const areaResolved = resolveMarkerGeometry(annotation);
           if (!areaResolved) continue;
-          const pos = markerPosition(areaResolved.rect);
+          const pos = markerPosition(areaResolved.rect, this.placement);
           entry.baseTop = pos.top;
           entry.baseLeft = pos.left;
           markerEl.style.display = "flex";
@@ -329,7 +347,7 @@ export class MarkerManager {
           continue;
         }
 
-        const pos = markerPosition(resolved.rect);
+        const pos = markerPosition(resolved.rect, this.placement);
         entry.baseTop = pos.top;
         entry.baseLeft = pos.left;
         markerEl.style.display = "flex";
@@ -414,7 +432,7 @@ export class MarkerManager {
     for (const annotation of feedback.annotations) {
       const resolved = resolveMarkerGeometry(annotation);
       if (!resolved) continue;
-      const pos = markerPosition(resolved.rect);
+      const pos = markerPosition(resolved.rect, this.placement);
       entry.baseTop = pos.top;
       entry.baseLeft = pos.left;
       const marker = this.createMarker(index, feedback, pos);

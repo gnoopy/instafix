@@ -13,7 +13,7 @@
  * recorded accurately.
  */
 
-import type { AnnotationInspect } from "@instafix/core";
+import { type AnnotationInspect, isGeneratedElementId } from "@instafix/core";
 
 /** Depth of the ancestor chain. Enough to place an element in a page; short enough to stay readable in a prompt. */
 const MAX_DEPTH = 8;
@@ -72,7 +72,7 @@ const NOISE = new Set(["none", "normal", "auto", "0px", "0px 0px", "rgba(0, 0, 0
 /** `button.btn.btn-primary`, `div#app`, `section` — compact and pasteable back into a selector. */
 function describe(element: Element): string {
   const tag = element.tagName.toLowerCase();
-  const id = element.id ? `#${element.id}` : "";
+  const id = element.id && !isGeneratedElementId(element.id) ? `#${element.id}` : "";
   const classes = Array.from(element.classList)
     .slice(0, MAX_CLASSES)
     .map((c) => `.${c}`)

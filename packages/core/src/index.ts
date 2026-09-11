@@ -1,9 +1,16 @@
-export type { AgentExporter, AgentMarkdownOptions } from "./agent-format.js";
-export { formatFeedbacksForAgent, PROMPT_EXPORTER } from "./agent-format.js";
+export type { AgentExporter, AgentMarkdownLabels, AgentMarkdownOptions } from "./agent-format.js";
+export {
+  DEFAULT_AGENT_LABELS,
+  formatFeedbackContext,
+  formatFeedbacksForAgent,
+  isProjectRelativeInstafixPath,
+  PROMPT_EXPORTER,
+} from "./agent-format.js";
 export type { InstaFixErrorCode } from "./errors.js";
 export { InstaFixAuthError, InstaFixError, InstaFixNetworkError, InstaFixValidationError } from "./errors.js";
 export type { FilterResult } from "./filters.js";
 export { applyFeedbackFilters } from "./filters.js";
+export { isGeneratedElementId } from "./generated-id.js";
 export type { InstaFixHandler, InstaFixHttpMethod, StoreHandlerOptions } from "./handler.js";
 export { createStoreHandler } from "./handler.js";
 export type { I18n, LocaleLoaders, TranslateFunction } from "./i18n.js";

@@ -1,4 +1,4 @@
-import type { AnchorData, RectData } from "@instafix/core";
+import { type AnchorData, isGeneratedElementId, type RectData } from "@instafix/core";
 import { finder } from "@medv/finder";
 import { isWidgetChrome } from "../focus-tracker.js";
 import { generateFingerprint } from "./fingerprint.js";
@@ -25,8 +25,8 @@ export function generateAnchor(element: Element): AnchorData {
     className: (name: string) => !/^(css|sc|emotion|styled)-/.test(name) && !/^[a-z]{1,3}[A-Za-z0-9]{4,8}$/.test(name),
     // Prefer stable attributes
     attr: (name: string) => ["data-testid", "data-id", "role", "aria-label"].includes(name),
-    // Exclude framework-generated dynamic IDs
-    idName: (name: string) => !name.startsWith("radix-") && !/^:r[0-9]+:$/.test(name),
+    // Exclude framework-generated dynamic IDs (React useId in every form, Radix, Base UI, …)
+    idName: (name: string) => !isGeneratedElementId(name),
     seedMinLength: 3,
     optimizedMinLength: 2,
   });
@@ -53,7 +53,8 @@ export function generateAnchor(element: Element): AnchorData {
     fingerprint,
     neighborText: neighbor,
     elementTag: element.tagName,
-    elementId: element.id || undefined,
+    // A generated id is not an identity: the next render gives the element another one.
+    elementId: element.id && !isGeneratedElementId(element.id) ? element.id : undefined,
     anchorKey,
   };
 }
