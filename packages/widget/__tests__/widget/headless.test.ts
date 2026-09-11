@@ -120,6 +120,44 @@ describe("headless capture", () => {
     expect(screenshot.calls[0]?.sessionLive).toBe(true);
   });
 
+  it("a completed selection releases the page: no surface, scroll lock, shield or key capture is left", async () => {
+    for (const mode of ["region", "element"] as const) {
+      const target = addTarget();
+      const onCapture = vi.fn<(capture: HeadlessCapture) => void>();
+      const onCancel = vi.fn();
+      stop = await startCapture({ mode, screenshot: false, onCapture, onCancel });
+      if (mode === "region") {
+        const overlay = document.querySelector('[data-instafix-ignore][role="application"]');
+        overlay?.dispatchEvent(new MouseEvent("mousedown", { clientX: 100, clientY: 100, bubbles: true }));
+        overlay?.dispatchEvent(new MouseEvent("mouseup", { clientX: 300, clientY: 250, bubbles: true }));
+      } else {
+        click(target);
+      }
+      await vi.waitFor(() => expect(onCapture).toHaveBeenCalledOnce());
+
+      expect(document.querySelector('[data-instafix-ignore][role="application"]')).toBeNull();
+      expect(document.querySelector("[data-instafix-targeting-highlight]")).toBeNull();
+      expect(document.body.style.overflow).toBe("");
+      const typed = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+      const pressed = new MouseEvent("pointerdown", { bubbles: true, cancelable: true, composed: true });
+      const clicked = new MouseEvent("click", { bubbles: true, cancelable: true, composed: true });
+      const input = document.body.appendChild(document.createElement("input"));
+      input.dispatchEvent(typed);
+      target.dispatchEvent(pressed);
+      target.dispatchEvent(clicked);
+      window.dispatchEvent(new Event("blur"));
+      input.remove();
+      expect([typed.defaultPrevented, pressed.defaultPrevented, clicked.defaultPrevented]).toEqual([
+        false,
+        false,
+        false,
+      ]);
+      expect(onCancel).not.toHaveBeenCalled();
+      expect(onCapture).toHaveBeenCalledOnce();
+      document.body.innerHTML = "";
+    }
+  });
+
   it("suppresses page pointerdown actions while picking, but not on widget chrome or after cancel", async () => {
     const target = addTarget();
     const chrome = document.createElement("div");
