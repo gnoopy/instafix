@@ -38,7 +38,7 @@
     "@biomejs/biome": "2.5.12",
     "@playwright/test": "^1.63.0",
     "@types/node": "^26.5.0",
-    "@vitest/coverage-istanbul": "^4.1.11",
+    "@vitest/coverage-istanbul": "^5.0.0",
     "fast-check": "^4.9.0",
     "jsdom": "29.1.1",
     "knip": "^6.34.0",
