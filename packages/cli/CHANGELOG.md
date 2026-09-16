@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.2](https://github.com/gnoopy/instafix/compare/cli-v0.6.1...cli-v0.6.2) (2026-09-16)
+
+
+### Features
+
+* **widget:** localize prompts and resolve scoped region references ([307ee01](https://github.com/gnoopy/instafix/commit/307ee010e8a8dff2b006ae02d0087261459d8f26))
+
+
+### Miscellaneous
+
+* **deps-dev:** bump the dev-dependencies group with 6 updates ([#33](https://github.com/gnoopy/instafix/issues/33)) ([28d9093](https://github.com/gnoopy/instafix/commit/28d9093cdd71e641b67aa17a43da334e2e09a8f3))
+
 ## [0.6.1](https://github.com/gnoopy/instafix/compare/cli-v0.6.0...cli-v0.6.1) (2026-09-05)
 
 

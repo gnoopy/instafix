@@ -1,6 +1,6 @@
 {
   "name": "@instafix/adapter-sqlite",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "SQLite adapter for InstaFix — zero external services, server-side request handlers",
   "type": "module",
   "sideEffects": false,
