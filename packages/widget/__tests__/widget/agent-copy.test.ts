@@ -135,6 +135,29 @@ describe("AgentCopyButton", () => {
     delete (navigator as { clipboard?: unknown }).clipboard;
   });
 
+  it.each(["panel", "detail"] as const)("uses the configured Korean locale for %s copy", async (variant) => {
+    const btn = new AgentCopyButton(
+      buildThemeColors(),
+      {
+        getFeedbacks: () => [makeFeedback()],
+        getContainer: () => root,
+        locale: "ko-KR",
+        variant,
+      },
+      createT("ko"),
+    );
+    root.appendChild(btn.element);
+    btn.element.click();
+    await Promise.resolve();
+    await raf();
+    const markdown = root.querySelector<HTMLTextAreaElement>(".sp-agent-modal-textarea")?.value;
+    expect(markdown).toContain("# UI 수정 요청사항");
+    expect(markdown).toContain("요청사항 (원문):");
+    expect(markdown).toContain("Make it bigger");
+    expect(markdown).toContain("페이지: /settings");
+    btn.destroy();
+  });
+
   it("opens a preview dialog with the formatted Markdown and item count", async () => {
     const btn = new AgentCopyButton(
       buildThemeColors(),

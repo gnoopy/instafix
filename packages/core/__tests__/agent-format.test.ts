@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatFeedbacksForAgent } from "../src/agent-format.js";
+import { formatFeedbacksForAgent, referencedRegionNumbers } from "../src/agent-format.js";
 import type { AnnotationResponse, FeedbackResponse } from "../src/types.js";
 
 function makeAnnotation(overrides: Partial<AnnotationResponse> = {}): AnnotationResponse {
@@ -279,12 +279,12 @@ describe("formatFeedbacksForAgent", () => {
 
     it("omits the screenshot line for an inline data URL (too long to be useful as text)", () => {
       const out = formatFeedbacksForAgent([makeFeedback({ screenshotUrl: "data:image/jpeg;base64,/9j/4AAQ" })]);
-      expect(out).not.toContain("Screenshot:");
+      expect(out).toContain("Screenshot: unavailable");
     });
 
     it("omits the screenshot line when none was captured", () => {
       const out = formatFeedbacksForAgent([makeFeedback()]);
-      expect(out).not.toContain("Screenshot:");
+      expect(out).toContain("Screenshot: unavailable");
     });
   });
 
@@ -362,5 +362,143 @@ describe("DOM/CSSOM inspect snapshot", () => {
     const out = formatFeedbacksForAgent([makeFeedback({ annotations: [makeAnnotation({ inspect: null })] })]);
     expect(out).not.toContain("DOM path:");
     expect(out).not.toContain("Computed:");
+  });
+});
+
+describe("localized prompt and target references", () => {
+  it.each(["ko", "ko-KR", "KO-kr"])("renders Korean prose for %s without translating captured content", (locale) => {
+    const out = formatFeedbacksForAgent(
+      [
+        makeFeedback({
+          message: "1번을 지우고 ②로 남은 공간을 채워줘",
+          annotations: [makeAnnotation({ cssSelector: ".first" }), makeAnnotation({ cssSelector: ".second" })],
+        }),
+      ],
+      { locale, instructions: ["Keep our custom instruction."] },
+    );
+    expect(out).toContain("# UI 수정 요청사항");
+    expect(out).toContain("요청사항 (원문):\n> 1번을 지우고 ②로 남은 공간을 채워줘");
+    expect(out).toContain("화면의 내부 선택 번호와 대응");
+    expect(out).toContain("바깥 영역 #1이며 내부 요소 1번이 아닙니다");
+    expect(out).toContain("대상 목록 (2):\n1. 요소");
+    expect(out).toMatch(/1\. 요소[\s\S]*css: `\.first`[\s\S]*2\. 요소[\s\S]*css: `\.second`/);
+    expect(out).toContain("주변 텍스트:");
+    expect(out).toContain("완료 처리하세요");
+    expect(out).toContain("npx @instafix/cli resolve <ID>");
+    expect(out).toContain("Keep our custom instruction.");
+    expect(out).not.toContain("Request (verbatim)");
+  });
+
+  it("scopes numbers to each request even with custom instructions", () => {
+    const feedback = makeFeedback({ annotations: [makeAnnotation(), makeAnnotation()] });
+    const out = formatFeedbacksForAgent([feedback, feedback], { instructions: [] });
+    expect(out.match(/Component numbers are local to this region/g)).toHaveLength(2);
+    expect(out.match(/Targets \(2\):\n1\. element/g)).toHaveLength(2);
+    expect(out).toContain('"①", or "1번"');
+  });
+
+  it("uses English for unsupported locales and preserves explicit titles", () => {
+    expect(formatFeedbacksForAgent([], { locale: "fr" })).toBe(formatFeedbacksForAgent([], { locale: "en-US" }));
+    expect(formatFeedbacksForAgent([], { locale: "ko", title: "Custom title" })).toContain("# Custom title");
+    expect(formatFeedbacksForAgent([], { locale: "ko" })).toContain("(항목 없음)");
+  });
+
+  it("localizes area and text targets, single-target guidance and default instructions", () => {
+    const area = formatFeedbacksForAgent(
+      [makeFeedback({ annotations: [makeAnnotation({ target: { kind: "area" } })] })],
+      { locale: "ko" },
+    );
+    expect(area).toContain("영역 (요소 없음 — 페이지 영역)");
+    expect(area).toContain("기준 뷰포트");
+    expect(area).toContain("대상 1번만 기록");
+    expect(area).toContain("변경하기 전에 각 요청사항을 현재 코드와 대조하세요.");
+    const text = formatFeedbacksForAgent(
+      [
+        makeFeedback({
+          annotations: [makeAnnotation({ target: { kind: "text", quote: "Save", quotePrefix: "", quoteSuffix: "" } })],
+        }),
+      ],
+      { locale: "ko" },
+    );
+    expect(text).toContain("텍스트 포함 요소");
+    expect(text).toContain('인용문: "[Save]"');
+  });
+});
+
+describe("cross-region references", () => {
+  it("recognizes region references without treating components, hex colors or selectors as regions", () => {
+    expect(referencedRegionNumbers("#1과#2, 영역#3의 1번; ① 2 3 #123abc #22px /path/#9 ##8")).toEqual([1, 2, 3]);
+  });
+
+  it("never guesses region identities from the order of a server-side export", () => {
+    const out = formatFeedbacksForAgent([makeFeedback({ message: "#1 참고" })]);
+    expect(out).toContain("Region #1: unavailable or ambiguous");
+  });
+
+  it("includes referenced components and screenshot path without turning context into another task", () => {
+    const current = makeFeedback({ id: "current", message: "#7의 1번처럼 2번을 바꿔줘" });
+    const reference = makeFeedback({
+      id: "reference",
+      message: "Do not copy this old task",
+      annotations: [makeAnnotation({ cssSelector: ".reference-component" })],
+      screenshotUrl: "/api/instafix/screenshots/reference.jpg",
+    });
+    const out = formatFeedbacksForAgent([current], {
+      locale: "ko",
+      regions: [
+        { number: 3, feedback: current },
+        { number: 7, feedback: reference },
+      ],
+    });
+    expect(out).toContain("## #3.");
+    expect(out).toContain("참조 영역 #7 (참고 정보이며 별도 수정 요청 아님)");
+    expect(out).toContain("css: `.reference-component`");
+    expect(out).toContain(".instafix/screenshots/reference.jpg");
+    expect(out).not.toContain("Do not copy this old task");
+    expect(out).not.toContain("ID: reference");
+    expect(out).toContain("바깥 선택 영역은 #번호");
+  });
+
+  it("keeps bare component numbers local and does not attach unrelated regions", () => {
+    const current = makeFeedback({ id: "current", message: "1번 삭제, 2번 확장" });
+    const other = makeFeedback({ id: "other", annotations: [makeAnnotation({ cssSelector: ".unrelated" })] });
+    const out = formatFeedbacksForAgent([current], {
+      regions: [
+        { number: 1, feedback: other },
+        { number: 2, feedback: current },
+      ],
+    });
+    expect(out).not.toContain(".unrelated");
+    expect(out).not.toContain("### Referenced region");
+  });
+
+  it("does not resolve a number to a region on a different page", () => {
+    const current = makeFeedback({ message: "#8 참고" });
+    const other = makeFeedback({
+      id: "elsewhere",
+      url: "/other",
+      annotations: [makeAnnotation({ cssSelector: ".wrong-page" })],
+    });
+    const out = formatFeedbacksForAgent([current], {
+      regions: [
+        { number: 1, feedback: current },
+        { number: 8, feedback: other },
+      ],
+    });
+    expect(out).toContain("Region #8: unavailable or ambiguous");
+    expect(out).not.toContain(".wrong-page");
+  });
+
+  it("deduplicates references and reports missing image files explicitly", () => {
+    const current = makeFeedback({ message: "#2, #2의 1번" });
+    const other = makeFeedback({ id: "other" });
+    const out = formatFeedbacksForAgent([current], {
+      regions: [
+        { number: 1, feedback: current },
+        { number: 2, feedback: other },
+      ],
+    });
+    expect(out.match(/### Referenced region #2/g)).toHaveLength(1);
+    expect(out).toContain("Screenshot: unavailable");
   });
 });

@@ -4,6 +4,7 @@ import {
   type FeedbackType,
   flattenAnnotation,
   formatFeedbacksForAgent,
+  type PromptRegion,
 } from "@instafix/core";
 import { copyTextToClipboard, ICON_AGENT_COPY } from "./agent-copy.js";
 import { FONT_STACK, Z_INDEX_MAX } from "./constants.js";
@@ -11,6 +12,8 @@ import { el, parseSvg, setText } from "./dom-utils.js";
 import { clearDraft, loadDraft, saveDraft } from "./draft-storage.js";
 import type { TFunction, Translations } from "./i18n/index.js";
 import { ICON_BUG, ICON_CHANGE, ICON_CLOSE, ICON_OTHER, ICON_QUESTION, ICON_REDO, ICON_UNDO } from "./icons.js";
+import type { RegionContext } from "./region-context.js";
+import type { AnnotatedScreenshot } from "./screenshot.js";
 import { getTypeBgColor, getTypeColor, type ThemeColors } from "./styles/theme.js";
 import { isVoiceInputSupported, type VoiceErrorReason, VoiceInputController, type VoiceState } from "./voice.js";
 
@@ -46,20 +49,22 @@ const TYPE_LABEL_KEYS: Record<FeedbackType, keyof Translations> = {
  * Exported for direct unit testing.
  */
 export interface ComposePromptOptions {
+  locale?: string | undefined;
+  regions?: readonly PromptRegion[] | undefined;
+  draft?: FeedbackResponse | undefined;
   /** Project-specific instruction bullets (InstaFixConfig.agentInstructions). */
   instructions?: string[] | undefined;
   /** Dev-only component source hint for the selected element (dom/source-hint.ts). */
   sourceHint?: string | undefined;
 }
 
-export function buildComposePrompt(
+export function buildComposeFeedback(
   annotations: readonly AnnotationPayload[],
   type: FeedbackType,
   message: string,
-  options: ComposePromptOptions = {},
-): string {
+): FeedbackResponse {
   const now = new Date().toISOString();
-  const draft: FeedbackResponse = {
+  return {
     id: "draft",
     projectName: "",
     type,
@@ -88,15 +93,27 @@ export function buildComposePrompt(
       createdAt: now,
     })),
   };
+}
+
+export function buildComposePrompt(
+  annotations: readonly AnnotationPayload[],
+  type: FeedbackType,
+  message: string,
+  options: ComposePromptOptions = {},
+): string {
+  const korean = options.locale?.toLowerCase().split("-")[0] === "ko";
+  const draft = options.draft ?? buildComposeFeedback(annotations, type, message);
   let markdown = formatFeedbacksForAgent([draft], {
-    title: "UI change request",
+    title: korean ? "UI 수정 요청" : "UI change request",
+    locale: options.locale,
+    regions: options.regions,
     // A draft has no real ID — resolve instructions would point nowhere.
     includeResolveProtocol: false,
     ...(options.instructions ? { instructions: options.instructions } : {}),
   });
   if (options.sourceHint) {
     // Appended as its own line — the formatter itself stays draft-agnostic.
-    markdown += `\nSource hint (dev): ${options.sourceHint}\n`;
+    markdown += `\n${korean ? "소스 위치 (개발용)" : "Source hint (dev)"}: ${options.sourceHint}\n`;
   }
   return markdown;
 }
@@ -164,6 +181,9 @@ export class Popup {
   /** Single-slot undo history for the clear (X) button only — `textarea.value = ""` bypasses the browser's native undo stack, so this is the sole way to recover an accidental clear. Not a general text-editing undo stack. */
   private clearedMessage: string | null = null;
   private submitBtn: HTMLButtonElement;
+  private regionId: string | null = null;
+  private regionCapture: { getRect: () => DOMRect; capture: () => Promise<AnnotatedScreenshot | null> } | null = null;
+  private copyingContext = false;
   private cancelBtn: HTMLButtonElement;
   private typeRow: HTMLElement;
   private submitLabel: HTMLSpanElement;
@@ -252,6 +272,8 @@ export class Popup {
     private readonly t: TFunction,
     /** Project instruction bullets injected into compose-copy prompts (InstaFixConfig.agentInstructions). */
     private readonly agentInstructions?: string[],
+    private readonly locale = "en",
+    private readonly regions?: RegionContext,
   ) {
     // Layer surface (see ThemeColors.layerBg): hue-tinted background + a
     // layer-toned edge, so the popover reads as InstaFix's own floating
@@ -864,9 +886,43 @@ export class Popup {
    * the Element/Container or summary/detail toggles. Called by the annotator
    * right after `show()` (which resets it to null); null hides the button.
    */
-  setPromptContext(getAnnotations: (() => readonly AnnotationPayload[]) | null): void {
+  setPromptContext(
+    getAnnotations: (() => readonly AnnotationPayload[]) | null,
+    capture?: { getRect: () => DOMRect; capture: () => Promise<AnnotatedScreenshot | null> },
+  ): void {
     this.getPromptAnnotations = getAnnotations;
+    this.regionCapture = capture ?? null;
+    if (!getAnnotations) this.regionId = null;
+    if (getAnnotations && this.regions && !this.regionId) {
+      this.regionId = this.regions.begin(
+        buildComposeFeedback(getAnnotations(), this.selectedType ?? "other", this.textarea.value),
+      );
+    }
+    this.syncRegion();
     this.copyContextBtn.style.display = getAnnotations ? "inline-flex" : "none";
+  }
+
+  private syncRegion(): void {
+    if (!this.regions || !this.regionId || !this.getPromptAnnotations || !this.regionCapture) return;
+    const feedback = buildComposeFeedback(
+      this.getPromptAnnotations(),
+      this.selectedType ?? "other",
+      this.textarea.value.trim(),
+    );
+    const pasted = this.pastedImage;
+    this.regions.update(
+      this.regionId,
+      feedback,
+      this.regionCapture.getRect(),
+      pasted
+        ? async () => ({ dataUrl: pasted, region: { xPct: 0, yPct: 0, wPct: 1, hPct: 1 } })
+        : this.regionCapture.capture,
+      pasted ?? "",
+    );
+  }
+
+  commitRegion(feedback: FeedbackResponse): void {
+    if (this.regionId) this.regions?.commit(this.regionId, feedback);
   }
 
   /**
@@ -916,23 +972,43 @@ export class Popup {
   /** Instant-copy the in-composition context+note as agent Markdown — transient ✓/✗ label, no modal. */
   private async copyComposeContext(): Promise<void> {
     const getAnnotations = this.getPromptAnnotations;
-    if (!getAnnotations || this.copyResetTimer) return; // mid ✓/✗ flash — ignore spam clicks
+    if (!getAnnotations || this.copyResetTimer || this.copyingContext) return; // mid ✓/✗ flash — ignore spam clicks
 
-    const markdown = buildComposePrompt(getAnnotations(), this.selectedType ?? "other", this.textarea.value.trim(), {
-      instructions: this.agentInstructions,
-      sourceHint: this.sourceHint ?? undefined,
-    });
-    const ok = await copyTextToClipboard(markdown);
+    this.copyingContext = true;
+    this.copyContextBtn.disabled = true;
+    this.syncRegion();
+    const annotations = getAnnotations();
+    const sourceHint = this.sourceHint ?? undefined;
+    const type = this.selectedType ?? "other";
+    const message = this.textarea.value.trim();
+    const regionId = this.regionId;
+    const draft = regionId ? this.regions?.feedback(regionId) : undefined;
+    try {
+      if (draft) await this.regions?.prepare([draft]);
+      if (this.regionId !== regionId || !this.isOpen || (regionId && this.regions?.feedback(regionId) !== draft))
+        return;
+      const markdown = buildComposePrompt(annotations, type, message, {
+        instructions: this.agentInstructions,
+        locale: this.locale,
+        sourceHint,
+        draft,
+        regions: this.regions?.regions(),
+      });
+      const ok = await copyTextToClipboard(markdown);
 
-    setText(this.copyContextLabel, this.t(ok ? "popup.copyContextCopied" : "popup.copyContextFailed"));
-    this.copyContextBtn.style.borderColor = ok ? "#22c55e" : "#ef4444";
-    this.copyContextBtn.style.color = ok ? "#22c55e" : "#ef4444";
-    this.copyResetTimer = setTimeout(() => {
-      this.copyResetTimer = null;
-      setText(this.copyContextLabel, this.t("popup.copyContext"));
-      this.copyContextBtn.style.borderColor = this.colors.border;
-      this.copyContextBtn.style.color = this.colors.textTertiary;
-    }, 1600);
+      setText(this.copyContextLabel, this.t(ok ? "popup.copyContextCopied" : "popup.copyContextFailed"));
+      this.copyContextBtn.style.borderColor = ok ? "#22c55e" : "#ef4444";
+      this.copyContextBtn.style.color = ok ? "#22c55e" : "#ef4444";
+      this.copyResetTimer = setTimeout(() => {
+        this.copyResetTimer = null;
+        setText(this.copyContextLabel, this.t("popup.copyContext"));
+        this.copyContextBtn.style.borderColor = this.colors.border;
+        this.copyContextBtn.style.color = this.colors.textTertiary;
+      }, 1600);
+    } finally {
+      this.copyingContext = false;
+      this.copyContextBtn.disabled = false;
+    }
   }
 
   /** Auto-grow the note textarea with its content: 100px floor, 220px cap (then it scrolls). */
@@ -966,6 +1042,7 @@ export class Popup {
    * re-hit-testing.
    */
   setLegend(entries: ReadonlyArray<{ number: number; label: string }>): void {
+    this.syncRegion();
     this.legendListEl.replaceChildren();
     if (entries.length === 0) {
       this.legendRow.style.display = "none";
@@ -1056,6 +1133,7 @@ export class Popup {
     this.targetSizeChoice = choice;
     this.renderTargetSizeButtons();
     this.targetSizeOnChange?.(choice);
+    this.syncRegion();
   }
 
   private renderTargetSizeButtons(): void {
@@ -1244,8 +1322,8 @@ export class Popup {
       this.submittingState = false;
       this.resetTypeButtons();
       this.hideDraftBanner();
-      this.setLegend([]);
       this.setPromptContext(null);
+      this.setLegend([]);
       this.setSourceHint(null);
       this.setPastedImage(null);
 
@@ -1529,6 +1607,7 @@ export class Popup {
   }
 
   private hideElement(): void {
+    this.syncRegion();
     if (this.draftSaveTimer) {
       clearTimeout(this.draftSaveTimer);
       this.draftSaveTimer = null;

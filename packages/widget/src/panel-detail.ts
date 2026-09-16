@@ -1,3 +1,4 @@
+import type { RegionContext } from "./region-context.js";
 /**
  * Detail View for the feedback panel.
  *
@@ -1196,6 +1197,7 @@ export class DetailView {
     t: TFunction,
     locale: string,
     getContainer: () => HTMLElement | ShadowRoot,
+    regions?: RegionContext,
   ) {
     this.t = t;
     this.locale = locale;
@@ -1206,6 +1208,8 @@ export class DetailView {
         getFeedbacks: () => (this.currentFeedback ? [this.currentFeedback] : []),
         getContainer,
         variant: "detail",
+        regions,
+        locale,
       },
       t,
     );

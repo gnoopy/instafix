@@ -14,6 +14,7 @@ import { isWidgetChrome } from "./focus-tracker.js";
 import { type TFunction, tWithParams } from "./i18n/index.js";
 import { MultiTargetPreview } from "./multi-target-preview.js";
 import { Popup } from "./popup.js";
+import type { RegionContext } from "./region-context.js";
 import { type AnnotatedScreenshot, captureAnnotatedScreenshot } from "./screenshot.js";
 import type { ThemeColors } from "./styles/theme.js";
 
@@ -142,8 +143,10 @@ export class Annotator {
     private readonly getFallbackTarget?: () => HTMLElement | null,
     agentInstructions?: string[],
     private readonly hostPopup?: HostPopup,
+    locale = "en",
+    regions?: RegionContext,
   ) {
-    this.popup = hostPopup ?? new Popup(colors, t, agentInstructions);
+    this.popup = hostPopup ?? new Popup(colors, t, agentInstructions, locale, regions);
 
     this.bus.on("annotation:start", (detail) => this.activate(detail?.via ?? "pointer"));
     this.bus.on("targeting:start", () => this.activateTargeting());
@@ -661,7 +664,10 @@ export class Annotator {
           }
         : undefined,
     );
-    this.popup.setPromptContext(() => [annotation]);
+    this.popup.setPromptContext(() => [annotation], {
+      getRect: () => captureRect,
+      capture: () => this.maybeCapture(captureRect),
+    });
     this.popup.setSourceHint(getSourceHint(target));
     const result = await keyboardShowPromise;
 
@@ -1086,7 +1092,10 @@ export class Annotator {
     if (showPreview) this.popup.setLegend(this.legendEntriesFromAnnotations(allAnnotations));
     // Getter, not a snapshot — `allAnnotations` is reassigned when the user
     // flips the summary/detail resolution.
-    this.popup.setPromptContext(() => allAnnotations);
+    this.popup.setPromptContext(() => allAnnotations, {
+      getRect: () => captureRect,
+      capture: () => this.maybeCapture(captureRect),
+    });
     // Same dev-only source hint the auto-target popover shows — part of
     // keeping the two popovers identical.
     if (elementSizeChoice) this.popup.setSourceHint(getSourceHint(elementSizeChoice.smallest));
@@ -1363,7 +1372,10 @@ export class Annotator {
     );
     // After show() (it resets the context to null synchronously); getter
     // because `annotation` is reassigned by the Element/Container toggle.
-    this.popup.setPromptContext(() => [annotation]);
+    this.popup.setPromptContext(() => [annotation], {
+      getRect: () => captureRect,
+      capture: () => this.maybeCapture(captureRect),
+    });
     // Dev-only component source hint for the picked element — null on
     // production host builds, and the line simply doesn't render then.
     this.popup.setSourceHint(getSourceHint(currentElement));
@@ -1420,7 +1432,8 @@ export class Annotator {
         unsubCancelled();
         this.rejectPendingSubmission = null;
       };
-      const unsubSent = this.bus.on("feedback:sent", () => {
+      const unsubSent = this.bus.on("feedback:sent", (feedback) => {
+        if (this.popup instanceof Popup) this.popup.commitRegion(feedback);
         cleanup();
         resolve();
       });

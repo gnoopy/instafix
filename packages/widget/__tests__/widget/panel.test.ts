@@ -32,7 +32,12 @@ async function confirmDeleteDialog(shadow: ShadowRoot): Promise<void> {
 }
 
 function createMockMarkers() {
+  const numbers = new Map<string, number>();
   return {
+    regionNumber: (feedback: FeedbackResponse) => {
+      if (!numbers.has(feedback.id)) numbers.set(feedback.id, numbers.size + 1);
+      return numbers.get(feedback.id)!;
+    },
     render: vi.fn(),
     highlight: vi.fn(),
     pinHighlight: vi.fn(),
