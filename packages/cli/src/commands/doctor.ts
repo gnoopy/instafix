@@ -24,7 +24,7 @@ export async function doctorCommand(options: DoctorCommandOptions): Promise<void
       defaultValue: "http://localhost:3000",
     }));
 
-  if (p.isCancel(url)) {
+  if (p.isCancel(url) || typeof url !== "string") {
     p.cancel("Cancelled.");
     process.exit(0);
   }
@@ -42,7 +42,7 @@ export async function doctorCommand(options: DoctorCommandOptions): Promise<void
       defaultValue: "/api/instafix",
     }));
 
-  if (p.isCancel(endpoint)) {
+  if (p.isCancel(endpoint) || typeof endpoint !== "string") {
     p.cancel("Cancelled.");
     process.exit(0);
   }
