@@ -29,6 +29,7 @@ export function DocsWidget({ locale }: { locale: string }) {
           store: new LocalStorageStore({ key: "instafix_docs_feedbacks" }),
           projectName: "docs",
           forceShow: true,
+          enableScreenshot: true,
           accentColor: "#173CFF",
           locale,
           position: "bottom-right",

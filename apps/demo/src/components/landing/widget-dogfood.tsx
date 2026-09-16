@@ -14,6 +14,7 @@ export function WidgetDogfood({ locale }: { locale: SiteLocale }) {
         endpoint: "/api/instafix",
         projectName: "landing",
         forceShow: true,
+        enableScreenshot: true,
         accentColor: "#173CFF",
         locale,
         position: "bottom-right",
