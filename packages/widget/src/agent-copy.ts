@@ -1,3 +1,4 @@
+import type { RegionContext } from "./region-context.js";
 /**
  * "Copy Prompt" — the widget-side wiring around
  * `formatFeedbacksForAgent` (pure, in `@instafix/core`): a button that opens
@@ -231,6 +232,8 @@ export async function copyTextToClipboard(text: string): Promise<boolean> {
 // ---------------------------------------------------------------------------
 
 export interface AgentCopyButtonOptions {
+  regions?: RegionContext | undefined;
+  locale?: string | undefined;
   /** Resolve the feedbacks to copy — called fresh on every click. */
   getFeedbacks: () => FeedbackResponse[] | Promise<FeedbackResponse[]>;
   /**
@@ -290,14 +293,16 @@ export class AgentCopyButton {
     let feedbacks: FeedbackResponse[];
     try {
       feedbacks = await this.options.getFeedbacks();
+      await this.options.regions?.prepare(feedbacks);
     } finally {
       this.element.disabled = false;
     }
 
-    const markdown = formatFeedbacksForAgent(
-      feedbacks,
-      this.options.instructions ? { instructions: this.options.instructions } : undefined,
-    );
+    const markdown = formatFeedbacksForAgent(feedbacks, {
+      locale: this.options.locale,
+      regions: this.options.regions?.regions(),
+      ...(this.options.instructions ? { instructions: this.options.instructions } : {}),
+    });
     this.showModal(
       feedbacks.length,
       markdown,

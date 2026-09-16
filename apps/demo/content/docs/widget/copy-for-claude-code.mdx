@@ -9,9 +9,21 @@ Every card in the panel — and the whole open list — can be turned into one M
 
 There's nothing to configure: it works out of the box once the widget is installed, using whatever selection you already have — a bulk multi-select if one is active, otherwise every open item on the current page.
 
+## Region numbers and component numbers
+
+Outer badges `#1`, `#2` identify selection regions. Inner numbers `1`, `2`, `3` identify components **only within their own region**. For example: `Remove 1 and expand 2. Match the spacing of #1 component 2.` The prompt explicitly distinguishes `#1` from local component `1`.
+
+Region numbers and captured context are retained per project and page in the current browser tab session. Sorting and filtering do not renumber regions; deleted numbers are not reused. Unsaved selections can be referenced, and submitting a selection preserves its region number. These are not global identifiers shared between users or browser tabs.
+
+Explicit `#N` references automatically include the other region's selectors, component details, bounds and screenshot path as **reference context**, without replaying its old request as another task. Use `#N` to identify a related region; vague prose is not used to guess a match. Missing or foreign-page references are reported as unavailable. Exports without browser region context, such as CLI exports, do not infer region numbers from list order.
+
+With screenshots enabled, images are captured on selection. Stored screenshots use their storage paths. Unsaved or inline images download on copy as files such as `instafix-region-N-identifier.jpg`, and their filenames appear in the prompt. **The clipboard contains text only: attach the downloaded images to your agent when needed.** Disabled or failed captures are explicitly reported as unavailable.
+
+Generated prompt prose follows the widget's Korean or English locale; requests and selectors retain their original text.
+
 ## What you get
 
-Paste this straight into your agent's prompt. This is real output — not a mockup — for one feedback with a single element target:
+Paste this straight into your agent's prompt. This is an English excerpt for one feedback with a single element target; numbering and screenshot guidance are omitted:
 
 ```md
 # UI change requests
@@ -23,7 +35,7 @@ Paste this straight into your agent's prompt. This is real output — not a mock
 Page: https://app.acme.dev/reports/monthly
 Viewport: 1440x900 @2x
 
-## 1. Export CSV
+## #1. Export CSV
 Request (verbatim):
 > The export button is disabled even after I pick a date range. Should be enabled once both dates are set.
 Target: element `button` "Export CSV"
@@ -43,7 +55,7 @@ Every field an agent needs to locate the change is there: a CSS selector, an XPa
 - **Select a range of text** → `Target: text in <tag>` plus a `Quote: "…[…]…"` line showing the exact quoted text with its surrounding prefix/suffix.
 - **Drag an empty area** (no element under it, or Alt-drag to force it) → `Target: area (no element — page region)` with bounds relative to the viewport instead of an element, since there's nothing to anchor a selector to.
 - **Shift-drag to add more targets to one note** → a single item with a `Targets (N):` numbered list instead of one flat `Target:` block, so "these three buttons are inconsistent" stays one request instead of three.
-- **Multiple feedback items in the selection** → each becomes its own `## N. …` section; a `Page:`/`Viewport:` header is hoisted once to the top when every item shares the same page, otherwise each section carries its own.
+- **Multiple feedback items in the selection** → each becomes its own `## #N. …` section; a `Page:`/`Viewport:` header is hoisted once to the top when every item shares the same page, otherwise each section carries its own.
 
 ## Why it's deterministic
 

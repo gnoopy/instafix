@@ -23,6 +23,7 @@ import { getIdentity, type Identity, saveIdentity } from "./identity.js";
 import { MarkerManager } from "./markers.js";
 import { hasSeenOnboarding, Onboarding } from "./onboarding.js";
 import type { Panel as PanelType } from "./panel.js";
+import { RegionContext } from "./region-context.js";
 import { loadPersistedSettings, savePersistedSettings, syncSharedSettings } from "./settings-storage.js";
 import { StoreClient } from "./store-client.js";
 import { buildStyles } from "./styles/base.js";
@@ -574,7 +575,9 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
 
   // Components outside Shadow DOM
   const tooltip = new Tooltip(colors, locale);
-  const markers = new MarkerManager(colors, tooltip, bus, t, liveRegion);
+  const regions = new RegionContext(config.projectName, () => getScope().url);
+  const markers = new MarkerManager(colors, tooltip, bus, t, liveRegion, "corner", regions);
+  bus.on("feedback:deleted", (id) => regions.remove(id));
 
   // Components inside Shadow DOM
   const fab = new Fab(shadow, config, bus, t);
@@ -689,6 +692,9 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
     config.enableScreenshot ?? false,
     () => focusTracker.getLastPageFocus(),
     config.agentInstructions,
+    undefined,
+    locale,
+    regions,
   );
 
   // Once the locale dictionary lands, swap the FAB + popup labels from the
@@ -978,6 +984,7 @@ function mount(config: InstaFixConfig, onUpdateConfig: (partial: Partial<InstaFi
       panelInstance?.destroy();
       annotator.destroy();
       markers.destroy();
+      regions.destroy();
       tooltip.destroy();
       // Restore the original console / fetch / XHR so the host page isn't
       // left with patched globals after the widget tears itself down.

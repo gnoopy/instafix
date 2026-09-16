@@ -1,10 +1,11 @@
-export type { AgentExporter, AgentMarkdownLabels, AgentMarkdownOptions } from "./agent-format.js";
+export type { AgentExporter, AgentMarkdownLabels, AgentMarkdownOptions, PromptRegion } from "./agent-format.js";
 export {
   DEFAULT_AGENT_LABELS,
   formatFeedbackContext,
   formatFeedbacksForAgent,
   isProjectRelativeInstafixPath,
   PROMPT_EXPORTER,
+  referencedRegionNumbers,
 } from "./agent-format.js";
 export type { InstaFixErrorCode } from "./errors.js";
 export { InstaFixAuthError, InstaFixError, InstaFixNetworkError, InstaFixValidationError } from "./errors.js";

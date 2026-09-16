@@ -200,6 +200,8 @@ export class Panel {
       colors,
       {
         getFeedbacks: () => this.getFeedbacksForAgentCopy(),
+        regions: this.markers.regions,
+        locale,
         getContainer: () => this.shadowRoot,
         // The copy's coverage, spelled out in the preview — selected items
         // when a bulk selection is active, open-on-this-page otherwise.
@@ -403,7 +405,7 @@ export class Panel {
             const idx = this.feedbacks.findIndex((f) => f.id === updated.id);
             const current = idx >= 0 ? this.feedbacks[idx] : undefined;
             if (current) {
-              this.detail.show(current, idx + 1);
+              this.detail.show(current, this.markers.regionNumber(current));
             } else {
               this.detail.hide();
             }
@@ -419,7 +421,7 @@ export class Panel {
             const idx = this.feedbacks.findIndex((f) => f.id === updated.id);
             const current = idx >= 0 ? this.feedbacks[idx] : undefined;
             if (current) {
-              this.detail.show(current, idx + 1);
+              this.detail.show(current, this.markers.regionNumber(current));
             } else {
               this.detail.hide();
             }
@@ -432,6 +434,7 @@ export class Panel {
       this.t,
       locale,
       () => this.shadowRoot,
+      this.markers.regions,
     );
 
     // --- Keyboard Shortcuts ---
@@ -546,7 +549,7 @@ export class Panel {
         const feedbackId = card.dataset.feedbackId;
         const feedback = this.feedbacks.find((f) => f.id === feedbackId);
         if (feedback) {
-          const number = this.feedbacks.indexOf(feedback) + 1;
+          const number = this.markers.regionNumber(feedback);
           this.setSelectedCard(feedback.id);
           this.detail.show(feedback, number);
           if (!this.markers.focusFeedback(feedback.id)) {
@@ -568,7 +571,7 @@ export class Panel {
       const feedbackId = card.dataset.feedbackId;
       const feedback = this.feedbacks.find((f) => f.id === feedbackId);
       if (feedback) {
-        const number = this.feedbacks.indexOf(feedback) + 1;
+        const number = this.markers.regionNumber(feedback);
         this.setSelectedCard(feedback.id);
         this.detail.show(feedback, number);
         // Same reveal-the-region behavior as the pointer path above.
@@ -958,7 +961,7 @@ export class Panel {
     } else {
       // Flat list rendering
       sorted.forEach((feedback, index) => {
-        const card = this.createCard(feedback, index + 1);
+        const card = this.createCard(feedback, this.markers.regionNumber(feedback));
         card.style.setProperty("--sp-card-i", String(index));
         this.listContainer.appendChild(card);
       });

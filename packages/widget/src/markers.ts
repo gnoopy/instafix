@@ -11,6 +11,7 @@ import { classifyVisibility } from "./dom/visibility.js";
 import { el, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
 import { getTypeLabel, type TFunction, tWithParams } from "./i18n/index.js";
+import type { RegionContext } from "./region-context.js";
 import type { ThemeColors } from "./styles/theme.js";
 import type { Tooltip } from "./tooltip.js";
 
@@ -178,6 +179,7 @@ export class MarkerManager {
     private readonly t: TFunction,
     private readonly liveRegion: HTMLElement | null = null,
     private readonly placement: MarkerPlacement = "corner",
+    readonly regions?: RegionContext,
   ) {
     this.container = el("div", {
       style: `position:absolute;top:0;left:0;pointer-events:none;z-index:${Z_INDEX_MAX - 1};`,
@@ -274,6 +276,20 @@ export class MarkerManager {
     const validKeys = new Set<string>();
 
     for (const entry of this.entries) {
+      if (entry.feedback.annotations.length > 1) {
+        const geometry = this.regionGeometry(entry.feedback);
+        const marker = entry.elements[0];
+        if (marker) {
+          marker.style.display = geometry ? "flex" : "none";
+          if (geometry) {
+            const pos = markerPosition(geometry.rect, this.placement);
+            entry.baseTop = pos.top;
+            entry.baseLeft = pos.left;
+            this.applyConfidenceStyle(marker, geometry.confidence, entry.feedback);
+          }
+        }
+        continue;
+      }
       for (let i = 0; i < entry.feedback.annotations.length; i++) {
         const markerEl = entry.elements[i];
         if (!markerEl) continue;
@@ -400,10 +416,23 @@ export class MarkerManager {
     this.bus.emit("markers:changed", openCount);
   }
 
+  private regionNumbers = new Map<string, number>();
+
+  regionNumber(feedback: FeedbackResponse): number {
+    if (this.regions) return this.regions.remember(feedback);
+    let number = this.regionNumbers.get(feedback.id);
+    if (!number) {
+      number = this.regionNumbers.size + 1;
+      this.regionNumbers.set(feedback.id, number);
+    }
+    return number;
+  }
+
   render(feedbacks: FeedbackResponse[]): void {
+    this.regions?.showDrafts();
     this.clear();
-    feedbacks.forEach((feedback, i) => {
-      const entry = this.buildEntry(feedback, i + 1);
+    feedbacks.forEach((feedback) => {
+      const entry = this.buildEntry(feedback, this.regionNumber(feedback));
       this.entries.push(entry);
     });
     this.buildClusters();
@@ -417,8 +446,8 @@ export class MarkerManager {
     this.emitMarkersChanged();
   }
 
-  addFeedback(feedback: FeedbackResponse, index: number): void {
-    const entry = this.buildEntry(feedback, index);
+  addFeedback(feedback: FeedbackResponse, _index: number): void {
+    const entry = this.buildEntry(feedback, this.regionNumber(feedback));
     for (const m of entry.elements) {
       m.style.animation = "sp-marker-in 0.35s cubic-bezier(0.34,1.56,0.64,1) both";
     }
@@ -429,9 +458,8 @@ export class MarkerManager {
 
   private buildEntry(feedback: FeedbackResponse, index: number): MarkerEntry {
     const entry: MarkerEntry = { feedback, elements: [], baseTop: 0, baseLeft: 0 };
-    for (const annotation of feedback.annotations) {
-      const resolved = resolveMarkerGeometry(annotation);
-      if (!resolved) continue;
+    const resolved = this.regionGeometry(feedback);
+    if (resolved) {
       const pos = markerPosition(resolved.rect, this.placement);
       entry.baseTop = pos.top;
       entry.baseLeft = pos.left;
@@ -441,6 +469,21 @@ export class MarkerManager {
       entry.elements.push(marker);
     }
     return entry;
+  }
+
+  private regionGeometry(feedback: FeedbackResponse): { rect: DOMRect; confidence: number } | null {
+    const geometries = feedback.annotations
+      .map((annotation) => resolveMarkerGeometry(annotation))
+      .filter((value) => value !== null);
+    if (!geometries.length) return null;
+    const left = Math.min(...geometries.map(({ rect }) => rect.left));
+    const top = Math.min(...geometries.map(({ rect }) => rect.top));
+    const right = Math.max(...geometries.map(({ rect }) => rect.right));
+    const bottom = Math.max(...geometries.map(({ rect }) => rect.bottom));
+    return {
+      rect: new DOMRect(left, top, right - left, bottom - top),
+      confidence: Math.min(...geometries.map((value) => value.confidence)),
+    };
   }
 
   private buildClusters(): void {
@@ -629,7 +672,7 @@ export class MarkerManager {
         position:absolute;
         top:${pos.top}px;
         left:${pos.left}px;
-        width:26px;height:26px;
+        min-width:26px;height:26px;padding:0 5px;box-sizing:border-box;
         border-radius:50%;
         background:${isResolved ? "rgba(241,245,249,0.9)" : markerColor};
         border:2px solid ${isResolved ? "#cbd5e1" : "#ffffff"};
@@ -649,13 +692,13 @@ export class MarkerManager {
     marker.setAttribute("role", "button");
     const truncatedMessage = feedback.message.length > 60 ? `${feedback.message.slice(0, 60)}...` : feedback.message;
     const ariaLabel = tWithParams(this.t, "marker.aria", {
-      number,
+      number: `#${number}`,
       type: getTypeLabel(feedback.type, this.t),
       message: truncatedMessage,
     });
     marker.setAttribute("aria-label", ariaLabel);
     marker.setAttribute("aria-describedby", this.tooltip.tooltipId);
-    setText(marker, isResolved ? "\u2713" : String(number));
+    setText(marker, isResolved ? `#${number} ✓` : `#${number}`);
 
     marker.addEventListener("mouseenter", () => {
       marker.style.transform = "scale(1.2)";

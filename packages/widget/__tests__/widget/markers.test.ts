@@ -177,6 +177,31 @@ describe("MarkerManager", () => {
   // -------------------------------------------------------------------------
 
   describe("render", () => {
+    it("renders one outer # marker for the union of a region's components", () => {
+      mockState.rectQueue = [
+        { x: 10, y: 20, w: 100, h: 50 },
+        { x: 200, y: 80, w: 60, h: 90 },
+      ];
+      markers.render([
+        makeFeedback({ id: "group", annotations: [makeAnnotation({ id: "a" }), makeAnnotation({ id: "b" })] }),
+      ]);
+      const pins = document.querySelectorAll<HTMLElement>('[data-feedback-id="group"]');
+      expect(pins).toHaveLength(1);
+      expect(pins[0]?.textContent).toBe("#1");
+      expect(pins[0]?.style.top).toBe("7px");
+      expect(pins[0]?.style.left).toBe("247px");
+    });
+
+    it("keeps outer numbers stable when list order or filters change", () => {
+      const a = makeFeedback({ id: "a" });
+      const b = makeFeedback({ id: "b" });
+      markers.render([a, b]);
+      markers.render([b]);
+      expect(document.querySelector('[data-feedback-id="b"]')?.textContent).toBe("#2");
+      markers.render([b, a]);
+      expect(document.querySelector('[data-feedback-id="a"]')?.firstChild?.textContent).toBe("#1");
+    });
+
     it("creates a container element with id instafix-markers", () => {
       const container = document.getElementById("instafix-markers");
       expect(container).not.toBeNull();

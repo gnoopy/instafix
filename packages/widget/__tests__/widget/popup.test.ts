@@ -4,6 +4,7 @@ import type { AnnotationPayload } from "@instafix/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createT, type TFunction, type Translations } from "../../src/i18n/index.js";
 import { buildComposePrompt, Popup } from "../../src/popup.js";
+import { RegionContext } from "../../src/region-context.js";
 import { buildThemeColors } from "../../src/styles/theme.js";
 
 // jsdom does not implement window.matchMedia — provide a stub
@@ -246,6 +247,77 @@ describe("Popup", () => {
   describe("compose prompt copy", () => {
     afterEach(() => {
       vi.restoreAllMocks();
+    });
+
+    it("includes a prior unsaved region when the next selection refers to its #number", async () => {
+      sessionStorage.clear();
+      const regions = new RegionContext("popup-reference-test", () => "/page");
+      popup.destroy();
+      const koreanT = createT("ko");
+      popup = new Popup(colors, koreanT, undefined, "ko", regions);
+      Object.defineProperty(window, "isSecureContext", { value: true, configurable: true });
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+      const capture = { getRect: makeBounds, capture: async () => null };
+      const old = makeAnnotationPayload();
+      old.anchor.cssSelector = ".previous-region";
+      popup.show(makeBounds());
+      popup.setPromptContext(() => [old], capture);
+      document.querySelector<HTMLTextAreaElement>("textarea")!.value = "previous note";
+      popup.cancelOpen();
+      popup.show(makeBounds());
+      popup.setPromptContext(() => [makeAnnotationPayload()], capture);
+      document.querySelector<HTMLTextAreaElement>("textarea")!.value = "#1의 1번처럼 1번 수정";
+      document.querySelector<HTMLButtonElement>(`[aria-label="${koreanT("popup.copyContext")}"]`)!.click();
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalledOnce());
+      const copied = writeText.mock.calls[0]![0] as string;
+      expect(copied).toContain("## #2.");
+      expect(copied).toContain("참조 영역 #1");
+      expect(copied).toContain("css: `.previous-region`");
+      expect(copied).toContain("스크린샷: 없음");
+      expect(regions.regions()[0]?.feedback.message).toBe("previous note");
+      expect(copied).not.toContain("previous note");
+      popup.cancelOpen();
+      regions.destroy();
+    });
+
+    it("copies Korean prose with the latest target list after selection changes", async () => {
+      popup.destroy();
+      const koreanT = createT("ko");
+      popup = new Popup(colors, koreanT, undefined, "ko-KR");
+      Object.defineProperty(window, "isSecureContext", { value: true, configurable: true });
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+      popup.show(makeBounds());
+      let targets = [makeAnnotationPayload()];
+      popup.setPromptContext(() => targets);
+      const first = makeAnnotationPayload();
+      first.anchor.cssSelector = ".new-first";
+      const second = makeAnnotationPayload();
+      second.anchor.cssSelector = ".new-second";
+      targets = [first, second];
+      document.querySelector<HTMLTextAreaElement>("textarea")!.value = "1번 삭제하고 2번 확장";
+      document.querySelector<HTMLButtonElement>(`[aria-label="${koreanT("popup.copyContext")}"]`)!.click();
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalledOnce());
+      const copied = writeText.mock.calls[0]![0] as string;
+      expect(copied).toContain("요청사항 (원문):\n> 1번 삭제하고 2번 확장");
+      expect(copied).toMatch(/1\. 요소[\s\S]*css: `\.new-first`[\s\S]*2\. 요소[\s\S]*css: `\.new-second`/);
+      expect(copied).not.toContain("button.save-btn");
+    });
+
+    it("localizes compose prompts while preserving source hints and current target order", () => {
+      const md = buildComposePrompt([makeAnnotationPayload(), makeAnnotationPayload()], "change", "1번 삭제", {
+        locale: "ko-KR",
+        sourceHint: "src/App.tsx:10",
+        instructions: ["Custom rule"],
+      });
+      expect(md).toContain("# UI 수정 요청");
+      expect(md).toContain("요청사항 (원문):\n> 1번 삭제");
+      expect(md).toContain("대상 목록 (2):");
+      expect(md).toContain("화면의 내부 선택 번호와 대응");
+      expect(md).toContain("소스 위치 (개발용): src/App.tsx:10");
+      expect(md).toContain("Custom rule");
+      expect(md).not.toContain("resolve <ID>");
     });
 
     it("buildComposePrompt renders the note, selectors and bounds as agent Markdown", () => {
