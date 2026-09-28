@@ -57,15 +57,15 @@
     "node": ">=22"
   },
   "dependencies": {
-    "zod": "^4.5.2"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@instafix/core": "workspace:*",
     "@size-limit/preset-small-lib": "^12.1.0",
     "@testing-library/react": "^16.3.3",
-    "@types/react": "^19.2.18",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "size-limit": "^12.1.0"
   },
   "peerDependencies": {
