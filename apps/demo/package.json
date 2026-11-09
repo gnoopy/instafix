@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "@instafix/core": "workspace:*",
-    "@tailwindcss/postcss": "^4.3.3",
+    "@tailwindcss/postcss": "^4.3.4",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "tailwindcss": "^4.0.0",
