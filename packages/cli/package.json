@@ -44,8 +44,8 @@
   },
   "devDependencies": {
     "@instafix/core": "workspace:*",
-    "commander": "^15.0.0",
-    "@clack/prompts": "^1.8.1",
+    "commander": "^15.1.0",
+    "@clack/prompts": "^1.9.0",
     "@mrleebo/prisma-ast": "^0.16.0"
   }
 }
